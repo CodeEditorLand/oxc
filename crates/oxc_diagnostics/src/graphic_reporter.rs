@@ -7,7 +7,7 @@
 use std::fmt::{self, Write};
 
 // use miette::diagnostic_chain::DiagnosticChain;
-use miette::{
+use garment::{
     Diagnostic, LabeledSpan, MietteError, ReportHandler, Severity, SourceCode, SourceSpan,
     SpanContents,
 };

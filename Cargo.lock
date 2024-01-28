@@ -709,6 +709,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "garment"
+version = "0.1.0"
+dependencies = [
+ "garment-derive",
+ "thiserror",
+]
+
+[[package]]
+name = "garment-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1466,8 +1483,8 @@ dependencies = [
 name = "oxc_diagnostics"
 version = "0.5.0"
 dependencies = [
+ "garment",
  "is-terminal",
- "miette",
  "owo-colors",
  "textwrap",
  "thiserror",

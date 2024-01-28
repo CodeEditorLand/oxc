@@ -238,7 +238,7 @@ impl<'a> Parser<'a> {
             && (self.source_text.starts_with("// @flow")
                 || self.source_text.starts_with("/* @flow */"))
         {
-            return Some(diagnostics::Flow(Span::new(0, 8)).into());
+            return Some(Error::from(diagnostics::Flow(Span::new(0, 8))));
         }
         None
     }

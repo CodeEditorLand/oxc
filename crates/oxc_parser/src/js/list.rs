@@ -1,7 +1,7 @@
 use oxc_allocator::Vec;
 use oxc_ast::{ast::*, syntax_directed_operations::PrivateBoundIdentifiers};
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
+    garment::{self, Diagnostic},
     thiserror::{self, Error},
     Result,
 };

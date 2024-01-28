@@ -1,24 +1,24 @@
 //! Diagnostics Wrapper
 //! Exports `thiserror` and `miette`
 
-mod graphic_reporter;
-mod graphical_theme;
+// mod graphic_reporter;
+// mod graphical_theme;
 mod service;
 
 use std::path::PathBuf;
 
 pub use crate::service::{DiagnosticSender, DiagnosticService, DiagnosticTuple};
-pub use graphic_reporter::{GraphicalReportHandler, GraphicalTheme};
-pub use miette;
+pub use garment;
+// pub use graphic_reporter::{GraphicalReportHandler, GraphicalTheme};
 pub use thiserror;
 
-pub type Error = miette::Error;
-pub type Severity = miette::Severity;
-pub type Report = miette::Report;
+pub type Error = garment::Report;
+pub type Severity = garment::Severity;
+pub type Report = garment::Report;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-use miette::Diagnostic;
+use garment::Diagnostic;
 use thiserror::Error;
 
 #[derive(Debug, Error, Diagnostic)]

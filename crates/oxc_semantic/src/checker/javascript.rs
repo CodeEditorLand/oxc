@@ -5,7 +5,7 @@ use oxc_ast::{
     AstKind,
 };
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
+    garment::{self, Diagnostic},
     thiserror::{self, Error},
 };
 use oxc_span::{Atom, GetSpan, ModuleKind, Span};

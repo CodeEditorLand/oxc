@@ -6,9 +6,10 @@ use std::{
     sync::Arc,
 };
 
-use crate::{miette::NamedSource, Error, GraphicalReportHandler, MinifiedFileError, Severity};
+use crate::{Error, MinifiedFileError, Severity};
+use garment::{Diagnostic, GraphicalReportHandler, NamedSource, Report};
 
-pub type DiagnosticTuple = (PathBuf, Vec<Error>);
+pub type DiagnosticTuple = (PathBuf, Vec<Report>);
 pub type DiagnosticSender = mpsc::Sender<Option<DiagnosticTuple>>;
 pub type DiagnosticReceiver = mpsc::Receiver<Option<DiagnosticTuple>>;
 
@@ -119,7 +120,7 @@ impl DiagnosticService {
                 handler.render_report(&mut err, diagnostic.as_ref()).unwrap();
                 // Skip large output and print only once
                 if err.lines().any(|line| line.len() >= 400) {
-                    let minified_diagnostic = Error::new(MinifiedFileError(path.clone()));
+                    let minified_diagnostic = Report::new(MinifiedFileError(path.clone()));
                     err = format!("{minified_diagnostic:?}");
                     output = err;
                     break;
