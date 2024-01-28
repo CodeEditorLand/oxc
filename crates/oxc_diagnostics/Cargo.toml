@@ -20,7 +20,7 @@ doctest = false
 [dependencies]
 thiserror = { workspace = true }
 # miette    = { workspace = true, features = ["fancy-no-backtrace"] }
-garment = { path = "../../../garment" }
+garment = { workspace = true }
 
 unicode-width = "0.1.11"
 owo-colors    = { version = "3.5.0" }

@@ -1,5 +1,5 @@
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
+    garment::{self, Diagnostic},
     thiserror::Error,
     Report,
 };

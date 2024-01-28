@@ -1,7 +1,6 @@
-use miette::{miette, LabeledSpan};
 use oxc_ast::{ast::ArrayExpressionElement, AstKind};
 use oxc_diagnostics::{
-    miette::{self, Diagnostic, Severity},
+    garment::{self, Diagnostic, LabeledSourceSpan, Severity},
     thiserror::Error,
 };
 use oxc_macros::declare_oxc_lint;
@@ -46,7 +45,7 @@ impl Rule for NoSparseArrays {
                     _ => None,
                 })
                 .map(|span| {
-                    LabeledSpan::at(
+                    LabeledSourceSpan::at(
                         (span.start as usize)..(span.start as usize),
                         "unexpected comma",
                     )
@@ -55,7 +54,7 @@ impl Rule for NoSparseArrays {
 
             if !violations.is_empty() {
                 if violations.len() < 10 {
-                    ctx.diagnostic(miette!(
+                    ctx.diagnostic(garment!(
                         severity = Severity::Warning,
                         labels = violations,
                         help = "remove the comma or insert `undefined`",
@@ -63,15 +62,15 @@ impl Rule for NoSparseArrays {
                     ));
                 } else {
                     let span = if (array_expr.span.end - array_expr.span.start) < 50 {
-                        LabeledSpan::at(array_expr.span, "the array here")
+                        LabeledSourceSpan::at(array_expr.span, "the array here")
                     } else {
-                        LabeledSpan::at(
+                        LabeledSourceSpan::at(
                             (array_expr.span.start as usize)..(array_expr.span.start as usize),
                             "the array starting here",
                         )
                     };
 
-                    ctx.diagnostic(miette!(
+                    ctx.diagnostic(garment!(
                         severity = Severity::Warning,
                         labels = vec![span],
                         help = "remove the comma or insert `undefined`",

@@ -134,6 +134,7 @@ codspeed-criterion-compat = { version = "2.3.3", default-features = false }
 glob                      = { version = "0.3.1" }
 mime_guess                = { version = "2.0.4" }
 language-tags             = { version = "0.3.2" }
+garment = { path = "../garment" }
 
 [profile.release.package.oxc_wasm]
 opt-level = 'z'

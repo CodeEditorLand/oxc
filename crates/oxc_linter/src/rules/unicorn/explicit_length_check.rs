@@ -1,4 +1,3 @@
-use miette::diagnostic;
 use oxc_ast::{
     ast::{
         BinaryExpression, Expression, LogicalExpression, MemberExpression, StaticMemberExpression,
@@ -6,7 +5,7 @@ use oxc_ast::{
     AstKind,
 };
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
+    garment::{self, Diagnostic},
     thiserror::{self, Error},
 };
 use oxc_macros::declare_oxc_lint;

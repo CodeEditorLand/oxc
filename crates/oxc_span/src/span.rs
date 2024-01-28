@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
 
-use miette::{SourceOffset, SourceSpan};
+use garment::{SourceOffset, SourceSpan};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 

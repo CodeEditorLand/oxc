@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
+    garment::{self, Diagnostic},
     thiserror::{self, Error},
 };
 use oxc_macros::declare_oxc_lint;

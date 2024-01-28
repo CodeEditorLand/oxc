@@ -23,7 +23,7 @@ default = []
 serde   = ["dep:serde", "compact_str/serde"]
 
 [dependencies]
-miette      = { workspace = true }
+garment      = { workspace = true }
 compact_str = { workspace = true }
 
 serde = { workspace = true, features = ["derive"], optional = true }

@@ -4,7 +4,7 @@ use oxc_macros::declare_oxc_lint;
 use oxc_semantic::AstNode;
 use oxc_span::Span;
 
-use oxc_diagnostics::miette::{self, Diagnostic};
+use oxc_diagnostics::garment::{self, Diagnostic};
 
 use crate::{rule::Rule, utils::get_element_type, LintContext};
 

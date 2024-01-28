@@ -1726,7 +1726,7 @@ name = "oxc_span"
 version = "0.5.0"
 dependencies = [
  "compact_str",
- "miette",
+ "garment",
  "serde",
 ]
 

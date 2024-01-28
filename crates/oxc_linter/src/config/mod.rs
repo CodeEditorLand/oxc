@@ -50,7 +50,10 @@ impl ESLintConfig {
 
     fn read_json(path: &Path) -> Result<serde_json::Value, Error> {
         let mut string = std::fs::read_to_string(path).map_err(|e| {
-            FailedToParseConfigError(vec![Error::new(FailedToOpenFileError(path.to_path_buf(), e))])
+            FailedToParseConfigError(vec![Error::from(FailedToOpenFileError(
+                path.to_path_buf(),
+                e,
+            ))])
         })?;
 
         // jsonc support
@@ -69,7 +72,7 @@ impl ESLintConfig {
                     )
                 }
             };
-            FailedToParseConfigError(vec![Error::new(FailedToParseConfigJsonError(
+            FailedToParseConfigError(vec![Error::from(FailedToParseConfigJsonError(
                 path.to_path_buf(),
                 err,
             ))])

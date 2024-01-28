@@ -1,6 +1,6 @@
 use oxc_ast::{ast::BindingPatternKind, AstKind};
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
+    garment::{self, Diagnostic},
     thiserror::Error,
 };
 use oxc_macros::declare_oxc_lint;

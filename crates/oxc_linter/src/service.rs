@@ -140,7 +140,7 @@ impl Runtime {
     ) -> Option<Result<(SourceType, String), Error>> {
         let read_file = |path: &Path| -> Result<String, Error> {
             fs::read_to_string(path)
-                .map_err(|e| Error::new(FailedToOpenFileError(path.to_path_buf(), e)))
+                .map_err(|e| Error::from(FailedToOpenFileError(path.to_path_buf(), e)))
         };
         let source_type = SourceType::from_path(path);
         let not_supported_yet =

@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use oxc_ast::{ast::Expression, AstKind};
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
+    garment::{self, Diagnostic},
     thiserror::Error,
 };
 

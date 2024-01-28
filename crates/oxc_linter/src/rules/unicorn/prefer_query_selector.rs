@@ -1,10 +1,9 @@
-use miette::diagnostic;
 use oxc_ast::{
     ast::{Argument, Expression},
     AstKind,
 };
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
+    garment::{self, Diagnostic},
     thiserror::{self, Error},
 };
 use oxc_macros::declare_oxc_lint;
