@@ -1,8 +1,18 @@
-use super::{Kind, Lexer, Token};
+use super::{
+    cold_branch,
+    search::{byte_search, safe_byte_match_table, SafeByteMatchTable},
+    Kind, Lexer, Token,
+};
 use crate::diagnostics;
 
 use memchr::{memchr, memchr2};
-use oxc_syntax::identifier::{is_identifier_part, is_identifier_start};
+use oxc_syntax::identifier::{is_identifier_part, is_identifier_start_unicode};
+
+static ASCII_JSX_ID_START_TABLE: SafeByteMatchTable =
+    safe_byte_match_table!(|b| b.is_ascii_alphabetic() || matches!(b, b'_' | b'$' | b'-'));
+
+static NOT_ASCII_JSX_ID_CONTINUE_TABLE: SafeByteMatchTable =
+    safe_byte_match_table!(|b| !(b.is_ascii_alphanumeric() || matches!(b, b'_' | b'$' | b'-')));
 
 impl<'a> Lexer<'a> {
     /// `JSXDoubleStringCharacters` ::
@@ -95,19 +105,54 @@ impl<'a> Lexer<'a> {
     ///   `JSXIdentifier` `IdentifierPart`
     ///   `JSXIdentifier` [no `WhiteSpace` or Comment here] -
     fn read_jsx_identifier(&mut self, _start_offset: u32) -> Kind {
-        while let Some(c) = self.peek() {
-            if c == '-' || is_identifier_start(c) {
-                self.consume_char();
-                while let Some(c) = self.peek() {
-                    if is_identifier_part(c) {
-                        self.consume_char();
-                    } else {
-                        break;
-                    }
+        // Handle start char
+        let Some(start_byte) = self.source.peek_byte() else {
+            return Kind::Ident;
+        };
+
+        if !start_byte.is_ascii() {
+            // Unicode identifiers are rare, so cold branch
+            return cold_branch(|| {
+                if is_identifier_start_unicode(self.peek().unwrap()) {
+                    self.consume_char();
+                    self.read_jsx_identifier_tail_unicode()
+                } else {
+                    Kind::Ident
                 }
-            } else {
+            });
+        }
+
+        if !ASCII_JSX_ID_START_TABLE.matches(start_byte) {
+            return Kind::Ident;
+        }
+
+        // Consume bytes which are part of identifier tail
+        let next_byte = byte_search! {
+            lexer: self,
+            table: NOT_ASCII_JSX_ID_CONTINUE_TABLE,
+            handle_eof: {
+                return Kind::Ident;
+            },
+        };
+
+        // Found a matching byte.
+        // Either end of identifier found, or a Unicode char.
+        if !next_byte.is_ascii() {
+            // Unicode chars are rare in identifiers, so cold branch to keep common path for ASCII
+            // as fast as possible
+            return cold_branch(|| self.read_jsx_identifier_tail_unicode());
+        }
+
+        Kind::Ident
+    }
+
+    /// Consume rest of JSX identifier after Unicode character found.
+    fn read_jsx_identifier_tail_unicode(&mut self) -> Kind {
+        while let Some(c) = self.peek() {
+            if !is_identifier_part(c) && c != '-' {
                 break;
             }
+            self.consume_char();
         }
         Kind::Ident
     }
