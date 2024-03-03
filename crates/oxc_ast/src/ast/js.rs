@@ -1,6 +1,7 @@
 use std::{cell::Cell, fmt, hash::Hash};
 
 use oxc_allocator::{Box, Vec};
+use oxc_macros::ast_node;
 use oxc_span::{Atom, SourceType, Span};
 use oxc_syntax::{
     operator::{
@@ -15,6 +16,7 @@ use serde::Serialize;
 #[allow(clippy::wildcard_imports)]
 use crate::ast::*;
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -40,6 +42,7 @@ impl<'a> Program<'a> {
 }
 
 /// Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -298,6 +301,7 @@ impl<'a> Expression<'a> {
 }
 
 /// Identifier Name
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -314,6 +318,7 @@ impl<'a> IdentifierName<'a> {
 }
 
 /// Identifier Reference
+#[ast_node]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -339,6 +344,7 @@ impl<'a> IdentifierReference<'a> {
 }
 
 /// Binding Identifier
+#[ast_node]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -363,6 +369,7 @@ impl<'a> BindingIdentifier<'a> {
 }
 
 /// Label Identifier
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -373,6 +380,7 @@ pub struct LabelIdentifier<'a> {
 }
 
 /// This Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -382,6 +390,7 @@ pub struct ThisExpression {
 }
 
 /// <https://tc39.es/ecma262/#prod-ArrayLiteral>
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -395,6 +404,7 @@ pub struct ArrayExpression<'a> {
 }
 
 /// Array Expression Element
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -413,6 +423,7 @@ impl<'a> ArrayExpressionElement<'a> {
 }
 
 /// Object Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -430,6 +441,7 @@ impl<'a> ObjectExpression<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -438,6 +450,7 @@ pub enum ObjectPropertyKind<'a> {
     SpreadProperty(Box<'a, SpreadElement<'a>>),
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -453,6 +466,7 @@ pub struct ObjectProperty<'a> {
     pub computed: bool,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -523,6 +537,7 @@ impl<'a> PropertyKey<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "lowercase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -535,6 +550,7 @@ pub enum PropertyKind {
 /// Template Literal
 ///
 /// This is interpreted by interleaving the expression elements in between the quasi elements.
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -556,6 +572,7 @@ impl<'a> TemplateLiteral<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -567,6 +584,7 @@ pub struct TaggedTemplateExpression<'a> {
     pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -578,6 +596,7 @@ pub struct TemplateElement<'a> {
 }
 
 /// See [template-strings-cooked-vs-raw](https://exploringjs.com/impatient-js/ch_template-literals.html#template-strings-cooked-vs-raw)
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -594,6 +613,7 @@ pub struct TemplateElementValue<'a> {
 }
 
 /// <https://tc39.es/ecma262/#prod-MemberExpression>
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -689,6 +709,7 @@ impl<'a> MemberExpression<'a> {
 }
 
 /// `MemberExpression[?Yield, ?Await] [ Expression[+In, ?Yield, ?Await] ]`
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -701,6 +722,7 @@ pub struct ComputedMemberExpression<'a> {
 }
 
 /// `MemberExpression[?Yield, ?Await] . IdentifierName`
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -713,6 +735,7 @@ pub struct StaticMemberExpression<'a> {
 }
 
 /// `MemberExpression[?Yield, ?Await] . PrivateIdentifier`
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -725,6 +748,7 @@ pub struct PrivateFieldExpression<'a> {
 }
 
 /// Call Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -779,6 +803,7 @@ impl<'a> CallExpression<'a> {
 }
 
 /// New Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -791,6 +816,7 @@ pub struct NewExpression<'a> {
 }
 
 /// Meta Property `new.target` | `import.meta`
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -802,6 +828,7 @@ pub struct MetaProperty<'a> {
 }
 
 /// Spread Element
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -812,6 +839,7 @@ pub struct SpreadElement<'a> {
 }
 
 /// Argument
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -827,6 +855,7 @@ impl Argument<'_> {
 }
 
 /// Update Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -839,6 +868,7 @@ pub struct UpdateExpression<'a> {
 }
 
 /// Unary Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -850,6 +880,7 @@ pub struct UnaryExpression<'a> {
 }
 
 /// Binary Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -862,6 +893,7 @@ pub struct BinaryExpression<'a> {
 }
 
 /// Private Identifier in Shift Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -874,6 +906,7 @@ pub struct PrivateInExpression<'a> {
 }
 
 /// Binary Logical Operators
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -886,6 +919,7 @@ pub struct LogicalExpression<'a> {
 }
 
 /// Conditional Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -898,6 +932,7 @@ pub struct ConditionalExpression<'a> {
 }
 
 /// Assignment Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -910,6 +945,7 @@ pub struct AssignmentExpression<'a> {
 }
 
 /// Destructuring Assignment
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -935,6 +971,7 @@ impl<'a> AssignmentTarget<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -959,6 +996,7 @@ impl<'a> SimpleAssignmentTarget<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -967,6 +1005,7 @@ pub enum AssignmentTargetPattern<'a> {
     ObjectAssignmentTarget(Box<'a, ObjectAssignmentTarget<'a>>),
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -987,6 +1026,7 @@ impl<'a> ArrayAssignmentTarget<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1007,6 +1047,7 @@ impl<'a> ObjectAssignmentTarget<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1033,6 +1074,7 @@ impl<'a> AssignmentTargetMaybeDefault<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1043,6 +1085,7 @@ pub struct AssignmentTargetWithDefault<'a> {
     pub init: Expression<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1052,6 +1095,7 @@ pub enum AssignmentTargetProperty<'a> {
 }
 
 /// Assignment Property - Identifier Reference
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1063,6 +1107,7 @@ pub struct AssignmentTargetPropertyIdentifier<'a> {
 }
 
 /// Assignment Property - Property Name
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1074,6 +1119,7 @@ pub struct AssignmentTargetPropertyProperty<'a> {
 }
 
 /// Sequence Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1083,6 +1129,7 @@ pub struct SequenceExpression<'a> {
     pub expressions: Vec<'a, Expression<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1092,6 +1139,7 @@ pub struct Super {
 }
 
 /// Await Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1101,6 +1149,7 @@ pub struct AwaitExpression<'a> {
     pub argument: Expression<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1110,6 +1159,7 @@ pub struct ChainExpression<'a> {
     pub expression: ChainElement<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1119,6 +1169,7 @@ pub enum ChainElement<'a> {
 }
 
 /// Parenthesized Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1129,6 +1180,7 @@ pub struct ParenthesizedExpression<'a> {
 }
 
 /// Statements
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1171,6 +1223,7 @@ impl<'a> Statement<'a> {
 }
 
 /// Directive Prologue
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1185,6 +1238,7 @@ pub struct Directive<'a> {
 }
 
 /// Hashbang
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1195,6 +1249,7 @@ pub struct Hashbang<'a> {
 }
 
 /// Block Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1205,6 +1260,7 @@ pub struct BlockStatement<'a> {
 }
 
 /// Declarations and the Variable Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1245,6 +1301,7 @@ impl<'a> Declaration<'a> {
 }
 
 /// Variable Declaration
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1263,6 +1320,7 @@ impl<'a> VariableDeclaration<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "lowercase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1301,6 +1359,7 @@ impl fmt::Display for VariableDeclarationKind {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1316,6 +1375,7 @@ pub struct VariableDeclarator<'a> {
 
 /// Using Declaration
 /// * <https://github.com/tc39/proposal-explicit-resource-management>
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1328,6 +1388,7 @@ pub struct UsingDeclaration<'a> {
 }
 
 /// Empty Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1337,6 +1398,7 @@ pub struct EmptyStatement {
 }
 
 /// Expression Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1347,6 +1409,7 @@ pub struct ExpressionStatement<'a> {
 }
 
 /// If Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1359,6 +1422,7 @@ pub struct IfStatement<'a> {
 }
 
 /// Do-While Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1370,6 +1434,7 @@ pub struct DoWhileStatement<'a> {
 }
 
 /// While Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1381,6 +1446,7 @@ pub struct WhileStatement<'a> {
 }
 
 /// For Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1393,6 +1459,7 @@ pub struct ForStatement<'a> {
     pub body: Statement<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1418,6 +1485,7 @@ impl<'a> ForStatementInit<'a> {
 }
 
 /// For-In Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1430,6 +1498,7 @@ pub struct ForInStatement<'a> {
 }
 
 /// For-Of Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1442,6 +1511,7 @@ pub struct ForOfStatement<'a> {
     pub body: Statement<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1460,6 +1530,7 @@ impl<'a> ForStatementLeft<'a> {
 }
 
 /// Continue Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1470,6 +1541,7 @@ pub struct ContinueStatement<'a> {
 }
 
 /// Break Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1480,6 +1552,7 @@ pub struct BreakStatement<'a> {
 }
 
 /// Return Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1490,6 +1563,7 @@ pub struct ReturnStatement<'a> {
 }
 
 /// With Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1501,6 +1575,7 @@ pub struct WithStatement<'a> {
 }
 
 /// Switch Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1511,6 +1586,7 @@ pub struct SwitchStatement<'a> {
     pub cases: Vec<'a, SwitchCase<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1528,6 +1604,7 @@ impl<'a> SwitchCase<'a> {
 }
 
 /// Labelled Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1539,6 +1616,7 @@ pub struct LabeledStatement<'a> {
 }
 
 /// Throw Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1549,6 +1627,7 @@ pub struct ThrowStatement<'a> {
 }
 
 /// Try Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1560,6 +1639,7 @@ pub struct TryStatement<'a> {
     pub finalizer: Option<Box<'a, BlockStatement<'a>>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1571,6 +1651,7 @@ pub struct CatchClause<'a> {
 }
 
 /// Debugger Statement
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1581,6 +1662,7 @@ pub struct DebuggerStatement {
 
 /// Destructuring Binding Patterns
 /// * <https://tc39.es/ecma262/#prod-BindingPattern>
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1596,6 +1678,7 @@ impl<'a> BindingPattern<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1627,6 +1710,7 @@ impl<'a> BindingPatternKind<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1637,6 +1721,7 @@ pub struct AssignmentPattern<'a> {
     pub right: Expression<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1657,6 +1742,7 @@ impl<'a> ObjectPattern<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1669,6 +1755,7 @@ pub struct BindingProperty<'a> {
     pub computed: bool,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1689,6 +1776,7 @@ impl<'a> ArrayPattern<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1699,6 +1787,7 @@ pub struct BindingRestElement<'a> {
 }
 
 /// Function Definitions
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1763,6 +1852,7 @@ impl<'a> Function<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1775,6 +1865,7 @@ pub enum FunctionType {
 }
 
 /// <https://tc39.es/ecma262/#prod-FormalParameters>
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1792,6 +1883,7 @@ impl<'a> FormalParameters<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1805,6 +1897,7 @@ pub struct FormalParameter<'a> {
     pub decorators: Vec<'a, Decorator<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1832,6 +1925,7 @@ impl<'a> FormalParameters<'a> {
 }
 
 /// <https://tc39.es/ecma262/#prod-FunctionBody>
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1849,6 +1943,7 @@ impl<'a> FunctionBody<'a> {
 }
 
 /// Arrow Function Definitions
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1879,6 +1974,7 @@ impl<'a> ArrowFunctionExpression<'a> {
 }
 
 /// Generator Function Definitions
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1890,6 +1986,7 @@ pub struct YieldExpression<'a> {
 }
 
 /// Class Definitions
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1926,6 +2023,7 @@ impl<'a> Class<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1934,6 +2032,7 @@ pub enum ClassType {
     ClassExpression,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -1943,6 +2042,7 @@ pub struct ClassBody<'a> {
     pub body: Vec<'a, ClassElement<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2044,6 +2144,7 @@ impl<'a> ClassElement<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2062,6 +2163,7 @@ pub struct MethodDefinition<'a> {
     pub decorators: Vec<'a, Decorator<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2070,6 +2172,7 @@ pub enum MethodDefinitionType {
     TSAbstractMethodDefinition,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2091,6 +2194,7 @@ pub struct PropertyDefinition<'a> {
     pub decorators: Vec<'a, Decorator<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2099,6 +2203,7 @@ pub enum PropertyDefinitionType {
     TSAbstractPropertyDefinition,
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "lowercase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2121,6 +2226,7 @@ impl MethodDefinitionKind {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2136,6 +2242,7 @@ impl<'a> PrivateIdentifier<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2145,6 +2252,7 @@ pub struct StaticBlock<'a> {
     pub body: Vec<'a, Statement<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2198,6 +2306,7 @@ impl<'a> ModuleDeclaration<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2211,6 +2320,7 @@ pub struct AccessorProperty<'a> {
     pub decorators: Vec<'a, Decorator<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2221,6 +2331,7 @@ pub struct ImportExpression<'a> {
     pub arguments: Vec<'a, Expression<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2236,6 +2347,7 @@ pub struct ImportDeclaration<'a> {
     pub import_kind: ImportOrExportKind,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2251,6 +2363,7 @@ pub enum ImportDeclarationSpecifier<'a> {
 
 // import {imported} from "source"
 // import {imported as local} from "source"
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2263,6 +2376,7 @@ pub struct ImportSpecifier<'a> {
 }
 
 // import local from "source"
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2273,6 +2387,7 @@ pub struct ImportDefaultSpecifier<'a> {
 }
 
 // import * as local from "source"
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2282,6 +2397,7 @@ pub struct ImportNamespaceSpecifier<'a> {
     pub local: BindingIdentifier<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2292,6 +2408,7 @@ pub struct WithClause<'a> {
     pub with_entries: Vec<'a, ImportAttribute<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2302,6 +2419,7 @@ pub struct ImportAttribute<'a> {
     pub value: StringLiteral<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2319,6 +2437,7 @@ impl<'a> ImportAttributeKey<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2343,6 +2462,7 @@ impl<'a> ExportNamedDeclaration<'a> {
 /// export default HoistableDeclaration
 /// export default ClassDeclaration
 /// export default AssignmentExpression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2359,6 +2479,7 @@ impl<'a> ExportDefaultDeclaration<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2377,6 +2498,7 @@ impl<'a> ExportAllDeclaration<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2394,6 +2516,7 @@ impl<'a> ExportSpecifier<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -2424,6 +2547,7 @@ impl<'a> ExportDefaultDeclarationKind<'a> {
 ///   * `export {foo as "\0 any unicode"}`
 /// * es2022: <https://github.com/estree/estree/blob/master/es2022.md#modules>
 /// * <https://github.com/tc39/ecma262/pull/2154>
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]

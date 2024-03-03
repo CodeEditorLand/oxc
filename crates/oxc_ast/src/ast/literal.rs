@@ -6,11 +6,18 @@ use std::{
 };
 
 use bitflags::bitflags;
+#[cfg(feature = "raw")]
+use layout_inspect::{
+    defs::{DefPrimitive, DefType},
+    Inspect, TypesCollector,
+};
+use oxc_macros::ast_node;
 use oxc_span::{Atom, Span};
 use oxc_syntax::{BigintBase, NumberBase};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -34,6 +41,7 @@ impl BooleanLiteral {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -54,6 +62,7 @@ impl NullLiteral {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -105,6 +114,7 @@ impl<'a> Hash for NumericLiteral<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -122,6 +132,7 @@ impl<'a> BigintLiteral<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -134,6 +145,7 @@ pub struct RegExpLiteral<'a> {
     pub regex: RegExp<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -160,6 +172,29 @@ bitflags! {
         const D = 1 << 6;
         /// v flag from `https://github.com/tc39/proposal-regexp-set-notation`
         const V = 1 << 7;
+    }
+}
+
+#[cfg(feature = "raw")]
+impl Inspect for RegExpFlags {
+    fn name() -> String {
+        "RegExpFlags".to_string()
+    }
+
+    fn size() -> Option<usize> {
+        Some(std::mem::size_of::<Self>())
+    }
+
+    fn align() -> Option<usize> {
+        Some(std::mem::align_of::<Self>())
+    }
+
+    fn def(_collector: &mut TypesCollector) -> DefType {
+        DefType::Primitive(DefPrimitive {
+            name: Self::name(),
+            size: Self::size().unwrap(),
+            align: Self::align().unwrap(),
+        })
     }
 }
 
@@ -229,11 +264,13 @@ impl fmt::Display for RegExpFlags {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
 pub struct EmptyObject;
 
+#[ast_node]
 #[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]

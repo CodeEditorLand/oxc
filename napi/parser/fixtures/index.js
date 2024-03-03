@@ -295,11 +295,9 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { parseWithoutReturn, parseSync, parseSyncBuffer, getSchema, parseSyncRaw, parseAsync } = nativeBinding
+const { parseWithoutReturn, parseSync, parseSyncBuffer, parseAsync } = nativeBinding
 
 module.exports.parseWithoutReturn = parseWithoutReturn
 module.exports.parseSync = parseSync
 module.exports.parseSyncBuffer = parseSyncBuffer
-module.exports.getSchema = getSchema
-module.exports.parseSyncRaw = parseSyncRaw
 module.exports.parseAsync = parseAsync

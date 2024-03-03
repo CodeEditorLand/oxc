@@ -1,4 +1,6 @@
 use bitflags::bitflags;
+#[cfg(feature = "raw")]
+use layout_inspect::{defs::DefType, Inspect, TypesCollector};
 use oxc_index::define_index_type;
 
 #[cfg(feature = "serde")]
@@ -6,6 +8,25 @@ use serde::Serialize;
 
 define_index_type! {
     pub struct SymbolId = u32;
+}
+
+#[cfg(feature = "raw")]
+impl Inspect for SymbolId {
+    fn name() -> String {
+        <u32 as Inspect>::name()
+    }
+
+    fn size() -> Option<usize> {
+        <u32 as Inspect>::size()
+    }
+
+    fn align() -> Option<usize> {
+        <u32 as Inspect>::align()
+    }
+
+    fn def(collector: &mut TypesCollector) -> DefType {
+        <u32 as Inspect>::def(collector)
+    }
 }
 
 #[cfg_attr(

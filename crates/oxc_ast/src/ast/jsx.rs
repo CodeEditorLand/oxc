@@ -1,6 +1,7 @@
 //! [JSX](https://facebook.github.io/jsx)
 
 use oxc_allocator::{Box, Vec};
+use oxc_macros::ast_node;
 use oxc_span::{Atom, Span};
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -11,6 +12,7 @@ use crate::ast::*;
 // 1.2 JSX Elements
 
 /// JSX Element
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -23,6 +25,7 @@ pub struct JSXElement<'a> {
 }
 
 /// JSX Opening Element
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -36,6 +39,7 @@ pub struct JSXOpeningElement<'a> {
 }
 
 /// JSX Closing Element
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -46,6 +50,7 @@ pub struct JSXClosingElement<'a> {
 }
 
 /// JSX Fragment
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -57,6 +62,7 @@ pub struct JSXFragment<'a> {
     pub children: Vec<'a, JSXChild<'a>>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -65,6 +71,7 @@ pub struct JSXOpeningFragment {
     pub span: Span,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -74,6 +81,7 @@ pub struct JSXClosingFragment {
 }
 
 /// JSX Element Name
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -87,6 +95,7 @@ pub enum JSXElementName<'a> {
 }
 
 /// JSX Namespaced Name
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -104,6 +113,7 @@ impl<'a> std::fmt::Display for JSXNamespacedName<'a> {
 }
 
 /// JSX Member Expression
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -123,6 +133,7 @@ impl<'a> JSXMemberExpression<'a> {
     }
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -131,6 +142,7 @@ pub enum JSXMemberExpressionObject<'a> {
     MemberExpression(Box<'a, JSXMemberExpression<'a>>),
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -140,6 +152,7 @@ pub struct JSXExpressionContainer<'a> {
     pub expression: JSXExpression<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -148,6 +161,7 @@ pub enum JSXExpression<'a> {
     EmptyExpression(JSXEmptyExpression),
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -159,6 +173,7 @@ pub struct JSXEmptyExpression {
 // 1.3 JSX Attributes
 
 /// JSX Attributes
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -168,6 +183,7 @@ pub enum JSXAttributeItem<'a> {
 }
 
 /// JSX Attribute
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -185,6 +201,7 @@ impl<'a> JSXAttribute<'a> {
 }
 
 /// JSX Spread Attribute
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -195,6 +212,7 @@ pub struct JSXSpreadAttribute<'a> {
 }
 
 /// JSX Attribute Name
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -204,6 +222,7 @@ pub enum JSXAttributeName<'a> {
 }
 
 /// JSX Attribute Value
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -214,6 +233,7 @@ pub enum JSXAttributeValue<'a> {
     Fragment(Box<'a, JSXFragment<'a>>),
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -226,6 +246,7 @@ pub struct JSXIdentifier<'a> {
 // 1.4 JSX Children
 
 /// JSX Child
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(untagged))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -237,6 +258,7 @@ pub enum JSXChild<'a> {
     Spread(JSXSpreadChild<'a>),
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -246,6 +268,7 @@ pub struct JSXSpreadChild<'a> {
     pub expression: Expression<'a>,
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]

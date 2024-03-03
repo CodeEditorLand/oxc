@@ -4,6 +4,11 @@ use std::{
     ops::Deref,
 };
 
+#[cfg(feature = "raw")]
+use layout_inspect::{
+    defs::{DefPrimitive, DefType},
+    Inspect, TypesCollector,
+};
 #[cfg(feature = "serde")]
 use serde::{Serialize, Serializer};
 
@@ -23,9 +28,33 @@ export type CompactString = string;
 ///
 /// Use [CompactString] with [Atom::to_compact_string()] for the lifetimeless form.
 #[derive(Clone, Eq)]
+#[repr(u8)]
 pub enum Atom<'a> {
-    Arena(&'a str),
-    Compact(CompactString),
+    Arena(&'a str) = 0,
+    Compact(CompactString) = 254,
+}
+
+#[cfg(feature = "raw")]
+impl<'a> Inspect for Atom<'a> {
+    fn name() -> String {
+        "Atom".to_string()
+    }
+
+    fn size() -> Option<usize> {
+        Some(std::mem::size_of::<Self>())
+    }
+
+    fn align() -> Option<usize> {
+        Some(std::mem::align_of::<Self>())
+    }
+
+    fn def(_collector: &mut TypesCollector) -> DefType {
+        DefType::Primitive(DefPrimitive {
+            name: <Self as Inspect>::name(),
+            size: <Self as Inspect>::size().unwrap(),
+            align: <Self as Inspect>::align().unwrap(),
+        })
+    }
 }
 
 #[cfg(feature = "serde")]

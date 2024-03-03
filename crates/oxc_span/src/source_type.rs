@@ -1,9 +1,16 @@
 use std::path::Path;
 
+#[cfg(feature = "raw")]
+use layout_inspect::{
+    defs::{DefPrimitive, DefType},
+    Inspect, TypesCollector,
+};
+use oxc_macros::ast_node;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
 /// Source Type for JavaScript vs TypeScript / Script vs Module / JSX
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -26,15 +33,40 @@ pub struct SourceType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
+#[repr(u8)]
 pub enum Language {
-    JavaScript,
+    JavaScript = 0,
     #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
     TypeScript {
         is_definition_file: bool,
-    },
+    } = 254,
+}
+
+#[cfg(feature = "raw")]
+impl Inspect for Language {
+    fn name() -> String {
+        "Language".to_string()
+    }
+
+    fn size() -> Option<usize> {
+        Some(std::mem::size_of::<Self>())
+    }
+
+    fn align() -> Option<usize> {
+        Some(std::mem::align_of::<Self>())
+    }
+
+    fn def(_collector: &mut TypesCollector) -> DefType {
+        DefType::Primitive(DefPrimitive {
+            name: <Self as Inspect>::name(),
+            size: <Self as Inspect>::size().unwrap(),
+            align: <Self as Inspect>::align().unwrap(),
+        })
+    }
 }
 
 /// Script or Module
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
@@ -44,6 +76,7 @@ pub enum ModuleKind {
 }
 
 /// JSX for JavaScript and TypeScript
+#[ast_node]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]

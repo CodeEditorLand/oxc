@@ -12,6 +12,7 @@ extend-exclude = [
   "crates/oxc_linter/fixtures",
   "crates/oxc_linter/src/rules/jsx_a11y/img_redundant_alt.rs",
   "crates/oxc_syntax/src/xml_entities.rs",
+  "napi/parser/fixtures",
   "**/*.snap",
   "pnpm-lock.yaml",
 ]
@@ -25,3 +26,5 @@ labeledby = "labeledby"
 
 [default.extend-identifiers]
 IIFEs = "IIFEs"
+serName = "serName"
+serValue = "serValue"

@@ -27,7 +27,11 @@ wasm-bindgen = { workspace = true, optional = true }
 
 serde = { workspace = true, features = ["derive"], optional = true }
 
+oxc_macros     = { workspace = true }
+layout_inspect = { workspace = true, features = ["unique_names"], optional = true }
+
 [features]
 default = []
+raw     = ["serde", "dep:layout_inspect"]
 serde   = ["dep:serde", "compact_str/serde"]
 wasm    = ["dep:tsify", "dep:wasm-bindgen"]

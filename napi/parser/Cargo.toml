@@ -23,13 +23,16 @@ doctest    = false
 [dependencies]
 oxc_allocator   = { workspace = true }
 oxc_parser      = { workspace = true }
-oxc_ast         = { workspace = true, features = ["serde"] }
+oxc_ast         = { workspace = true, features = ["raw", "serde"] }
 oxc_span        = { workspace = true }
 oxc_diagnostics = { workspace = true }
 
 serde       = { workspace = true }
 serde_json  = { workspace = true }
 flexbuffers = { version = "2.0.0" }
+
+bumpalo        = { workspace = true }
+layout_inspect = { workspace = true, features = ["unique_names", "serde"] }
 
 tokio       = { workspace = true }
 napi        = { version = "2", features = ["serde-json", "async"] }
