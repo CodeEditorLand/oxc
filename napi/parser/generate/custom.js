@@ -35,6 +35,11 @@ function deserializeRegExpFlags(pos) {
     return text;
 }
 
-function deserializeReferenceFlag(_pos) {
-    return '';
+function deserializeReferenceFlag(pos) {
+    const bits = uint8[pos],
+        parts = [];
+    if (bits & 1) parts.push('Read');
+    if (bits & 2) parts.push('Write');
+    if (bits & 4) parts.push('Type');
+    return parts.join(' | ');
 }
