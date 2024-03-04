@@ -39,6 +39,7 @@ for (const [index, type] of types.entries()) {
     type.name = type.name
         .replace(/<(.)/g, (_, c) => c.toUpperCase())
         .replace(/[>, ]/g, '')
+        .replace(/^&(.)/, (_, c) => `Ref${c.toUpperCase()}`)
         .replace(/^(.)/, (_, c) => c.toUpperCase());
     assert(!typesByName[type.name], `Repeated type name ${type.name}`);
     typesByName[type.name] = type;
@@ -213,9 +214,18 @@ adaptTypeContainingAtom('JSXText', 'start', 'end');
     adaptTypeForSpan(type);
     addVarToPreamble(type, `flags = ${generateStructFieldCode(flagsField)}`);
 
-    regexField.code = `{pattern: source.slice(start + 1, end - flags.length - 1), flags}`
+    regexField.code = `{pattern: source.slice(start + 1, end - flags.length - 1), flags}`;
     type.dependencies.delete(regexField.type);
     type.dependencies.add(flagsField.type);
+}
+
+// NumericLiteral
+{
+    const type = typesByName.NumericLiteral,
+        rawField = type.fields.find(field => field.name === 'raw');
+    adaptTypeForSpan(type);
+    rawField.code = `source.slice(start, end)`;
+    type.dependencies.delete(typesByName.RefStr);
 }
 
 // Generate deserializer
