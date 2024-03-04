@@ -838,6 +838,7 @@ pub enum TSTypeQueryExprName<'a> {
     TSImportType(TSImportType<'a>),
 }
 
+#[ast_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize), serde(tag = "type", rename_all = "camelCase"))]
 #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(tsify::Tsify))]
