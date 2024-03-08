@@ -16,9 +16,9 @@ function testFlexBuffer(sourceText) {
   assert(body.isVector());
 }
 
-function testRaw(sourceText, allocSize) {
-  const buffer = oxc.parseSyncRaw(sourceText, {}, allocSize);
-  const program = deserialize(sourceText, buffer);
+function testRaw(sourceBuff, allocSize) {
+  const buff = oxc.parseSyncRaw(sourceBuff, {}, allocSize);
+  const program = deserialize(buff, sourceBuff);
   assert(typeof program === 'object');
   assert.equal(program.type, 'Program');
   assert(Array.isArray(program.body));
@@ -43,11 +43,12 @@ async function runAll() {
 
 async function run(filename, allocSize) {
     // Get input code
-    const sourceText = loadFile(filename);
+    const sourceBuff = readFileSync(pathJoin(__dirname, 'fixtures', filename));
+    const sourceText = sourceBuff.toString();
 
     // Run benchmark
     await benny.suite(
-        `${filename} (${filesize(sourceText.length)})`,
+        `${filename} (${filesize(sourceBuff.length)})`,
 
         // Parse
         benny.add('JSON', () => {
@@ -59,7 +60,7 @@ async function run(filename, allocSize) {
         }),
 
         benny.add('Raw', () => {
-            testRaw(sourceText, allocSize);
+            testRaw(sourceBuff, allocSize);
         }),
 
         benny.cycle(),
@@ -86,13 +87,4 @@ async function run(filename, allocSize) {
             format: "chart.html",
         })
     );
-}
-
-function loadFile(filename) {
-  const buff = readFileSync(pathJoin(__dirname, 'fixtures', filename));
-  // Replace all Unicode chars with whitespace
-  for (let i = 0; i < buff.length; i++) {
-    if (buff[i] >= 128) buff[i] = 32;
-  }
-  return buff.toString();
 }

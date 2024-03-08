@@ -1,6 +1,7 @@
 #![allow(clippy::trailing_empty_array)]
 
 use std::alloc::Layout;
+use std::str;
 use std::sync::Arc;
 
 use bumpalo::Bump;
@@ -160,9 +161,9 @@ pub fn get_schema() -> String {
 /// # Panics
 /// Panics if AST takes more memory than expected.
 #[napi]
-#[allow(clippy::needless_pass_by_value, clippy::verbose_bit_mask)]
+#[allow(clippy::needless_pass_by_value)]
 pub fn parse_sync_raw(
-    source_text: String,
+    source: Uint8Array,
     options: Option<ParserOptions>,
     bump_size: u32,
 ) -> Uint8Array {
@@ -187,12 +188,13 @@ pub fn parse_sync_raw(
     let allocator: Allocator = bump.into();
 
     // Parse + allocate space for metadata in chunk
+    let source_text = str::from_utf8(&source).unwrap();
     let options = options.unwrap_or_default();
     let (program_addr, metadata_ptr) = {
-        let ret = parse(&allocator, &source_text, &options);
+        let ret = parse(&allocator, source_text, &options);
         let program = allocator.alloc(ret.program);
         let program_addr = program as *mut _ as usize;
-        let metadata_ptr = allocator.alloc_layout(Layout::new::<[usize; 2]>()).as_ptr();
+        let metadata_ptr = allocator.alloc_layout(Layout::new::<[usize; 4]>()).as_ptr();
         (program_addr, metadata_ptr)
     };
 
@@ -208,15 +210,22 @@ pub fn parse_sync_raw(
     };
     assert!(chunk_ptr == metadata_ptr);
     let chunk_addr = chunk_ptr as usize;
+    let chunk_end = chunk_addr + chunk_len;
 
-    // Write offset of program + memory address of Bump into start of Bump
+    // Write at start of bump:
+    // * Offset of program
+    // * Memory address of start of bump
+    // * Memory address of end of bump
+    // * Memory address of start of source
     let program_offset = program_addr - chunk_addr;
-    // SAFETY: `chunk_ptr` is valid for writes, and we allocated space for `[usize; 2] at that address.
+    #[allow(clippy::borrow_as_ptr, clippy::ptr_as_ptr)]
+    let source_addr = &*source as *const _ as *const u8 as usize;
+    // SAFETY: `chunk_ptr` is valid for writes, and we allocated space for `[usize; 4] at that address.
     // LACK OF SAFETY: This may be unsound due to breaking aliasing rules. Or maybe not.
     // TODO: Ensure this is sound.
     unsafe {
         #[allow(clippy::ptr_as_ptr, clippy::cast_ptr_alignment)]
-        (chunk_ptr as *mut [usize; 2]).write([program_offset, chunk_addr]);
+        (chunk_ptr as *mut [usize; 4]).write([program_offset, chunk_addr, chunk_end, source_addr]);
     };
 
     // Convert to NAPI `Uint8Array`.

@@ -17,13 +17,14 @@ test('antd.js', 64 * 1024 * 1024); // 64 MiB
 function test(filename, allocSize) {
   console.log('Testing:', filename);
 
-  const sourceText = loadFile(filename);
+  const sourceBuff = readFileSync(pathJoin(__dirname, 'fixtures', filename)),
+    sourceText = sourceBuff.toString();
 
   const astViaJson = JSON.parse(oxc.parseSync(sourceText).program);
   // console.log(astViaJson);
 
-  const buff = oxc.parseSyncRaw(sourceText, {}, allocSize);
-  const astRaw = deserialize(sourceText, buff);
+  const buff = oxc.parseSyncRaw(sourceBuff, {}, allocSize);
+  const astRaw = deserialize(buff, sourceBuff);
   // console.log(astRaw);
 
   if (JSON.stringify(astRaw) === JSON.stringify(astViaJson)) {
@@ -43,15 +44,6 @@ function test(filename, allocSize) {
   }
 
   // assertEqual(astRaw, astViaJson);
-}
-
-function loadFile(filename) {
-  const buff = readFileSync(pathJoin(__dirname, 'fixtures', filename));
-  // Replace all Unicode chars with whitespace
-  for (let i = 0; i < buff.length; i++) {
-    if (buff[i] >= 128) buff[i] = 32;
-  }
-  return buff.toString();
 }
 
 function assertEqual(val1, val2) {

@@ -71,7 +71,7 @@ export function getSchema(): string
  * # Panics
  * Panics if AST takes more memory than expected.
  */
-export function parseSyncRaw(sourceText: string, options: ParserOptions | undefined | null, bumpSize: number): Uint8Array
+export function parseSyncRaw(source: Uint8Array, options: ParserOptions | undefined | null, bumpSize: number): Uint8Array
 /**
  * # Panics
  *
