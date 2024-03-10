@@ -24,15 +24,15 @@ function deserializeAtom(pos) {
     const strLow = uint32[pos32 + 2],
         strHigh = uint32[pos32 + 3];
     let strBuff;
-    if (strHigh !== ptrHigh || strLow < ptrOffset || strLow >= endLow) {
+    if (strHigh === ptrHigh && strLow >= ptrOffset && strLow < endLow) {
+        // String is in buffer
+        const offset = strLow - ptrOffset;
+        strBuff = uint8.subarray(offset, offset + len);
+    } else {
         // String is in source
         let offset = strLow - sourceLow;
         if (strHigh > sourceHigh) offset += 4294967296; // 1 << 32
         strBuff = source.subarray(offset, offset + len);
-    } else {
-        // String is in buffer
-        const offset = strLow - ptrOffset;
-        strBuff = uint8.subarray(offset, offset + len);
     }
 
     return textDecoder.decode(strBuff);
