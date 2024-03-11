@@ -76,6 +76,23 @@ impl ModuleRecord {
     pub fn new(resolved_absolute_path: PathBuf) -> Self {
         Self { resolved_absolute_path, ..Self::default() }
     }
+
+    pub fn has_exported_binding(&self, name: &str) -> bool {
+        self.exported_bindings.contains_key(name)
+    }
+
+    pub fn has_exported_binding_include_reexport(&self, name: &str) -> bool {
+        fn check_modules(name: &str, module: &ModuleRecord) -> bool {
+            module.has_exported_binding(name)
+                || module.star_export_entries.iter().any(|entry| {
+                    entry.module_request.as_ref().is_some_and(|name_span| {
+                        check_modules(name, &module.loaded_modules.get(name_span.name()).unwrap())
+                    })
+                })
+        }
+
+        check_modules(name, self)
+    }
 }
 
 impl fmt::Debug for ModuleRecord {
