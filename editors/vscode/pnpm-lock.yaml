@@ -592,8 +592,8 @@ packages:
       pend: 1.2.0
     dev: true
 
-  /follow-redirects@1.15.5:
-    resolution: {integrity: sha512-vSFWUON1B+yAw1VN4xMfxgn5fTUiaOzAJCKBwIIgT/+7CuGy9+r+5gITvP62j3RmaD5Ph65UaERdOSRGUzZtgw==}
+  /follow-redirects@1.15.6:
+    resolution: {integrity: sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -859,7 +859,7 @@ packages:
     dependencies:
       '@vscode/vsce': 2.24.0
       commander: 6.2.1
-      follow-redirects: 1.15.5
+      follow-redirects: 1.15.6
       is-ci: 2.0.0
       leven: 3.1.0
       semver: 7.5.4
