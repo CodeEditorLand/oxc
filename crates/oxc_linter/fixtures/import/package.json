@@ -1,22 +1,46 @@
 {
-  "dummy": true,
-  "devDependencies": {
-    "glob": "1.0.0",
-    "eslint": "2.x"
-  },
-  "peerDependencies": {
-    "eslint": "2.x"
-  },
-  "dependencies": {
-    "@org/package": "^1.0.0",
-    "esm-package": "^1.0.0",
-    "jquery": "^3.1.0",
-    "lodash.cond": "^4.3.0",
-    "find-up": "^1.0.0",
-    "rxjs": "^1.0.0"
-  },
-  "optionalDependencies": {
-    "lodash.isarray": "^4.0.0"
-  },
-  "bundledDependencies": ["@generated/foo"]
+	"version": "0.0.1",
+	"private": false,
+	"homepage": "https://github.com/CodeEditorLand/Foundation#readme",
+	"bugs": {
+		"url": "https://github.com/CodeEditorLand/Foundation/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/Foundation.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "Land",
+		"email": "Land@Playform.Cloud",
+		"url": "HTTPS://Land.Playform.Cloud"
+	},
+	"type": "module",
+	"scripts": {
+		"Document": "Document 'Source/**/*.ts'",
+		"prepublishOnly": "Build 'Source/**/*.ts'"
+	},
+	"dependencies": {
+		"@org/package": "^1.0.0",
+		"esm-package": "^1.0.0",
+		"find-up": "^1.0.0",
+		"jquery": "^3.1.0",
+		"lodash.cond": "^4.3.0",
+		"rxjs": "^1.0.0"
+	},
+	"devDependencies": {
+		"@playform/build": "0.0.5",
+		"@playform/document": "0.0.6",
+		"glob": "1.0.0"
+	},
+	"optionalDependencies": {
+		"lodash.isarray": "^4.0.0"
+	},
+	"bundledDependencies": [
+		"@generated/foo"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"dummy": true
 }

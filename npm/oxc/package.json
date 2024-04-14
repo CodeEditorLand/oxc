@@ -1,25 +1,39 @@
 {
-  "name": "oxidation-compiler",
-  "version": "0.2.3",
-  "description": "The JavaScript Oxidation Compiler",
-  "keywords": [],
-  "author": "Boshen and oxc contributors",
-  "license": "MIT",
-  "homepage": "https://oxc-project.github.io",
-  "bugs": "https://github.com/oxc-project/oxc/issues",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/oxc-project/oxc",
-    "directory": "npm/oxc"
-  },
-  "bin": "bin/oxc",
-  "funding": {
-    "url": "https://github.com/sponsors/Boshen"
-  },
-  "engines": {
-    "node": ">=14.*"
-  },
-  "files": [
-    "bin/oxc"
-  ]
+	"name": "oxidation-compiler",
+	"version": "0.0.1",
+	"private": false,
+	"description": "The JavaScript Oxidation Compiler",
+	"homepage": "https://github.com/CodeEditorLand/Foundation#readme",
+	"bugs": {
+		"url": "https://github.com/CodeEditorLand/Foundation/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/Foundation.git"
+	},
+	"funding": {
+		"url": "https://github.com/sponsors/Boshen"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "Land",
+		"email": "Land@Playform.Cloud",
+		"url": "HTTPS://Land.Playform.Cloud"
+	},
+	"type": "module",
+	"bin": "bin/oxc",
+	"files": [
+		"bin/oxc"
+	],
+	"scripts": {
+		"Document": "Document 'Source/**/*.ts'",
+		"prepublishOnly": "Build 'Source/**/*.ts'"
+	},
+	"devDependencies": {
+		"@playform/build": "0.0.5",
+		"@playform/document": "0.0.6"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }
