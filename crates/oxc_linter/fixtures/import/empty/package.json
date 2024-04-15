@@ -2,9 +2,9 @@
 	"name": "foo",
 	"version": "0.0.1",
 	"private": false,
-	"homepage": "HTTPS://github.com/CodeEditorLand/Oxc#readme",
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Oxc#readme",
 	"bugs": {
-		"url": "HTTPS://github.com/CodeEditorLand/Oxc/issues"
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/Oxc/issues"
 	},
 	"repository": {
 		"type": "git",
