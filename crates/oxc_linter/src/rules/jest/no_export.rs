@@ -1,0 +1,144 @@
+use oxc_diagnostics::{
+    miette::{self, Diagnostic},
+    thiserror::Error,
+};
+use oxc_macros::declare_oxc_lint;
+use oxc_span::Span;
+
+use crate::{context::LintContext, rule::Rule, utils::is_jest_file};
+
+#[derive(Debug, Error, Diagnostic)]
+#[error("eslint-plugin-jest(no-export): Do not export from a test file.")]
+#[diagnostic(severity(warning), help("If you want to share code between tests, move it into a separate file and import it from there."))]
+struct NoExportDiagnostic(#[label] pub Span);
+
+#[derive(Debug, Default, Clone)]
+pub struct NoExport;
+
+declare_oxc_lint!(
+    /// ### What it does
+    ///
+    /// Prevents using exports if a file has one or more tests in it.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// This rule aims to eliminate duplicate runs of tests by exporting things from test files.
+    ///  If you import from a test file, then all the tests in that file will be run in each imported instance.
+    /// so bottom line, don't export from a test, but instead move helper functions into a separate file when they need to be shared across tests.
+    ///
+    /// ### Example
+    /// ```javascript
+    /// export function myHelper() {}
+    /// describe('a test', () => {
+    ///   expect(1).toBe(1);
+    /// });
+    /// ```
+    NoExport,
+    correctness
+);
+
+impl Rule for NoExport {
+    fn run_once(&self, ctx: &LintContext) {
+        // only used in jest files
+        if !is_jest_file(ctx) {
+            return;
+        }
+
+        for span in ctx.semantic().module_record().exported_bindings.values() {
+            ctx.diagnostic(NoExportDiagnostic(*span));
+        }
+
+        if let Some(span) = ctx.semantic().module_record().export_default {
+            ctx.diagnostic(NoExportDiagnostic(span));
+        }
+    }
+}
+
+#[test]
+fn test() {
+    use crate::tester::Tester;
+    use std::path::PathBuf;
+
+    let pass = vec![
+        (
+            "describe('a test', () => { expect(1).toBe(1); })",
+            None,
+            None,
+            Some(PathBuf::from("foo.test.js")),
+        ),
+        ("window.location = 'valid'", None, None, None),
+        ("module.somethingElse = 'foo';", None, None, None),
+        ("export const myThing = 'valid'", None, None, None),
+        ("export default function () {}", None, None, None),
+        ("module.exports = function(){}", None, None, None),
+        ("module.exports.myThing = 'valid';", None, None, None),
+    ];
+
+    let fail = vec![
+        (
+            "export const myThing = 'invalid'; test('a test', () => { expect(1).toBe(1);});",
+            None,
+            None,
+            Some(PathBuf::from("foo.test.js")),
+        ),
+        (
+            "
+              export const myThing = 'invalid';
+
+              test.each()('my code', () => {
+                expect(1).toBe(1);
+              });
+            ",
+            None,
+            None,
+            Some(PathBuf::from("foo.test.js")),
+        ),
+        (
+            "
+              export const myThing = 'invalid';
+
+              test.each``('my code', () => {
+                expect(1).toBe(1);
+              });
+            ",
+            None,
+            None,
+            Some(PathBuf::from("foo.test.js")),
+        ),
+        (
+            "
+              export const myThing = 'invalid';
+              test.only.each``('my code', () => {
+                expect(1).toBe(1);
+              });
+            ",
+            None,
+            None,
+            Some(PathBuf::from("foo.test.js")),
+        ),
+        (
+            "export default function() {};  test('a test', () => { expect(1).toBe(1);});",
+            None,
+            None,
+            Some(PathBuf::from("foo.test.js")),
+        ),
+        (
+            "
+              const foo = 1;
+              const bar = 2;
+              test('a test', () => {})
+
+              export {foo, bar};
+            ",
+            None,
+            None,
+            Some(PathBuf::from("foo.test.js")),
+        ),
+        // TODO: support `module.exports`
+        // ("module.exports['invalid'] = function() {};  test('a test', () => { expect(1).toBe(1);});", None),
+        // ("module.exports = function() {}; ;  test('a test', () => { expect(1).toBe(1);});", None),
+        // ("module.export.invalid = function() {}; ;  test('a test', () => { expect(1).toBe(1);});", None)
+    ];
+
+    Tester::new(NoExport::NAME, pass, fail).with_jest_plugin(true).test_and_snapshot();
+}
