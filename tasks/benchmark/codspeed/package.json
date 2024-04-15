@@ -24,8 +24,8 @@
 	"devDependencies": {
 		"@playform/build": "0.0.5",
 		"@playform/document": "0.0.6",
-		"axios": "^1.6.8",
-		"tar": "^6.2.0"
+		"axios": "1.6.8",
+		"tar": "6.2.0"
 	},
 	"publishConfig": {
 		"access": "public"
