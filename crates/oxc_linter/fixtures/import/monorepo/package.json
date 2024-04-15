@@ -24,7 +24,7 @@
 		"right-pad": "1.0.1"
 	},
 	"devDependencies": {
-		"@playform/build": "0.0.5",
+		"@playform/build": "0.0.7",
 		"@playform/document": "0.0.6",
 		"left-pad": "1.2.0"
 	},

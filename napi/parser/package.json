@@ -24,11 +24,11 @@
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"devDependencies": {
-		"@napi-rs/cli": "2.18.0",
-		"@playform/build": "0.0.5",
+		"@napi-rs/cli": "2.18.1",
+		"@playform/build": "0.0.7",
 		"@playform/document": "0.0.6",
-		"es-module-lexer": "1.4.1",
-		"tinybench": "2.6.0"
+		"es-module-lexer": "1.5.0",
+		"tinybench": "2.7.0"
 	},
 	"publishConfig": {
 		"access": "public"
