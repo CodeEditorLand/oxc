@@ -119,7 +119,7 @@
 	},
 	"icon": "icon.png",
 	"sponsor": {
-		"url": "https://github.com/sponsors/boshen"
+		"url": "HTTPS://GitHub.Com/sponsors/boshen"
 	},
 	"vsce": {
 		"dependencies": false
