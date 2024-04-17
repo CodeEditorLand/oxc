@@ -55,7 +55,7 @@ expression: no_useless_catch
   ⚠ eslint(no-useless-catch): Unnecessary try/catch wrapper
    ╭─[no_useless_catch.tsx:5:20]
  4 │             await doSomething();
- 5 │           } catch (e) {
+ 5 │           } catch (_Error) {
    ·                    ┬
    ·                    ╰── is caught here
  6 │             throw e;

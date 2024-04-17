@@ -46,7 +46,7 @@ declare_oxc_lint!(
     /// ```javascript
     /// try {
     ///   doSomethingThatMightThrow();
-    /// } catch (e) {
+    /// } catch (_Error) {
     ///   throw e;
     /// }
     /// ```
@@ -153,7 +153,7 @@ fn test() {
         async () => {
           try {
             await doSomething();
-          } catch (e) {
+          } catch (_Error) {
             doSomethingAfterCatch();
             throw e;
           }
@@ -207,7 +207,7 @@ fn test() {
         async () => {
           try {
             await doSomething();
-          } catch (e) {
+          } catch (_Error) {
             throw e;
           }
         }

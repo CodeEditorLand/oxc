@@ -267,9 +267,9 @@ fn test() {
 
     let fail = vec![
         ("try { } catch (descriptiveError) { }", Some(serde_json::json!([{"name": "exception"}]))),
-        ("try { } catch (e) { }", Some(serde_json::json!([{"name": "has_space_after "}]))),
-        ("try { } catch (e) { }", Some(serde_json::json!([{"name": "1_start_with_a_number"}]))),
-        ("try { } catch (e) { }", Some(serde_json::json!([{"name": "_){ } evilCode; if(false"}]))),
+        ("try { } catch (_Error) { }", Some(serde_json::json!([{"name": "has_space_after "}]))),
+        ("try { } catch (_Error) { }", Some(serde_json::json!([{"name": "1_start_with_a_number"}]))),
+        ("try { } catch (_Error) { }", Some(serde_json::json!([{"name": "_){ } evilCode; if(false"}]))),
         ("try { } catch (notMatching) { }", Some(serde_json::json!([{"ignore": []}]))),
         ("try { } catch (notMatching) { }", Some(serde_json::json!([{"ignore": ["unicorn"]}]))),
         ("try { } catch (notMatching) { }", Some(serde_json::json!([{"ignore": ["unicorn"]}]))),

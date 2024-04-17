@@ -19,7 +19,7 @@ function isMusl() {
     try {
       const lddPath = require('child_process').execSync('which ldd').toString().trim()
       return readFileSync(lddPath, 'utf8').includes('musl')
-    } catch (e) {
+    } catch (_Error) {
       return true
     }
   } else {
@@ -39,7 +39,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-android-arm64')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break
@@ -51,7 +51,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-android-arm-eabi')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break
@@ -71,7 +71,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-win32-x64-msvc')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break
@@ -85,7 +85,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-win32-ia32-msvc')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break
@@ -99,7 +99,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-win32-arm64-msvc')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break
@@ -126,7 +126,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-darwin-x64')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break
@@ -140,7 +140,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-darwin-arm64')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break
@@ -159,7 +159,7 @@ switch (platform) {
       } else {
         nativeBinding = require('@oxc-parser/binding-freebsd-x64')
       }
-    } catch (e) {
+    } catch (_Error) {
       loadError = e
     }
     break
@@ -176,7 +176,7 @@ switch (platform) {
             } else {
               nativeBinding = require('@oxc-parser/binding-linux-x64-musl')
             }
-          } catch (e) {
+          } catch (_Error) {
             loadError = e
           }
         } else {
@@ -189,7 +189,7 @@ switch (platform) {
             } else {
               nativeBinding = require('@oxc-parser/binding-linux-x64-gnu')
             }
-          } catch (e) {
+          } catch (_Error) {
             loadError = e
           }
         }
@@ -205,7 +205,7 @@ switch (platform) {
             } else {
               nativeBinding = require('@oxc-parser/binding-linux-arm64-musl')
             }
-          } catch (e) {
+          } catch (_Error) {
             loadError = e
           }
         } else {
@@ -218,7 +218,7 @@ switch (platform) {
             } else {
               nativeBinding = require('@oxc-parser/binding-linux-arm64-gnu')
             }
-          } catch (e) {
+          } catch (_Error) {
             loadError = e
           }
         }
@@ -233,7 +233,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-linux-arm-gnueabihf')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break
@@ -248,7 +248,7 @@ switch (platform) {
             } else {
               nativeBinding = require('@oxc-parser/binding-linux-riscv64-musl')
             }
-          } catch (e) {
+          } catch (_Error) {
             loadError = e
           }
         } else {
@@ -261,7 +261,7 @@ switch (platform) {
             } else {
               nativeBinding = require('@oxc-parser/binding-linux-riscv64-gnu')
             }
-          } catch (e) {
+          } catch (_Error) {
             loadError = e
           }
         }
@@ -276,7 +276,7 @@ switch (platform) {
           } else {
             nativeBinding = require('@oxc-parser/binding-linux-s390x-gnu')
           }
-        } catch (e) {
+        } catch (_Error) {
           loadError = e
         }
         break

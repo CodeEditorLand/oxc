@@ -256,7 +256,7 @@ fn test() {
         // None,
         // ),
         // (
-        // "Reflect.defineProperty(foo, 'bar', { set(val) { try { return f(val) } catch (e) { return e }; } })",
+        // "Reflect.defineProperty(foo, 'bar', { set(val) { try { return f(val) } catch (_Error) { return e }; } })",
         // None,
         // ),
         // (

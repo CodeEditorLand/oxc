@@ -10,19 +10,19 @@ expression: catch_error_name
 
   ⚠ eslint-plugin-unicorn(catch-error-name): The catch parameter "e" should be named "has_space_after "
    ╭─[catch_error_name.tsx:1:16]
- 1 │ try { } catch (e) { }
+ 1 │ try { } catch (_Error) { }
    ·                ─
    ╰────
 
   ⚠ eslint-plugin-unicorn(catch-error-name): The catch parameter "e" should be named "1_start_with_a_number"
    ╭─[catch_error_name.tsx:1:16]
- 1 │ try { } catch (e) { }
+ 1 │ try { } catch (_Error) { }
    ·                ─
    ╰────
 
   ⚠ eslint-plugin-unicorn(catch-error-name): The catch parameter "e" should be named "_){ } evilCode; if(false"
    ╭─[catch_error_name.tsx:1:16]
- 1 │ try { } catch (e) { }
+ 1 │ try { } catch (_Error) { }
    ·                ─
    ╰────
 

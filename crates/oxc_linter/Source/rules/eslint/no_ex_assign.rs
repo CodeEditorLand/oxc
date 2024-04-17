@@ -31,7 +31,7 @@ declare_oxc_lint!(
     /// ```javascript
     // try {
     //     // code
-    // } catch (e) {
+    // } catch (_Error) {
     //     e = 10;
     // }
     /// ```
@@ -57,13 +57,13 @@ fn test() {
     use crate::tester::Tester;
 
     let pass = vec![
-        ("try { } catch (e) { three = 2 + 1; }", None),
+        ("try { } catch (_Error) { three = 2 + 1; }", None),
         ("try { } catch ({e}) { this.something = 2; }", None),
-        ("function foo() { try { } catch (e) { return false; } }", None),
+        ("function foo() { try { } catch (_Error) { return false; } }", None),
     ];
 
     let fail = vec![
-        ("try { } catch (e) { e = 10; }", None),
+        ("try { } catch (_Error) { e = 10; }", None),
         ("try { } catch (ex) { ex = 10; }", None),
         ("try { } catch (ex) { [ex] = []; }", None),
         ("try { } catch (ex) { ({x: ex = 0} = {}); }", None),

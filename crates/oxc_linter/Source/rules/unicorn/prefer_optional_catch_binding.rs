@@ -33,7 +33,7 @@ declare_oxc_lint!(
     /// // Bad
     /// try {
     ///  // ...
-    /// } catch (e) { }
+    /// } catch (_Error) { }
     ///
     /// // Good
     /// try {

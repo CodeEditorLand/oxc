@@ -240,7 +240,7 @@ expression: no_return_await
 
   ⚠ eslint(no-return-await): Redundant use of `await` on a return value.
    ╭─[no_return_await.tsx:5:8]
- 4 │ catch (e) {
+ 4 │ catch (_Error) {
  5 │ return await bar();
    ·        ─────
  6 │ }
@@ -261,13 +261,13 @@ expression: no_return_await
  2 │ try {
  3 │ async () => await bar();
    ·             ─────
- 4 │ } catch (e) {}
+ 4 │ } catch (_Error) {}
    ╰────
   help: Remove redundant `await`.
 
   ⚠ eslint(no-return-await): Redundant use of `await` on a return value.
    ╭─[no_return_await.tsx:7:9]
- 6 │ catch (e) {
+ 6 │ catch (_Error) {
  7 │  return await bar();
    ·         ─────
  8 │ }

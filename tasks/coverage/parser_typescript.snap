@@ -7352,7 +7352,7 @@ Expect to Parse: "conformance/salsa/plainJSRedeclare3.ts"
 
   × Identifier `var11` has already been declared
     ╭─[compiler/letDeclarations-scopes-duplicates.ts:42:9]
- 41 │ catch (e) {
+ 41 │ catch (_Error) {
  42 │     let var11 = 0;
     ·         ──┬──
     ·           ╰── `var11` has already been declared here
@@ -11483,7 +11483,8 @@ Expect to Parse: "conformance/salsa/plainJSRedeclare3.ts"
  12 │     }
     ╰────
 
-  × Invalid Character ``
+  × Invalid Character `
+`
    ╭─[conformance/classes/members/privateNames/privateNameHashCharName.ts:3:2]
  2 │ 
  3 │ #

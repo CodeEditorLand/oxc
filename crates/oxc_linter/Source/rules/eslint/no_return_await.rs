@@ -183,7 +183,7 @@ fn test() {
         ("\nasync () => (baz() ? a : (await bar(), b))\n", None),
         ("\nasync () => (baz() ? a : (await bar() && b))\n", None),
         (
-            "\n          async function foo() {\n            try {\n              return await bar();\n            } catch (e) {\n              baz();\n            }\n          }\n        ",
+            "\n          async function foo() {\n            try {\n              return await bar();\n            } catch (_Error) {\n              baz();\n            }\n          }\n        ",
             None,
         ),
         (
@@ -191,7 +191,7 @@ fn test() {
             None,
         ),
         (
-            "\n          async function foo() {\n            try {}\n            catch (e) {\n              return await bar();\n            } finally {\n              baz();\n            }\n          }\n        ",
+            "\n          async function foo() {\n            try {}\n            catch (_Error) {\n              return await bar();\n            } finally {\n              baz();\n            }\n          }\n        ",
             None,
         ),
         (
@@ -199,19 +199,19 @@ fn test() {
             None,
         ),
         (
-            "\n          async function foo() {\n            try {\n              try {}\n              catch (e) {\n                return await bar();\n              }\n            } finally {\n              baz();\n            }\n          }\n        ",
+            "\n          async function foo() {\n            try {\n              try {}\n              catch (_Error) {\n                return await bar();\n              }\n            } finally {\n              baz();\n            }\n          }\n        ",
             None,
         ),
         (
-            "\n          async function foo() {\n            try {\n              return (a, await bar());\n            } catch (e) {\n              baz();\n            }\n          }\n        ",
+            "\n          async function foo() {\n            try {\n              return (a, await bar());\n            } catch (_Error) {\n              baz();\n            }\n          }\n        ",
             None,
         ),
         (
-            "\n          async function foo() {\n            try {\n              return (qux() ? await bar() : b);\n            } catch (e) {\n              baz();\n            }\n          }\n        ",
+            "\n          async function foo() {\n            try {\n              return (qux() ? await bar() : b);\n            } catch (_Error) {\n              baz();\n            }\n          }\n        ",
             None,
         ),
         (
-            "\n          async function foo() {\n            try {\n              return (a && await bar());\n            } catch (e) {\n              baz();\n            }\n          }\n        ",
+            "\n          async function foo() {\n            try {\n              return (a && await bar());\n            } catch (_Error) {\n              baz();\n            }\n          }\n        ",
             None,
         ),
     ];
@@ -244,8 +244,8 @@ fn test() {
         ("\nasync () => {\nif (a) {\n\t\tif (b) {\n\t\t\treturn await bar();\n\t\t}\n\t}\n}\n", None),
         ("\nasync function foo() { try {}\nfinally {\nreturn await bar();\n}\n}\n", None),
         ("\nasync function foo() {\ntry {}\ncatch (e) {\nreturn await bar();\n}\n}\n", None),
-        ("\ntry {\nasync function foo() {\nreturn await bar();\n}\n} catch (e) {}\n", None),
-        ("\ntry {\nasync () => await bar();\n} catch (e) {}\n", None),
+        ("\ntry {\nasync function foo() {\nreturn await bar();\n}\n} catch (_Error) {}\n", None),
+        ("\ntry {\nasync () => await bar();\n} catch (_Error) {}\n", None),
         (
             "\nasync function foo() {\ntry {}\ncatch (e) {\ntry {}\ncatch (e) {\n return await bar();\n}\n}\n}\n",
             None,
