@@ -14,6 +14,11 @@ mod options;
 // Presets: <https://babel.dev/docs/presets>
 mod react;
 mod typescript;
+mod utils;
+
+mod helpers {
+    pub mod module_imports;
+}
 
 use std::{path::Path, rc::Rc};
 
@@ -50,7 +55,7 @@ impl<'a> Transformer<'a> {
         semantic: Semantic<'a>,
         options: TransformOptions,
     ) -> Self {
-        let ctx = Rc::new(TransformCtx::new(allocator, source_path, semantic));
+        let ctx = Rc::new(TransformCtx::new(allocator, source_path, semantic, &options));
         Self {
             ctx: Rc::clone(&ctx),
             x0_typescript: TypeScript::new(options.typescript, &ctx),
@@ -143,8 +148,6 @@ impl<'a> VisitMut<'a> for Transformer<'a> {
     }
 
     fn visit_import_declaration(&mut self, decl: &mut ImportDeclaration<'a>) {
-        self.x0_typescript.transform_import_declaration(decl);
-
         walk_mut::walk_import_declaration_mut(self, decl);
     }
 
@@ -197,5 +200,20 @@ impl<'a> VisitMut<'a> for Transformer<'a> {
         self.x1_react.transform_variable_declarator(declarator);
 
         walk_mut::walk_variable_declarator_mut(self, declarator);
+    }
+
+    fn visit_identifier_reference(&mut self, ident: &mut IdentifierReference<'a>) {
+        self.x0_typescript.transform_identifier_reference(ident);
+        walk_mut::walk_identifier_reference_mut(self, ident);
+    }
+
+    fn visit_statement(&mut self, stmt: &mut Statement<'a>) {
+        self.x0_typescript.transform_statement(stmt);
+        walk_mut::walk_statement_mut(self, stmt);
+    }
+
+    fn visit_declaration(&mut self, decl: &mut Declaration<'a>) {
+        self.x0_typescript.transform_declaration(decl);
+        walk_mut::walk_declaration_mut(self, decl);
     }
 }
