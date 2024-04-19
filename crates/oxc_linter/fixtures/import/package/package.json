@@ -2,6 +2,9 @@
 	"version": "0.0.1",
 	"private": false,
 	"description": "Unnamed package for reaching through main field - rxjs style",
+	"keywords": [
+		"land"
+	],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Oxc#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/Oxc/issues"

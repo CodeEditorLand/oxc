@@ -4,6 +4,9 @@
 	"version": "0.0.1",
 	"private": false,
 	"description": "oxc vscode extension",
+	"keywords": [
+		"land"
+	],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Oxc#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/Oxc/issues"

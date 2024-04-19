@@ -2,6 +2,9 @@
 	"name": "@eslint/import-test-order-redirect-scoped",
 	"version": "0.0.1",
 	"private": false,
+	"keywords": [
+		"land"
+	],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Oxc#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/Oxc/issues"

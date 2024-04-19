@@ -3,6 +3,9 @@
 	"version": "0.0.1",
 	"private": false,
 	"description": "Standard, named package",
+	"keywords": [
+		"land"
+	],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Oxc#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/Oxc/issues"
