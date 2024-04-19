@@ -86,7 +86,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-bundled-dependencies-as-array-bundle-deps-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/bundled-dependencies/as-array-bundle-deps/Target
@@ -103,7 +103,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-bundled-dependencies-as-object-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/bundled-dependencies/as-object/Target
@@ -120,7 +120,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-bundled-dependencies-race-condition-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/bundled-dependencies/race-condition/Target
@@ -137,7 +137,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-empty-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/empty/Target
@@ -154,7 +154,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-internal-modules-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/internal-modules/Target
@@ -171,7 +171,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-missing-entrypoint-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/missing-entrypoint/Target
@@ -188,7 +188,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-monorepo-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/monorepo/Target
@@ -205,7 +205,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-monorepo-packages-nested-package-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/monorepo/packages/nested-package/Target
@@ -222,7 +222,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-no-unused-modules-binObject-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/no-unused-modules/binObject/Target
@@ -239,7 +239,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-no-unused-modules-browserObject-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/no-unused-modules/browserObject/Target
@@ -256,7 +256,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-no-unused-modules-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/no-unused-modules/Target
@@ -273,7 +273,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-no-unused-modules-privatePkg-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/no-unused-modules/privatePkg/Target
@@ -290,7 +290,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-order-redirect-scoped-module-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/order-redirect-scoped/module/Target
@@ -307,7 +307,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-order-redirect-scoped-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/order-redirect-scoped/Target
@@ -324,7 +324,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-order-redirect-module-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/order-redirect/module/Target
@@ -341,7 +341,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-order-redirect-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/order-redirect/Target
@@ -358,7 +358,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-package-named-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/package-named/Target
@@ -375,7 +375,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-package-scoped-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/package-scoped/Target
@@ -392,7 +392,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/Target
@@ -409,7 +409,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-package-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/package/Target
@@ -426,7 +426,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-symlinked-module-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/symlinked-module/Target
@@ -443,7 +443,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-with-flow-typed-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/with-flow-typed/Target
@@ -460,7 +460,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-crates-oxc_linter-fixtures-import-with-typescript-dev-dependencies-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_linter/fixtures/import/with-typescript-dev-dependencies/Target
@@ -477,7 +477,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-editors-vscode-Node-${{ matrix.node-version }}-Target
                   path: ./editors/vscode/Target
@@ -485,7 +485,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-editors-vscode-Node-${{ matrix.node-version }}-Target
                   path: ./editors/vscode/Target
@@ -502,7 +502,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-napi-parser-Node-${{ matrix.node-version }}-Target
                   path: ./napi/parser/Target
@@ -510,7 +510,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-napi-parser-Node-${{ matrix.node-version }}-Target
                   path: ./napi/parser/Target
@@ -527,7 +527,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-npm-oxc-parser-Node-${{ matrix.node-version }}-Target
                   path: ./npm/oxc-parser/Target
@@ -544,7 +544,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-npm-oxc-Node-${{ matrix.node-version }}-Target
                   path: ./npm/oxc/Target
@@ -561,7 +561,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-npm-oxlint-Node-${{ matrix.node-version }}-Target
                   path: ./npm/oxlint/Target
@@ -578,7 +578,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-tasks-benchmark-codspeed-Node-${{ matrix.node-version }}-Target
                   path: ./tasks/benchmark/codspeed/Target
@@ -595,7 +595,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-tasks-coverage-Source-runtime-Node-${{ matrix.node-version }}-Target
                   path: ./tasks/coverage/Source/runtime/Target
@@ -612,7 +612,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-tasks-lint_rules-Node-${{ matrix.node-version }}-Target
                   path: ./tasks/lint_rules/Target
@@ -629,7 +629,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-wasm-parser-Node-${{ matrix.node-version }}-Target
                   path: ./wasm/parser/Target
@@ -637,7 +637,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-wasm-parser-Node-${{ matrix.node-version }}-Target
                   path: ./wasm/parser/Target
@@ -654,7 +654,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-website-Node-${{ matrix.node-version }}-Target
                   path: ./website/Target
@@ -662,7 +662,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.1
+            - uses: actions/upload-artifact@v4.3.2
               with:
                   name: .-website-Node-${{ matrix.node-version }}-Target
                   path: ./website/Target
