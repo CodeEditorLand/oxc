@@ -28,7 +28,7 @@
 		"@playform/build": "0.0.7",
 		"@playform/document": "0.0.6",
 		"axios": "1.6.8",
-		"tar": "7.0.1"
+		"tar": "7.1.0"
 	},
 	"publishConfig": {
 		"access": "public"
