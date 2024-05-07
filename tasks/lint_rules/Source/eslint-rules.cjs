@@ -57,7 +57,7 @@ const {
 // https://github.com/vercel/next.js/blob/canary/packages/eslint-plugin-next/src/index.ts
 const { rules: pluginNextAllRules } = require("@next/eslint-plugin-next");
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginTypeScriptRules = (linter) => {
   // We want to list all rules but not support type-checked rules
   const pluginTypeScriptDisableTypeCheckedRules = new Map(
@@ -78,7 +78,7 @@ const loadPluginTypeScriptRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginNRules = (linter) => {
   for (const [name, rule] of Object.entries(pluginNAllRules)) {
     const prefixedName = `n/${name}`;
@@ -88,7 +88,7 @@ const loadPluginNRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginUnicornRules = (linter) => {
   const pluginUnicornRecommendedRules = new Map(
     Object.entries(pluginUnicornConfigs.recommended.rules),
@@ -105,7 +105,7 @@ const loadPluginUnicornRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginJSDocRules = (linter) => {
   const pluginJSDocRecommendedRules = new Map(
     Object.entries(pluginJSDocConfigs.recommended.rules),
@@ -121,7 +121,7 @@ const loadPluginJSDocRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginImportRules = (linter) => {
   const pluginImportRecommendedRules = new Map(
     // @ts-expect-error: Property 'rules' does not exist on type 'Object'.
@@ -138,7 +138,7 @@ const loadPluginImportRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginJSXA11yRules = (linter) => {
   const pluginJSXA11yRecommendedRules = new Map(
     Object.entries(pluginJSXA11yConfigs.recommended.rules),
@@ -157,7 +157,7 @@ const loadPluginJSXA11yRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginJestRules = (linter) => {
   const pluginJestRecommendedRules = new Map(
     // @ts-expect-error: Property 'recommended' does not exist on type '{}'.
@@ -174,7 +174,7 @@ const loadPluginJestRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginReactRules = (linter) => {
   for (const [name, rule] of Object.entries(pluginReactAllRules)) {
     const prefixedName = `react/${name}`;
@@ -183,7 +183,7 @@ const loadPluginReactRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginReactHooksRules = (linter) => {
   for (const [name, rule] of Object.entries(pluginReactHooksAllRules)) {
     const prefixedName = `react-hooks/${name}`;
@@ -193,7 +193,7 @@ const loadPluginReactHooksRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginReactPerfRules = (linter) => {
   const pluginReactPerfRecommendedRules = new Map(
     Object.entries(pluginReactPerfConfigs.recommended.rules),
@@ -208,7 +208,7 @@ const loadPluginReactPerfRules = (linter) => {
   }
 };
 
-/** @param {import("eslint").Linter} linter */
+
 const loadPluginNextRules = (linter) => {
   for (const [name, rule] of Object.entries(pluginNextAllRules)) {
     const prefixedName = `nextjs/${name}`;
@@ -247,7 +247,7 @@ exports.createESLintLinter = () =>
     configType: "eslintrc",
   });
 
-/** @param {import("eslint").Linter} linter */
+
 exports.loadTargetPluginRules = (linter) => {
   loadPluginTypeScriptRules(linter);
   loadPluginNRules(linter);

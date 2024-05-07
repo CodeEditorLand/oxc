@@ -3,7 +3,7 @@
  * @typedef {{ isImplemented: number; isNotSupported: number; total: number }} CounterView
  */
 
-/** @param {{ npm: string; }} props */
+
 const renderIntroduction = ({ npm }) => `
 > [!WARNING]
 > This comment is maintained by CI. Do not edit this comment directly.
@@ -47,7 +47,7 @@ ${countersList}
 `;
 };
 
-/** @param {{ pluginName: string }} props */
+
 const renderGettingStarted = ({ pluginName }) => `
 To get started, run the following command:
 
@@ -93,7 +93,7 @@ ${views
  * @param {import("./oxlint-rules.cjs").RuleEntries} ruleEntries
  */
 exports.renderMarkdown = (pluginName, pluginMeta, ruleEntries) => {
-  /** @type {Record<string, RuleEntryView[]>} */
+  
   const views = {
     deprecated: [],
     recommended: [],

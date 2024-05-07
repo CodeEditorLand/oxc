@@ -7,7 +7,7 @@ const readAllImplementedRuleNames = async () => {
     "utf8",
   );
 
-  /** @type {Set<string>} */
+  
   const rules = new Set();
 
   let found = false;
@@ -60,9 +60,9 @@ const NOT_SUPPORTED_RULE_NAMES = new Set([
  * @typedef {Map<string, RuleEntry>} RuleEntries
  */
 
-/** @param {ReturnType<import("eslint").Linter["getRules"]>} loadedAllRules */
+
 exports.createRuleEntries = (loadedAllRules) => {
-  /** @type {RuleEntries} */
+  
   const rulesEntry = new Map();
 
   for (const [name, rule] of loadedAllRules) {
@@ -86,7 +86,7 @@ exports.createRuleEntries = (loadedAllRules) => {
   return rulesEntry;
 };
 
-/** @param {RuleEntries} ruleEntries */
+
 exports.updateImplementedStatus = async (ruleEntries) => {
   const implementedRuleNames = await readAllImplementedRuleNames();
 
@@ -97,7 +97,7 @@ exports.updateImplementedStatus = async (ruleEntries) => {
   }
 };
 
-/** @param {RuleEntries} ruleEntries */
+
 exports.updateNotSupportedStatus = (ruleEntries) => {
   for (const name of NOT_SUPPORTED_RULE_NAMES) {
     const rule = ruleEntries.get(name);
