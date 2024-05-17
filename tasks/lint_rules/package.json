@@ -17,7 +17,7 @@
 	"author": {
 		"name": "🛬 Land —",
 		"email": "Land@PlayForm.Cloud",
-		"url": "HTTPS://Land.PlayForm.Cloud"
+		"url": "HTTPS://Editor.Land"
 	},
 	"type": "module",
 	"main": "./src/main.cjs",
