@@ -66,7 +66,7 @@ Plugins: ${Array.from(ALL_TARGET_PLUGINS.keys()).join(", ")}
   const results = await Promise.allSettled(
     Array.from(targetPluginNames).map((pluginName) => {
       const pluginMeta =
-         (
+        /** @type {import("./eslint-rules.cjs").TargetPluginMeta} */ (
           ALL_TARGET_PLUGINS.get(pluginName)
         );
       const content = renderMarkdown(pluginName, pluginMeta, ruleEntries);
