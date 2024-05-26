@@ -12,39 +12,45 @@
 /**
  * @type {Array<any>}
  */
-let cacheSymbols = null
+let cacheSymbols = null;
 /**
- * 
- * @param {SymbolTable} symbols 
- * @returns 
+ *
+ * @param {SymbolTable} symbols
+ * @returns
  */
 export const renderSymbols = (symbols) => {
-  const target = []
-  symbols.declarations.forEach((nodeId, index) => {
-    target.push({
-      name: symbols.names[index],
-      flag: symbols.flags[index],
-      symbolId: index,
-      nodeId,
-      span: symbols.spans[index],
-      references: symbols.resolvedReferences[index].map((id) => ({ referenceId: id, ...symbols.references[id] })),
-    })
-  })
-  cacheSymbols = target
-  return JSON.stringify(target, null, 2)
-}
+	const target = [];
+	symbols.declarations.forEach((nodeId, index) => {
+		target.push({
+			name: symbols.names[index],
+			flag: symbols.flags[index],
+			symbolId: index,
+			nodeId,
+			span: symbols.spans[index],
+			references: symbols.resolvedReferences[index].map((id) => ({
+				referenceId: id,
+				...symbols.references[id],
+			})),
+		});
+	});
+	cacheSymbols = target;
+	return JSON.stringify(target, null, 2);
+};
 
 export const getSymbolAndReferencesSpan = (start, end) => {
-  if (!cacheSymbols) {
-    return [{ start, end }]
-  }
-  const symbol = cacheSymbols.find((symbol) => {
-    return symbol.span.start == start && symbol.span.end == end
-  })
+	if (!cacheSymbols) {
+		return [{ start, end }];
+	}
+	const symbol = cacheSymbols.find((symbol) => {
+		return symbol.span.start == start && symbol.span.end == end;
+	});
 
-  if (!symbol) {
-    return [{ start, end }]
-  }
+	if (!symbol) {
+		return [{ start, end }];
+	}
 
-  return [symbol.span, ...symbol.references.map((reference) => reference.span)]
-}
+	return [
+		symbol.span,
+		...symbol.references.map((reference) => reference.span),
+	];
+};

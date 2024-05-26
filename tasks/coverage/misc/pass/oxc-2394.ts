@@ -1,1 +1,10 @@
-type A = import("foo", {with: {type: "json"}})
+type A = import("foo"
+,
+{
+	with
+	:
+	{
+		type: "json";
+	}
+}
+)

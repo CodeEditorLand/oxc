@@ -1,9 +1,11 @@
-const foo = <div
-    // comment
-/>;
+const foo = (
+	<div
+	// comment
+	/>
+);
 
 <div-
-    // comment
+// comment
 />;
 
 <div-- /* comment */ />;

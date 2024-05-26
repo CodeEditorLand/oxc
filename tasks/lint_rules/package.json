@@ -2,9 +2,7 @@
 	"name": "lint_rules",
 	"version": "0.0.1",
 	"private": false,
-	"keywords": [
-		"land"
-	],
+	"keywords": ["land"],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
@@ -27,8 +25,8 @@
 	},
 	"dependencies": {},
 	"devDependencies": {
-		"@playform/build": "0.0.8",
-		"@playform/document": "0.0.6"
+		"@playform/build": "0.0.9",
+		"@playform/document": "0.0.7"
 	},
 	"publishConfig": {
 		"access": "public"

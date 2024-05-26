@@ -1,3 +1,3 @@
 class Foo {
-  set x: (v: number) => {}
+	set x: (v: number) => {}
 }

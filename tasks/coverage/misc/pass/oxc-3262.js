@@ -1,4 +1,4 @@
 class Foo {
-    @Bar({ x: Map['String'] })
-    quaz() {}
+	@Bar({ x: Map["String"] })
+	quaz() {}
 }

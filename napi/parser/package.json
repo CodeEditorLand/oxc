@@ -2,9 +2,7 @@
 	"name": "@oxc-parser/binding",
 	"version": "0.0.1",
 	"private": false,
-	"keywords": [
-		"land"
-	],
+	"keywords": ["land"],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
@@ -28,8 +26,8 @@
 	},
 	"devDependencies": {
 		"@napi-rs/cli": "2.18.3",
-		"@playform/build": "0.0.8",
-		"@playform/document": "0.0.6",
+		"@playform/build": "0.0.9",
+		"@playform/document": "0.0.7",
 		"es-module-lexer": "1.5.3",
 		"tinybench": "2.8.0"
 	},

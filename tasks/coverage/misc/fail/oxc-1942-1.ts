@@ -1,5 +1,5 @@
 class Foo {
-  get x: () => {
+	get x: () => {
       return 5;
   }
 }

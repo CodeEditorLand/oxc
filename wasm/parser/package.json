@@ -3,9 +3,7 @@
 	"version": "0.0.1",
 	"private": false,
 	"description": "Wasm target for the oxc parser.",
-	"keywords": [
-		"land"
-	],
+	"keywords": ["land"],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
@@ -27,10 +25,7 @@
 	"main": "./node/oxc_parser_wasm.js",
 	"browser": "./web/oxc_parser_wasm.js",
 	"types": "./node/oxc_parser_wasm.d.ts",
-	"files": [
-		"node",
-		"web"
-	],
+	"files": ["node", "web"],
 	"scripts": {
 		"Document": "Document 'Source/**/*.ts'",
 		"build": "pnpm run build-node && pnpm run build-web && pnpm run copy-files && pnpm run clean-files",
@@ -42,8 +37,8 @@
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"devDependencies": {
-		"@playform/build": "0.0.8",
-		"@playform/document": "0.0.6",
+		"@playform/build": "0.0.9",
+		"@playform/document": "0.0.7",
 		"wasm-pack": "0.12.1"
 	},
 	"publishConfig": {

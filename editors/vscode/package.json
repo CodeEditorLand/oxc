@@ -4,9 +4,7 @@
 	"version": "0.0.1",
 	"private": false,
 	"description": "oxc vscode extension",
-	"keywords": [
-		"land"
-	],
+	"keywords": ["land"],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
@@ -72,26 +70,15 @@
 				"oxc_language_server.run": {
 					"default": "onType",
 					"description": "Run the linter on save (onSave) or on type (onType)",
-					"enum": [
-						"onSave",
-						"onType"
-					],
+					"enum": ["onSave", "onType"],
 					"scope": "resource",
 					"type": "string"
 				},
 				"oxc_language_server.trace.server": {
 					"default": "off",
 					"description": "Traces the communication between VS Code and the language server.",
-					"enum": [
-						"off",
-						"messages",
-						"verbose"
-					],
-					"enumDescriptions": [
-						"No traces",
-						"Error only",
-						"Full log"
-					],
+					"enum": ["off", "messages", "verbose"],
+					"enumDescriptions": ["No traces", "Error only", "Full log"],
 					"scope": "window",
 					"type": "string"
 				}
@@ -110,11 +97,11 @@
 	],
 	"dependencies": {},
 	"devDependencies": {
-		"@playform/build": "0.0.8",
-		"@playform/document": "0.0.6",
+		"@playform/build": "0.0.9",
+		"@playform/document": "0.0.7",
 		"@types/node": "20.12.12",
 		"cross-env": "7.0.3",
-		"esbuild": "0.21.3",
+		"esbuild": "0.21.4",
 		"ovsx": "0.9.1"
 	},
 	"publishConfig": {

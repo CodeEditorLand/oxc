@@ -3,9 +3,7 @@
 	"version": "0.0.1",
 	"private": false,
 	"description": "Linter for the JavaScript Oxidation Compiler",
-	"keywords": [
-		"land"
-	],
+	"keywords": ["land"],
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
@@ -25,17 +23,14 @@
 	},
 	"type": "module",
 	"bin": "bin/oxlint",
-	"files": [
-		"bin/oxlint",
-		"README.md"
-	],
+	"files": ["bin/oxlint", "README.md"],
 	"scripts": {
 		"Document": "Document 'Source/**/*.ts'",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"devDependencies": {
-		"@playform/build": "0.0.8",
-		"@playform/document": "0.0.6"
+		"@playform/build": "0.0.9",
+		"@playform/document": "0.0.7"
 	},
 	"publishConfig": {
 		"access": "public"
