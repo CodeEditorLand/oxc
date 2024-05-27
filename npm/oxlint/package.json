@@ -1,45 +1,45 @@
 {
-	"author": {
-		"email": "Land@PlayForm.Cloud",
-		"name": "🛬 Land —",
-		"url": "HTTPS://Editor.Land"
-	},
-	"bin": "bin/oxlint",
+	"name": "oxlint",
+	"version": "0.0.1",
+	"private": false,
+	"description": "Linter for the JavaScript Oxidation Compiler",
+	"keywords": [
+		"land"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
 	},
-	"description": "Linter for the JavaScript Oxidation Compiler",
-	"devDependencies": {
-		"@playform/build": "0.0.9",
-		"@playform/document": "0.0.7"
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
 	},
+	"funding": {
+		"url": "https://github.com/sponsors/Boshen"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🛬 Land —",
+		"email": "Land@PlayForm.Cloud",
+		"url": "HTTPS://Editor.Land"
+	},
+	"type": "module",
+	"bin": "bin/oxlint",
 	"files": [
 		"bin/oxlint",
 		"bin/oxc_language_server",
 		"configuration_schema.json",
 		"README.md"
 	],
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
-	},
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"keywords": [
-		"land"
-	],
-	"license": "SEE LICENSE IN LICENSE",
-	"name": "oxlint",
-	"private": false,
-	"publishConfig": {
-		"access": "public"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
 	"scripts": {
 		"Document": "Document 'Source/**/*.ts'",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
-	"type": "module",
-	"version": "0.0.1"
+	"devDependencies": {
+		"@playform/build": "0.0.9",
+		"@playform/document": "0.0.7"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }

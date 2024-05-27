@@ -1,19 +1,37 @@
 {
-	"activationEvents": [
-		"onLanguage:javascript",
-		"onLanguage:javascriptreact",
-		"onLanguage:typescript",
-		"onLanguage:typescriptreact",
-		"onLanguage:vue",
-		"onLanguage:svelte"
+	"name": "oxc-vscode",
+	"displayName": "Oxc",
+	"version": "0.0.1",
+	"private": false,
+	"description": "oxc vscode extension",
+	"keywords": [
+		"land"
 	],
-	"author": {
-		"email": "Land@PlayForm.Cloud",
-		"name": "🛬 Land —",
-		"url": "HTTPS://Editor.Land"
-	},
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🛬 Land —",
+		"email": "Land@PlayForm.Cloud",
+		"url": "HTTPS://Editor.Land"
+	},
+	"type": "module",
+	"main": "./out/main.js",
+	"scripts": {
+		"Document": "Document 'Source/**/*.ts'",
+		"build": "pnpm run server:build:release && pnpm run compile && pnpm run package",
+		"compile": "esbuild client/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node16 --minify --sourcemap",
+		"preinstall": "[ -f icon.png ] || curl https://raw.githubusercontent.com/Boshen/oxc-assets/main/logo-square-min.png --output icon.png",
+		"install-extension": "code --install-extension oxc_language_server.vsix --force",
+		"prepublishOnly": "Build 'Source/**/*.ts'",
+		"server:build:debug": "cargo build -p oxc_language_server",
+		"server:build:release": "cross-env CARGO_TARGET_DIR=./target cargo build -p oxc_language_server --release"
 	},
 	"contributes": {
 		"commands": [
@@ -82,8 +100,15 @@
 			"type": "object"
 		}
 	},
+	"activationEvents": [
+		"onLanguage:javascript",
+		"onLanguage:javascriptreact",
+		"onLanguage:typescript",
+		"onLanguage:typescriptreact",
+		"onLanguage:vue",
+		"onLanguage:svelte"
+	],
 	"dependencies": {},
-	"description": "oxc vscode extension",
 	"devDependencies": {
 		"@playform/build": "0.0.9",
 		"@playform/document": "0.0.7",
@@ -92,38 +117,13 @@
 		"esbuild": "^0.21.0",
 		"ovsx": "^0.9.0"
 	},
-	"displayName": "Oxc",
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"icon": "icon.png",
-	"keywords": [
-		"land"
-	],
-	"license": "SEE LICENSE IN LICENSE",
-	"main": "./out/main.js",
-	"name": "oxc-vscode",
-	"private": false,
 	"publishConfig": {
 		"access": "public"
 	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"scripts": {
-		"Document": "Document 'Source/**/*.ts'",
-		"build": "pnpm run server:build:release && pnpm run compile && pnpm run package",
-		"compile": "esbuild client/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node16 --minify --sourcemap",
-		"install-extension": "code --install-extension oxc_language_server.vsix --force",
-		"preinstall": "[ -f icon.png ] || curl https://raw.githubusercontent.com/Boshen/oxc-assets/main/logo-square-min.png --output icon.png",
-		"prepublishOnly": "Build 'Source/**/*.ts'",
-		"server:build:debug": "cargo build -p oxc_language_server",
-		"server:build:release": "cross-env CARGO_TARGET_DIR=./target cargo build -p oxc_language_server --release"
-	},
+	"icon": "icon.png",
 	"sponsor": {
 		"url": "https://github.com/sponsors/boshen"
 	},
-	"type": "module",
-	"version": "0.0.1",
 	"vsce": {
 		"dependencies": false
 	}

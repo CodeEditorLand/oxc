@@ -1,43 +1,43 @@
 {
-	"author": {
-		"email": "Land@PlayForm.Cloud",
-		"name": "🛬 Land —",
-		"url": "HTTPS://Editor.Land"
-	},
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
-	},
+	"name": "oxc-parser",
+	"version": "0.0.1",
+	"private": false,
 	"description": "Oxc Parser Node API",
-	"devDependencies": {
-		"@playform/build": "0.0.9",
-		"@playform/document": "0.0.7"
-	},
-	"files": [
-		"index.d.ts",
-		"index.js"
-	],
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
-	},
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"keywords": [
 		"land"
 	],
-	"license": "SEE LICENSE IN LICENSE",
-	"main": "index.js",
-	"name": "oxc-parser",
-	"private": false,
-	"publishConfig": {
-		"access": "public"
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
 	},
+	"funding": {
+		"url": "https://github.com/sponsors/Boshen"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🛬 Land —",
+		"email": "Land@PlayForm.Cloud",
+		"url": "HTTPS://Editor.Land"
+	},
+	"type": "module",
+	"main": "index.js",
+	"files": [
+		"index.d.ts",
+		"index.js"
+	],
 	"scripts": {
 		"Document": "Document 'Source/**/*.ts'",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
-	"type": "module",
-	"version": "0.0.1"
+	"devDependencies": {
+		"@playform/build": "0.0.9",
+		"@playform/document": "0.0.7"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }

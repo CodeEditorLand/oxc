@@ -1,25 +1,52 @@
 {
-	"browser": "./web/oxc_parser_wasm.js",
+	"name": "@oxc-parser/wasm",
+	"version": "0.0.1",
+	"private": false,
 	"description": "Wasm target for the oxc parser.",
-	"devDependencies": {
-		"wasm-pack": "^0.12.1"
+	"keywords": [
+		"land"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
 	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
+	"funding": {
+		"url": "https://github.com/sponsors/Boshen"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🛬 Land —",
+		"email": "Land@PlayForm.Cloud",
+		"url": "HTTPS://Editor.Land"
+	},
+	"type": "module",
+	"main": "./node/oxc_parser_wasm.js",
+	"browser": "./web/oxc_parser_wasm.js",
+	"types": "./node/oxc_parser_wasm.d.ts",
 	"files": [
 		"node",
 		"web"
 	],
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
-	},
-	"main": "./node/oxc_parser_wasm.js",
-	"name": "@oxc-parser/wasm",
 	"scripts": {
+		"Document": "Document 'Source/**/*.ts'",
 		"build": "pnpm run build-node && pnpm run build-web && pnpm run copy-files && pnpm run clean-files",
 		"build-base": "wasm-pack build --release --no-pack",
 		"build-node": "pnpm run build-base --target nodejs --out-dir ../../npm/parser-wasm/node .",
 		"build-web": "pnpm run build-base --target web --out-dir ../../npm/parser-wasm/web .",
 		"clean-files": "rm ../../npm/parser-wasm/*/.gitignore",
-		"copy-files": "cp ./package.json ../../npm/parser-wasm/package.json && cp ./README.md ../../npm/parser-wasm/README.md"
+		"copy-files": "cp ./package.json ../../npm/parser-wasm/package.json && cp ./README.md ../../npm/parser-wasm/README.md",
+		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
-	"types": "./node/oxc_parser_wasm.d.ts"
+	"devDependencies": {
+		"@playform/build": "0.0.9",
+		"@playform/document": "0.0.7",
+		"wasm-pack": "^0.12.1"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }
