@@ -21,7 +21,6 @@
 	},
 	"type": "module",
 	"scripts": {
-		"Document": "Document 'Source/**/*.ts'",
 		"build": "pnpm run wasm-build && vite build --base=https://oxc-project.github.io/oxc/",
 		"dev": "pnpm run wasm-dev && concurrently 'vite' 'cd .. && cargo watch --workdir website -s \"pnpm run wasm-dev\"'",
 		"prepublishOnly": "Build 'Source/**/*.ts'",

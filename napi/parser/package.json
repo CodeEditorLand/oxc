@@ -21,7 +21,6 @@
 	},
 	"type": "module",
 	"scripts": {
-		"Document": "Document 'Source/**/*.ts'",
 		"bench": "node parse.bench.mjs",
 		"build": "napi build --platform --release",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
