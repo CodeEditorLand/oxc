@@ -1,15 +1,13 @@
 async(...null);
 
-null ? async() : null;
+null?async():null;
 
-switch (null) {
-	case async():
-}
+switch(null){case async():};
 
-for (new null((null in null)); ; );
+for(new null(null in null);;);
 
-for (var [l = null in null] in null);
+for(var[l=null in null]in null);
 
-for (`${(null in null)}`; ; );
+for(`${null in null}`;;);
 
-for (var { async = null in null } of null); // #873
+for(var{async=null in null}of null); // #873

@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from 'assert'
 import { parseSync } from "../../npm/parser-wasm/node/oxc_parser_wasm.js";
 
 const code = "let foo";

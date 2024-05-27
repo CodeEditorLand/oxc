@@ -1,38 +1,37 @@
-import { camelToSnake, snakeToCamel } from "./utils.mjs";
+import {camelToSnake, snakeToCamel} from './utils.mjs';
 
 export default function generateAncestorsCode(types) {
-	const variantNamesForEnums = Object.create(null);
-	let ancestorTypeEnumVariants = "",
-		ancestorEnumVariants = "",
-		isFunctions = "",
-		ancestorTypes = "",
-		discriminant = 1;
-	for (const type of Object.values(types)) {
-		if (type.kind === "enum") continue;
+    const variantNamesForEnums = Object.create(null);
+    let ancestorTypeEnumVariants = '',
+        ancestorEnumVariants = '',
+        isFunctions = '',
+        ancestorTypes = '',
+        discriminant = 1;
+    for (const type of Object.values(types)) {
+        if (type.kind === 'enum') continue;
 
-		const typeSnakeName = camelToSnake(type.name),
-			typeScreamingName = typeSnakeName.toUpperCase();
-		let offsetCode = "";
-		for (const field of type.fields) {
-			const offsetVarName = `OFFSET_${typeScreamingName}_${field.name.toUpperCase()}`;
-			field.offsetVarName = offsetVarName;
-			offsetCode +=
-				`pub(crate) const ${offsetVarName}: usize = ` +
-				`offset_of!(${type.name}, ${field.rawName});\n`;
-		}
+        const typeSnakeName = camelToSnake(type.name),
+            typeScreamingName = typeSnakeName.toUpperCase();
+        let offsetCode = '';
+        for (const field of type.fields) {
+            const offsetVarName = `OFFSET_${typeScreamingName}_${field.name.toUpperCase()}`;
+            field.offsetVarName = offsetVarName;
+            offsetCode += `pub(crate) const ${offsetVarName}: usize = `
+                + `offset_of!(${type.name}, ${field.rawName});\n`;
+        }
 
-		const variantNames = [];
-		let thisAncestorTypes = "";
-		for (const field of type.fields) {
-			const fieldTypeName = field.innerTypeName,
-				fieldType = types[fieldTypeName];
-			if (!fieldType) continue;
+        const variantNames = [];
+        let thisAncestorTypes = '';
+        for (const field of type.fields) {
+            const fieldTypeName = field.innerTypeName,
+                fieldType = types[fieldTypeName];
+            if (!fieldType) continue;
 
-			let methodsCode = "";
-			for (const otherField of type.fields) {
-				if (otherField === field) continue;
+            let methodsCode = '';
+            for (const otherField of type.fields) {
+                if (otherField === field) continue;
 
-				methodsCode += `
+                methodsCode += `
                     #[inline]
                     pub fn ${otherField.rawName}(&self) -> &${otherField.rawTypeName} {
                         unsafe {
@@ -43,13 +42,13 @@ export default function generateAncestorsCode(types) {
                         }
                     }
                 `;
-			}
+            }
 
-			const fieldNameCamel = snakeToCamel(field.name),
-				lifetime = type.rawName.slice(type.name.length),
-				structName = `${type.name}Without${fieldNameCamel}${lifetime}`;
+            const fieldNameCamel = snakeToCamel(field.name),
+                lifetime = type.rawName.slice(type.name.length),
+                structName = `${type.name}Without${fieldNameCamel}${lifetime}`;
 
-			thisAncestorTypes += `
+            thisAncestorTypes += `
                 #[repr(transparent)]
                 #[derive(Debug)]
                 pub struct ${structName}(
@@ -61,52 +60,44 @@ export default function generateAncestorsCode(types) {
                 }
             `;
 
-			const variantName = `${type.name}${fieldNameCamel}`;
-			variantNames.push(variantName);
+            const variantName = `${type.name}${fieldNameCamel}`;
+            variantNames.push(variantName);
 
-			ancestorTypeEnumVariants += `${variantName} = ${discriminant},\n`;
-			ancestorEnumVariants += `${variantName}(${structName}) = AncestorType::${variantName} as u16,\n`;
-			discriminant++;
+            ancestorTypeEnumVariants += `${variantName} = ${discriminant},\n`;
+            ancestorEnumVariants += `${variantName}(${structName}) = AncestorType::${variantName} as u16,\n`;
+            discriminant++;
 
-			if (fieldType.kind === "enum") {
-				(
-					variantNamesForEnums[fieldTypeName] ||
-					(variantNamesForEnums[fieldTypeName] = [])
-				).push(variantName);
-			}
-		}
+            if (fieldType.kind === 'enum') {
+                (variantNamesForEnums[fieldTypeName] || (variantNamesForEnums[fieldTypeName] = []))
+                    .push(variantName);
+            }
+        }
 
-		if (variantNames.length > 0) {
-			ancestorTypes += `
+        if (variantNames.length > 0) {
+            ancestorTypes += `
                 ${offsetCode}
                 ${thisAncestorTypes}
             `;
 
-			isFunctions += `
+            isFunctions += `
                 #[inline]
                 pub fn is_${typeSnakeName}(&self) -> bool {
-                    matches!(self, ${variantNames
-						.map((name) => `Self::${name}(_)`)
-						.join(" | ")})
+                    matches!(self, ${variantNames.map(name => `Self::${name}(_)`).join(' | ')})
                 }
             `;
-		}
-	}
+        }
+    }
 
-	for (const [typeName, variantNames] of Object.entries(
-		variantNamesForEnums,
-	)) {
-		isFunctions += `
+    for (const [typeName, variantNames] of Object.entries(variantNamesForEnums)) {
+        isFunctions += `
             #[inline]
             pub fn is_via_${camelToSnake(typeName)}(&self) -> bool {
-                matches!(self, ${variantNames
-					.map((name) => `Self::${name}(_)`)
-					.join(" | ")})
+                matches!(self, ${variantNames.map(name => `Self::${name}(_)`).join(' | ')})
             }
         `;
-	}
+    }
 
-	return `
+    return `
         #![allow(
             unsafe_code,
             clippy::missing_safety_doc,

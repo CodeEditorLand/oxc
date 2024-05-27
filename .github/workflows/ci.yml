@@ -1,0 +1,230 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.yml'
+      - '!.github/workflows/ci.yml'
+      - '!.github/actions/clone-submodules/action.yml'
+  push:
+    branches:
+      - main
+      - "renovate/**"
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.yml'
+      - '!.github/workflows/ci.yml'
+      - '!.github/actions/clone-submodules/action.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  test:
+    name: Test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+          - os: ubuntu-latest
+          - os: macos-14
+    runs-on: ${{ matrix.os }}
+    env:
+      # https://github.com/mozilla/sccache/blob/main/docs/S3.md
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SCCACHE_BUCKET: ${{ secrets.SCCACHE_BUCKET }}
+      SCCACHE_ENDPOINT: ${{ secrets.SCCACHE_ENDPOINT }}
+      SCCACHE_REGION: auto
+      RUSTC_WRAPPER: ${{ vars.USE_SCCACHE == 'true' && 'sccache' || '' }}
+      CARGO_INCREMENTAL: 0
+      SCCACHE_LOCAL_RW_MODE:
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          # warm cache factory for all other CI jobs
+          # cache `target` directory to avoid download crates
+          save-cache: ${{ github.ref_name == 'main' }}
+          cache-key: warm
+      # cache build outputs to speed up compilation
+      - uses: mozilla-actions/sccache-action@v0.0.4
+        if: ${{ vars.USE_SCCACHE == 'true' }}
+      - run: cargo test --no-run
+      - run: cargo test
+      - run: cargo ck
+
+  wasm:
+    name: Check Wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          cache-key: wasm
+          save-cache: ${{ github.ref_name == 'main' }}
+      - name: Check
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo check -p oxc_wasm --target wasm32-unknown-unknown
+      - name: Build
+        run: |
+          npx -y wasm-pack build --target web --dev ./crates/oxc_wasm
+          npx -y wasm-pack build --target web --dev ./wasm/parser
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check output types
+        run: npx -y -p typescript tsc --lib es2020,dom crates/oxc_wasm/pkg/oxc_wasm.d.ts
+
+  typos:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: crate-ci/typos@master
+        with:
+          files: .
+
+  deny:
+    name: Cargo Deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'Cargo.lock'
+
+      - uses: Boshen/setup-rust@main
+        if: steps.filter.outputs.src == 'true'
+        with:
+          restore-cache: false
+          tools: cargo-deny
+
+      - if: steps.filter.outputs.src == 'true'
+        run: cargo deny check
+
+  unused-deps:
+    name: Check Unused Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+              - 'Cargo.lock'
+      - uses: Boshen/setup-rust@main
+        with:
+          restore-cache: false
+        if: steps.filter.outputs.src == 'true'
+      - uses: cargo-bins/cargo-binstall@main
+        if: steps.filter.outputs.src == 'true'
+      - run: cargo binstall --no-confirm cargo-shear
+        if: steps.filter.outputs.src == 'true'
+      - run: cargo shear
+        if: steps.filter.outputs.src == 'true'
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          components: rustfmt
+          restore-cache: false
+      - run: cargo fmt --all -- --check
+
+  lint:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          components: clippy
+      - run: cargo lint -- -D warnings
+
+  doc:
+    name: Doc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          components: rust-docs
+      - run: RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --document-private-items
+
+  conformance:
+    name: Conformance
+    runs-on: ubuntu-latest
+    env:
+      # https://github.com/mozilla/sccache/blob/main/docs/S3.md
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SCCACHE_BUCKET: ${{ secrets.SCCACHE_BUCKET }}
+      SCCACHE_ENDPOINT: ${{ secrets.SCCACHE_ENDPOINT }}
+      SCCACHE_REGION: auto
+      RUSTC_WRAPPER: sccache
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: taiki-e/checkout-action@v1
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - '!crates/oxc_linter/**'
+
+      - uses: Boshen/setup-rust@main
+        if: steps.filter.outputs.src == 'true'
+        with:
+          cache-key: conformance
+          save-cache: ${{ github.ref_name == 'main' }}
+          tools: just
+
+      - uses: mozilla-actions/sccache-action@v0.0.4
+
+      - name: Clone submodules
+        if: steps.filter.outputs.src == 'true'
+        uses: ./.github/actions/clone-submodules
+
+      - name: Set up Bun
+        if: steps.filter.outputs.src == 'true'
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install Node.js
+        if: steps.filter.outputs.src == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Check Conformance
+        if: steps.filter.outputs.src == 'true'
+        run: |
+          just coverage
+          git diff --exit-code
