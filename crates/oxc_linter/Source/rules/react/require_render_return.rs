@@ -45,7 +45,7 @@ declare_oxc_lint!(
     /// }
     /// ```
     RequireRenderReturn,
-    correctness
+    nursery
 );
 
 impl Rule for RequireRenderReturn {
@@ -94,7 +94,7 @@ fn contains_return_statement<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> b
     let cfg = ctx.semantic().cfg();
     let state = neighbors_filtered_by_edge_weight(
         &cfg.graph,
-        node.cfg_ix(),
+        node.cfg_id(),
         &|edge| match edge {
             // We only care about normal edges having a return statement.
             EdgeType::Normal => None,
@@ -109,15 +109,19 @@ fn contains_return_statement<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> b
                 }
             }
 
-            for entry in cfg.basic_block_by_index(*basic_block_id) {
-                if let BasicBlockElement::Assignment(to_reg, val) = entry {
-                    if matches!(to_reg, Register::Return)
-                        && matches!(val, AssignmentValue::NotImplicitUndefined)
-                    {
-                        return (FoundReturn::Yes, STOP_WALKING_ON_THIS_PATH);
+            for entry in cfg.basic_block(*basic_block_id) {
+                match entry {
+                    BasicBlockElement::Assignment(to_reg, val) => {
+                        if matches!(to_reg, Register::Return)
+                            && matches!(val, AssignmentValue::NotImplicitUndefined)
+                        {
+                            return (FoundReturn::Yes, STOP_WALKING_ON_THIS_PATH);
+                        }
                     }
-                } else {
-                    // We don't care about other types of instructions.
+                    BasicBlockElement::Unreachable | BasicBlockElement::Throw(_) => {
+                        return (FoundReturn::No, STOP_WALKING_ON_THIS_PATH);
+                    }
+                    BasicBlockElement::Break(_) => {}
                 }
             }
 
@@ -186,7 +190,31 @@ fn is_in_es6_component<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) 
 fn test() {
     use crate::tester::Tester;
 
+    // let too_many_if_else = (1..10)
+    //     .map(|i| {
+    //         "
+    //         if (a > i) {
+    //             foo1()
+    //         } else {
+    //             foo2()
+    //         }
+    //     "
+    //     })
+    //     .collect::<String>();
+
+    // let too_many_if_else_case = format!(
+    //     "
+    //     class Hello extends React.Component {{
+    //         render() {{
+    //             {too_many_if_else}
+    //             return 'div'
+    //         }}
+    //     }}
+    //     ",
+    // );
+
     let pass = vec![
+        // &too_many_if_else_case,
         r"
 			        class Hello extends React.Component {
 			          render() {

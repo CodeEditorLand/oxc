@@ -17,7 +17,7 @@ use crate::{
     checker::{EarlyErrorJavaScript, EarlyErrorTypeScript},
     class::ClassTableBuilder,
     control_flow::{
-        AssignmentValue, ControlFlowGraph, EdgeType, Register, StatementControlFlowType,
+        AssignmentValue, ControlFlowGraphBuilder, EdgeType, Register, StatementControlFlowType,
     },
     diagnostics::redeclaration,
     jsdoc::JSDocBuilder,
@@ -69,7 +69,7 @@ pub struct SemanticBuilder<'a> {
 
     check_syntax_error: bool,
 
-    pub cfg: ControlFlowGraph,
+    pub cfg: ControlFlowGraphBuilder,
 
     pub class_table_builder: ClassTableBuilder,
 }
@@ -105,7 +105,7 @@ impl<'a> SemanticBuilder<'a> {
             label_builder: LabelBuilder::default(),
             jsdoc: JSDocBuilder::new(source_text, &trivias),
             check_syntax_error: false,
-            cfg: ControlFlowGraph::new(),
+            cfg: ControlFlowGraphBuilder::default(),
             class_table_builder: ClassTableBuilder::new(),
         }
     }
@@ -164,7 +164,7 @@ impl<'a> SemanticBuilder<'a> {
             module_record: Arc::clone(&self.module_record),
             jsdoc: self.jsdoc.build(),
             unused_labels: self.label_builder.unused_node_ids,
-            cfg: self.cfg,
+            cfg: self.cfg.build(),
         };
         SemanticBuilderReturn { semantic, errors: self.errors.into_inner() }
     }
@@ -181,7 +181,7 @@ impl<'a> SemanticBuilder<'a> {
             module_record: Arc::new(ModuleRecord::default()),
             jsdoc: self.jsdoc.build(),
             unused_labels: self.label_builder.unused_node_ids,
-            cfg: self.cfg,
+            cfg: self.cfg.build(),
         }
     }
 
@@ -801,7 +801,6 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         let after_conditional_graph_ix = self.cfg.new_basic_block();
         /* cfg */
 
-        self.cfg.put_unreachable();
         self.cfg.add_edge(
             after_consequent_expr_graph_ix,
             after_conditional_graph_ix,
@@ -1078,12 +1077,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg - bb after if statement joins consequent and alternate */
         let after_if_graph_ix = self.cfg.new_basic_block();
 
-        if stmt.alternate.is_some() {
-            self.cfg.put_unreachable();
-        }
-        //  else {
         self.cfg.add_edge(after_consequent_stmt_graph_ix, after_if_graph_ix, EdgeType::Normal);
-        // }
 
         self.cfg.add_edge(
             before_if_stmt_graph_ix,
