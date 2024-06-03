@@ -1,6 +1,6 @@
 commit: 4bd1b2c2
 
-Passed: 471/930
+Passed: 478/926
 
 # All Passed:
 * babel-preset-react
@@ -445,21 +445,11 @@ Passed: 471/930
 * opts/optimizeConstEnums/input.ts
 * opts/rewriteImportExtensions/input.ts
 
-# babel-plugin-transform-typescript (128/154)
+# babel-plugin-transform-typescript (134/150)
 * enum/mix-references/input.ts
-* enum/scoped/input.ts
 * enum/ts5.0-const-foldable/input.ts
 * exports/declared-types/input.ts
 * imports/type-only-export-specifier-2/input.ts
-* namespace/empty-removed/input.ts
-* namespace/mutable-fail/input.ts
-* namespace/namespace-flag/input.ts
-* namespace/namespace-nested-module/input.ts
-* namespace/nested/input.ts
-* namespace/nested-destructuring/input.ts
-* namespace/nested-namespace/input.ts
-* namespace/nested-shorthand-export/input.ts
-* namespace/same-name/input.ts
 * optimize-const-enums/custom-values/input.ts
 * optimize-const-enums/custom-values-exported/input.ts
 * optimize-const-enums/declare/input.ts
@@ -473,8 +463,7 @@ Passed: 471/930
 * optimize-const-enums/merged-exported/input.ts
 * regression/15768/input.ts
 
-# babel-plugin-transform-react-jsx (140/142)
-* autoImport/complicated-scope-module/input.js
+# babel-plugin-transform-react-jsx (141/142)
 * react-automatic/does-not-add-source-self-automatic/input.mjs
 
 # babel-plugin-transform-react-jsx-development (9/10)
