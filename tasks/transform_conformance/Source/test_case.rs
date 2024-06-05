@@ -37,9 +37,12 @@ impl TestCaseKind {
             return Some(Self::Exec(ExecTestCase::new(cwd, path)));
         }
 
-        // named `input.[ext]``
-        if path.file_stem().is_some_and(|name| name == "input")
-            && path.extension().is_some_and(|ext| VALID_EXTENSIONS.contains(&ext.to_str().unwrap()))
+        // named `input.[ext]` or `input.d.ts`
+        if (path.file_stem().is_some_and(|name| name == "input")
+            && path
+                .extension()
+                .is_some_and(|ext| VALID_EXTENSIONS.contains(&ext.to_str().unwrap())))
+            || path.file_name().is_some_and(|name| name == "input.d.ts")
         {
             return Some(Self::Transform(ConformanceTestCase::new(cwd, path)));
         }
@@ -156,11 +159,15 @@ pub trait TestCase {
         let allocator = Allocator::default();
         let source_text = fs::read_to_string(path).unwrap();
 
-        let source_type = SourceType::from_path(path).unwrap().with_typescript(
-            // Some babel test cases have a js extension, but contain typescript code.
-            // Therefore, if the typescript plugin exists, enable the typescript.
-            self.options().get_plugin("transform-typescript").is_some(),
-        );
+        // Some babel test cases have a js extension, but contain typescript code.
+        // Therefore, if the typescript plugin exists, enable typescript.
+        let mut source_type = SourceType::from_path(path).unwrap();
+        if !source_type.is_typescript()
+            && (self.options().get_plugin("transform-typescript").is_some()
+                || self.options().get_plugin("syntax-typescript").is_some())
+        {
+            source_type = source_type.with_typescript(true);
+        }
 
         let ret = Parser::new(&allocator, &source_text, source_type).parse();
         let mut program = ret.program;
@@ -175,7 +182,7 @@ pub trait TestCase {
         .build(&mut program);
 
         result.map(|()| {
-            Codegen::<false>::new("", &source_text, CodegenOptions::default())
+            Codegen::<false>::new("", &source_text, CodegenOptions::default(), None)
                 .build(&program)
                 .source_text
         })
@@ -224,18 +231,20 @@ impl TestCase for ConformanceTestCase {
             .as_ref()
             .is_some_and(|path| path.extension().and_then(std::ffi::OsStr::to_str) == Some("js"));
 
-        let source_type = SourceType::from_path(&self.path)
+        let mut source_type = SourceType::from_path(&self.path)
             .unwrap()
             .with_script(if self.options.source_type.is_some() {
                 !self.options.is_module()
             } else {
                 input_is_js && output_is_js
             })
-            .with_typescript(
-                self.options.get_plugin("transform-typescript").is_some()
-                    || self.options.get_plugin("syntax-typescript").is_some(),
-            )
             .with_jsx(self.options.get_plugin("syntax-jsx").is_some());
+        if !source_type.is_typescript()
+            && (self.options.get_plugin("transform-typescript").is_some()
+                || self.options.get_plugin("syntax-typescript").is_some())
+        {
+            source_type = source_type.with_typescript(true);
+        }
 
         if filtered {
             println!("input_path: {:?}", &self.path);
@@ -261,10 +270,9 @@ impl TestCase for ConformanceTestCase {
                     );
                     let result = transformer.build(&mut program);
                     if result.is_ok() {
-                        transformed_code =
-                            Codegen::<false>::new("", &input, codegen_options.clone())
-                                .build(&program)
-                                .source_text;
+                        transformed_code = Codegen::<false>::new("", &input, codegen_options, None)
+                            .build(&program)
+                            .source_text;
                     } else {
                         let error = result
                             .err()
@@ -306,7 +314,7 @@ impl TestCase for ConformanceTestCase {
             |output| {
                 // Get expected code by parsing the source text, so we can get the same code generated result.
                 let program = Parser::new(&allocator, &output, source_type).parse().program;
-                Codegen::<false>::new("", &output, codegen_options.clone())
+                Codegen::<false>::new("", &output, codegen_options, None)
                     .build(&program)
                     .source_text
             },
@@ -374,7 +382,7 @@ impl ExecTestCase {
         let source_type = SourceType::from_path(&target_path).unwrap();
         let transformed_program =
             Parser::new(&allocator, &source_text, source_type).parse().program;
-        let result = Codegen::<false>::new("", &source_text, CodegenOptions::default())
+        let result = Codegen::<false>::new("", &source_text, CodegenOptions::default(), None)
             .build(&transformed_program)
             .source_text;
 

@@ -48,10 +48,12 @@ mod eslint {
     pub mod no_const_assign;
     pub mod no_constant_binary_expression;
     pub mod no_constant_condition;
+    pub mod no_constructor_return;
     pub mod no_continue;
     pub mod no_control_regex;
     pub mod no_debugger;
     pub mod no_delete_var;
+    pub mod no_div_regex;
     pub mod no_dupe_class_members;
     pub mod no_dupe_else_if;
     pub mod no_dupe_keys;
@@ -160,6 +162,7 @@ mod jest {
     pub mod no_identical_title;
     pub mod no_interpolation_in_snapshots;
     pub mod no_jasmine_globals;
+    pub mod no_large_snapshots;
     pub mod no_mocks_import;
     pub mod no_restricted_jest_methods;
     pub mod no_restricted_matchers;
@@ -171,6 +174,7 @@ mod jest {
     pub mod prefer_comparison_matcher;
     pub mod prefer_equality_matcher;
     pub mod prefer_expect_resolves;
+    pub mod prefer_hooks_on_top;
     pub mod prefer_lowercase_title;
     pub mod prefer_mock_promise_shorthand;
     pub mod prefer_spy_on;
@@ -181,6 +185,7 @@ mod jest {
     pub mod prefer_todo;
     pub mod require_hook;
     pub mod require_to_throw_message;
+    pub mod require_top_level_describe;
     pub mod valid_describe_callback;
     pub mod valid_expect;
     pub mod valid_title;
@@ -345,7 +350,10 @@ mod oxc {
     pub mod misrefactored_assign_op;
     pub mod missing_throw;
     pub mod no_accumulating_spread;
+    pub mod no_async_await;
     pub mod no_barrel_file;
+    pub mod no_const_enum;
+    pub mod no_rest_spread_properties;
     pub mod number_arg_out_of_range;
     pub mod only_used_in_recursion;
     pub mod uninvoked_array_callback;
@@ -428,6 +436,7 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_control_regex,
     eslint::no_debugger,
     eslint::no_delete_var,
+    eslint::no_div_regex,
     eslint::no_dupe_class_members,
     eslint::no_dupe_else_if,
     eslint::no_dupe_keys,
@@ -486,6 +495,7 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_new_native_nonconstructor,
     eslint::no_restricted_globals,
     eslint::prefer_exponentiation_operator,
+    eslint::no_constructor_return,
     typescript::adjacent_overload_signatures,
     typescript::array_type,
     typescript::ban_ts_comment,
@@ -527,6 +537,7 @@ oxc_macros::declare_all_lint_rules! {
     jest::no_identical_title,
     jest::no_interpolation_in_snapshots,
     jest::no_jasmine_globals,
+    jest::no_large_snapshots,
     jest::no_mocks_import,
     jest::no_restricted_jest_methods,
     jest::no_restricted_matchers,
@@ -538,6 +549,7 @@ oxc_macros::declare_all_lint_rules! {
     jest::prefer_comparison_matcher,
     jest::prefer_equality_matcher,
     jest::prefer_expect_resolves,
+    jest::prefer_hooks_on_top,
     jest::prefer_lowercase_title,
     jest::prefer_mock_promise_shorthand,
     jest::prefer_spy_on,
@@ -548,6 +560,7 @@ oxc_macros::declare_all_lint_rules! {
     jest::prefer_todo,
     jest::require_hook,
     jest::require_to_throw_message,
+    jest::require_top_level_describe,
     jest::valid_describe_callback,
     jest::valid_expect,
     jest::valid_title,
@@ -707,12 +720,15 @@ oxc_macros::declare_all_lint_rules! {
     oxc::const_comparisons,
     oxc::double_comparisons,
     oxc::erasing_op,
+    oxc::no_rest_spread_properties,
     oxc::misrefactored_assign_op,
     oxc::missing_throw,
     oxc::no_accumulating_spread,
     oxc::no_barrel_file,
+    oxc::no_const_enum,
     oxc::number_arg_out_of_range,
     oxc::only_used_in_recursion,
+    oxc::no_async_await,
     oxc::uninvoked_array_callback,
     nextjs::google_font_display,
     nextjs::google_font_preconnect,
