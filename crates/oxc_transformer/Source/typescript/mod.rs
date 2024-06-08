@@ -1,4 +1,5 @@
 mod annotations;
+mod collector;
 mod diagnostics;
 mod r#enum;
 mod module;
@@ -13,7 +14,10 @@ use oxc_traverse::TraverseCtx;
 
 use crate::context::Ctx;
 
-use self::{annotations::TypeScriptAnnotations, r#enum::TypeScriptEnum};
+use self::{
+    annotations::TypeScriptAnnotations, collector::TypeScriptReferenceCollector,
+    r#enum::TypeScriptEnum,
+};
 
 pub use self::options::TypeScriptOptions;
 
@@ -45,17 +49,19 @@ pub struct TypeScript<'a> {
 
     annotations: TypeScriptAnnotations<'a>,
     r#enum: TypeScriptEnum<'a>,
+    reference_collector: TypeScriptReferenceCollector<'a>,
 }
 
 impl<'a> TypeScript<'a> {
-    pub fn new(options: TypeScriptOptions, ctx: Ctx<'a>) -> Self {
-        let options = Rc::new(options.update_with_comments(&ctx));
+    pub fn new(options: TypeScriptOptions, ctx: &Ctx<'a>) -> Self {
+        let options = Rc::new(options.update_with_comments(ctx));
 
         Self {
-            annotations: TypeScriptAnnotations::new(Rc::clone(&options), Rc::clone(&ctx)),
-            r#enum: TypeScriptEnum::new(Rc::clone(&ctx)),
+            annotations: TypeScriptAnnotations::new(&options, ctx),
+            r#enum: TypeScriptEnum::new(ctx),
+            reference_collector: TypeScriptReferenceCollector::new(),
             options,
-            ctx,
+            ctx: Rc::clone(ctx),
         }
     }
 }
@@ -73,12 +79,8 @@ impl<'a> TypeScript<'a> {
         }
     }
 
-    pub fn transform_program_on_exit(
-        &mut self,
-        program: &mut Program<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) {
-        self.annotations.transform_program_on_exit(program, ctx);
+    pub fn transform_program_on_exit(&self, program: &mut Program<'a>) {
+        self.annotations.transform_program_on_exit(program, &self.reference_collector);
     }
 
     pub fn transform_arrow_expression(&mut self, expr: &mut ArrowFunctionExpression<'a>) {
@@ -102,19 +104,11 @@ impl<'a> TypeScript<'a> {
     }
 
     pub fn transform_export_named_declaration(&mut self, decl: &mut ExportNamedDeclaration<'a>) {
-        self.annotations.transform_export_named_declaration(decl);
+        self.reference_collector.visit_transform_export_named_declaration(decl);
     }
 
     pub fn transform_expression(&mut self, expr: &mut Expression<'a>) {
         self.annotations.transform_expression(expr);
-    }
-
-    pub fn transform_simple_assignment_target(&mut self, target: &mut SimpleAssignmentTarget<'a>) {
-        self.annotations.transform_simple_assignment_target(target);
-    }
-
-    pub fn transform_assignment_target(&mut self, target: &mut AssignmentTarget<'a>) {
-        self.annotations.transform_assignment_target(target);
     }
 
     pub fn transform_formal_parameter(&mut self, param: &mut FormalParameter<'a>) {
@@ -202,12 +196,22 @@ impl<'a> TypeScript<'a> {
         self.annotations.transform_tagged_template_expression(expr);
     }
 
-    pub fn transform_declaration(&mut self, decl: &mut Declaration<'a>, ctx: &mut TraverseCtx<'a>) {
+    pub fn transform_identifier_reference(
+        &mut self,
+        ident: &mut IdentifierReference<'a>,
+        ctx: &TraverseCtx<'a>,
+    ) {
+        if !ctx.parent().is_ts_interface_heritage() && !ctx.parent().is_ts_type_reference() {
+            self.reference_collector.visit_identifier_reference(ident);
+        }
+    }
+
+    pub fn transform_declaration(&mut self, decl: &mut Declaration<'a>) {
         match decl {
             Declaration::TSImportEqualsDeclaration(ts_import_equals)
                 if ts_import_equals.import_kind.is_value() =>
             {
-                *decl = self.transform_ts_import_equals(ts_import_equals, ctx);
+                *decl = self.transform_ts_import_equals(ts_import_equals);
             }
             _ => {}
         }

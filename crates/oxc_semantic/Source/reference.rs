@@ -30,16 +30,6 @@ impl Reference {
         Self { span, name, node_id, symbol_id: None, flag }
     }
 
-    pub fn new_with_symbol_id(
-        span: Span,
-        name: CompactStr,
-        node_id: AstNodeId,
-        symbol_id: SymbolId,
-        flag: ReferenceFlag,
-    ) -> Self {
-        Self { span, name, node_id, symbol_id: Some(symbol_id), flag }
-    }
-
     pub fn span(&self) -> Span {
         self.span
     }
@@ -58,10 +48,6 @@ impl Reference {
 
     pub(crate) fn set_symbol_id(&mut self, symbol_id: SymbolId) {
         self.symbol_id = Some(symbol_id);
-    }
-
-    pub fn flag_mut(&mut self) -> &mut ReferenceFlag {
-        &mut self.flag
     }
 
     /// Returns `true` if the identifier value was read. This is not mutually

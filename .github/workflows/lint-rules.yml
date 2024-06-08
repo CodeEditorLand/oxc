@@ -1,11 +1,11 @@
 name: Update implementation status of all linter plugins
 
-on:
+on: 
   push:
     branches:
       - main
     paths:
-      - 'crates/oxc_linter/src/rules.rs'
+      - 'crates/oxc_linter/**'
       - 'tasks/lint_rules/**'
 
 jobs:

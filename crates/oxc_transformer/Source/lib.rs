@@ -37,7 +37,7 @@ pub use crate::{
     es2015::{ArrowFunctionsOptions, ES2015Options},
     options::BabelOptions,
     options::TransformOptions,
-    react::{ReactJsxRuntime, ReactOptions},
+    react::ReactOptions,
     typescript::TypeScriptOptions,
 };
 
@@ -74,9 +74,9 @@ impl<'a> Transformer<'a> {
         ));
         Self {
             ctx: Rc::clone(&ctx),
-            x0_typescript: TypeScript::new(options.typescript, Rc::clone(&ctx)),
-            x1_react: React::new(options.react, Rc::clone(&ctx)),
-            x3_es2015: ES2015::new(options.es2015, ctx),
+            x0_typescript: TypeScript::new(options.typescript, &ctx),
+            x1_react: React::new(options.react, &ctx),
+            x3_es2015: ES2015::new(options.es2015, &ctx),
         }
     }
 
@@ -102,9 +102,9 @@ impl<'a> Traverse<'a> for Transformer<'a> {
         self.x0_typescript.transform_program(program, ctx);
     }
 
-    fn exit_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
+    fn exit_program(&mut self, program: &mut Program<'a>, _ctx: &mut TraverseCtx<'a>) {
         self.x1_react.transform_program_on_exit(program);
-        self.x0_typescript.transform_program_on_exit(program, ctx);
+        self.x0_typescript.transform_program_on_exit(program);
     }
 
     // ALPHASORT
@@ -155,22 +155,6 @@ impl<'a> Traverse<'a> for Transformer<'a> {
 
     fn exit_expression(&mut self, expr: &mut Expression<'a>, _ctx: &mut TraverseCtx<'a>) {
         self.x3_es2015.transform_expression_on_exit(expr);
-    }
-
-    fn enter_simple_assignment_target(
-        &mut self,
-        node: &mut SimpleAssignmentTarget<'a>,
-        _ctx: &mut TraverseCtx<'a>,
-    ) {
-        self.x0_typescript.transform_simple_assignment_target(node);
-    }
-
-    fn enter_assignment_target(
-        &mut self,
-        node: &mut AssignmentTarget<'a>,
-        _ctx: &mut TraverseCtx<'a>,
-    ) {
-        self.x0_typescript.transform_assignment_target(node);
     }
 
     fn enter_formal_parameter(
@@ -248,12 +232,20 @@ impl<'a> Traverse<'a> for Transformer<'a> {
         self.x0_typescript.transform_tagged_template_expression(expr);
     }
 
+    fn enter_identifier_reference(
+        &mut self,
+        ident: &mut IdentifierReference<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+        self.x0_typescript.transform_identifier_reference(ident, ctx);
+    }
+
     fn enter_statement(&mut self, stmt: &mut Statement<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x0_typescript.transform_statement(stmt, ctx);
     }
 
-    fn enter_declaration(&mut self, decl: &mut Declaration<'a>, ctx: &mut TraverseCtx<'a>) {
-        self.x0_typescript.transform_declaration(decl, ctx);
+    fn enter_declaration(&mut self, decl: &mut Declaration<'a>, _ctx: &mut TraverseCtx<'a>) {
+        self.x0_typescript.transform_declaration(decl);
         self.x3_es2015.transform_declaration(decl);
     }
 

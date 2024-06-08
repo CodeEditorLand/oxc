@@ -139,8 +139,11 @@ impl<'a> TypeScript<'a> {
 
         // Reuse `TSModuleDeclaration`'s scope in transformed function
         let scope_id = decl.scope_id.get().unwrap();
-        let symbol_id = ctx.generate_uid(&real_name, scope_id, SymbolFlags::FunctionScopedVariable);
-        let name = self.ctx.ast.new_atom(ctx.symbols().get_name(symbol_id));
+        let name = self.ctx.ast.new_atom(&ctx.generate_uid(
+            &real_name,
+            scope_id,
+            SymbolFlags::FunctionScopedVariable,
+        ));
 
         let namespace_top_level = match body {
             TSModuleDeclarationBody::TSModuleBlock(block) => block.unbox().body,
@@ -280,34 +283,15 @@ impl<'a> TypeScript<'a> {
         &self,
         arg_name: Atom<'a>,
         real_name: Atom<'a>,
-        mut stmts: Vec<'a, Statement<'a>>,
+        stmts: Vec<'a, Statement<'a>>,
         parent_export: Option<Expression<'a>>,
         scope_id: ScopeId,
         ctx: &mut TraverseCtx,
     ) -> Statement<'a> {
-        let mut directives = self.ctx.ast.new_vec();
-
-        // Check if the namespace has a `use strict` directive
-        if stmts.first().is_some_and(|stmt| {
-            matches!(stmt, Statement::ExpressionStatement(es) if
-                matches!(&es.expression, Expression::StringLiteral(literal) if
-                literal.value == "use strict")
-            )
-        }) {
-            stmts.remove(0);
-            let directive = self.ctx.ast.new_atom("use strict");
-            let directive = Directive {
-                span: SPAN,
-                expression: StringLiteral::new(SPAN, directive.clone()),
-                directive,
-            };
-            directives.push(directive);
-        }
-
         // `(function (_N) { var x; })(N || (N = {}))`;
         //  ^^^^^^^^^^^^^^^^^^^^^^^^^^
         let callee = {
-            let body = self.ctx.ast.function_body(SPAN, directives, stmts);
+            let body = self.ctx.ast.function_body(SPAN, self.ctx.ast.new_vec(), stmts);
             let params = {
                 let ident =
                     self.ctx.ast.binding_pattern_identifier(BindingIdentifier::new(SPAN, arg_name));
