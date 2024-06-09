@@ -390,12 +390,14 @@ mod jsdoc {
     pub mod empty_tags;
     pub mod implements_on_classes;
     pub mod no_defaults;
+    pub mod require_param;
     pub mod require_property;
     pub mod require_property_description;
     pub mod require_property_name;
     pub mod require_property_type;
     pub mod require_returns;
     pub mod require_returns_description;
+    pub mod require_returns_type;
     pub mod require_yields;
 }
 
@@ -756,12 +758,14 @@ oxc_macros::declare_all_lint_rules! {
     jsdoc::empty_tags,
     jsdoc::implements_on_classes,
     jsdoc::no_defaults,
+    jsdoc::require_param,
     jsdoc::require_property,
     jsdoc::require_property_type,
     jsdoc::require_property_name,
     jsdoc::require_property_description,
     jsdoc::require_returns,
     jsdoc::require_returns_description,
+    jsdoc::require_returns_type,
     jsdoc::require_yields,
     tree_shaking::no_side_effects_in_initialization,
 }

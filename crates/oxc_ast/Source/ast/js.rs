@@ -353,7 +353,7 @@ impl<'a> Expression<'a> {
         matches!(self, Expression::Identifier(_))
     }
 
-    pub fn get_identifier_reference(&self) -> Option<&IdentifierReference> {
+    pub fn get_identifier_reference(&self) -> Option<&IdentifierReference<'a>> {
         match self.get_inner_expression() {
             Expression::Identifier(ident) => Some(ident),
             _ => None,
@@ -1135,6 +1135,9 @@ pub enum AssignmentTarget<'a> {
 impl<'a> AssignmentTarget<'a> {
     pub fn get_identifier(&self) -> Option<&str> {
         self.as_simple_assignment_target().and_then(|it| it.get_identifier())
+    }
+    pub fn get_expression(&self) -> Option<&Expression<'a>> {
+        self.as_simple_assignment_target().and_then(|it| it.get_expression())
     }
 }
 
