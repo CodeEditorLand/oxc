@@ -5,8 +5,8 @@ use oxc_codegen::{Codegen, CodegenOptions};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 use oxc_transformer::{
-    ArrowFunctionsOptions, ES2015Options, ReactOptions, TransformOptions, Transformer,
-    TypeScriptOptions,
+    ArrowFunctionsOptions, ES2015Options, ReactJsxRuntime, ReactOptions, TransformOptions,
+    Transformer, TypeScriptOptions,
 };
 
 use crate::{
@@ -17,11 +17,8 @@ use crate::{
     typescript::TypeScriptCase,
 };
 
-/// Runs the transformer and make sure it doesn't crash.
-fn get_result(source_text: &str, source_type: SourceType, source_path: &Path) -> TestResult {
-    let allocator = Allocator::default();
-    let filename = source_path.file_name().unwrap().to_string_lossy();
-    let options = TransformOptions {
+fn get_default_transformer_options() -> TransformOptions {
+    TransformOptions {
         typescript: TypeScriptOptions::default(),
         es2015: ES2015Options { arrow_function: Some(ArrowFunctionsOptions::default()) },
         react: ReactOptions {
@@ -31,10 +28,22 @@ fn get_result(source_text: &str, source_type: SourceType, source_path: &Path) ->
             ..Default::default()
         },
         ..Default::default()
-    };
+    }
+}
+
+/// Runs the transformer and make sure it doesn't crash.
+fn get_result(
+    source_text: &str,
+    source_type: SourceType,
+    source_path: &Path,
+    options: Option<TransformOptions>,
+) -> TestResult {
+    let allocator = Allocator::default();
+    let filename = source_path.file_name().unwrap().to_string_lossy();
+    let options = options.unwrap_or_else(get_default_transformer_options);
     let parse_result1 = Parser::new(&allocator, source_text, source_type).parse();
     let mut program = parse_result1.program;
-    let _ = Transformer::new(
+    let transform_result1 = Transformer::new(
         &allocator,
         source_path,
         source_type,
@@ -44,15 +53,28 @@ fn get_result(source_text: &str, source_type: SourceType, source_path: &Path) ->
     )
     .build(&mut program);
 
+    let ts_source_text1 = Codegen::<false>::new(
+        &filename,
+        source_text,
+        CodegenOptions::default().with_typescript(true),
+        None,
+    )
+    .build(&program)
+    .source_text;
+
     let source_text1 =
         Codegen::<false>::new(&filename, source_text, CodegenOptions::default(), None)
             .build(&program)
             .source_text;
 
-    let parse_result2 = Parser::new(&allocator, &source_text1, source_type).parse();
+    if transform_result1.is_ok() && ts_source_text1 != source_text1 {
+        return TestResult::Mismatch(ts_source_text1.clone(), source_text1.clone());
+    }
+
+    let parse_result2 = Parser::new(&allocator, &ts_source_text1, source_type).parse();
     let mut program = parse_result2.program;
 
-    let _ = Transformer::new(
+    let transform_result2 = Transformer::new(
         &allocator,
         source_path,
         source_type,
@@ -67,10 +89,17 @@ fn get_result(source_text: &str, source_type: SourceType, source_path: &Path) ->
             .build(&program)
             .source_text;
 
-    let result = source_text1 == source_text2;
-
-    if result {
+    if source_text1 == source_text2 {
         TestResult::Passed
+    } else if transform_result1.is_err_and(|err| {
+        // If error messages are the same, we consider it as a pass.
+        transform_result2
+            .map_err(|err| err.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n"))
+            .is_err_and(|err_message| {
+                err.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n") == err_message
+            })
+    }) {
+        return TestResult::Passed;
     } else {
         TestResult::Mismatch(source_text1.clone(), source_text2)
     }
@@ -105,7 +134,7 @@ impl Case for TransformerTest262Case {
         let source_text = self.base.code();
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
         let source_type = SourceType::default().with_module(is_module);
-        let result = get_result(source_text, source_type, self.path());
+        let result = get_result(source_text, source_type, self.path(), None);
         self.base.set_result(result);
     }
 }
@@ -138,7 +167,7 @@ impl Case for TransformerBabelCase {
     fn run(&mut self) {
         let source_text = self.base.code();
         let source_type = self.base.source_type();
-        let result = get_result(source_text, source_type, self.path());
+        let result = get_result(source_text, source_type, self.path(), None);
         self.base.set_result(result);
     }
 }
@@ -169,7 +198,14 @@ impl Case for TransformerTypeScriptCase {
     }
 
     fn run(&mut self) {
-        let result = get_result(self.base.code(), self.base.source_type(), self.path());
+        let mut options = get_default_transformer_options();
+        let mut source_type = self.base.source_type();
+        // handle @jsx: react, `react` of behavior is match babel following options
+        if self.base.meta().options.jsx.last().is_some_and(|jsx| jsx == "react") {
+            source_type = source_type.with_module(true);
+            options.react.runtime = ReactJsxRuntime::Classic;
+        }
+        let result = get_result(self.base.code(), source_type, self.path(), Some(options));
         self.base.set_result(result);
     }
 }
@@ -200,7 +236,7 @@ impl Case for TransformerMiscCase {
     }
 
     fn run(&mut self) {
-        let result = get_result(self.base.code(), self.base.source_type(), self.path());
+        let result = get_result(self.base.code(), self.base.source_type(), self.path(), None);
         self.base.set_result(result);
     }
 }

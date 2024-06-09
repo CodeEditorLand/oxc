@@ -37,7 +37,7 @@ pub use crate::{
     es2015::{ArrowFunctionsOptions, ES2015Options},
     options::BabelOptions,
     options::TransformOptions,
-    react::ReactOptions,
+    react::{ReactJsxRuntime, ReactOptions},
     typescript::TypeScriptOptions,
 };
 
@@ -74,9 +74,9 @@ impl<'a> Transformer<'a> {
         ));
         Self {
             ctx: Rc::clone(&ctx),
-            x0_typescript: TypeScript::new(options.typescript, &ctx),
-            x1_react: React::new(options.react, &ctx),
-            x3_es2015: ES2015::new(options.es2015, &ctx),
+            x0_typescript: TypeScript::new(options.typescript, Rc::clone(&ctx)),
+            x1_react: React::new(options.react, Rc::clone(&ctx)),
+            x3_es2015: ES2015::new(options.es2015, ctx),
         }
     }
 
@@ -155,6 +155,22 @@ impl<'a> Traverse<'a> for Transformer<'a> {
 
     fn exit_expression(&mut self, expr: &mut Expression<'a>, _ctx: &mut TraverseCtx<'a>) {
         self.x3_es2015.transform_expression_on_exit(expr);
+    }
+
+    fn enter_simple_assignment_target(
+        &mut self,
+        node: &mut SimpleAssignmentTarget<'a>,
+        _ctx: &mut TraverseCtx<'a>,
+    ) {
+        self.x0_typescript.transform_simple_assignment_target(node);
+    }
+
+    fn enter_assignment_target(
+        &mut self,
+        node: &mut AssignmentTarget<'a>,
+        _ctx: &mut TraverseCtx<'a>,
+    ) {
+        self.x0_typescript.transform_assignment_target(node);
     }
 
     fn enter_formal_parameter(

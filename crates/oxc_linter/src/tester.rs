@@ -65,12 +65,33 @@ impl From<(&str, Option<Value>, Option<Value>, Option<PathBuf>)> for TestCase {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct ExpectFix {
+    /// Source code being tested
+    source: String,
+    /// Expected source code after fix has been applied
+    expected: String,
+    rule_config: Option<Value>,
+}
+
+impl<S: Into<String>> From<(S, S, Option<Value>)> for ExpectFix {
+    fn from(value: (S, S, Option<Value>)) -> Self {
+        Self { source: value.0.into(), expected: value.1.into(), rule_config: value.2 }
+    }
+}
+
+impl<S: Into<String>> From<(S, S)> for ExpectFix {
+    fn from(value: (S, S)) -> Self {
+        Self { source: value.0.into(), expected: value.1.into(), rule_config: None }
+    }
+}
+
 pub struct Tester {
     rule_name: &'static str,
     rule_path: PathBuf,
     expect_pass: Vec<TestCase>,
     expect_fail: Vec<TestCase>,
-    expect_fix: Vec<(String, String, Option<Value>)>,
+    expect_fix: Vec<ExpectFix>,
     snapshot: String,
     current_working_directory: Box<Path>,
     import_plugin: bool,
@@ -138,9 +159,30 @@ impl Tester {
         self
     }
 
-    pub fn expect_fix<S: Into<String>>(mut self, expect_fix: Vec<(S, S, Option<Value>)>) -> Self {
-        self.expect_fix =
-            expect_fix.into_iter().map(|(s1, s2, r)| (s1.into(), s2.into(), r)).collect::<Vec<_>>();
+    /// Add cases that should fix problems found in the source code.
+    ///
+    /// These cases will fail if no fixes are produced or if the fixed source
+    /// code does not match the expected result.
+    ///
+    /// ```
+    /// use oxc_linter::tester::Tester;
+    ///
+    /// let pass = vec![
+    ///     ("let x = 1", None)
+    /// ];
+    /// let fail = vec![];
+    /// // You can omit the rule_config if you never use it,
+    /// //otherwise its an Option<Value>
+    /// let fix = vec![
+    ///     // source, expected, rule_config?
+    ///     ("let x = 1", "let x = 1", None)
+    /// ];
+    ///
+    /// // the first argument is normally `MyRuleStruct::NAME`.
+    /// Tester::new("no-undef", pass, fail).expect_fix(fix).test();
+    /// ```
+    pub fn expect_fix<F: Into<ExpectFix>>(mut self, expect_fix: Vec<F>) -> Self {
+        self.expect_fix = expect_fix.into_iter().map(std::convert::Into::into).collect::<Vec<_>>();
         self
     }
 
@@ -179,12 +221,16 @@ impl Tester {
     }
 
     fn test_fix(&mut self) {
-        for (test, expected, config) in self.expect_fix.clone() {
-            let result = self.run(&test, config, &None, None, true);
-            if let TestResult::Fixed(fixed_str) = result {
-                assert_eq!(expected, fixed_str);
-            } else {
-                unreachable!()
+        for fix in self.expect_fix.clone() {
+            let ExpectFix { source, expected, rule_config: config } = fix;
+            let result = self.run(&source, config, &None, None, true);
+            match result {
+                TestResult::Fixed(fixed_str) => assert_eq!(
+                    expected, fixed_str,
+                    r#"Expected "{source}" to be fixed into "{expected}""#
+                ),
+                TestResult::Passed => panic!("Expected a fix, but test passed: {source}"),
+                TestResult::Failed => panic!("Expected a fix, but test failed: {source}"),
             }
         }
     }

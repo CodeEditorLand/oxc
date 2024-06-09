@@ -28,7 +28,7 @@ pub struct TypeScriptAnnotations<'a> {
 }
 
 impl<'a> TypeScriptAnnotations<'a> {
-    pub fn new(options: &Rc<TypeScriptOptions>, ctx: &Ctx<'a>) -> Self {
+    pub fn new(options: Rc<TypeScriptOptions>, ctx: Ctx<'a>) -> Self {
         let jsx_element_import_name = if options.jsx_pragma.contains('.') {
             options.jsx_pragma.split('.').next().map(String::from).unwrap()
         } else {
@@ -44,8 +44,8 @@ impl<'a> TypeScriptAnnotations<'a> {
         Self {
             has_super_call: false,
             assignments: ctx.ast.new_vec(),
-            options: Rc::clone(options),
-            ctx: Rc::clone(ctx),
+            options,
+            ctx,
             has_jsx_element: false,
             has_jsx_fragment: false,
             jsx_element_import_name,
@@ -90,8 +90,6 @@ impl<'a> TypeScriptAnnotations<'a> {
         let mut module_count = 0;
         let mut removed_count = 0;
 
-        // let mut type_identifier_names = self.type_identifier_names.clone();
-
         program.body.retain_mut(|stmt| {
             // fix namespace/export-type-only/input.ts
             // The namespace is type only. So if its name appear in the ExportNamedDeclaration, we should remove it.
@@ -121,6 +119,9 @@ impl<'a> TypeScriptAnnotations<'a> {
                 }
                 ModuleDeclaration::ExportAllDeclaration(decl) => {
                     return !decl.export_kind.is_type()
+                }
+                ModuleDeclaration::ExportDefaultDeclaration(decl) => {
+                    return !decl.is_typescript_syntax()
                 }
                 ModuleDeclaration::ImportDeclaration(decl) => {
                     let is_type = decl.import_kind.is_type();
@@ -177,7 +178,7 @@ impl<'a> TypeScriptAnnotations<'a> {
                                 .as_ref()
                                 .is_some_and(|specifiers| specifiers.is_empty()))
                 }
-                _ => false,
+                _ => module_decl.is_typescript_syntax(),
             };
 
             if need_delete {
@@ -228,7 +229,7 @@ impl<'a> TypeScriptAnnotations<'a> {
         body.body.retain(|elem| match elem {
             ClassElement::MethodDefinition(method) => {
                 matches!(method.r#type, MethodDefinitionType::MethodDefinition)
-                    || !method.value.is_typescript_syntax()
+                    && !method.value.is_typescript_syntax()
             }
             ClassElement::PropertyDefinition(prop) => {
                 if prop.value.as_ref().is_some_and(Expression::is_typescript_syntax)
@@ -239,13 +240,44 @@ impl<'a> TypeScriptAnnotations<'a> {
                     matches!(prop.r#type, PropertyDefinitionType::PropertyDefinition)
                 }
             }
+            ClassElement::AccessorProperty(prop) => {
+                matches!(prop.r#type, AccessorPropertyType::AccessorProperty)
+            }
             ClassElement::TSIndexSignature(_) => false,
-            _ => true,
+            ClassElement::StaticBlock(_) => true,
         });
     }
 
     pub fn transform_expression(&mut self, expr: &mut Expression<'a>) {
-        *expr = self.ctx.ast.copy(expr.get_inner_expression());
+        if expr.is_typescript_syntax() {
+            *expr = self.ctx.ast.copy(expr.get_inner_expression());
+        }
+    }
+
+    pub fn transform_simple_assignment_target(&mut self, target: &mut SimpleAssignmentTarget<'a>) {
+        if let Some(expr) = target.get_expression() {
+            if let Some(ident) = expr.get_inner_expression().get_identifier_reference() {
+                let ident = self.ctx.ast.alloc(self.ctx.ast.copy(ident));
+                *target = SimpleAssignmentTarget::AssignmentTargetIdentifier(ident);
+            }
+        }
+    }
+
+    pub fn transform_assignment_target(&mut self, target: &mut AssignmentTarget<'a>) {
+        if let Some(new_target) = target
+            .get_expression()
+            .map(Expression::get_inner_expression)
+            .and_then(|expr| match expr {
+                match_member_expression!(Expression) => {
+                    Some(self.ctx.ast.simple_assignment_target_member_expression(
+                        self.ctx.ast.copy(expr.as_member_expression().unwrap()),
+                    ))
+                }
+                _ => None,
+            })
+        {
+            *target = new_target;
+        }
     }
 
     pub fn transform_formal_parameter(&mut self, param: &mut FormalParameter<'a>) {
@@ -266,15 +298,17 @@ impl<'a> TypeScriptAnnotations<'a> {
         // Collects parameter properties so that we can add an assignment
         // for each of them in the constructor body.
         if def.kind == MethodDefinitionKind::Constructor {
-            for param in &def.value.params.items {
-                if !param.is_public() {
-                    continue;
+            for param in def.value.params.items.as_mut_slice() {
+                if param.is_public() {
+                    if let Some(id) = param.pattern.get_identifier() {
+                        let assignment = self.create_this_property_assignment(id);
+                        self.assignments.push(assignment);
+                    }
                 }
 
-                if let Some(id) = param.pattern.get_identifier() {
-                    let assignment = self.create_this_property_assignment(id);
-                    self.assignments.push(assignment);
-                }
+                param.readonly = false;
+                param.accessibility = None;
+                param.r#override = false;
             }
         }
 
