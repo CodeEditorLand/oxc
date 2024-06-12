@@ -86,6 +86,21 @@ jobs:
                       ~/.cargo/git/db/
                       target/
                       Target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('./apps/oxlint/Cargo.toml') }}
+            - uses: actions-rs/cargo@v1.0.3
+              with:
+                command: build
+                args: --release --all-features --manifest-path ./apps/oxlint/Cargo.toml
+
+            - uses: actions/cache@v4.0.2
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                      Target/
                   key: ${{ runner.os }}-cargo-${{ hashFiles('./crates/oxc/Cargo.toml') }}
             - uses: actions-rs/cargo@v1.0.3
               with:
@@ -571,6 +586,21 @@ jobs:
               with:
                 command: build
                 args: --release --all-features --manifest-path ./tasks/transform_conformance/Cargo.toml
+
+            - uses: actions/cache@v4.0.2
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                      Target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('./tasks/website/Cargo.toml') }}
+            - uses: actions-rs/cargo@v1.0.3
+              with:
+                command: build
+                args: --release --all-features --manifest-path ./tasks/website/Cargo.toml
 
             - uses: actions/cache@v4.0.2
               with:

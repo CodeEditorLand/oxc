@@ -14,6 +14,12 @@ updates:
       versioning-strategy: lockfile-only
 
     - package-ecosystem: "cargo"
+      directory: "/apps/oxlint"
+      schedule:
+          interval: "daily"
+      versioning-strategy: lockfile-only
+
+    - package-ecosystem: "cargo"
       directory: "/crates/oxc"
       schedule:
           interval: "daily"
@@ -261,6 +267,12 @@ updates:
 
     - package-ecosystem: "cargo"
       directory: "/tasks/transform_conformance"
+      schedule:
+          interval: "daily"
+      versioning-strategy: lockfile-only
+
+    - package-ecosystem: "cargo"
+      directory: "/tasks/website"
       schedule:
           interval: "daily"
       versioning-strategy: lockfile-only
