@@ -28,7 +28,7 @@ fn bench_transformer(criterion: &mut Criterion) {
                     Path::new(&file.file_name),
                     source_type,
                     source_text,
-                    &trivias,
+                    trivias,
                     transform_options,
                 )
                 .build(program)
