@@ -462,6 +462,15 @@ impl<'a> IdentifierReference<'a> {
     pub fn new(span: Span, name: Atom<'a>) -> Self {
         Self { span, name, reference_id: Cell::default(), reference_flag: ReferenceFlag::default() }
     }
+
+    pub fn new_read(span: Span, name: Atom<'a>, reference_id: Option<ReferenceId>) -> Self {
+        Self {
+            span,
+            name,
+            reference_id: Cell::new(reference_id),
+            reference_flag: ReferenceFlag::Read,
+        }
+    }
 }
 
 /// Binding Identifier
@@ -801,17 +810,9 @@ impl<'a> MemberExpression<'a> {
 
     pub fn static_property_name(&self) -> Option<&str> {
         match self {
-            MemberExpression::ComputedMemberExpression(expr) => match &expr.expression {
-                Expression::StringLiteral(lit) => Some(&lit.value),
-                Expression::TemplateLiteral(lit) => {
-                    if lit.expressions.is_empty() && lit.quasis.len() == 1 {
-                        Some(&lit.quasis[0].value.raw)
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            },
+            MemberExpression::ComputedMemberExpression(expr) => {
+                expr.static_property_name().map(|name| name.as_str())
+            }
             MemberExpression::StaticMemberExpression(expr) => Some(expr.property.name.as_str()),
             MemberExpression::PrivateFieldExpression(_) => None,
         }
@@ -872,6 +873,20 @@ pub struct ComputedMemberExpression<'a> {
     pub object: Expression<'a>,
     pub expression: Expression<'a>,
     pub optional: bool, // for optional chaining
+}
+
+impl<'a> ComputedMemberExpression<'a> {
+    pub fn static_property_name(&self) -> Option<Atom<'a>> {
+        match &self.expression {
+            Expression::StringLiteral(lit) => Some(lit.value.clone()),
+            Expression::TemplateLiteral(lit)
+                if lit.expressions.is_empty() && lit.quasis.len() == 1 =>
+            {
+                Some(lit.quasis[0].value.raw.clone())
+            }
+            _ => None,
+        }
+    }
 }
 
 /// `MemberExpression[?Yield, ?Await] . IdentifierName`
@@ -1675,6 +1690,10 @@ impl<'a> VariableDeclaration<'a> {
     pub fn is_typescript_syntax(&self) -> bool {
         self.modifiers.contains(ModifierKind::Declare)
     }
+
+    pub fn has_init(&self) -> bool {
+        self.declarations.iter().any(|decl| decl.init.is_some())
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -2438,6 +2457,14 @@ impl<'a> FormalParameters<'a> {
     pub fn parameters_count(&self) -> usize {
         self.items.len() + self.rest.as_ref().map_or(0, |_| 1)
     }
+
+    /// Iterates over all bound parameters, including rest parameters.
+    pub fn iter_bindings(&self) -> impl Iterator<Item = &BindingPattern<'a>> + '_ {
+        self.items
+            .iter()
+            .map(|param| &param.pattern)
+            .chain(self.rest.iter().map(|rest| &rest.argument))
+    }
 }
 
 #[visited_node]
@@ -2508,7 +2535,10 @@ impl<'a> FunctionBody<'a> {
 }
 
 /// Arrow Function Definitions
-#[visited_node(scope(ScopeFlags::Function | ScopeFlags::Arrow))]
+#[visited_node(
+    scope(ScopeFlags::Function | ScopeFlags::Arrow),
+    strict_if(self.body.has_use_strict_directive())
+)]
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[cfg_attr(feature = "serialize", serde(tag = "type", rename_all = "camelCase"))]
@@ -2633,14 +2663,42 @@ impl<'a> Class<'a> {
         }
     }
 
+    /// `true` if this [`Class`] is an expression.
+    ///
+    /// For example,
+    /// ```ts
+    /// var Foo = class { /* ... */ }
+    /// ```
     pub fn is_expression(&self) -> bool {
         self.r#type == ClassType::ClassExpression
     }
 
+    /// `true` if this [`Class`] is a declaration statement.
+    ///
+    /// For example,
+    /// ```ts
+    /// class Foo {
+    ///   // ...
+    /// }
+    /// ```
+    ///
+    /// Not to be confused with [`Class::is_declare`].
     pub fn is_declaration(&self) -> bool {
         self.r#type == ClassType::ClassDeclaration
     }
 
+    /// `true` if this [`Class`] is being within a typescript declaration file
+    /// or `declare` statement.
+    ///
+    /// For example,
+    /// ```ts
+    /// declare global {
+    ///   declare class Foo {
+    ///    // ...
+    ///   }
+    /// }
+    ///
+    /// Not to be confused with [`Class::is_declaration`].
     pub fn is_declare(&self) -> bool {
         self.modifiers.contains(ModifierKind::Declare)
     }
@@ -3066,6 +3124,22 @@ pub enum ImportDeclarationSpecifier<'a> {
     ImportDefaultSpecifier(Box<'a, ImportDefaultSpecifier<'a>>),
     /// import * as local from "source"
     ImportNamespaceSpecifier(Box<'a, ImportNamespaceSpecifier<'a>>),
+}
+
+impl<'a> ImportDeclarationSpecifier<'a> {
+    pub fn name(&self) -> CompactStr {
+        match self {
+            ImportDeclarationSpecifier::ImportSpecifier(specifier) => {
+                specifier.local.name.to_compact_str()
+            }
+            ImportDeclarationSpecifier::ImportNamespaceSpecifier(specifier) => {
+                specifier.local.name.to_compact_str()
+            }
+            ImportDeclarationSpecifier::ImportDefaultSpecifier(specifier) => {
+                specifier.local.name.to_compact_str()
+            }
+        }
+    }
 }
 
 // import {imported} from "source"

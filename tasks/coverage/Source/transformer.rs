@@ -48,7 +48,7 @@ fn get_result(
         source_path,
         source_type,
         source_text,
-        &parse_result1.trivias,
+        parse_result1.trivias.clone(),
         options.clone(),
     )
     .build(&mut program);
@@ -56,16 +56,20 @@ fn get_result(
     let ts_source_text1 = Codegen::<false>::new(
         &filename,
         source_text,
+        parse_result1.trivias.clone(),
         CodegenOptions::default().with_typescript(true),
-        None,
     )
     .build(&program)
     .source_text;
 
-    let source_text1 =
-        Codegen::<false>::new(&filename, source_text, CodegenOptions::default(), None)
-            .build(&program)
-            .source_text;
+    let source_text1 = Codegen::<false>::new(
+        &filename,
+        source_text,
+        parse_result1.trivias.clone(),
+        CodegenOptions::default(),
+    )
+    .build(&program)
+    .source_text;
 
     if transform_result1.is_ok() && ts_source_text1 != source_text1 {
         return TestResult::Mismatch(ts_source_text1.clone(), source_text1.clone());
@@ -79,27 +83,32 @@ fn get_result(
         source_path,
         source_type,
         &source_text1,
-        &parse_result2.trivias,
+        parse_result2.trivias.clone(),
         options,
     )
     .build(&mut program);
 
-    let source_text2 =
-        Codegen::<false>::new(&filename, &source_text1, CodegenOptions::default(), None)
-            .build(&program)
-            .source_text;
+    let source_text2 = Codegen::<false>::new(
+        &filename,
+        &source_text1,
+        parse_result2.trivias,
+        CodegenOptions::default(),
+    )
+    .build(&program)
+    .source_text;
 
-    if source_text1 == source_text2 {
+    if source_text1 == source_text2
+        || transform_result1.is_err_and(|err| {
+            // If error messages are the same, we consider it as a pass.
+            transform_result2
+                .map_err(|err| err.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n"))
+                .is_err_and(|err_message| {
+                    err.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n")
+                        == err_message
+                })
+        })
+    {
         TestResult::Passed
-    } else if transform_result1.is_err_and(|err| {
-        // If error messages are the same, we consider it as a pass.
-        transform_result2
-            .map_err(|err| err.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n"))
-            .is_err_and(|err_message| {
-                err.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n") == err_message
-            })
-    }) {
-        return TestResult::Passed;
     } else {
         TestResult::Mismatch(source_text1.clone(), source_text2)
     }
@@ -201,7 +210,7 @@ impl Case for TransformerTypeScriptCase {
         let mut options = get_default_transformer_options();
         let mut source_type = self.base.source_type();
         // handle @jsx: react, `react` of behavior is match babel following options
-        if self.base.meta().options.jsx.last().is_some_and(|jsx| jsx == "react") {
+        if self.base.meta().settings.jsx.last().is_some_and(|jsx| jsx == "react") {
             source_type = source_type.with_module(true);
             options.react.runtime = ReactJsxRuntime::Classic;
         }

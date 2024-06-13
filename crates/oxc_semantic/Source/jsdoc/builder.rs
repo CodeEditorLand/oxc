@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::rc::Rc;
 
 use super::parser::JSDoc;
 use crate::jsdoc::JSDocFinder;
@@ -9,13 +8,13 @@ use rustc_hash::FxHashSet;
 
 pub struct JSDocBuilder<'a> {
     source_text: &'a str,
-    trivias: Rc<Trivias>,
+    trivias: Trivias,
     attached_docs: BTreeMap<Span, Vec<JSDoc<'a>>>,
     leading_comments_seen: FxHashSet<u32>,
 }
 
 impl<'a> JSDocBuilder<'a> {
-    pub fn new(source_text: &'a str, trivias: Rc<Trivias>) -> Self {
+    pub fn new(source_text: &'a str, trivias: Trivias) -> Self {
         Self {
             source_text,
             trivias,

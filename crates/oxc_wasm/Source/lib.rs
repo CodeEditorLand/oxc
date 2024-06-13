@@ -172,6 +172,7 @@ impl Oxc {
             .parse();
 
         self.comments = self.map_comments(&ret.trivias);
+
         self.save_diagnostics(ret.errors.into_iter().map(Error::from).collect::<Vec<_>>());
 
         self.ir = format!("{:#?}", ret.program.body).into();
@@ -179,7 +180,7 @@ impl Oxc {
         let program = allocator.alloc(ret.program);
 
         let semantic_ret = SemanticBuilder::new(source_text, source_type)
-            .with_trivias(ret.trivias)
+            .with_trivias(ret.trivias.clone())
             .with_check_syntax_error(true)
             .build(program);
 
@@ -206,7 +207,7 @@ impl Oxc {
                 .preserve_parens(false)
                 .parse();
             let printed =
-                Prettier::new(&allocator, source_text, &ret.trivias, PrettierOptions::default())
+                Prettier::new(&allocator, source_text, ret.trivias, PrettierOptions::default())
                     .build(&ret.program);
             self.prettier_formatted_text = printed;
         }
@@ -216,13 +217,17 @@ impl Oxc {
                 .allow_return_outside_function(parser_options.allow_return_outside_function)
                 .preserve_parens(false)
                 .parse();
-            let prettier_doc =
-                Prettier::new(&allocator, source_text, &ret.trivias, PrettierOptions::default())
-                    .doc(&ret.program)
-                    .to_string();
+            let prettier_doc = Prettier::new(
+                &allocator,
+                source_text,
+                ret.trivias.clone(),
+                PrettierOptions::default(),
+            )
+            .doc(&ret.program)
+            .to_string();
             self.prettier_ir_text = {
                 let ret = Parser::new(&allocator, &prettier_doc, SourceType::default()).parse();
-                Prettier::new(&allocator, &prettier_doc, &ret.trivias, PrettierOptions::default())
+                Prettier::new(&allocator, &prettier_doc, ret.trivias, PrettierOptions::default())
                     .build(&ret.program)
             };
         }
@@ -234,7 +239,7 @@ impl Oxc {
                 &path,
                 source_type,
                 source_text,
-                semantic.trivias(),
+                ret.trivias.clone(),
                 options,
             )
             .build(program);
@@ -274,9 +279,13 @@ impl Oxc {
             ..CodegenOptions::default()
         };
         self.codegen_text = if minifier_options.whitespace() {
-            Codegen::<true>::new("", source_text, codegen_options, None).build(program).source_text
+            Codegen::<true>::new("", source_text, ret.trivias, codegen_options)
+                .build(program)
+                .source_text
         } else {
-            Codegen::<false>::new("", source_text, codegen_options, None).build(program).source_text
+            Codegen::<false>::new("", source_text, ret.trivias, codegen_options)
+                .build(program)
+                .source_text
         };
 
         Ok(())

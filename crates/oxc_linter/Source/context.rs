@@ -1,13 +1,13 @@
 use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
-use oxc_codegen::{Codegen, CodegenOptions};
 use oxc_diagnostics::{OxcDiagnostic, Severity};
 use oxc_semantic::{AstNodes, JSDocFinder, ScopeTree, Semantic, SymbolTable};
 use oxc_span::{SourceType, Span};
+use oxc_syntax::module_record::ModuleRecord;
 
 use crate::{
     disable_directives::{DisableDirectives, DisableDirectivesBuilder},
-    fixer::{Fix, Message},
+    fixer::{Fix, Message, RuleFixer},
     javascript_globals::GLOBALS,
     AllowWarnDeny, OxlintConfig, OxlintEnv, OxlintGlobals, OxlintSettings,
 };
@@ -36,7 +36,8 @@ pub struct LintContext<'a> {
 impl<'a> LintContext<'a> {
     pub fn new(file_path: Box<Path>, semantic: Rc<Semantic<'a>>) -> Self {
         let disable_directives =
-            DisableDirectivesBuilder::new(semantic.source_text(), semantic.trivias()).build();
+            DisableDirectivesBuilder::new(semantic.source_text(), semantic.trivias().clone())
+                .build();
         Self {
             semantic,
             diagnostics: RefCell::new(vec![]),
@@ -147,9 +148,14 @@ impl<'a> LintContext<'a> {
     }
 
     /// Report a lint rule violation and provide an automatic fix.
-    pub fn diagnostic_with_fix<F: FnOnce() -> Fix<'a>>(&self, diagnostic: OxcDiagnostic, fix: F) {
+    pub fn diagnostic_with_fix<F: FnOnce(RuleFixer<'_, 'a>) -> Fix<'a>>(
+        &self,
+        diagnostic: OxcDiagnostic,
+        fix: F,
+    ) {
         if self.fix {
-            self.add_diagnostic(Message::new(diagnostic, Some(fix())));
+            let fixer = RuleFixer::new(self);
+            self.add_diagnostic(Message::new(diagnostic, Some(fix(fixer))));
         } else {
             self.diagnostic(diagnostic);
         }
@@ -167,9 +173,8 @@ impl<'a> LintContext<'a> {
         self.semantic().symbols()
     }
 
-    #[allow(clippy::unused_self)]
-    pub fn codegen(&self) -> Codegen<false> {
-        Codegen::<false>::new("", "", CodegenOptions::default(), None)
+    pub fn module_record(&self) -> &ModuleRecord {
+        self.semantic().module_record()
     }
 
     /* JSDoc */
