@@ -2,6 +2,11 @@
 
 use std::{collections::HashMap, fs, path::Path};
 
+use oxc_allocator::Allocator;
+use oxc_codegen::{Codegen, CodegenOptions};
+use oxc_parser::Parser;
+use oxc_span::SourceType;
+
 use regex::Regex;
 
 use crate::project_root;
@@ -14,6 +19,7 @@ lazy_static::lazy_static! {
     static ref TEST_BRACES: Regex = Regex::new(r"^[[:space:]]*[{|}][[:space:]]*$").unwrap();
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct CompilerSettings {
     pub modules: Vec<String>,
@@ -21,6 +27,7 @@ pub struct CompilerSettings {
     pub strict: bool,
     pub jsx: Vec<String>, // 'react', 'preserve'
     pub declaration: bool,
+    pub emit_declaration_only: bool,
     pub always_strict: bool, // Ensure 'use strict' is always emitted.
     pub allow_unreachable_code: bool,
     pub allow_unused_labels: bool,
@@ -35,6 +42,10 @@ impl CompilerSettings {
             strict: Self::value_to_boolean(options.get("strict"), false),
             jsx: Self::split_value_options(options.get("jsx")),
             declaration: Self::value_to_boolean(options.get("declaration"), false),
+            emit_declaration_only: Self::value_to_boolean(
+                options.get("emitDeclarationOnly"),
+                false,
+            ),
             always_strict: Self::value_to_boolean(options.get("alwaysstrict"), false),
             allow_unreachable_code: Self::value_to_boolean(
                 options.get("allowunreachablecode"),
@@ -69,6 +80,7 @@ pub struct TestUnitData {
     pub content: String,
 }
 
+#[derive(Debug)]
 pub struct TestCaseContent {
     pub tests: Vec<TestUnitData>,
     pub settings: CompilerSettings,
@@ -79,7 +91,7 @@ impl TestCaseContent {
     /// TypeScript supports multiple files in a single test case.
     /// These files start with `// @<option-name>: <option-value>` and are followed by the file's content.
     /// This function extracts the individual files with their content and drops unsupported files.
-    pub fn make_units_from_test(path: &Path, code: &str) -> TestCaseContent {
+    pub fn make_units_from_test(path: &Path, code: &str) -> Self {
         let mut current_file_options: HashMap<String, String> = HashMap::default();
         let mut current_file_name: Option<String> = None;
         let mut test_unit_data: Vec<TestUnitData> = vec![];
@@ -147,5 +159,69 @@ impl TestCaseContent {
             }
         }
         error_files
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Baseline {
+    pub name: String,
+    pub original: String,
+    pub oxc_printed: String,
+    pub diagnostic: String,
+}
+
+impl Baseline {
+    pub fn print_oxc(&mut self) {
+        let allocator = Allocator::default();
+        let source_type = SourceType::from_path(Path::new(&self.name)).unwrap();
+        let ret = Parser::new(&allocator, &self.original, source_type).parse();
+        let printed =
+            Codegen::<false>::new("", &self.original, ret.trivias, CodegenOptions::default())
+                .build(&ret.program)
+                .source_text;
+        self.oxc_printed = printed;
+    }
+}
+
+#[derive(Debug)]
+pub struct BaselineFile {
+    pub files: Vec<Baseline>,
+}
+
+impl BaselineFile {
+    pub fn print(&self) -> String {
+        self.files.iter().map(|f| f.oxc_printed.clone()).collect::<Vec<_>>().join("\n")
+    }
+
+    pub fn parse(path: &Path) -> Self {
+        let s = fs::read_to_string(path).unwrap();
+
+        let mut files: Vec<Baseline> = vec![];
+        let mut is_diagnostic = false;
+
+        for line in s.lines() {
+            if let Some(remain) = line.strip_prefix("//// [") {
+                is_diagnostic = remain.starts_with("Diagnostics reported]");
+                if !is_diagnostic {
+                    files.push(Baseline::default());
+                    files.last_mut().unwrap().name = remain.trim_end_matches("] ////").to_string();
+                }
+                continue;
+            }
+            let last = files.last_mut().unwrap();
+            if is_diagnostic {
+                last.diagnostic.push_str(line);
+                last.diagnostic.push_str("\r\n");
+            } else {
+                last.original.push_str(line);
+                last.original.push_str("\r\n");
+            }
+        }
+
+        for file in &mut files {
+            file.print_oxc();
+        }
+
+        Self { files }
     }
 }

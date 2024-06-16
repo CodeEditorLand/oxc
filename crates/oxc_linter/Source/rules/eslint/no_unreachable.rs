@@ -6,7 +6,7 @@ use oxc_semantic::{
         visit::{depth_first_search, Control, DfsEvent, EdgeRef},
         Direction,
     },
-    EdgeType, InstructionKind,
+    EdgeType, ErrorEdgeKind, InstructionKind,
 };
 use oxc_span::{GetSpan, Span};
 
@@ -26,7 +26,7 @@ declare_oxc_lint!(
     /// Disallow unreachable code after `return`, `throw`, `continue`, and `break` statements
     ///
     NoUnreachable,
-    correctness
+    nursery
 );
 
 impl Rule for NoUnreachable {
@@ -50,25 +50,18 @@ impl Rule for NoUnreachable {
         // In our first path we first check if each block is definitely unreachable, If it is then
         // we set it as such, If we encounter an infinite loop we keep its end block since it can
         // prevent other reachable blocks from ever getting executed.
-        let _: Control<()> = depth_first_search(graph, Some(root.cfg_id()), |event| match event {
-            DfsEvent::Finish(node, _) => {
-                let bb = cfg.basic_block(node);
-                let unreachable = if bb.unreachable {
-                    true
-                } else {
-                    graph
-                        .edges_directed(node, Direction::Incoming)
-                        .any(|edge| matches!(edge.weight(), EdgeType::Join))
-                };
+        let _: Control<()> = depth_first_search(graph, Some(root.cfg_id()), |event| {
+            if let DfsEvent::Finish(node, _) = event {
+                let unreachable = cfg.basic_block(node).unreachable;
                 unreachables[node.index()] = unreachable;
 
-                if let Some(it) = cfg.is_infinite_loop_start(node, nodes) {
-                    infinite_loops.push(it);
+                if !unreachable {
+                    if let Some(it) = cfg.is_infinite_loop_start(node, nodes) {
+                        infinite_loops.push(it);
+                    }
                 }
-
-                Control::Continue
             }
-            _ => Control::Continue,
+            Control::Continue
         });
 
         // In the second path we go for each infinite loop end block and follow it marking all
@@ -91,7 +84,9 @@ impl Rule for NoUnreachable {
                         // `NewFunction` is always reachable
                         | EdgeType::NewFunction
                         // `Finalize` can be reachable if we encounter an error in the loop.
-                        | EdgeType::Finalize => true,
+                        | EdgeType::Finalize
+                        // Explicit `Error` can also be reachable if we encounter an error in the loop.
+                        | EdgeType::Error(ErrorEdgeKind::Explicit) => true,
 
                         // If we have an incoming `Jump` and it is from a `Break` instruction,
                         // We know with high confidence that we are visiting a reachable block.
@@ -252,6 +247,23 @@ fn test() {
                 a();
             }
         } finally {
+            b();
+        }
+        ",
+        "
+        try {
+            a();
+        } finally {
+            b();
+        }
+        c();
+        ",
+        "
+        try {
+            while (true) {
+                a();
+            }
+        } catch {
             b();
         }
         ",

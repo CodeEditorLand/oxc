@@ -2211,7 +2211,11 @@ impl<'a> BindingPatternKind<'a> {
     }
 
     pub fn is_destructuring_pattern(&self) -> bool {
-        matches!(self, Self::ObjectPattern(_) | Self::ArrayPattern(_))
+        match self {
+            Self::ObjectPattern(_) | Self::ArrayPattern(_) => true,
+            Self::AssignmentPattern(pattern) => pattern.left.kind.is_destructuring_pattern(),
+            Self::BindingIdentifier(_) => false,
+        }
     }
 
     pub fn is_binding_identifier(&self) -> bool {
@@ -3315,7 +3319,6 @@ pub enum ExportDefaultDeclarationKind<'a> {
     ClassDeclaration(Box<'a, Class<'a>>) = 65,
 
     TSInterfaceDeclaration(Box<'a, TSInterfaceDeclaration<'a>>) = 66,
-    TSEnumDeclaration(Box<'a, TSEnumDeclaration<'a>>) = 67,
 
     // `Expression` variants added here by `inherit_variants!` macro
     @inherit Expression
@@ -3328,7 +3331,7 @@ impl<'a> ExportDefaultDeclarationKind<'a> {
         match self {
             Self::FunctionDeclaration(func) => func.is_typescript_syntax(),
             Self::ClassDeclaration(class) => class.is_typescript_syntax(),
-            Self::TSInterfaceDeclaration(_) | Self::TSEnumDeclaration(_) => true,
+            Self::TSInterfaceDeclaration(_) => true,
             _ => false,
         }
     }

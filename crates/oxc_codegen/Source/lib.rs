@@ -11,7 +11,6 @@
 mod annotation_comment;
 mod context;
 mod gen;
-mod gen_ts;
 mod operator;
 mod sourcemap_builder;
 
@@ -44,27 +43,30 @@ pub struct CodegenOptions {
     /// Pass in the filename to enable source map support.
     pub enable_source_map: bool,
 
-    /// Enable TypeScript code generation.
-    pub enable_typescript: bool,
-
     /// Enable preserve annotate comments, like `/* #__PURE__ */` and `/* #__NO_SIDE_EFFECTS__ */`.
     pub preserve_annotate_comments: bool,
-}
-
-impl CodegenOptions {
-    #[must_use]
-    pub fn with_typescript(mut self, yes: bool) -> Self {
-        if yes {
-            self.enable_typescript = true;
-        }
-
-        self
-    }
 }
 
 pub struct CodegenReturn {
     pub source_text: String,
     pub source_map: Option<oxc_sourcemap::SourceMap>,
+}
+
+impl From<CodegenReturn> for String {
+    fn from(val: CodegenReturn) -> Self {
+        val.source_text
+    }
+}
+
+impl<'a, const MINIFY: bool> From<Codegen<'a, MINIFY>> for String {
+    fn from(mut val: Codegen<'a, MINIFY>) -> Self {
+        val.into_source_text()
+    }
+}
+impl<'a, const MINIFY: bool> From<Codegen<'a, MINIFY>> for Cow<'a, str> {
+    fn from(mut val: Codegen<'a, MINIFY>) -> Self {
+        Cow::Owned(val.into_source_text())
+    }
 }
 
 pub struct Codegen<'a, const MINIFY: bool> {
@@ -470,14 +472,6 @@ impl<'a, const MINIFY: bool> Codegen<'a, MINIFY> {
             }
         }
         for stmt in statements {
-            if let Some(decl) = stmt.as_declaration() {
-                if decl.is_typescript_syntax()
-                    && !self.options.enable_typescript
-                    && !matches!(decl, Declaration::TSEnumDeclaration(_))
-                {
-                    continue;
-                }
-            }
             if print_semicolon_first {
                 self.print_semicolon_if_needed();
                 stmt.gen(self, ctx);
@@ -516,22 +510,5 @@ fn choose_quote(s: &str) -> char {
         '"'
     } else {
         '\''
-    }
-}
-
-impl From<CodegenReturn> for String {
-    fn from(val: CodegenReturn) -> Self {
-        val.source_text
-    }
-}
-
-impl<'a, const MINIFY: bool> From<Codegen<'a, MINIFY>> for String {
-    fn from(mut val: Codegen<'a, MINIFY>) -> Self {
-        val.into_source_text()
-    }
-}
-impl<'a, const MINIFY: bool> From<Codegen<'a, MINIFY>> for Cow<'a, str> {
-    fn from(mut val: Codegen<'a, MINIFY>) -> Self {
-        Cow::Owned(val.into_source_text())
     }
 }

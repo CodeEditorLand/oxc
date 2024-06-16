@@ -237,6 +237,20 @@ macro_rules! match_ts_type {
 pub use match_ts_type;
 
 impl<'a> TSType<'a> {
+    pub fn get_identifier_reference(&self) -> Option<IdentifierReference<'a>> {
+        match self {
+            TSType::TSTypeReference(reference) => {
+                Some(TSTypeName::get_first_name(&reference.type_name))
+            }
+            TSType::TSQualifiedName(qualified) => Some(TSTypeName::get_first_name(&qualified.left)),
+            TSType::TSTypeQuery(query) => match &query.expr_name {
+                TSTypeQueryExprName::IdentifierReference(ident) => Some((*ident).clone()),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
     pub fn is_const_type_reference(&self) -> bool {
         matches!(self, TSType::TSTypeReference(reference) if reference.type_name.is_const())
     }
@@ -245,11 +259,32 @@ impl<'a> TSType<'a> {
     pub fn is_maybe_undefined(&self) -> bool {
         match self {
             TSType::TSUndefinedKeyword(_) => true,
-            TSType::TSUnionType(un) => {
-                un.types.iter().any(|t| matches!(t, TSType::TSUndefinedKeyword(_)))
-            }
+            TSType::TSUnionType(un) => un.types.iter().any(Self::is_maybe_undefined),
             _ => false,
         }
+    }
+
+    pub fn is_keyword(&self) -> bool {
+        matches!(
+            self,
+            TSType::TSAnyKeyword(_)
+                | TSType::TSBigIntKeyword(_)
+                | TSType::TSBooleanKeyword(_)
+                | TSType::TSNeverKeyword(_)
+                | TSType::TSNullKeyword(_)
+                | TSType::TSNumberKeyword(_)
+                | TSType::TSObjectKeyword(_)
+                | TSType::TSStringKeyword(_)
+                | TSType::TSSymbolKeyword(_)
+                | TSType::TSThisType(_)
+                | TSType::TSUndefinedKeyword(_)
+                | TSType::TSUnknownKeyword(_)
+                | TSType::TSVoidKeyword(_)
+        )
+    }
+
+    pub fn is_keyword_or_literal(&self) -> bool {
+        self.is_keyword() || matches!(self, TSType::TSLiteralType(_))
     }
 }
 
@@ -692,6 +727,12 @@ pub enum TSAccessibility {
     Private,
     Protected,
     Public,
+}
+
+impl TSAccessibility {
+    pub fn is_private(&self) -> bool {
+        matches!(self, TSAccessibility::Private)
+    }
 }
 
 #[visited_node]
@@ -1305,9 +1346,19 @@ impl<'a> Modifiers<'a> {
         self.contains(ModifierKind::Declare)
     }
 
+    pub fn is_contains_abstract(&self) -> bool {
+        self.contains(ModifierKind::Abstract)
+    }
+
     pub fn remove_type_modifiers(&mut self) {
         if let Some(list) = &mut self.0 {
             list.retain(|m| !m.kind.is_typescript_syntax());
+        }
+    }
+
+    pub fn add_modifier(&mut self, modifier: Modifier) {
+        if let Some(list) = self.0.as_mut() {
+            list.push(modifier);
         }
     }
 }
@@ -1369,6 +1420,7 @@ impl ImportOrExportKind {
 
 // [`JSDoc`](https://github.com/microsoft/TypeScript/blob/54a554d8af2657630307cbfa8a3e4f3946e36507/src/compiler/types.ts#L393)
 
+/// `type foo = ty?` or `type foo = ?ty`
 #[visited_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
