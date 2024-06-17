@@ -72,7 +72,7 @@ impl<'a, const MINIFY: bool> From<Codegen<'a, MINIFY>> for Cow<'a, str> {
 pub struct Codegen<'a, const MINIFY: bool> {
     options: CodegenOptions,
 
-    source_code: &'a str,
+    source_text: &'a str,
 
     trivias: Trivias,
 
@@ -116,24 +116,24 @@ pub enum Separator {
 impl<'a, const MINIFY: bool> Codegen<'a, MINIFY> {
     pub fn new(
         source_name: &str,
-        source_code: &'a str,
+        source_text: &'a str,
         trivias: Trivias,
         options: CodegenOptions,
     ) -> Self {
         // Initialize the output code buffer to reduce memory reallocation.
         // Minification will reduce by at least half of the original size.
-        let source_len = source_code.len();
+        let source_len = source_text.len();
         let capacity = if MINIFY { source_len / 2 } else { source_len };
 
         let sourcemap_builder = options.enable_source_map.then(|| {
             let mut sourcemap_builder = SourcemapBuilder::default();
-            sourcemap_builder.with_name_and_source(source_name, source_code);
+            sourcemap_builder.with_name_and_source(source_name, source_text);
             sourcemap_builder
         });
 
         Self {
             options,
-            source_code,
+            source_text,
             trivias,
             // mangler: None,
             code: Vec::with_capacity(capacity),
@@ -192,7 +192,7 @@ impl<'a, const MINIFY: bool> Codegen<'a, MINIFY> {
     /// Since if you want to print a range of source code, you need to borrow the source code
     /// immutable first, and call the [Self::print_str] which is a mutable borrow.
     pub fn print_range_of_source_code(&mut self, range: Range<usize>) {
-        self.code.extend_from_slice(self.source_code[range].as_bytes());
+        self.code.extend_from_slice(self.source_text[range].as_bytes());
     }
 
     /// In some scenario, we want to move the comment that should be codegened to another position.
@@ -311,16 +311,30 @@ impl<'a, const MINIFY: bool> Codegen<'a, MINIFY> {
     }
 
     fn print_sequence<T: Gen<MINIFY>>(&mut self, items: &[T], separator: Separator, ctx: Context) {
-        let len = items.len();
-        for (index, item) in items.iter().enumerate() {
+        for item in items {
             item.gen(self, ctx);
             match separator {
                 Separator::Semicolon => self.print_semicolon(),
                 Separator::Comma => self.print(b','),
                 Separator::None => {}
             }
-            if index != len - 1 {}
         }
+    }
+
+    fn print_curly_braces<F: FnOnce(&mut Self)>(&mut self, span: Span, single_line: bool, op: F) {
+        self.add_source_mapping(span.start);
+        self.print(b'{');
+        if !single_line {
+            self.print_soft_newline();
+            self.indent();
+        }
+        op(self);
+        if !single_line {
+            self.dedent();
+            self.print_indent();
+        }
+        self.add_source_mapping(span.end);
+        self.print(b'}');
     }
 
     fn print_block_start(&mut self, position: u32) {
@@ -337,11 +351,21 @@ impl<'a, const MINIFY: bool> Codegen<'a, MINIFY> {
         self.print(b'}');
     }
 
-    fn print_block1(&mut self, stmt: &BlockStatement<'_>, ctx: Context) {
-        self.print_block_start(stmt.span.start);
-        self.print_directives_and_statements_with_semicolon_order(None, &stmt.body, ctx, true);
-        self.print_block_end(stmt.span.end);
-        self.needs_semicolon = false;
+    fn print_body(&mut self, stmt: &Statement<'_>, ctx: Context) {
+        match stmt {
+            Statement::BlockStatement(stmt) => {
+                self.print_block_statement(stmt, ctx);
+                self.print_soft_newline();
+            }
+            stmt => stmt.gen(self, ctx),
+        }
+    }
+
+    fn print_block_statement(&mut self, stmt: &BlockStatement<'_>, ctx: Context) {
+        self.print_curly_braces(stmt.span, stmt.body.is_empty(), |p| {
+            p.print_directives_and_statements_with_semicolon_order(None, &stmt.body, ctx, true);
+            p.needs_semicolon = false;
+        });
     }
 
     fn print_block<T: Gen<MINIFY>>(
@@ -379,6 +403,7 @@ impl<'a, const MINIFY: bool> Codegen<'a, MINIFY> {
         for (index, item) in items.iter().enumerate() {
             if index != 0 {
                 self.print_comma();
+                self.print_soft_space();
             }
             item.gen_expr(self, precedence, ctx);
         }
@@ -461,6 +486,7 @@ impl<'a, const MINIFY: bool> Codegen<'a, MINIFY> {
                 if let Some(Statement::ExpressionStatement(s)) = statements.first() {
                     if matches!(s.expression.get_inner_expression(), Expression::StringLiteral(_)) {
                         self.print_semicolon();
+                        self.print_soft_newline();
                     }
                 }
             } else {
