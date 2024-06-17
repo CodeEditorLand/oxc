@@ -2,18 +2,21 @@ mod binder;
 mod builder;
 mod checker;
 mod class;
+mod control_flow;
 mod diagnostics;
 mod jsdoc;
 mod label;
 mod module_record;
 mod node;
+pub mod pg;
 mod reference;
 mod scope;
 mod symbol;
 
-pub mod control_flow;
+use std::{rc::Rc, sync::Arc};
 
-use std::sync::Arc;
+pub use petgraph;
+pub use petgraph::algo;
 
 pub use builder::{SemanticBuilder, SemanticBuilderReturn};
 use class::ClassTable;
@@ -29,9 +32,11 @@ use rustc_hash::FxHashSet;
 
 pub use crate::{
     control_flow::{
-        BasicBlock, BasicBlockId, ControlFlowGraph, DebugDot, DebugDotContext, DisplayDot,
-        EdgeType, ErrorEdgeKind, Instruction, InstructionKind, LabeledInstruction,
-        ReturnInstructionKind,
+        AssignmentValue, BasicBlock, BasicBlockId, BinaryAssignmentValue, BinaryOp, CallType,
+        CalleeWithArgumentsAssignmentValue, CollectionAssignmentValue, ControlFlowGraph, DebugDot,
+        DebugDotContext, DisplayDot, EdgeType, Instruction, InstructionKind, LabeledInstruction,
+        ObjectPropertyAccessAssignmentValue, Register, ReturnInstructionKind,
+        UnaryExpressioneAssignmentValue, UpdateAssignmentValue,
     },
     node::{AstNode, AstNodeId, AstNodes},
     reference::{Reference, ReferenceFlag, ReferenceId},
@@ -52,7 +57,7 @@ pub struct Semantic<'a> {
 
     classes: ClassTable,
 
-    trivias: Trivias,
+    trivias: Rc<Trivias>,
 
     module_record: Arc<ModuleRecord>,
 
@@ -100,8 +105,8 @@ impl<'a> Semantic<'a> {
         &self.jsdoc
     }
 
-    pub fn module_record(&self) -> &ModuleRecord {
-        self.module_record.as_ref()
+    pub fn module_record(&self) -> &Arc<ModuleRecord> {
+        &self.module_record
     }
 
     pub fn symbols(&self) -> &SymbolTable {

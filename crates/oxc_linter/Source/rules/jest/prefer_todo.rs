@@ -5,11 +5,11 @@ use oxc_ast::{
 use oxc_diagnostics::OxcDiagnostic;
 
 use oxc_macros::declare_oxc_lint;
-use oxc_span::{GetSpan, Span};
+use oxc_span::Span;
 
 use crate::{
     context::LintContext,
-    fixer::{Fix, RuleFixer},
+    fixer::Fix,
     rule::Rule,
     utils::{
         collect_possible_jest_call_node, is_type_of_jest_fn_call, JestFnKind, JestGeneralFnKind,
@@ -79,26 +79,16 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
         }
 
         if counts == 1 && !filter_todo_case(call_expr) {
-            let span = call_expr
-                .callee
-                .as_member_expression()
-                .map_or(call_expr.callee.span(), GetSpan::span);
-            ctx.diagnostic_with_fix(un_implemented_test_diagnostic(span), |fixer| {
-                if let Expression::Identifier(ident) = &call_expr.callee {
-                    return fixer.replace(Span::empty(ident.span.end), ".todo");
-                }
-                if let Some(mem_expr) = call_expr.callee.as_member_expression() {
-                    if let Some((span, _)) = mem_expr.static_property_info() {
-                        return fixer.replace(span, "todo");
-                    }
-                }
-                fixer.delete_range(call_expr.span)
+            let (content, span) = get_fix_content(call_expr);
+            ctx.diagnostic_with_fix(un_implemented_test_diagnostic(span), || {
+                Fix::new(content, span)
             });
         }
 
         if counts > 1 && is_empty_function(call_expr) {
-            ctx.diagnostic_with_fix(empty_test(call_expr.span), |fixer| {
-                build_code(fixer, call_expr)
+            ctx.diagnostic_with_fix(empty_test(call_expr.span), || {
+                let (content, span) = build_code(call_expr, ctx);
+                Fix::new(content, span)
             });
         }
     }
@@ -138,8 +128,20 @@ fn is_empty_function(expr: &CallExpression) -> bool {
     }
 }
 
-fn build_code<'a>(fixer: RuleFixer<'_, 'a>, expr: &CallExpression<'a>) -> Fix<'a> {
-    let mut formatter = fixer.codegen();
+fn get_fix_content<'a>(expr: &'a CallExpression<'a>) -> (&'a str, Span) {
+    if let Expression::Identifier(ident) = &expr.callee {
+        return (".todo", Span::new(ident.span.end, ident.span.end));
+    }
+    if let Some(mem_expr) = expr.callee.as_member_expression() {
+        if let Some((span, _)) = mem_expr.static_property_info() {
+            return ("todo", span);
+        }
+    }
+    ("", expr.span)
+}
+
+fn build_code(expr: &CallExpression, ctx: &LintContext) -> (String, Span) {
+    let mut formatter = ctx.codegen();
 
     match &expr.callee {
         Expression::Identifier(ident) => {
@@ -178,7 +180,7 @@ fn build_code<'a>(fixer: RuleFixer<'_, 'a>, expr: &CallExpression<'a>) -> Fix<'a
         formatter.print(b')');
     }
 
-    fixer.replace(expr.span, formatter)
+    (formatter.into_source_text(), expr.span)
 }
 
 #[test]

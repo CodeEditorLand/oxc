@@ -1,4 +1,3 @@
-#![allow(clippy::print_stdout)]
 use std::{env, path::Path};
 
 use oxc_allocator::Allocator;
@@ -25,11 +24,11 @@ fn main() {
     let ret = Parser::new(&allocator, &source_text, source_type).parse();
 
     if !ret.errors.is_empty() {
-        println!("Parser Errors:");
         for error in ret.errors {
             let error = error.with_source_code(source_text.clone());
             println!("{error:?}");
         }
+        return;
     }
 
     println!("Original:\n");
@@ -47,7 +46,7 @@ fn main() {
         },
         ..Default::default()
     };
-    let _ = Transformer::new(
+    Transformer::new(
         &allocator,
         path,
         source_type,
@@ -55,7 +54,8 @@ fn main() {
         ret.trivias.clone(),
         transform_options,
     )
-    .build(&mut program);
+    .build(&mut program)
+    .unwrap();
 
     let printed = Codegen::<false>::new("", &source_text, ret.trivias, CodegenOptions::default())
         .build(&program)

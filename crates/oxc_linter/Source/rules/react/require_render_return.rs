@@ -3,8 +3,8 @@ use oxc_diagnostics::OxcDiagnostic;
 
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::{
-    control_flow::graph::visit::neighbors_filtered_by_edge_weight, EdgeType, Instruction,
-    InstructionKind, ReturnInstructionKind,
+    pg::neighbors_filtered_by_edge_weight, EdgeType, Instruction, InstructionKind,
+    ReturnInstructionKind,
 };
 use oxc_span::{GetSpan, Span};
 
@@ -100,12 +100,9 @@ fn contains_return_statement<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> b
             // We only care about normal edges having a return statement.
             EdgeType::Jump | EdgeType::Normal => None,
             // For these two type, we flag it as not found.
-            EdgeType::Unreachable
-            | EdgeType::Error(_)
-            | EdgeType::Finalize
-            | EdgeType::Join
-            | EdgeType::NewFunction
-            | EdgeType::Backedge => Some(FoundReturn::No),
+            EdgeType::Unreachable | EdgeType::NewFunction | EdgeType::Backedge => {
+                Some(FoundReturn::No)
+            }
         },
         &mut |basic_block_id, _state_going_into_this_rule| {
             // If its an arrow function with an expression, marked as founded and stop walking.
@@ -126,8 +123,6 @@ fn contains_return_statement<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> b
                     InstructionKind::Return(ReturnInstructionKind::ImplicitUndefined)
                     | InstructionKind::Break(_)
                     | InstructionKind::Continue(_)
-                    | InstructionKind::Iteration(_)
-                    | InstructionKind::Condition
                     | InstructionKind::Statement => {}
                 }
             }

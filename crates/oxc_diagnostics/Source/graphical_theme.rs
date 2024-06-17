@@ -64,7 +64,7 @@ impl Default for GraphicalTheme {
     fn default() -> Self {
         match std::env::var("NO_COLOR") {
             _ if !std::io::stdout().is_terminal() || !std::io::stderr().is_terminal() => {
-                Self::none()
+                Self::ascii()
             }
             Ok(string) if string != "0" => Self::unicode_nocolor(),
             _ => Self::unicode(),

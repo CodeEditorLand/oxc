@@ -69,14 +69,6 @@ impl<'a> AstNodes<'a> {
         self.nodes.iter()
     }
 
-    pub fn len(&self) -> usize {
-        self.nodes.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.nodes.len() == 0
-    }
-
     /// Walk up the AST, iterating over each parent node.
     ///
     /// The first node produced by this iterator is the first parent of the node

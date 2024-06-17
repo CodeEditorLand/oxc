@@ -6,7 +6,7 @@ use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 use oxc_syntax::operator::BinaryOperator;
 
-use crate::{context::LintContext, rule::Rule, AstNode};
+use crate::{context::LintContext, fixer::Fix, rule::Rule, AstNode};
 
 fn no_instanceof_array_diagnostic(span0: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("eslint-plugin-unicorn(no-instanceof-array): Use `Array.isArray()` instead of `instanceof Array`.")
@@ -44,15 +44,15 @@ impl Rule for NoInstanceofArray {
 
         match &expr.right.without_parenthesized() {
             Expression::Identifier(identifier) if identifier.name == "Array" => {
-                ctx.diagnostic_with_fix(no_instanceof_array_diagnostic(expr.span), |fixer| {
+                ctx.diagnostic_with_fix(no_instanceof_array_diagnostic(expr.span), || {
                     let modified_code = {
                         let mut codegen = String::new();
                         codegen.push_str("Array.isArray(");
-                        codegen.push_str(fixer.source_range(expr.left.span()));
+                        codegen.push_str(expr.left.span().source_text(ctx.source_text()));
                         codegen.push(')');
                         codegen
                     };
-                    fixer.replace(expr.span, modified_code)
+                    Fix::new(modified_code, expr.span)
                 });
             }
             _ => {}

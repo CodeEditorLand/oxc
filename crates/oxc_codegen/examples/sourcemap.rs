@@ -1,4 +1,3 @@
-#![allow(clippy::print_stdout)]
 use std::{env, path::Path};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -27,7 +26,8 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
-    let codegen_options = CodegenOptions { enable_source_map: true, ..Default::default() };
+    let codegen_options =
+        CodegenOptions { enable_source_map: true, enable_typescript: true, ..Default::default() };
 
     let CodegenReturn { source_text, source_map } = Codegen::<false>::new(
         path.to_string_lossy().as_ref(),

@@ -1,4 +1,3 @@
-#![allow(clippy::print_stdout, clippy::print_stderr)]
 use std::{
     collections::HashMap,
     fmt::{self, Display, Formatter},
@@ -59,7 +58,6 @@ const TREE_SHAKING_PATH: &str =
 struct TestCase {
     source_text: String,
     code: Option<String>,
-    output: Option<String>,
     group_comment: Option<String>,
     config: Option<String>,
     settings: Option<String>,
@@ -72,7 +70,6 @@ impl TestCase {
         let mut test_case = Self {
             source_text: source_text.to_string(),
             code: None,
-            output: None,
             config: None,
             settings: None,
             group_comment: None,
@@ -92,7 +89,17 @@ impl TestCase {
         self.code
             .as_ref()
             .map(|code| {
-                let code_str = format_code_snippet(code);
+                let mut code = if code.contains('\n') {
+                    code.replace('\n', "\n\t\t\t").replace('\\', "\\\\").replace('\"', "\\\"")
+                } else {
+                    code.to_string()
+                };
+
+                if code.contains('"') {
+                    // handle " to \" and then \\" to \"
+                    code = code.replace('"', "\\\"").replace("\\\\\"", "\\\"");
+                }
+
                 let config = self.config.as_ref().map_or_else(
                     || "None".to_string(),
                     |config| format!("Some(serde_json::json!({config}))"),
@@ -105,6 +112,11 @@ impl TestCase {
                     || "None".to_string(),
                     |filename| format!(r#"Some(PathBuf::from("{filename}"))"#),
                 );
+                let code_str = if code.contains('"') {
+                    format!("r#\"{}\"#", code.replace("\\\"", "\""))
+                } else {
+                    format!("\"{code}\"")
+                };
                 let code_str = if need_filename {
                     format!("({code_str}, {config}, {settings}, {filename})")
                 } else if need_settings {
@@ -126,34 +138,6 @@ impl TestCase {
     fn group_comment(&self) -> Option<&str> {
         self.group_comment.as_deref()
     }
-
-    fn output(&self) -> Option<String> {
-        let code = format_code_snippet(self.code.as_ref()?);
-        let output = format_code_snippet(self.output.as_ref()?);
-        // ("null==null", "null === null", None),
-        Some(format!(r#"({code}, {output}, None)"#))
-    }
-}
-
-fn format_code_snippet(code: &str) -> String {
-    let code = if code.contains('\n') {
-        code.replace('\n', "\n\t\t\t").replace('\\', "\\\\").replace('\"', "\\\"")
-    } else {
-        code.to_string()
-    };
-
-    // "debugger" => "debugger"
-    if !code.contains('"') {
-        return format!("\"{code}\"");
-    }
-
-    // "document.querySelector("#foo");" => r##"document.querySelector("#foo");"##
-    if code.contains("\"#") {
-        return format!("r##\"{code}\"##");
-    }
-
-    // 'import foo from "foo";' => r#"import foo from "foo";"#
-    format!("r#\"{}\"#", code.replace("\\\"", "\""))
 }
 
 impl<'a> Visit<'a> for TestCase {
@@ -236,18 +220,6 @@ impl<'a> Visit<'a> for TestCase {
                             _ => continue,
                         }
                     }
-                    PropertyKey::StaticIdentifier(ident) if ident.name == "output" => {
-                        self.output = match &prop.value {
-                            Expression::StringLiteral(s) => Some(s.value.to_string()),
-                            Expression::TaggedTemplateExpression(tag_expr) => {
-                                tag_expr.quasi.quasi().map(ToString::to_string)
-                            }
-                            Expression::TemplateLiteral(tag_expr) => {
-                                tag_expr.quasi().map(ToString::to_string)
-                            }
-                            _ => None,
-                        }
-                    }
                     PropertyKey::StaticIdentifier(ident) if ident.name == "options" => {
                         let span = prop.value.span();
                         let option_text = &self.source_text[span.start as usize..span.end as usize];
@@ -307,7 +279,6 @@ pub struct Context {
     snake_rule_name: String,
     pass_cases: String,
     fail_cases: String,
-    fix_cases: Option<String>,
     has_filename: bool,
 }
 
@@ -323,18 +294,12 @@ impl Context {
             snake_rule_name: underscore_rule_name,
             pass_cases,
             fail_cases,
-            fix_cases: None,
             has_filename: false,
         }
     }
 
-    fn with_filename(mut self, has_filename: bool) -> Self {
-        self.has_filename = has_filename;
-        self
-    }
-
-    fn with_fix_cases(mut self, fix_cases: String) -> Self {
-        self.fix_cases = Some(fix_cases);
+    fn with_filename(mut self) -> Self {
+        self.has_filename = true;
         self
     }
 }
@@ -667,7 +632,6 @@ fn main() {
 
             let gen_cases_string = |cases: Vec<TestCase>| {
                 let mut codes = vec![];
-                let mut fix_codes = vec![];
                 let mut last_comment = String::new();
                 for case in cases {
                     let current_comment = case.group_comment();
@@ -686,23 +650,16 @@ fn main() {
                         }
                     }
 
-                    if let Some(output) = case.output() {
-                        fix_codes.push(output);
-                    }
-
                     codes.push(code);
                 }
 
-                (codes.join(",\n"), fix_codes.join(",\n"))
+                codes.join(",\n")
             };
 
-            // pass cases don't need to be fixed
-            let (pass_cases, _) = gen_cases_string(pass_cases);
-            let (fail_cases, fix_cases) = gen_cases_string(fail_cases);
+            let pass_cases = gen_cases_string(pass_cases);
+            let fail_cases = gen_cases_string(fail_cases);
 
-            Context::new(plugin_name, &rule_name, pass_cases, fail_cases)
-                .with_filename(has_filename)
-                .with_fix_cases(fix_cases)
+            Context::new(plugin_name, &rule_name, pass_cases, fail_cases).with_filename()
         }
         Err(_err) => {
             println!("Rule {rule_name} cannot be found in {rule_kind}, use empty template.");

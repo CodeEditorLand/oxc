@@ -95,7 +95,6 @@ mod eslint {
     pub mod no_ternary;
     pub mod no_this_before_super;
     pub mod no_undef;
-    pub mod no_unreachable;
     pub mod no_unsafe_finally;
     pub mod no_unsafe_negation;
     pub mod no_unsafe_optional_chaining;
@@ -103,7 +102,6 @@ mod eslint {
     pub mod no_unused_private_class_members;
     pub mod no_useless_catch;
     pub mod no_useless_concat;
-    pub mod no_useless_constructor;
     pub mod no_useless_escape;
     pub mod no_useless_rename;
     pub mod no_var;
@@ -113,7 +111,6 @@ mod eslint {
     pub mod radix;
     pub mod require_await;
     pub mod require_yield;
-    pub mod sort_imports;
     pub mod symbol_description;
     pub mod unicode_bom;
     pub mod use_isnan;
@@ -128,19 +125,16 @@ mod typescript {
     pub mod ban_types;
     pub mod consistent_indexed_object_style;
     pub mod consistent_type_definitions;
-    pub mod explicit_function_return_type;
     pub mod no_duplicate_enum_values;
     pub mod no_empty_interface;
     pub mod no_explicit_any;
     pub mod no_extra_non_null_assertion;
-    pub mod no_import_type_side_effects;
     pub mod no_misused_new;
     pub mod no_namespace;
     pub mod no_non_null_asserted_optional_chain;
     pub mod no_this_alias;
     pub mod no_unnecessary_type_constraint;
     pub mod no_unsafe_declaration_merging;
-    pub mod no_useless_empty_export;
     pub mod no_var_requires;
     pub mod prefer_as_const;
     pub mod prefer_enum_initializers;
@@ -154,7 +148,6 @@ mod typescript {
 mod jest {
     pub mod expect_expect;
     pub mod max_expects;
-    pub mod max_nested_describe;
     pub mod no_alias_methods;
     pub mod no_commented_out_tests;
     pub mod no_conditional_expect;
@@ -360,7 +353,6 @@ mod oxc {
     pub mod no_async_await;
     pub mod no_barrel_file;
     pub mod no_const_enum;
-    pub mod no_optional_chaining;
     pub mod no_rest_spread_properties;
     pub mod number_arg_out_of_range;
     pub mod only_used_in_recursion;
@@ -399,9 +391,6 @@ mod jsdoc {
     pub mod implements_on_classes;
     pub mod no_defaults;
     pub mod require_param;
-    pub mod require_param_description;
-    pub mod require_param_name;
-    pub mod require_param_type;
     pub mod require_property;
     pub mod require_property_description;
     pub mod require_property_name;
@@ -486,7 +475,6 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_shadow_restricted_names,
     eslint::no_sparse_arrays,
     eslint::no_undef,
-    eslint::no_unreachable,
     eslint::no_unsafe_finally,
     eslint::no_unsafe_negation,
     eslint::no_unsafe_optional_chaining,
@@ -496,14 +484,12 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_useless_escape,
     eslint::no_useless_rename,
     eslint::no_useless_concat,
-    eslint::no_useless_constructor,
     eslint::no_var,
     eslint::no_void,
     eslint::no_with,
     eslint::radix,
     eslint::require_yield,
     eslint::symbol_description,
-    eslint::sort_imports,
     eslint::unicode_bom,
     eslint::use_isnan,
     eslint::valid_typeof,
@@ -524,14 +510,12 @@ oxc_macros::declare_all_lint_rules! {
     typescript::no_empty_interface,
     typescript::no_explicit_any,
     typescript::no_extra_non_null_assertion,
-    typescript::no_import_type_side_effects,
     typescript::no_misused_new,
     typescript::no_namespace,
     typescript::no_non_null_asserted_optional_chain,
     typescript::no_this_alias,
     typescript::no_unnecessary_type_constraint,
     typescript::no_unsafe_declaration_merging,
-    typescript::no_useless_empty_export,
     typescript::no_var_requires,
     typescript::prefer_as_const,
     typescript::prefer_for_of,
@@ -539,10 +523,8 @@ oxc_macros::declare_all_lint_rules! {
     typescript::prefer_ts_expect_error,
     typescript::triple_slash_reference,
     typescript::prefer_literal_enum_member,
-    typescript::explicit_function_return_type,
     jest::expect_expect,
     jest::max_expects,
-    jest::max_nested_describe,
     jest::no_alias_methods,
     jest::no_commented_out_tests,
     jest::no_conditional_expect,
@@ -740,7 +722,6 @@ oxc_macros::declare_all_lint_rules! {
     oxc::const_comparisons,
     oxc::double_comparisons,
     oxc::erasing_op,
-    oxc::no_optional_chaining,
     oxc::no_rest_spread_properties,
     oxc::misrefactored_assign_op,
     oxc::missing_throw,
@@ -778,9 +759,6 @@ oxc_macros::declare_all_lint_rules! {
     jsdoc::implements_on_classes,
     jsdoc::no_defaults,
     jsdoc::require_param,
-    jsdoc::require_param_description,
-    jsdoc::require_param_name,
-    jsdoc::require_param_type,
     jsdoc::require_property,
     jsdoc::require_property_type,
     jsdoc::require_property_name,

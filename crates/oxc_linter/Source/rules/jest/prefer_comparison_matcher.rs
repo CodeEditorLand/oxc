@@ -1,6 +1,6 @@
 use crate::{
     context::LintContext,
-    fixer::RuleFixer,
+    fixer::Fix,
     rule::Rule,
     utils::{
         collect_possible_jest_call_node, is_equality_matcher, parse_expect_jest_fn_call,
@@ -113,16 +113,16 @@ impl PreferComparisonMatcher {
             return;
         };
 
-        ctx.diagnostic_with_fix(use_to_be_comparison(prefer_matcher_name, matcher.span), |fixer| {
+        ctx.diagnostic_with_fix(use_to_be_comparison(prefer_matcher_name, matcher.span), || {
             // This is to handle the case can be transform into the following case:
             // expect(value > 1,).toEqual(true,) => expect(value,).toBeGreaterThan(1,)
             //                 ^              ^
             // Therefore the range starting after ',' and before '.' is called as call_span_end,
             // and the same as `arg_span_end`.
-            let call_span_end =
-                fixer.source_range(Span::new(binary_expr.span.end, parent_call_expr.span.end));
-            let arg_span_end =
-                fixer.source_range(Span::new(matcher_arg_value.span.end, call_expr.span.end));
+            let call_span_end = Span::new(binary_expr.span.end, parent_call_expr.span.end)
+                .source_text(ctx.source_text());
+            let arg_span_end = Span::new(matcher_arg_value.span.end, call_expr.span.end)
+                .source_text(ctx.source_text());
             let content = Self::building_code(
                 binary_expr,
                 call_span_end,
@@ -130,9 +130,9 @@ impl PreferComparisonMatcher {
                 parse_expect_jest_fn.local.as_bytes(),
                 &parse_expect_jest_fn.modifiers(),
                 prefer_matcher_name,
-                fixer,
+                ctx,
             );
-            fixer.replace(call_expr.span, content)
+            Fix::new(content, call_expr.span)
         });
     }
 
@@ -171,16 +171,16 @@ impl PreferComparisonMatcher {
         }
     }
 
-    fn building_code<'a>(
-        binary_expr: &BinaryExpression<'a>,
+    fn building_code(
+        binary_expr: &BinaryExpression,
         call_span_end: &str,
         arg_span_end: &str,
         local_name: &[u8],
-        modifiers: &[&KnownMemberExpressionProperty<'a>],
+        modifiers: &[&KnownMemberExpressionProperty],
         prefer_matcher_name: &str,
-        fixer: RuleFixer<'_, 'a>,
+        ctx: &LintContext,
     ) -> String {
-        let mut content = fixer.codegen();
+        let mut content = ctx.codegen();
         content.print_str(local_name);
         content.print(b'(');
         content.print_expression(&binary_expr.left);

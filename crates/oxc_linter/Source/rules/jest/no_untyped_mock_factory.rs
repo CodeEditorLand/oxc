@@ -1,5 +1,6 @@
 use crate::{
     context::LintContext,
+    fixer::Fix,
     rule::Rule,
     utils::{collect_possible_jest_call_node, PossibleJestNode},
 };
@@ -139,14 +140,16 @@ impl NoUntypedMockFactory {
                     string_literal.value.as_str(),
                     property_span,
                 ),
-                |fixer| {
-                    let mut content = fixer.codegen();
+                || {
+                    let mut content = ctx.codegen();
                     content.print_str(b"<typeof import('");
                     content.print_str(string_literal.value.as_bytes());
                     content.print_str(b"')>(");
-                    let span = Span::sized(string_literal.span.start - 1, 1);
 
-                    fixer.replace(span, content)
+                    Fix::new(
+                        content.into_source_text(),
+                        Span::new(string_literal.span.start - 1, string_literal.span.start),
+                    )
                 },
             );
         } else if let Expression::Identifier(ident) = expr {

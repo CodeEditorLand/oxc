@@ -9,8 +9,7 @@ use oxc_diagnostics::OxcDiagnostic;
 
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::{
-    control_flow::graph::visit::neighbors_filtered_by_edge_weight, EdgeType, InstructionKind,
-    ReturnInstructionKind,
+    pg::neighbors_filtered_by_edge_weight, EdgeType, InstructionKind, ReturnInstructionKind,
 };
 use oxc_span::Span;
 
@@ -55,10 +54,6 @@ declare_oxc_lint!(
 
 impl Rule for GetterReturn {
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
-        // https://eslint.org/docs/latest/rules/getter-return#handled_by_typescript
-        if ctx.source_type().is_typescript() {
-            return;
-        }
         match node.kind() {
             AstKind::Function(func) if !func.is_typescript_syntax() => {
                 self.run_diagnostic(node, ctx, func.span);
@@ -198,11 +193,6 @@ impl GetterReturn {
                 | EdgeType::NewFunction
                 // Unreachable nodes aren't reachable so we don't follow them.
                 | EdgeType::Unreachable
-                // TODO: For now we ignore the error path to simplify this rule, We can also
-                // analyze the error path as a nice to have addition.
-                | EdgeType::Error(_)
-                | EdgeType::Finalize
-                | EdgeType::Join
                 // By returning Some(X),
                 // we signal that we don't walk to this path any farther.
                 //
@@ -280,8 +270,6 @@ impl GetterReturn {
                         // Ignore irrelevant elements.
                         | InstructionKind::Break(_)
                         | InstructionKind::Continue(_)
-                        | InstructionKind::Iteration(_)
-                        | InstructionKind::Condition
                         | InstructionKind::Statement => {}
                     }
                 }
@@ -355,12 +343,54 @@ fn test() {
         ("foo.defineProperties(null, { bar: { get() {} } });", None),
         ("foo.create(null, { bar: { get() {} } });", None),
         ("var foo = { get willThrowSoValid() { throw MyException() } };", None),
+        ("export abstract class Foo { protected abstract get foobar(): number; }", None),
+        (
+            "class T {
+            theme: number;
+            get type(): number {
+                switch (theme) {
+                    case 1: return 1;
+                    case 2: return 2;
+                    default: return 3;
+                 }
+                 throw new Error('test')
+            }
+        }",
+            None,
+        ),
+        (
+            "class T {
+            theme: number;
+            get type(): number {
+                switch (theme) {
+                    case 1: return 1;
+                    case 2: return 2;
+                    default: return 3;
+                 }
+            }
+        }",
+            None,
+        ),
         (
             "const originalClearTimeout = targetWindow.clearTimeout;
         Object.defineProperty(targetWindow, 'vscodeOriginalClearTimeout', { get: () => originalClearTimeout });
         ",
             None,
         ),
+        (
+            "class T {
+            get width(): number | undefined {
+                const val = undefined
+                if (!val) {
+                    return;
+                }
+
+                return val * val;
+            }
+        }",
+            None,
+        ),
+        ("function fn(): void { console.log('test') }", None),
     ];
 
     let fail = vec![
@@ -400,7 +430,5 @@ fn test() {
         ("(Object?.create)(foo, { bar: { get: function (){} } });", Some(serde_json::json!([{ "allowImplicit": true }]))),
     ];
 
-    Tester::new(GetterReturn::NAME, pass, fail)
-        .change_rule_path_extension("js")
-        .test_and_snapshot();
+    Tester::new(GetterReturn::NAME, pass, fail).test_and_snapshot();
 }

@@ -124,22 +124,24 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                 match node.kind() {
                     AstKind::TSInterfaceDeclaration(interface_decl) => {
                         if let Some(type_parameters) = &interface_decl.type_parameters {
+                            let node_start = interface_decl.span.start;
+                            let node_end = interface_decl.span.end;
+                            let type_name = &source_code[interface_decl.id.span.start as usize
+                                ..type_parameters.span.end as usize];
+
                             ctx.diagnostic_with_fix(
                                 prefer_function_type_diagnostic(&suggestion, decl.span),
-                                |fixer| {
-                                    let mut span = interface_decl.id.span;
-                                    span.end = type_parameters.span.end;
-                                    let type_name = fixer.source_range(span);
-                                    fixer.replace(
-                                        interface_decl.span,
+                                || {
+                                    Fix::new(
                                         format!("type {type_name} = {suggestion};"),
+                                        Span::new(node_start, node_end),
                                     )
                                 },
                             );
                         } else {
                             ctx.diagnostic_with_fix(
                                 prefer_function_type_diagnostic(&suggestion, decl.span),
-                                |_| {
+                                || {
                                     let mut is_parent_exported = false;
                                     let mut node_start = interface_decl.span.start;
                                     let mut node_end = interface_decl.span.end;
@@ -226,8 +228,11 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                                 if let TSType::TSTypeLiteral(literal) = ts_type {
                                     ctx.diagnostic_with_fix(
                                         prefer_function_type_diagnostic(&suggestion, decl.span),
-                                        |fixer| {
-                                            fixer.replace(literal.span, format!("({suggestion})"))
+                                        || {
+                                            Fix::new(
+                                                format!("({suggestion})"),
+                                                Span::new(literal.span.start, literal.span.end),
+                                            )
                                         },
                                     );
                                 }
@@ -236,7 +241,12 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
 
                         TSType::TSTypeLiteral(literal) => ctx.diagnostic_with_fix(
                             prefer_function_type_diagnostic(&suggestion, decl.span),
-                            |fixer| fixer.replace(literal.span, suggestion),
+                            || {
+                                Fix::new(
+                                    suggestion.to_string(),
+                                    Span::new(literal.span.start, literal.span.end),
+                                )
+                            },
                         ),
 
                         _ => {
@@ -256,10 +266,13 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                                                     &suggestion,
                                                     decl.span,
                                                 ),
-                                                |fixer| {
-                                                    fixer.replace(
-                                                        literal.span,
+                                                || {
+                                                    Fix::new(
                                                         format!("({suggestion})"),
+                                                        Span::new(
+                                                            literal.span.start,
+                                                            literal.span.end,
+                                                        ),
                                                     )
                                                 },
                                             );
@@ -278,10 +291,13 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                                                     &suggestion,
                                                     decl.span,
                                                 ),
-                                                |fixer| {
-                                                    fixer.replace(
-                                                        literal.span,
+                                                || {
+                                                    Fix::new(
                                                         format!("({suggestion})"),
+                                                        Span::new(
+                                                            literal.span.start,
+                                                            literal.span.end,
+                                                        ),
                                                     )
                                                 },
                                             );
@@ -292,7 +308,12 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
 
                             TSType::TSTypeLiteral(literal) => ctx.diagnostic_with_fix(
                                 prefer_function_type_diagnostic(&suggestion, decl.span),
-                                |fixer| fixer.replace(literal.span, suggestion),
+                                || {
+                                    Fix::new(
+                                        suggestion.to_string(),
+                                        Span::new(literal.span.start, literal.span.end),
+                                    )
+                                },
                             ),
 
                             _ => {}

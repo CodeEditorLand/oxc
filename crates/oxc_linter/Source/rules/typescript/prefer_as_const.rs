@@ -5,7 +5,7 @@ use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
-use crate::{context::LintContext, rule::Rule, AstNode};
+use crate::{context::LintContext, fixer::Fix, rule::Rule, AstNode};
 
 fn prefer_as_const_diagnostic(span0: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("typescript-eslint(prefer-as-const): Expected a `const` assertion instead of a literal type annotation.")
@@ -117,8 +117,10 @@ fn check_and_report(
         };
         if let Some(span) = error_span {
             if can_fix {
-                ctx.diagnostic_with_fix(prefer_as_const_diagnostic(span), |fixer| {
-                    fixer.replace(span, "const")
+                ctx.diagnostic_with_fix(prefer_as_const_diagnostic(span), || {
+                    let start = span.start;
+                    let end = span.end;
+                    Fix::new("const", Span::new(start, end))
                 });
             } else {
                 ctx.diagnostic(prefer_as_const_diagnostic(span));

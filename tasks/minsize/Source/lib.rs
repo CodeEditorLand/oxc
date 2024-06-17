@@ -1,4 +1,3 @@
-#![allow(clippy::print_stdout, clippy::print_stderr)]
 use std::{
     fs::File,
     io::{self, Write},
@@ -71,10 +70,10 @@ fn minify_twice(file: &TestFile) -> String {
 
 fn minify(source_text: &str, source_type: SourceType, options: MinifierOptions) -> String {
     let allocator = Allocator::default();
-    let ret = Parser::new(&allocator, source_text, source_type).parse();
-    let program = allocator.alloc(ret.program);
+    let program = Parser::new(&allocator, source_text, source_type).parse().program;
+    let program = allocator.alloc(program);
     Minifier::new(options).build(&allocator, program);
-    Codegen::<true>::new("", source_text, ret.trivias, CodegenOptions::default())
+    Codegen::<true>::new("", source_text, CodegenOptions::default(), None)
         .build(program)
         .source_text
 }

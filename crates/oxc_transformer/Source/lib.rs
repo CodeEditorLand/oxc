@@ -19,7 +19,6 @@ mod react;
 mod typescript;
 
 mod helpers {
-    pub mod bindings;
     pub mod module_imports;
 }
 
@@ -62,7 +61,7 @@ impl<'a> Transformer<'a> {
         source_path: &Path,
         source_type: SourceType,
         source_text: &'a str,
-        trivias: Trivias,
+        trivias: &'a Trivias,
         options: TransformOptions,
     ) -> Self {
         let ctx = Rc::new(TransformCtx::new(
@@ -154,8 +153,8 @@ impl<'a> Traverse<'a> for Transformer<'a> {
         self.x3_es2015.transform_expression(expr);
     }
 
-    fn exit_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
-        self.x3_es2015.transform_expression_on_exit(expr, ctx);
+    fn exit_expression(&mut self, expr: &mut Expression<'a>, _ctx: &mut TraverseCtx<'a>) {
+        self.x3_es2015.transform_expression_on_exit(expr);
     }
 
     fn enter_simple_assignment_target(
@@ -201,10 +200,7 @@ impl<'a> Traverse<'a> for Transformer<'a> {
     ) {
         self.x0_typescript.transform_jsx_opening_element(elem);
         self.x1_react.transform_jsx_opening_element(elem, ctx);
-    }
-
-    fn enter_jsx_element_name(&mut self, elem: &mut JSXElementName<'a>, ctx: &mut TraverseCtx<'a>) {
-        self.x3_es2015.transform_jsx_element_name(elem, ctx);
+        self.x3_es2015.transform_jsx_opening_element(elem);
     }
 
     fn enter_method_definition(
@@ -236,7 +232,6 @@ impl<'a> Traverse<'a> for Transformer<'a> {
     }
 
     fn enter_statements(&mut self, stmts: &mut Vec<'a, Statement<'a>>, _ctx: &mut TraverseCtx<'a>) {
-        self.x0_typescript.transform_statements(stmts);
         self.x3_es2015.enter_statements(stmts);
     }
 

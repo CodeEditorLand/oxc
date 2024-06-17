@@ -1,4 +1,3 @@
-#![allow(clippy::print_stdout)]
 use std::path::Path;
 
 use oxc_allocator::Allocator;

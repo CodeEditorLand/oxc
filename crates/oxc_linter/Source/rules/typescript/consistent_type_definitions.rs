@@ -7,7 +7,7 @@ use oxc_diagnostics::{LabeledSpan, OxcDiagnostic};
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
-use crate::{context::LintContext, rule::Rule, AstNode};
+use crate::{context::LintContext, fixer::Fix, rule::Rule, AstNode};
 
 fn consistent_type_definitions_diagnostic(x0: &str, x1: &str, span2: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("typescript-eslint(consistent-type-definitions):")
@@ -100,10 +100,10 @@ impl Rule for ConsistentTypeDefinitions {
                                 "type",
                                 Span::new(start, start + 4),
                             ),
-                            |fixer| {
-                                fixer.replace(
-                                    Span::new(start, decl.span.end),
+                            || {
+                                Fix::new(
                                     format!("interface {name} {body}"),
+                                    Span::new(start, decl.span.end),
                                 )
                             },
                         );
@@ -157,10 +157,10 @@ impl Rule for ConsistentTypeDefinitions {
                             "interface",
                             Span::new(decl.span.start, decl.span.start + 9),
                         ),
-                        |fixer| {
-                            fixer.replace(
-                                exp.span,
+                        || {
+                            Fix::new(
                                 format!("type {name} = {body}{extends}\nexport default {name}"),
+                                Span::new(exp.span.start, exp.span.end),
                             )
                         },
                     );
@@ -215,10 +215,10 @@ impl Rule for ConsistentTypeDefinitions {
                         "interface",
                         Span::new(start, start + 9),
                     ),
-                    |fixer| {
-                        fixer.replace(
-                            Span::new(start, decl.span.end),
+                    || {
+                        Fix::new(
                             format!("type {name} = {body}{extends}"),
+                            Span::new(start, decl.span.end),
                         )
                     },
                 );

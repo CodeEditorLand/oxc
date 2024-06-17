@@ -1,11 +1,7 @@
 use std::borrow::Cow;
 
-use oxc_ast::Trivias;
-use oxc_codegen::{Codegen, CodegenOptions};
 use oxc_diagnostics::OxcDiagnostic;
-use oxc_span::{GetSpan, Span};
-
-use crate::LintContext;
+use oxc_span::Span;
 
 #[derive(Debug, Clone, Default)]
 pub struct Fix<'a> {
@@ -23,54 +19,7 @@ impl<'a> Fix<'a> {
     }
 }
 
-/// Inspired by ESLint's [`RuleFixer`].
-///
-/// [`RuleFixer`]: https://github.com/eslint/eslint/blob/main/lib/linter/rule-fixer.js
-#[derive(Clone, Copy)]
-pub struct RuleFixer<'c, 'a: 'c> {
-    ctx: &'c LintContext<'a>,
-}
-
-impl<'c, 'a: 'c> RuleFixer<'c, 'a> {
-    pub fn new(ctx: &'c LintContext<'a>) -> Self {
-        Self { ctx }
-    }
-
-    pub fn source_range(self, span: Span) -> &'a str {
-        self.ctx.source_range(span)
-    }
-
-    /// Create a [`Fix`] that deletes the text covered by the given [`Span`] or
-    /// AST node.
-    pub fn delete<S: GetSpan>(self, spanned: &S) -> Fix<'a> {
-        self.delete_range(spanned.span())
-    }
-
-    #[allow(clippy::unused_self)]
-    pub fn delete_range(self, span: Span) -> Fix<'a> {
-        Fix::delete(span)
-    }
-
-    /// Replace a `target` AST node with the source code of a `replacement` node..
-    pub fn replace_with<T: GetSpan, S: GetSpan>(self, target: &T, replacement: &S) -> Fix<'a> {
-        let replacement_text = self.ctx.source_range(replacement.span());
-        Fix::new(replacement_text, target.span())
-    }
-
-    /// Replace a `target` AST node with a `replacement` string.
-    #[allow(clippy::unused_self)]
-    pub fn replace<S: Into<Cow<'a, str>>>(self, target: Span, replacement: S) -> Fix<'a> {
-        Fix::new(replacement, target)
-    }
-
-    #[allow(clippy::unused_self)]
-    pub fn codegen(self) -> Codegen<'a, false> {
-        Codegen::<false>::new("", "", Trivias::default(), CodegenOptions::default())
-    }
-}
-
 pub struct FixResult<'a> {
-    #[allow(unused)]
     pub fixed: bool,
     pub fixed_code: Cow<'a, str>,
     pub messages: Vec<Message<'a>>,

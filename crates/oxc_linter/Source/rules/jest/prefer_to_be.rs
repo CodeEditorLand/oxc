@@ -9,6 +9,7 @@ use oxc_span::Span;
 
 use crate::{
     context::LintContext,
+    fixer::Fix,
     rule::Rule,
     utils::{
         collect_possible_jest_call_node, is_equality_matcher, parse_expect_jest_fn_call,
@@ -229,40 +230,39 @@ impl PreferToBe {
         let maybe_not_modifier = modifiers.iter().find(|modifier| modifier.is_name_equal("not"));
 
         if kind == &PreferToBeKind::Undefined {
-            ctx.diagnostic_with_fix(use_to_be_undefined(span), |fixer| {
+            ctx.diagnostic_with_fix(use_to_be_undefined(span), || {
                 let new_matcher =
                     if is_cmp_mem_expr { "[\"toBeUndefined\"]()" } else { "toBeUndefined()" };
-                let span = if let Some(not_modifier) = maybe_not_modifier {
-                    Span::new(not_modifier.span.start, end)
+                if let Some(not_modifier) = maybe_not_modifier {
+                    Fix::new(new_matcher.to_string(), Span::new(not_modifier.span.start, end))
                 } else {
-                    Span::new(span.start, end)
-                };
-                fixer.replace(span, new_matcher)
+                    Fix::new(new_matcher.to_string(), Span::new(span.start, end))
+                }
             });
         } else if kind == &PreferToBeKind::Defined {
-            ctx.diagnostic_with_fix(use_to_be_defined(span), |fixer| {
+            ctx.diagnostic_with_fix(use_to_be_defined(span), || {
                 let (new_matcher, start) = if is_cmp_mem_expr {
                     ("[\"toBeDefined\"]()", modifiers.first().unwrap().span.end)
                 } else {
                     ("toBeDefined()", maybe_not_modifier.unwrap().span.start)
                 };
 
-                fixer.replace(Span::new(start, end), new_matcher)
+                Fix::new(new_matcher.to_string(), Span::new(start, end))
             });
         } else if kind == &PreferToBeKind::Null {
-            ctx.diagnostic_with_fix(use_to_be_null(span), |fixer| {
+            ctx.diagnostic_with_fix(use_to_be_null(span), || {
                 let new_matcher = if is_cmp_mem_expr { "\"toBeNull\"]()" } else { "toBeNull()" };
-                fixer.replace(Span::new(span.start, end), new_matcher)
+                Fix::new(new_matcher.to_string(), Span::new(span.start, end))
             });
         } else if kind == &PreferToBeKind::NaN {
-            ctx.diagnostic_with_fix(use_to_be_na_n(span), |fixer| {
+            ctx.diagnostic_with_fix(use_to_be_na_n(span), || {
                 let new_matcher = if is_cmp_mem_expr { "\"toBeNaN\"]()" } else { "toBeNaN()" };
-                fixer.replace(Span::new(span.start, end), new_matcher)
+                Fix::new(new_matcher.to_string(), Span::new(span.start, end))
             });
         } else {
-            ctx.diagnostic_with_fix(use_to_be(span), |fixer| {
+            ctx.diagnostic_with_fix(use_to_be(span), || {
                 let new_matcher = if is_cmp_mem_expr { "\"toBe\"" } else { "toBe" };
-                fixer.replace(span, new_matcher)
+                Fix::new(new_matcher.to_string(), span)
             });
         }
     }

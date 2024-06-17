@@ -6,14 +6,14 @@ use oxc_ast::{
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
-use oxc_span::{GetSpan, Span};
+use oxc_span::Span;
 use oxc_syntax::operator::{BinaryOperator, LogicalOperator};
 
 use crate::{
     context::LintContext,
     rule::Rule,
     utils::{get_boolean_ancestor, is_boolean_node},
-    AstNode,
+    AstNode, Fix,
 };
 
 fn none_zero(span0: Span, x1: &str, x2: &str, x3: Option<String>) -> OxcDiagnostic {
@@ -161,6 +161,13 @@ impl ExplicitLengthCheck {
         auto_fix: bool,
     ) {
         let kind = node.kind();
+        let span = match kind {
+            AstKind::BinaryExpression(expr) => expr.span,
+            AstKind::UnaryExpression(expr) => expr.span,
+            AstKind::CallExpression(expr) => expr.span,
+            AstKind::MemberExpression(MemberExpression::StaticMemberExpression(expr)) => expr.span,
+            _ => unreachable!(),
+        };
         let check_code = if is_zero_length_check {
             if matches!(kind, AstKind::BinaryExpression(BinaryExpression{operator:BinaryOperator::StrictEquality,right,..}) if right.is_number_0())
             {
@@ -185,8 +192,6 @@ impl ExplicitLengthCheck {
                 }
             }
         };
-
-        let span = kind.span();
         let mut need_pad_start = false;
         let mut need_pad_end = false;
         let parent = ctx.nodes().parent_kind(node.id());
@@ -211,18 +216,31 @@ impl ExplicitLengthCheck {
             if need_pad_end { " " } else { "" },
         );
         let property = static_member_expr.property.name.clone();
-        let help = if auto_fix {
-            None
-        } else {
-            Some(format!("Replace `.{property}` with `.{property} {check_code}`."))
-        };
         let diagnostic = if is_zero_length_check {
-            zero(span, property.as_str(), check_code, help)
+            zero(
+                span,
+                property.as_str(),
+                check_code,
+                if auto_fix {
+                    None
+                } else {
+                    Some(format!("Replace `.{property}` with `.{property} {check_code}`."))
+                },
+            )
         } else {
-            none_zero(span, property.as_str(), check_code, help)
+            none_zero(
+                span,
+                property.as_str(),
+                check_code,
+                if auto_fix {
+                    None
+                } else {
+                    Some(format!("Replace `.{property}` with `.{property} {check_code}`."))
+                },
+            )
         };
         if auto_fix {
-            ctx.diagnostic_with_fix(diagnostic, |fixer| fixer.replace(span, fixed));
+            ctx.diagnostic_with_fix(diagnostic, || Fix::new(fixed, span));
         } else {
             ctx.diagnostic(diagnostic);
         }
