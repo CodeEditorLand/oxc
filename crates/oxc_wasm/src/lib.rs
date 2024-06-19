@@ -8,7 +8,7 @@ use std::{cell::RefCell, path::PathBuf, rc::Rc};
 use oxc::{
     allocator::Allocator,
     ast::{CommentKind, Trivias},
-    codegen::{Codegen, CodegenOptions},
+    codegen::{CodeGenerator, WhitespaceRemover},
     diagnostics::Error,
     minifier::{CompressOptions, Minifier, MinifierOptions},
     parser::Parser,
@@ -155,7 +155,7 @@ impl Oxc {
         run_options: &OxcRunOptions,
         parser_options: &OxcParserOptions,
         _linter_options: &OxcLinterOptions,
-        codegen_options: &OxcCodegenOptions,
+        _codegen_options: &OxcCodegenOptions,
         minifier_options: &OxcMinifierOptions,
     ) -> Result<(), serde_wasm_bindgen::Error> {
         self.diagnostics = RefCell::default();
@@ -180,6 +180,7 @@ impl Oxc {
         let program = allocator.alloc(ret.program);
 
         let semantic_ret = SemanticBuilder::new(source_text, source_type)
+            .with_cfg(true)
             .with_trivias(ret.trivias.clone())
             .with_check_syntax_error(true)
             .build(program);
@@ -263,10 +264,19 @@ impl Oxc {
         let program = allocator.alloc(program);
 
         if minifier_options.compress() || minifier_options.mangle() {
+            let compress_options = minifier_options.compress_options();
             let options = MinifierOptions {
                 mangle: minifier_options.mangle(),
                 compress: if minifier_options.compress() {
-                    CompressOptions::default()
+                    CompressOptions {
+                        booleans: compress_options.booleans(),
+                        drop_console: compress_options.drop_console(),
+                        drop_debugger: compress_options.drop_debugger(),
+                        evaluate: compress_options.evaluate(),
+                        join_vars: compress_options.join_vars(),
+                        loops: compress_options.loops(),
+                        typeofs: compress_options.typeofs(),
+                    }
                 } else {
                     CompressOptions::all_false()
                 },
@@ -274,18 +284,10 @@ impl Oxc {
             Minifier::new(options).build(&allocator, program);
         }
 
-        let codegen_options = CodegenOptions {
-            enable_typescript: codegen_options.enable_typescript,
-            ..CodegenOptions::default()
-        };
         self.codegen_text = if minifier_options.whitespace() {
-            Codegen::<true>::new("", source_text, ret.trivias, codegen_options)
-                .build(program)
-                .source_text
+            WhitespaceRemover::new().build(program).source_text
         } else {
-            Codegen::<false>::new("", source_text, ret.trivias, codegen_options)
-                .build(program)
-                .source_text
+            CodeGenerator::new().build(program).source_text
         };
 
         Ok(())

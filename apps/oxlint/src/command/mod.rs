@@ -1,53 +1,19 @@
-mod format;
 mod ignore;
 mod lint;
 
-use bpaf::Bpaf;
 use std::path::PathBuf;
 
-pub use self::{
-    format::{format_command, FormatOptions},
-    ignore::IgnoreOptions,
-    lint::{lint_command, lint_options, LintOptions, OutputFormat, OutputOptions, WarningOptions},
-};
+use bpaf::Bpaf;
 
-use self::format::format_options;
+pub use self::{
+    ignore::IgnoreOptions,
+    lint::{lint_command, LintCommand, OutputFormat, OutputOptions, WarningOptions},
+};
 
 const VERSION: &str = match option_env!("OXC_VERSION") {
     Some(v) => v,
     None => "dev",
 };
-
-#[derive(Debug, Clone, Bpaf)]
-#[bpaf(options, version(VERSION))]
-pub enum CliCommand {
-    /// Lint this repository
-    #[bpaf(command)]
-    Lint(#[bpaf(external(lint_options))] LintOptions),
-
-    /// Format this repository
-    #[bpaf(command)]
-    Format(#[bpaf(external(format_options))] FormatOptions),
-}
-
-impl CliCommand {
-    pub fn handle_threads(&self) {
-        match self {
-            Self::Lint(options) => {
-                Self::set_rayon_threads(options.misc_options.threads);
-            }
-            Self::Format(options) => {
-                Self::set_rayon_threads(options.misc_options.threads);
-            }
-        }
-    }
-
-    fn set_rayon_threads(threads: Option<usize>) {
-        if let Some(threads) = threads {
-            rayon::ThreadPoolBuilder::new().num_threads(threads).build_global().unwrap();
-        }
-    }
-}
 
 /// Miscellaneous
 #[derive(Debug, Clone, Bpaf)]
@@ -99,12 +65,11 @@ fn expand_glob(paths: Vec<PathBuf>) -> Vec<PathBuf> {
 
 #[cfg(test)]
 mod misc_options {
-    use super::lint::lint_command;
-    use super::MiscOptions;
+    use super::{lint::lint_command, MiscOptions};
 
     fn get_misc_options(arg: &str) -> MiscOptions {
         let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
-        lint_command().run_inner(args.as_slice()).unwrap().lint_options.misc_options
+        lint_command().run_inner(args.as_slice()).unwrap().misc_options
     }
 
     #[test]

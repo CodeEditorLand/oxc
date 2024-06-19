@@ -335,9 +335,9 @@ dependencies = [
 
 [[package]]
 name = "criterion2"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f22174bed309c964c1720148dfe793f285cc02fd8b13c91205d485f73468d94d"
+checksum = "7258985df1aa8b33359ee2392cbc3b7802875242cdacdda91a17a602132c24a9"
 dependencies = [
  "anes",
  "bpaf",
@@ -987,9 +987,9 @@ dependencies = [
 
 [[package]]
 name = "memchr"
-version = "2.7.2"
+version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
+checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
 name = "memoffset"
@@ -1264,13 +1264,14 @@ checksum = "caff54706df99d2a78a5a4e3455ff45448d81ef1bb63c22cd14052ca0e993a3f"
 
 [[package]]
 name = "oxc"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "oxc_allocator",
  "oxc_ast",
  "oxc_codegen",
  "oxc_diagnostics",
  "oxc_index",
+ "oxc_isolated_declarations",
  "oxc_minifier",
  "oxc_parser",
  "oxc_semantic",
@@ -1282,9 +1283,9 @@ dependencies = [
 
 [[package]]
 name = "oxc-browserslist"
-version = "0.17.0"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9d96b978cbca7d108283a10fcfe79e0dc5b2ecaa99e610b5b5488c3c9321295"
+checksum = "4ffd653f8c5d3dfd8beca79303398ab65d936168109640e00a19629eded86423"
 dependencies = [
  "js-sys",
  "nom",
@@ -1299,7 +1300,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_allocator"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "allocator-api2",
  "bumpalo",
@@ -1309,7 +1310,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_ast"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "bitflags 2.5.0",
  "num-bigint",
@@ -1326,7 +1327,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_ast_macros"
-version = "0.14.0"
+version = "0.15.0"
 
 [[package]]
 name = "oxc_benchmark"
@@ -1349,8 +1350,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "oxc_cfg"
+version = "0.15.0"
+dependencies = [
+ "bitflags 2.5.0",
+ "itertools 0.13.0",
+ "oxc_syntax",
+ "petgraph",
+ "rustc-hash",
+]
+
+[[package]]
 name = "oxc_codegen"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "base64",
  "bitflags 2.5.0",
@@ -1378,6 +1390,7 @@ dependencies = [
  "oxc_ast",
  "oxc_codegen",
  "oxc_diagnostics",
+ "oxc_isolated_declarations",
  "oxc_minifier",
  "oxc_parser",
  "oxc_prettier",
@@ -1401,7 +1414,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_diagnostics"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "miette",
  "owo-colors",
@@ -1411,9 +1424,24 @@ dependencies = [
 
 [[package]]
 name = "oxc_index"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "oxc_isolated_declarations"
+version = "0.15.0"
+dependencies = [
+ "insta",
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_codegen",
+ "oxc_diagnostics",
+ "oxc_parser",
+ "oxc_span",
+ "oxc_syntax",
+ "rustc-hash",
 ]
 
 [[package]]
@@ -1449,7 +1477,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_linter"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "convert_case",
  "dashmap",
@@ -1463,6 +1491,7 @@ dependencies = [
  "once_cell",
  "oxc_allocator",
  "oxc_ast",
+ "oxc_cfg",
  "oxc_codegen",
  "oxc_diagnostics",
  "oxc_macros",
@@ -1497,7 +1526,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_minifier"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "insta",
  "itertools 0.13.0",
@@ -1531,7 +1560,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_module_lexer"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "oxc_allocator",
  "oxc_ast",
@@ -1541,7 +1570,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_parser"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "assert-unchecked",
  "bitflags 2.5.0",
@@ -1635,20 +1664,19 @@ dependencies = [
 
 [[package]]
 name = "oxc_semantic"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
- "bitflags 2.5.0",
  "indexmap",
  "insta",
  "itertools 0.13.0",
  "oxc_allocator",
  "oxc_ast",
+ "oxc_cfg",
  "oxc_diagnostics",
  "oxc_index",
  "oxc_parser",
  "oxc_span",
  "oxc_syntax",
- "petgraph",
  "phf",
  "rustc-hash",
  "serde",
@@ -1658,7 +1686,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_sourcemap"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "base64-simd",
  "cfg-if",
@@ -1670,7 +1698,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_span"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "compact_str",
  "miette",
@@ -1681,7 +1709,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_syntax"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "bitflags 2.5.0",
  "dashmap",
@@ -1724,8 +1752,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "oxc_transform_napi"
+version = "0.0.0"
+dependencies = [
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "oxc_allocator",
+ "oxc_codegen",
+ "oxc_diagnostics",
+ "oxc_isolated_declarations",
+ "oxc_parser",
+ "oxc_span",
+]
+
+[[package]]
 name = "oxc_transformer"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "dashmap",
  "indexmap",
@@ -1746,7 +1789,7 @@ dependencies = [
 
 [[package]]
 name = "oxc_traverse"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "compact_str",
  "memoffset",
@@ -1773,7 +1816,7 @@ dependencies = [
 
 [[package]]
 name = "oxlint"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "bpaf",
  "glob",

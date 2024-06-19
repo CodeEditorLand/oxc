@@ -1,5 +1,6 @@
-use crate::SourceMap;
 use rustc_hash::FxHashMap;
+
+use crate::SourceMap;
 
 /// The `SourcemapVisualizer` is a helper for sourcemap testing.
 /// It print the mapping of original content and final content tokens.
@@ -189,7 +190,6 @@ mod test {
         let output = "\n// shared.js\nconst a = 'shared.js';\n\n// index.js\nconst a$1 = 'index.js';\nconsole.log(a$1, a);\n";
         let visualizer = SourcemapVisualizer::new(output, &sourcemap);
         let visualizer_text = visualizer.into_visualizer_text();
-        println!("{visualizer_text}");
         assert_eq!(
             visualizer_text,
             r#"- shared.js

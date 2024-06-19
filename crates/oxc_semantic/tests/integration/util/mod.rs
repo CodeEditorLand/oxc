@@ -3,20 +3,21 @@ mod expect;
 mod symbol_tester;
 use std::{path::PathBuf, sync::Arc};
 
-use itertools::Itertools;
-use oxc_allocator::Allocator;
-use oxc_diagnostics::{Error, NamedSource, OxcDiagnostic};
-use oxc_semantic::{DebugDot, DisplayDot, Semantic, SemanticBuilder};
-use oxc_span::SourceType;
-
 pub use class_tester::ClassTester;
 pub use expect::Expect;
+use itertools::Itertools;
+use oxc_allocator::Allocator;
+use oxc_cfg::DisplayDot;
+use oxc_diagnostics::{Error, NamedSource, OxcDiagnostic};
+use oxc_semantic::{dot::DebugDot, Semantic, SemanticBuilder};
+use oxc_span::SourceType;
 pub use symbol_tester::SymbolTester;
 
 pub struct SemanticTester<'a> {
     allocator: Allocator,
     source_type: SourceType,
     source_text: &'a str,
+    cfg: bool,
 }
 
 impl<'a> SemanticTester<'a> {
@@ -35,7 +36,7 @@ impl<'a> SemanticTester<'a> {
     }
 
     pub fn new(source_text: &'a str, source_type: SourceType) -> Self {
-        Self { allocator: Allocator::default(), source_type, source_text }
+        Self { allocator: Allocator::default(), source_type, source_text, cfg: false }
     }
 
     /// Set the [`SourceType`] to TypeScript (or JavaScript, using `false`)
@@ -55,6 +56,12 @@ impl<'a> SemanticTester<'a> {
     #[must_use]
     pub fn with_module(mut self, yes: bool) -> Self {
         self.source_type = self.source_type.with_module(yes);
+        self
+    }
+
+    #[must_use]
+    pub fn with_cfg(mut self, yes: bool) -> Self {
+        self.cfg = yes;
         self
     }
 
@@ -82,6 +89,7 @@ impl<'a> SemanticTester<'a> {
             .with_check_syntax_error(true)
             .with_trivias(parse.trivias)
             .build_module_record(PathBuf::new(), program)
+            .with_cfg(self.cfg)
             .build(program);
 
         if !semantic_ret.errors.is_empty() {
@@ -101,29 +109,29 @@ impl<'a> SemanticTester<'a> {
 
     pub fn basic_blocks_count(&self) -> usize {
         let built = self.build();
-        built.cfg().basic_blocks.len()
+        built.cfg().map_or(0, |cfg| cfg.basic_blocks.len())
     }
 
     pub fn basic_blocks_printed(&self) -> String {
         let built = self.build();
-        built
-            .cfg()
-            .basic_blocks
-            .iter()
-            .map(DisplayDot::display_dot)
-            .enumerate()
-            .map(|(i, it)| {
-                format!(
-                    "bb{i}: {{\n{}\n}}",
-                    it.lines().map(|x| format!("\t{}", x.trim())).join("\n")
-                )
-            })
-            .join("\n\n")
+        built.cfg().map_or_else(String::default, |cfg| {
+            cfg.basic_blocks
+                .iter()
+                .map(DisplayDot::display_dot)
+                .enumerate()
+                .map(|(i, it)| {
+                    format!(
+                        "bb{i}: {{\n{}\n}}",
+                        it.lines().map(|x| format!("\t{}", x.trim())).join("\n")
+                    )
+                })
+                .join("\n\n")
+        })
     }
 
     pub fn cfg_dot_diagram(&self) -> String {
         let semantic = self.build();
-        semantic.cfg().debug_dot(semantic.nodes().into())
+        semantic.cfg().map_or_else(String::default, |cfg| cfg.debug_dot(semantic.nodes().into()))
     }
 
     /// Tests that a symbol with the given name exists at the top-level scope and provides a

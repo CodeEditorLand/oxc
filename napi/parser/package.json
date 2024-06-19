@@ -7,14 +7,13 @@
     "bench": "node parse.bench.mjs"
   },
   "devDependencies": {
-    "@napi-rs/cli": "2.18.3",
-    "es-module-lexer": "1.5.3",
-    "tinybench": "2.8.0"
+    "@napi-rs/cli": "^2.18.0",
+    "es-module-lexer": "^1.4.1",
+    "tinybench": "^2.6.0"
   },
   "engines": {
     "node": ">=14.*"
   },
-  "packageManager": "pnpm@8.15.4+sha256.cea6d0bdf2de3a0549582da3983c70c92ffc577ff4410cbf190817ddc35137c2",
   "napi": {
     "name": "parser",
     "triples": {

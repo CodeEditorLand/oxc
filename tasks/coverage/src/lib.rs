@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 // Core
 mod runtime;
 mod suite;
@@ -32,7 +33,7 @@ use crate::{
         TransformerBabelCase, TransformerMiscCase, TransformerTest262Case,
         TransformerTypeScriptCase,
     },
-    typescript::{TypeScriptCase, TypeScriptSuite},
+    typescript::{TranspileRunner, TypeScriptCase, TypeScriptSuite, TypeScriptTranspileCase},
 };
 
 /// # Panics
@@ -60,6 +61,7 @@ impl AppArgs {
         self.run_codegen();
         self.run_prettier();
         self.run_transformer();
+        self.run_transpiler();
         // self.run_codegen_runtime();
         self.run_minifier();
     }
@@ -91,6 +93,10 @@ impl AppArgs {
         BabelSuite::<TransformerBabelCase>::new().run("transformer_babel", self);
         TypeScriptSuite::<TransformerTypeScriptCase>::new().run("transformer_typescript", self);
         MiscSuite::<TransformerMiscCase>::new().run("transformer_misc", self);
+    }
+
+    pub fn run_transpiler(&self) {
+        TranspileRunner::<TypeScriptTranspileCase>::new().run("transpile", self);
     }
 
     /// # Panics

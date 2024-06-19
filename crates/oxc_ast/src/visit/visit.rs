@@ -6,10 +6,9 @@
 
 use oxc_allocator::Vec;
 use oxc_syntax::scope::ScopeFlags;
+use walk::*;
 
 use crate::{ast::*, ast_kind::AstKind};
-
-use walk::*;
 
 /// Syntax tree traversal
 pub trait Visit<'a>: Sized {
@@ -714,6 +713,10 @@ pub trait Visit<'a>: Sized {
         walk_ts_boolean_keyword(self, ty);
     }
 
+    fn visit_ts_intrinsic_keyword(&mut self, ty: &TSIntrinsicKeyword) {
+        walk_ts_intrinsic_keyword(self, ty);
+    }
+
     fn visit_ts_never_keyword(&mut self, ty: &TSNeverKeyword) {
         walk_ts_never_keyword(self, ty);
     }
@@ -1247,12 +1250,12 @@ pub mod walk {
         if let Some(ident) = &func.id {
             visitor.visit_binding_identifier(ident);
         }
+        if let Some(parameters) = &func.type_parameters {
+            visitor.visit_ts_type_parameter_declaration(parameters);
+        }
         visitor.visit_formal_parameters(&func.params);
         if let Some(body) = &func.body {
             visitor.visit_function_body(body);
-        }
-        if let Some(parameters) = &func.type_parameters {
-            visitor.visit_ts_type_parameter_declaration(parameters);
         }
         if let Some(annotation) = &func.return_type {
             visitor.visit_ts_type_annotation(annotation);
@@ -2691,6 +2694,7 @@ pub mod walk {
             TSType::TSAnyKeyword(ty) => visitor.visit_ts_any_keyword(ty),
             TSType::TSBigIntKeyword(ty) => visitor.visit_ts_big_int_keyword(ty),
             TSType::TSBooleanKeyword(ty) => visitor.visit_ts_boolean_keyword(ty),
+            TSType::TSIntrinsicKeyword(ty) => visitor.visit_ts_intrinsic_keyword(ty),
             TSType::TSNeverKeyword(ty) => visitor.visit_ts_never_keyword(ty),
             TSType::TSNullKeyword(ty) => visitor.visit_ts_null_keyword(ty),
             TSType::TSNumberKeyword(ty) => visitor.visit_ts_number_keyword(ty),
@@ -3066,6 +3070,12 @@ pub mod walk {
 
     pub fn walk_ts_boolean_keyword<'a, V: Visit<'a>>(visitor: &mut V, ty: &TSBooleanKeyword) {
         let kind = AstKind::TSBooleanKeyword(visitor.alloc(ty));
+        visitor.enter_node(kind);
+        visitor.leave_node(kind);
+    }
+
+    pub fn walk_ts_intrinsic_keyword<'a, V: Visit<'a>>(visitor: &mut V, ty: &TSIntrinsicKeyword) {
+        let kind = AstKind::TSIntrinsicKeyword(visitor.alloc(ty));
         visitor.enter_node(kind);
         visitor.leave_node(kind);
     }

@@ -1,11 +1,11 @@
+#![allow(clippy::print_stdout)]
 use std::path::Path;
 
 use oxc_allocator::Allocator;
-use oxc_codegen::{Codegen, CodegenOptions};
+use oxc_codegen::{CodeGenerator, WhitespaceRemover};
 use oxc_minifier::{Minifier, MinifierOptions};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
-
 use pico_args::Arguments;
 
 // Instruction:
@@ -43,10 +43,9 @@ fn minify(source_text: &str, source_type: SourceType, mangle: bool, whitespace: 
     let options = MinifierOptions { mangle, ..MinifierOptions::default() };
     Minifier::new(options).build(&allocator, program);
     if whitespace {
-        Codegen::<true>::new("", source_text, ret.trivias, CodegenOptions::default()).build(program)
+        WhitespaceRemover::new().build(program)
     } else {
-        Codegen::<false>::new("", source_text, ret.trivias, CodegenOptions::default())
-            .build(program)
+        CodeGenerator::new().build(program)
     }
     .source_text
 }

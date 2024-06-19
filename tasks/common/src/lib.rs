@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 use std::path::{Path, PathBuf};
 
 mod diff;
@@ -5,8 +6,9 @@ mod request;
 mod snapshot;
 mod test_file;
 
-pub use crate::{request::agent, snapshot::Snapshot, test_file::*};
 pub use diff::print_diff_in_terminal;
+
+pub use crate::{request::agent, snapshot::Snapshot, test_file::*};
 
 /// # Panics
 /// Invalid Project Root

@@ -134,6 +134,12 @@ impl Tester {
         self
     }
 
+    /// Change the extension of the path
+    pub fn change_rule_path_extension(mut self, ext: &str) -> Self {
+        self.rule_path = self.rule_path.with_extension(ext);
+        self
+    }
+
     pub fn with_import_plugin(mut self, yes: bool) -> Self {
         self.import_plugin = yes;
         self
@@ -199,8 +205,8 @@ impl Tester {
 
     pub fn snapshot(&self) {
         let name = self.rule_name.replace('-', "_");
-        insta::with_settings!({ prepend_module_to_snapshot => false, }, {
-            insta::assert_snapshot!(name.clone(), self.snapshot, &name);
+        insta::with_settings!({ prepend_module_to_snapshot => false, omit_expression => true }, {
+            insta::assert_snapshot!(name, self.snapshot);
         });
     }
 

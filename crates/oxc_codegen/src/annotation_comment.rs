@@ -1,5 +1,3 @@
-use std::usize;
-
 use daachorse::DoubleArrayAhoCorasick;
 use once_cell::sync::Lazy;
 use oxc_ast::{Comment, CommentKind};
@@ -21,7 +19,7 @@ pub fn get_leading_annotate_comment<const MINIFY: bool>(
         CommentKind::SingleLine => comment.end,
         CommentKind::MultiLine => comment.end + 2,
     };
-    let source_code = codegen.source_code;
+    let source_code = codegen.source_text;
     let content_between = &source_code[real_end as usize..node_start as usize];
     // Used for VariableDeclaration (Rollup only respects "const" and only for the first one)
     if content_between.chars().all(|ch| ch.is_ascii_whitespace()) {
@@ -57,7 +55,7 @@ pub fn print_comment<const MINIFY: bool>(
 }
 
 pub fn gen_comment<const MINIFY: bool>(node_start: u32, codegen: &mut Codegen<{ MINIFY }>) {
-    if !codegen.options.preserve_annotate_comments {
+    if !codegen.comment_options.preserve_annotate_comments {
         return;
     }
     if let Some((comment_start, comment)) = codegen.try_take_moved_comment(node_start) {
