@@ -1,8 +1,7 @@
 #![allow(clippy::cast_possible_truncation)]
-use oxc_diagnostics::OxcDiagnostic;
-
 use std::{ffi::OsStr, path::Component, sync::Arc};
 
+use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{CompactStr, Span};
 use oxc_syntax::{
@@ -98,7 +97,7 @@ impl Rule for NoCycle {
     }
 
     fn run_once(&self, ctx: &LintContext<'_>) {
-        let module_record = ctx.semantic().module_record();
+        let module_record = ctx.module_record();
 
         let needle = &module_record.resolved_absolute_path;
         let cwd = std::env::current_dir().unwrap();

@@ -1,6 +1,5 @@
 use oxc_ast::AstKind;
 use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
@@ -75,7 +74,7 @@ fn is_inside_process_event_handler(ctx: &LintContext, node: &AstNode) -> bool {
 }
 
 fn is_worker_threads_imported(ctx: &LintContext) -> bool {
-    ctx.semantic().module_record().import_entries.iter().any(|entry| {
+    ctx.module_record().import_entries.iter().any(|entry| {
         matches!(entry.module_request.name().as_str(), "worker_threads" | "node:worker_threads")
     })
 }

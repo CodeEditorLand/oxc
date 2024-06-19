@@ -3,11 +3,12 @@ use oxc_ast::ast::{
     ArrowFunctionExpression, BindingPatternKind, Expression, FormalParameter, Function, Statement,
     TSType, TSTypeAnnotation,
 };
-use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::{GetSpan, SPAN};
 
 use crate::{
-    diagnostics::{array_inferred, inferred_type_of_class_expression},
+    diagnostics::{
+        array_inferred, inferred_type_of_class_expression, parameter_must_have_explicit_type,
+    },
     return_type::FunctionReturnType,
     IsolatedDeclarations,
 };
@@ -51,15 +52,14 @@ impl<'a> IsolatedDeclarations<'a> {
                 self.error(inferred_type_of_class_expression(expr.span));
                 Some(self.ast.ts_unknown_keyword(SPAN))
             }
+            Expression::ParenthesizedExpression(expr) => {
+                self.infer_type_from_expression(&expr.expression)
+            }
             Expression::TSNonNullExpression(expr) => {
                 self.infer_type_from_expression(&expr.expression)
             }
             Expression::TSSatisfiesExpression(expr) => {
                 self.infer_type_from_expression(&expr.expression)
-            }
-            Expression::TSInstantiationExpression(_expr) => {
-                unreachable!();
-                // infer_type_from_expression(ctx, &expr.expression)
             }
             Expression::TSTypeAssertion(expr) => Some(self.ast.copy(&expr.type_annotation)),
             _ => None,
@@ -79,10 +79,7 @@ impl<'a> IsolatedDeclarations<'a> {
             } else {
                 if let Expression::TSAsExpression(expr) = &pattern.right {
                     if !expr.type_annotation.is_keyword_or_literal() {
-                        self.error(
-                            OxcDiagnostic::error("Parameter must have an explicit type annotation with --isolatedDeclarations.")
-                                .with_label(expr.type_annotation.span())
-                        );
+                        self.error(parameter_must_have_explicit_type(expr.type_annotation.span()));
                     }
                 }
 
@@ -105,14 +102,10 @@ impl<'a> IsolatedDeclarations<'a> {
             return None;
         }
 
-        FunctionReturnType::infer(
-            self,
-            function
-                .body
-                .as_ref()
-                .unwrap_or_else(|| unreachable!("Only declare function can have no body")),
-        )
-        .map(|type_annotation| self.ast.ts_type_annotation(SPAN, type_annotation))
+        function.body.as_ref().and_then(|body| {
+            FunctionReturnType::infer(self, body)
+                .map(|type_annotation| self.ast.ts_type_annotation(SPAN, type_annotation))
+        })
     }
 
     pub fn infer_arrow_function_return_type(

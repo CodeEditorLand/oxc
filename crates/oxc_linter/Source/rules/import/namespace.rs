@@ -63,8 +63,9 @@ impl Rule for Namespace {
                 .unwrap_or(false),
         }
     }
+
     fn run_once(&self, ctx: &LintContext<'_>) {
-        let module_record = ctx.semantic().module_record();
+        let module_record = ctx.module_record();
         module_record.import_entries.iter().for_each(|entry| {
             let (source, module) = match &entry.import_name {
                 ImportImportName::NamespaceObject => {
@@ -319,8 +320,9 @@ fn check_binding_exported(
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
     use serde_json::json;
+
+    use crate::tester::Tester;
 
     let pass = vec![
         (r#"import "./malformed.js""#, None),

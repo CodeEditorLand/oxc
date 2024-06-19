@@ -1,7 +1,5 @@
-use crate::Fix;
 use oxc_ast::AstKind;
 use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 use serde_json::Value;
@@ -97,8 +95,8 @@ impl Rule for NoExplicitAny {
         }
 
         if self.fix_to_unknown {
-            ctx.diagnostic_with_fix(no_explicit_any_diagnostic(any.span), || {
-                Fix::new("unknown", any.span)
+            ctx.diagnostic_with_fix(no_explicit_any_diagnostic(any.span), |fixer| {
+                fixer.replace(any.span, "unknown")
             });
         } else {
             ctx.diagnostic(no_explicit_any_diagnostic(any.span));
@@ -127,9 +125,10 @@ impl NoExplicitAny {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::*;
     use crate::tester::Tester;
-    use serde_json::json;
 
     #[test]
     fn test_simple() {

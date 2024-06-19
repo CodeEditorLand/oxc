@@ -1,17 +1,16 @@
-use crate::{
-    context::LintContext,
-    fixer::Fix,
-    rule::Rule,
-    utils::{collect_possible_jest_call_node, PossibleJestNode},
-};
-use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_ast::{
     ast::{Argument, Expression},
     AstKind,
 };
+use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
+
+use crate::{
+    context::LintContext,
+    rule::Rule,
+    utils::{collect_possible_jest_call_node, PossibleJestNode},
+};
 
 fn add_type_parameter_to_module_mock_diagnostic(x0: &str, span1: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("eslint-plugin-jest(no-untyped-mock-factory): Disallow using `jest.mock()` factories without an explicit type parameter.")
@@ -140,16 +139,14 @@ impl NoUntypedMockFactory {
                     string_literal.value.as_str(),
                     property_span,
                 ),
-                || {
-                    let mut content = ctx.codegen();
+                |fixer| {
+                    let mut content = fixer.codegen();
                     content.print_str(b"<typeof import('");
                     content.print_str(string_literal.value.as_bytes());
                     content.print_str(b"')>(");
+                    let span = Span::sized(string_literal.span.start - 1, 1);
 
-                    Fix::new(
-                        content.into_source_text(),
-                        Span::new(string_literal.span.start - 1, string_literal.span.start),
-                    )
+                    fixer.replace(span, content)
                 },
             );
         } else if let Expression::Identifier(ident) = expr {

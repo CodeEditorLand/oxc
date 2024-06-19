@@ -1,6 +1,4 @@
-use oxc_diagnostics::OxcDiagnostic;
 // #![allow(clippy::significant_drop_tightening)]
-
 use std::collections::HashMap;
 
 use dashmap::mapref::one::Ref;
@@ -8,6 +6,7 @@ use oxc_ast::{
     ast::{BindingPatternKind, Expression, IdentifierReference, MemberExpression},
     AstKind,
 };
+use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::SymbolId;
 use oxc_span::{CompactStr, Span};
@@ -62,7 +61,7 @@ fn get_symbol_id_from_ident(
 
 impl Rule for NoNamedAsDefaultMember {
     fn run_once(&self, ctx: &LintContext<'_>) {
-        let module_record = ctx.semantic().module_record();
+        let module_record = ctx.module_record();
 
         let mut has_members_map: HashMap<SymbolId, (Ref<'_, CompactStr, _, _>, CompactStr)> =
             HashMap::default();

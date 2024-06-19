@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 use std::{
     fs::File,
     io::{self, Write},
@@ -5,9 +6,8 @@ use std::{
 
 use flate2::{write::GzEncoder, Compression};
 use humansize::{format_size, DECIMAL};
-
 use oxc_allocator::Allocator;
-use oxc_codegen::{Codegen, CodegenOptions};
+use oxc_codegen::WhitespaceRemover;
 use oxc_minifier::{CompressOptions, Minifier, MinifierOptions};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
@@ -70,12 +70,10 @@ fn minify_twice(file: &TestFile) -> String {
 
 fn minify(source_text: &str, source_type: SourceType, options: MinifierOptions) -> String {
     let allocator = Allocator::default();
-    let program = Parser::new(&allocator, source_text, source_type).parse().program;
-    let program = allocator.alloc(program);
+    let ret = Parser::new(&allocator, source_text, source_type).parse();
+    let program = allocator.alloc(ret.program);
     Minifier::new(options).build(&allocator, program);
-    Codegen::<true>::new("", source_text, CodegenOptions::default(), None)
-        .build(program)
-        .source_text
+    WhitespaceRemover::new().build(program).source_text
 }
 
 fn gzip_size(s: &str) -> usize {

@@ -1,12 +1,10 @@
 use oxc_ast::{ast::Expression, AstKind};
 use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 
 use crate::{
     context::LintContext,
-    fixer::Fix,
     rule::Rule,
     utils::{
         collect_possible_jest_call_node, parse_general_jest_fn_call, JestGeneralFnKind,
@@ -87,8 +85,8 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
 
     let preferred_node_name = get_preferred_node_names(&jest_fn_call);
 
-    ctx.diagnostic_with_fix(no_test_prefixes_diagnostic(&preferred_node_name, span), || {
-        Fix::new(preferred_node_name, span)
+    ctx.diagnostic_with_fix(no_test_prefixes_diagnostic(&preferred_node_name, span), |fixer| {
+        fixer.replace(span, preferred_node_name)
     });
 }
 

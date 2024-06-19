@@ -3,20 +3,20 @@
 use std::path::{Path, PathBuf};
 
 use oxc_allocator::Allocator;
-use oxc_ast::Trivias;
-use oxc_codegen::{Codegen, CodegenOptions};
+use oxc_codegen::CodeGenerator;
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_isolated_declarations::IsolatedDeclarations;
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 
+use super::{
+    meta::{Baseline, BaselineFile, CompilerSettings, TestCaseContent, TestUnitData},
+    TESTS_ROOT,
+};
 use crate::{
     project_root,
     suite::{Case, Suite, TestResult},
 };
-
-use super::meta::{Baseline, BaselineFile, CompilerSettings, TestCaseContent, TestUnitData};
-use super::TESTS_ROOT;
 
 pub struct TranspileRunner<T: Case> {
     test_root: PathBuf,
@@ -118,12 +118,14 @@ impl TypeScriptTranspileCase {
             return TestResult::Mismatch(baseline_text, expected_text);
         }
 
-        for (base, expected) in baseline.files.into_iter().zip(expected.files) {
+        for (base, expected) in baseline.files.iter().zip(expected.files) {
             if base.oxc_printed != expected.oxc_printed {
-                return TestResult::Mismatch(base.oxc_printed, expected.oxc_printed);
+                return TestResult::Mismatch(base.oxc_printed.clone(), expected.oxc_printed);
             }
         }
-        TestResult::Passed
+
+        let snapshot = format!("\n#### {:?} ####\n{}", self.path, baseline.snapshot());
+        TestResult::CorrectError(snapshot, false)
     }
 
     fn run_kind(&self, _kind: TranspileKind) -> BaselineFile {
@@ -144,12 +146,9 @@ impl TypeScriptTranspileCase {
             let baseline = Baseline {
                 name: change_extension(&unit.name),
                 original: unit.content.clone(),
+                original_diagnostic: String::new(),
                 oxc_printed: source_text,
-                diagnostic: errors
-                    .into_iter()
-                    .map(|e| e.message.clone())
-                    .collect::<Vec<_>>()
-                    .join("\n"),
+                oxc_diagnostics: errors,
             };
             files.push(baseline);
         }
@@ -167,8 +166,6 @@ fn transpile(path: &Path, source_text: &str) -> (String, Vec<OxcDiagnostic>) {
     let source_type = SourceType::from_path(path).unwrap();
     let ret = Parser::new(&allocator, source_text, source_type).parse();
     let ret = IsolatedDeclarations::new(&allocator).build(&ret.program);
-    let printed = Codegen::<false>::new("", "", Trivias::default(), CodegenOptions::default())
-        .build(&ret.program)
-        .source_text;
+    let printed = CodeGenerator::new().build(&ret.program).source_text;
     (printed, ret.errors)
 }

@@ -6,27 +6,12 @@ use oxc_linter::AllowWarnDeny;
 use super::{
     expand_glob,
     ignore::{ignore_options, IgnoreOptions},
-    misc_options, validate_paths, CliCommand, MiscOptions, PATHS_ERROR_MESSAGE, VERSION,
+    misc_options, validate_paths, MiscOptions, PATHS_ERROR_MESSAGE, VERSION,
 };
 
-// To add a header or footer, see
-// <https://docs.rs/bpaf/latest/bpaf/struct.OptionParser.html#method.descr>
-/// Linter for the JavaScript Oxidation Compiler
 #[derive(Debug, Clone, Bpaf)]
 #[bpaf(options, version(VERSION))]
 pub struct LintCommand {
-    #[bpaf(external(lint_options))]
-    pub lint_options: LintOptions,
-}
-
-impl LintCommand {
-    pub fn handle_threads(&self) {
-        CliCommand::set_rayon_threads(self.lint_options.misc_options.threads);
-    }
-}
-
-#[derive(Debug, Clone, Bpaf)]
-pub struct LintOptions {
     #[bpaf(external)]
     pub basic_options: BasicOptions,
 
@@ -60,6 +45,17 @@ pub struct LintOptions {
     pub paths: Vec<PathBuf>,
 }
 
+impl LintCommand {
+    pub fn handle_threads(&self) {
+        Self::set_rayon_threads(self.misc_options.threads);
+    }
+
+    fn set_rayon_threads(threads: Option<usize>) {
+        if let Some(threads) = threads {
+            rayon::ThreadPoolBuilder::new().num_threads(threads).build_global().unwrap();
+        }
+    }
+}
 /// Basic Configuration
 #[derive(Debug, Clone, Bpaf)]
 pub struct BasicOptions {
@@ -166,6 +162,7 @@ pub enum OutputFormat {
 
 impl FromStr for OutputFormat {
     type Err = String;
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "json" => Ok(Self::Json),
@@ -230,7 +227,7 @@ mod warning_options {
 
     fn get_warning_options(arg: &str) -> WarningOptions {
         let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
-        lint_command().run_inner(args.as_slice()).unwrap().lint_options.warning_options
+        lint_command().run_inner(args.as_slice()).unwrap().warning_options
     }
 
     #[test]
@@ -255,16 +252,15 @@ mod warning_options {
 
 #[cfg(test)]
 mod lint_options {
-    use std::fs::File;
-    use std::path::PathBuf;
+    use std::{fs::File, path::PathBuf};
 
     use oxc_linter::AllowWarnDeny;
 
-    use super::{lint_command, LintOptions, OutputFormat};
+    use super::{lint_command, LintCommand, OutputFormat};
 
-    fn get_lint_options(arg: &str) -> LintOptions {
+    fn get_lint_options(arg: &str) -> LintCommand {
         let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
-        lint_command().run_inner(args.as_slice()).unwrap().lint_options
+        lint_command().run_inner(args.as_slice()).unwrap()
     }
 
     #[test]

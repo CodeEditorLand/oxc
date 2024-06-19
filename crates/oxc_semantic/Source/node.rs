@@ -1,9 +1,9 @@
 use oxc_ast::AstKind;
+use oxc_cfg::BasicBlockId;
 use oxc_index::IndexVec;
-
-use crate::{control_flow::BasicBlockId, scope::ScopeId};
-
 pub use oxc_syntax::node::{AstNodeId, NodeFlags};
+
+use crate::scope::ScopeId;
 
 /// Semantic node contains all the semantic information about an ast node.
 #[derive(Debug, Clone, Copy)]
@@ -67,6 +67,14 @@ pub struct AstNodes<'a> {
 impl<'a> AstNodes<'a> {
     pub fn iter(&self) -> impl Iterator<Item = &AstNode<'a>> + '_ {
         self.nodes.iter()
+    }
+
+    pub fn len(&self) -> usize {
+        self.nodes.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.nodes.len() == 0
     }
 
     /// Walk up the AST, iterating over each parent node.

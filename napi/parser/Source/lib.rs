@@ -3,7 +3,6 @@ mod module_lexer;
 use std::sync::Arc;
 
 use napi_derive::napi;
-
 use oxc_allocator::Allocator;
 pub use oxc_ast::ast::Program;
 use oxc_ast::CommentKind;
@@ -41,8 +40,8 @@ pub struct ParseResult {
 
 #[napi(object)]
 pub struct Comment {
-    pub r#type: &'static str,
     #[napi(ts_type = "'Line' | 'Block'")]
+    pub r#type: &'static str,
     pub value: String,
     pub start: u32,
     pub end: u32,

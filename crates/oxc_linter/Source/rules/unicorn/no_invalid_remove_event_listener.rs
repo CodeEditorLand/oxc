@@ -3,7 +3,6 @@ use oxc_ast::{
     AstKind,
 };
 use oxc_diagnostics::{LabeledSpan, OxcDiagnostic};
-
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 
@@ -170,12 +169,12 @@ fn test() {
         element.removeEventListener("glider-refresh", event => {
             // $ExpectType GliderEvent<undefined>
             event;
-        
+
             // $ExpectType boolean
             event.bubbles;
-        
+
             event.target;
-        
+
             if (event.target) {
                 // $ExpectType Glider<HTMLElement> | undefined
                 event.target._glider;
@@ -186,12 +185,12 @@ fn test() {
         element.removeEventListener("glider-refresh", function (event) {
             // $ExpectType GliderEvent<undefined>
             event;
-        
+
             // $ExpectType boolean
             event.bubbles;
-        
+
             event.target;
-        
+
             if (event.target) {
                 // $ExpectType Glider<HTMLElement> | undefined
                 event.target._glider;

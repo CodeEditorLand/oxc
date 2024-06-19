@@ -19,6 +19,27 @@ impl<'a> TypeScriptEnum<'a> {
     pub fn new(ctx: Ctx<'a>) -> Self {
         Self { ctx, enums: FxHashMap::default() }
     }
+
+    pub fn transform_statement(&mut self, stmt: &mut Statement<'a>, ctx: &TraverseCtx<'a>) {
+        let new_stmt = match stmt {
+            Statement::TSEnumDeclaration(ts_enum_decl) => {
+                self.transform_ts_enum(ts_enum_decl, false, ctx)
+            }
+            Statement::ExportNamedDeclaration(decl) => {
+                if let Some(Declaration::TSEnumDeclaration(ts_enum_decl)) = &decl.declaration {
+                    self.transform_ts_enum(ts_enum_decl, true, ctx)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
+        if let Some(new_stmt) = new_stmt {
+            *stmt = new_stmt;
+        }
+    }
+
     /// ```TypeScript
     /// enum Foo {
     ///   X = 1,
@@ -32,7 +53,7 @@ impl<'a> TypeScriptEnum<'a> {
     ///   return Foo;
     /// })(Foo || {});
     /// ```
-    pub fn transform_ts_enum(
+    fn transform_ts_enum(
         &mut self,
         decl: &Box<'a, TSEnumDeclaration<'a>>,
         is_export: bool,
@@ -128,7 +149,7 @@ impl<'a> TypeScriptEnum<'a> {
         Some(stmt)
     }
 
-    pub fn transform_ts_enum_members(
+    fn transform_ts_enum_members(
         &mut self,
         members: &Vec<'a, TSEnumMember<'a>>,
         enum_name: &Atom<'a>,
@@ -535,6 +556,16 @@ impl<'a, 'b> VisitMut<'a> for IdentifierReferenceRename<'a, 'b> {
                 None
             }
             Expression::Identifier(ident) => {
+                // If the identifier is binding in current/parent scopes,
+                // and it is not a member of the enum,
+                // we don't need to rename it.
+                // `var c = 1; enum A { a = c }` -> `var c = 1; enum A { a = c }
+                if !self.previous_enum_members.contains_key(&ident.name)
+                    && self.ctx.scopes().has_binding(self.ctx.current_scope_id(), &ident.name)
+                {
+                    return;
+                }
+
                 // TODO: shadowed case, e.g. let ident = 1; ident; // ident is not an enum
                 // enum_name.identifier
                 let ident_reference = IdentifierReference::new(SPAN, self.enum_name.clone());

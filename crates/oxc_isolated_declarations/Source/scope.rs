@@ -1,5 +1,3 @@
-use rustc_hash::FxHashSet;
-
 use oxc_allocator::{Allocator, Vec};
 #[allow(clippy::wildcard_imports)]
 use oxc_ast::ast::*;
@@ -8,6 +6,7 @@ use oxc_ast::AstBuilder;
 use oxc_ast::{visit::walk::*, Visit};
 use oxc_span::Atom;
 use oxc_syntax::scope::ScopeFlags;
+use rustc_hash::FxHashSet;
 
 pub struct ScopeTree<'a> {
     type_bindings: Vec<'a, FxHashSet<Atom<'a>>>,
@@ -133,8 +132,8 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 
     fn visit_export_default_declaration(&mut self, decl: &ExportDefaultDeclaration<'a>) {
         if let ExportDefaultDeclarationKind::Identifier(ident) = &decl.declaration {
-            self.add_type_binding(&ident.name);
-            self.add_value_binding(&ident.name);
+            self.add_type_reference(&ident.name);
+            self.add_value_reference(&ident.name);
         } else {
             walk_export_default_declaration(self, decl);
         }
@@ -177,8 +176,6 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
         }
         walk_declaration(self, declaration);
     }
-
-    // // TODO: handle ts infer and ts mapped type
 
     // ==================== TSTypeParameter ====================
 

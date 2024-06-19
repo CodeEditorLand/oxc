@@ -21,9 +21,12 @@ use oxc_ast::{ast::Program, AstKind, CommentKind, Trivias};
 use oxc_span::Span;
 use oxc_syntax::identifier::is_line_terminator;
 
-use crate::{doc::Doc, doc::DocBuilder, format::Format, printer::Printer};
-
 pub use crate::options::{ArrowParens, EndOfLine, PrettierOptions, QuoteProps, TrailingComma};
+use crate::{
+    doc::{Doc, DocBuilder},
+    format::Format,
+    printer::Printer,
+};
 
 type GroupId = u32;
 #[derive(Default)]
@@ -70,10 +73,11 @@ impl<'a> DocBuilder<'a> for Prettier<'a> {
 }
 
 impl<'a> Prettier<'a> {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn new(
         allocator: &'a Allocator,
         source_text: &'a str,
-        trivias: &Trivias,
+        trivias: Trivias,
         options: PrettierOptions,
     ) -> Self {
         Self {

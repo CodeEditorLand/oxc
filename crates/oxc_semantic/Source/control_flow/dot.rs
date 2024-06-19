@@ -3,12 +3,17 @@ use oxc_ast::{
     AstKind,
 };
 use oxc_syntax::node::AstNodeId;
-use petgraph::dot::{Config, Dot};
+use petgraph::{
+    dot::{Config, Dot},
+    visit::EdgeRef,
+};
 
 use crate::{
     AstNode, AstNodes, BasicBlock, ControlFlowGraph, EdgeType, Instruction, InstructionKind,
     LabeledInstruction, ReturnInstructionKind,
 };
+
+use super::IterationInstructionKind;
 
 pub trait DisplayDot {
     fn display_dot(&self) -> String;
@@ -24,6 +29,17 @@ pub struct DebugDotContext<'a, 'b>(&'b AstNodes<'a>);
 impl<'a, 'b> DebugDotContext<'a, 'b> {
     fn debug_ast_kind(self, id: AstNodeId) -> String {
         self.0.kind(id).debug_name().into_owned()
+    }
+
+    fn try_eval_literal(self, id: AstNodeId) -> Option<String> {
+        match self.0.kind(id) {
+            AstKind::NumericLiteral(lit) => Some(lit.value.to_string()),
+            AstKind::BooleanLiteral(lit) => Some(lit.value.to_string()),
+            AstKind::StringLiteral(lit) => Some(lit.value.to_string()),
+            AstKind::BigintLiteral(lit) => Some(lit.raw.to_string()),
+            AstKind::NullLiteral(_) => Some("null".to_string()),
+            _ => None,
+        }
     }
 }
 
@@ -42,8 +58,10 @@ impl DisplayDot for ControlFlowGraph {
                 &[Config::EdgeNoLabel, Config::NodeNoLabel],
                 &|_graph, edge| {
                     let weight = edge.weight();
-                    let label = format!("label = {weight:?} ");
-                    if matches!(weight, EdgeType::Unreachable) {
+                    let label = format!("label = \"{weight:?}\" ");
+                    if matches!(weight, EdgeType::Unreachable)
+                        || self.basic_block(edge.source()).unreachable
+                    {
                         format!("{label}, style = \"dotted\" ")
                     } else {
                         label
@@ -74,6 +92,9 @@ impl DisplayDot for Instruction {
             InstructionKind::Statement => "statement",
             InstructionKind::Unreachable => "unreachable",
             InstructionKind::Throw => "throw",
+            InstructionKind::Condition => "condition",
+            InstructionKind::Iteration(IterationInstructionKind::Of) => "iteration <of>",
+            InstructionKind::Iteration(IterationInstructionKind::In) => "iteration <in>",
             InstructionKind::Break(LabeledInstruction::Labeled) => "break <label>",
             InstructionKind::Break(LabeledInstruction::Unlabeled) => "break",
             InstructionKind::Continue(LabeledInstruction::Labeled) => "continue <label>",
@@ -98,8 +119,10 @@ impl DebugDot for ControlFlowGraph {
                 &[Config::EdgeNoLabel, Config::NodeNoLabel],
                 &|_graph, edge| {
                     let weight = edge.weight();
-                    let label = format!("label = {weight:?} ");
-                    if matches!(weight, EdgeType::Unreachable) {
+                    let label = format!("label = \"{weight:?}\" ");
+                    if matches!(weight, EdgeType::Unreachable)
+                        || self.basic_block(edge.source()).unreachable
+                    {
                         format!("{label}, style = \"dotted\" ")
                     } else {
                         label
@@ -132,6 +155,21 @@ impl DebugDot for Instruction {
             }
             InstructionKind::Unreachable => "unreachable".to_string(),
             InstructionKind::Throw => "throw".to_string(),
+            InstructionKind::Condition => self.node_id.map_or("None".to_string(), |id| {
+                format!(
+                    "Condition({})",
+                    ctx.try_eval_literal(id).unwrap_or_else(|| ctx.debug_ast_kind(id))
+                )
+            }),
+            InstructionKind::Iteration(ref kind) => {
+                format!(
+                    "Iteration({} {} {})",
+                    self.node_id.map_or("None".to_string(), |id| ctx.debug_ast_kind(id)),
+                    if matches!(kind, IterationInstructionKind::Of) { "of" } else { "in" },
+                    // TODO: at this point we can't evaluate this note. needs access to the graph information.
+                    "expr"
+                )
+            }
             InstructionKind::Break(LabeledInstruction::Labeled) => {
                 let Some(AstKind::BreakStatement(BreakStatement { label: Some(label), .. })) =
                     self.node_id.map(|id| ctx.0.get_node(id)).map(AstNode::kind)

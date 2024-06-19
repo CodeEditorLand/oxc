@@ -22,8 +22,7 @@ use serde::Serialize;
 #[cfg(feature = "serialize")]
 use tsify::Tsify;
 
-use super::inherit_variants;
-use super::{jsx::*, literal::*, ts::*};
+use super::{inherit_variants, jsx::*, literal::*, ts::*};
 
 #[cfg(feature = "serialize")]
 #[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
@@ -462,6 +461,15 @@ impl<'a> IdentifierReference<'a> {
     pub fn new(span: Span, name: Atom<'a>) -> Self {
         Self { span, name, reference_id: Cell::default(), reference_flag: ReferenceFlag::default() }
     }
+
+    pub fn new_read(span: Span, name: Atom<'a>, reference_id: Option<ReferenceId>) -> Self {
+        Self {
+            span,
+            name,
+            reference_id: Cell::new(reference_id),
+            reference_flag: ReferenceFlag::Read,
+        }
+    }
 }
 
 /// Binding Identifier
@@ -801,17 +809,9 @@ impl<'a> MemberExpression<'a> {
 
     pub fn static_property_name(&self) -> Option<&str> {
         match self {
-            MemberExpression::ComputedMemberExpression(expr) => match &expr.expression {
-                Expression::StringLiteral(lit) => Some(&lit.value),
-                Expression::TemplateLiteral(lit) => {
-                    if lit.expressions.is_empty() && lit.quasis.len() == 1 {
-                        Some(&lit.quasis[0].value.raw)
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            },
+            MemberExpression::ComputedMemberExpression(expr) => {
+                expr.static_property_name().map(|name| name.as_str())
+            }
             MemberExpression::StaticMemberExpression(expr) => Some(expr.property.name.as_str()),
             MemberExpression::PrivateFieldExpression(_) => None,
         }
@@ -874,6 +874,20 @@ pub struct ComputedMemberExpression<'a> {
     pub optional: bool, // for optional chaining
 }
 
+impl<'a> ComputedMemberExpression<'a> {
+    pub fn static_property_name(&self) -> Option<Atom<'a>> {
+        match &self.expression {
+            Expression::StringLiteral(lit) => Some(lit.value.clone()),
+            Expression::TemplateLiteral(lit)
+                if lit.expressions.is_empty() && lit.quasis.len() == 1 =>
+            {
+                Some(lit.quasis[0].value.raw.clone())
+            }
+            _ => None,
+        }
+    }
+}
+
 /// `MemberExpression[?Yield, ?Await] . IdentifierName`
 #[visited_node]
 #[derive(Debug, Hash)]
@@ -885,6 +899,28 @@ pub struct StaticMemberExpression<'a> {
     pub object: Expression<'a>,
     pub property: IdentifierName<'a>,
     pub optional: bool, // for optional chaining
+}
+
+impl<'a> StaticMemberExpression<'a> {
+    pub fn get_first_object(&self) -> &Expression<'a> {
+        match &self.object {
+            Expression::StaticMemberExpression(member) => {
+                if let Expression::StaticMemberExpression(expr) = &member.object {
+                    expr.get_first_object()
+                } else {
+                    &self.object
+                }
+            }
+            Expression::ChainExpression(chain) => {
+                if let ChainElement::StaticMemberExpression(expr) = &chain.expression {
+                    expr.get_first_object()
+                } else {
+                    &self.object
+                }
+            }
+            _ => &self.object,
+        }
+    }
 }
 
 /// `MemberExpression[?Yield, ?Await] . PrivateIdentifier`
@@ -1136,6 +1172,7 @@ impl<'a> AssignmentTarget<'a> {
     pub fn get_identifier(&self) -> Option<&str> {
         self.as_simple_assignment_target().and_then(|it| it.get_identifier())
     }
+
     pub fn get_expression(&self) -> Option<&Expression<'a>> {
         self.as_simple_assignment_target().and_then(|it| it.get_expression())
     }
@@ -1675,6 +1712,10 @@ impl<'a> VariableDeclaration<'a> {
     pub fn is_typescript_syntax(&self) -> bool {
         self.modifiers.contains(ModifierKind::Declare)
     }
+
+    pub fn has_init(&self) -> bool {
+        self.declarations.iter().any(|decl| decl.init.is_some())
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -2192,7 +2233,11 @@ impl<'a> BindingPatternKind<'a> {
     }
 
     pub fn is_destructuring_pattern(&self) -> bool {
-        matches!(self, Self::ObjectPattern(_) | Self::ArrayPattern(_))
+        match self {
+            Self::ObjectPattern(_) | Self::ArrayPattern(_) => true,
+            Self::AssignmentPattern(pattern) => pattern.left.kind.is_destructuring_pattern(),
+            Self::BindingIdentifier(_) => false,
+        }
     }
 
     pub fn is_binding_identifier(&self) -> bool {
@@ -2305,6 +2350,7 @@ pub struct Function<'a> {
     pub id: Option<BindingIdentifier<'a>>,
     pub generator: bool,
     pub r#async: bool,
+    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
     /// Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
     ///
     /// The JavaScript specification states that you cannot have a parameter called `this`,
@@ -2323,7 +2369,6 @@ pub struct Function<'a> {
     pub this_param: Option<TSThisParameter<'a>>,
     pub params: Box<'a, FormalParameters<'a>>,
     pub body: Option<Box<'a, FunctionBody<'a>>>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
     pub return_type: Option<Box<'a, TSTypeAnnotation<'a>>>,
     /// Valid modifiers: `export`, `default`, `async`
     pub modifiers: Modifiers<'a>,
@@ -2438,6 +2483,14 @@ impl<'a> FormalParameters<'a> {
     pub fn parameters_count(&self) -> usize {
         self.items.len() + self.rest.as_ref().map_or(0, |_| 1)
     }
+
+    /// Iterates over all bound parameters, including rest parameters.
+    pub fn iter_bindings(&self) -> impl Iterator<Item = &BindingPattern<'a>> + '_ {
+        self.items
+            .iter()
+            .map(|param| &param.pattern)
+            .chain(self.rest.iter().map(|rest| &rest.argument))
+    }
 }
 
 #[visited_node]
@@ -2508,7 +2561,10 @@ impl<'a> FunctionBody<'a> {
 }
 
 /// Arrow Function Definitions
-#[visited_node(scope(ScopeFlags::Function | ScopeFlags::Arrow))]
+#[visited_node(
+    scope(ScopeFlags::Function | ScopeFlags::Arrow),
+    strict_if(self.body.has_use_strict_directive())
+)]
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[cfg_attr(feature = "serialize", serde(tag = "type", rename_all = "camelCase"))]
@@ -2633,14 +2689,42 @@ impl<'a> Class<'a> {
         }
     }
 
+    /// `true` if this [`Class`] is an expression.
+    ///
+    /// For example,
+    /// ```ts
+    /// var Foo = class { /* ... */ }
+    /// ```
     pub fn is_expression(&self) -> bool {
         self.r#type == ClassType::ClassExpression
     }
 
+    /// `true` if this [`Class`] is a declaration statement.
+    ///
+    /// For example,
+    /// ```ts
+    /// class Foo {
+    ///   // ...
+    /// }
+    /// ```
+    ///
+    /// Not to be confused with [`Class::is_declare`].
     pub fn is_declaration(&self) -> bool {
         self.r#type == ClassType::ClassDeclaration
     }
 
+    /// `true` if this [`Class`] is being within a typescript declaration file
+    /// or `declare` statement.
+    ///
+    /// For example,
+    /// ```ts
+    /// declare global {
+    ///   declare class Foo {
+    ///    // ...
+    ///   }
+    /// }
+    ///
+    /// Not to be confused with [`Class::is_declaration`].
     pub fn is_declare(&self) -> bool {
         self.modifiers.contains(ModifierKind::Declare)
     }
@@ -2853,11 +2937,17 @@ impl MethodDefinitionKind {
     pub fn is_constructor(&self) -> bool {
         matches!(self, Self::Constructor)
     }
+
     pub fn is_method(&self) -> bool {
         matches!(self, Self::Method)
     }
+
     pub fn is_set(&self) -> bool {
         matches!(self, Self::Set)
+    }
+
+    pub fn is_get(&self) -> bool {
+        matches!(self, Self::Get)
     }
 
     pub fn scope_flags(self) -> ScopeFlags {
@@ -3068,6 +3158,22 @@ pub enum ImportDeclarationSpecifier<'a> {
     ImportNamespaceSpecifier(Box<'a, ImportNamespaceSpecifier<'a>>),
 }
 
+impl<'a> ImportDeclarationSpecifier<'a> {
+    pub fn name(&self) -> CompactStr {
+        match self {
+            ImportDeclarationSpecifier::ImportSpecifier(specifier) => {
+                specifier.local.name.to_compact_str()
+            }
+            ImportDeclarationSpecifier::ImportNamespaceSpecifier(specifier) => {
+                specifier.local.name.to_compact_str()
+            }
+            ImportDeclarationSpecifier::ImportDefaultSpecifier(specifier) => {
+                specifier.local.name.to_compact_str()
+            }
+        }
+    }
+}
+
 // import {imported} from "source"
 // import {imported as local} from "source"
 #[visited_node]
@@ -3241,7 +3347,6 @@ pub enum ExportDefaultDeclarationKind<'a> {
     ClassDeclaration(Box<'a, Class<'a>>) = 65,
 
     TSInterfaceDeclaration(Box<'a, TSInterfaceDeclaration<'a>>) = 66,
-    TSEnumDeclaration(Box<'a, TSEnumDeclaration<'a>>) = 67,
 
     // `Expression` variants added here by `inherit_variants!` macro
     @inherit Expression
@@ -3254,7 +3359,7 @@ impl<'a> ExportDefaultDeclarationKind<'a> {
         match self {
             Self::FunctionDeclaration(func) => func.is_typescript_syntax(),
             Self::ClassDeclaration(class) => class.is_typescript_syntax(),
-            Self::TSInterfaceDeclaration(_) | Self::TSEnumDeclaration(_) => true,
+            Self::TSInterfaceDeclaration(_) => true,
             _ => false,
         }
     }

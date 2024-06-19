@@ -4,7 +4,7 @@ use std::{
 };
 
 use oxc_allocator::Allocator;
-use oxc_codegen::{Codegen, CodegenOptions};
+use oxc_codegen::CodeGenerator;
 use oxc_diagnostics::{Error, OxcDiagnostic};
 use oxc_parser::Parser;
 use oxc_span::{SourceType, VALID_EXTENSIONS};
@@ -176,21 +176,11 @@ pub trait TestCase {
             path,
             source_type,
             &source_text,
-            &ret.trivias,
+            ret.trivias.clone(),
             transform_options.clone(),
         )
         .build(&mut program);
-
-        result.map(|()| {
-            Codegen::<false>::new(
-                "",
-                &source_text,
-                CodegenOptions::default().with_typescript(true),
-                None,
-            )
-            .build(&program)
-            .source_text
-        })
+        result.map(|()| CodeGenerator::new().build(&program).source_text)
     }
 }
 
@@ -256,7 +246,6 @@ impl TestCase for ConformanceTestCase {
             println!("output_path: {output_path:?}");
         }
 
-        let codegen_options = CodegenOptions::default().with_typescript(true);
         let mut transformed_code = String::new();
         let mut actual_errors = String::new();
 
@@ -270,14 +259,12 @@ impl TestCase for ConformanceTestCase {
                         &self.path,
                         source_type,
                         &input,
-                        &ret.trivias,
+                        ret.trivias.clone(),
                         transform_options.clone(),
                     );
                     let result = transformer.build(&mut program);
                     if result.is_ok() {
-                        transformed_code = Codegen::<false>::new("", &input, codegen_options, None)
-                            .build(&program)
-                            .source_text;
+                        transformed_code = CodeGenerator::new().build(&program).source_text;
                     } else {
                         let error = result
                             .err()
@@ -318,10 +305,8 @@ impl TestCase for ConformanceTestCase {
             },
             |output| {
                 // Get expected code by parsing the source text, so we can get the same code generated result.
-                let program = Parser::new(&allocator, &output, source_type).parse().program;
-                Codegen::<false>::new("", &output, codegen_options, None)
-                    .build(&program)
-                    .source_text
+                let ret = Parser::new(&allocator, &output, source_type).parse();
+                CodeGenerator::new().build(&ret.program).source_text
             },
         );
 
@@ -374,7 +359,7 @@ impl ExecTestCase {
     fn write_to_test_files(&self, content: &str) -> PathBuf {
         let allocator = Allocator::default();
         let new_file_name: String =
-            normalize_path(self.path.strip_prefix(&packages_root()).unwrap())
+            normalize_path(self.path.strip_prefix(packages_root()).unwrap())
                 .split('/')
                 .collect::<Vec<&str>>()
                 .join("-");
@@ -385,19 +370,9 @@ impl ExecTestCase {
         fs::write(&target_path, content).unwrap();
         let source_text = fs::read_to_string(&target_path).unwrap();
         let source_type = SourceType::from_path(&target_path).unwrap();
-        let transformed_program =
-            Parser::new(&allocator, &source_text, source_type).parse().program;
-        let result = Codegen::<false>::new(
-            "",
-            &source_text,
-            CodegenOptions::default().with_typescript(true),
-            None,
-        )
-        .build(&transformed_program)
-        .source_text;
-
+        let transformed_ret = Parser::new(&allocator, &source_text, source_type).parse();
+        let result = CodeGenerator::new().build(&transformed_ret.program).source_text;
         fs::write(&target_path, result).unwrap();
-
         target_path
     }
 }

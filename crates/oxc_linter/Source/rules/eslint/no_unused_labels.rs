@@ -1,10 +1,9 @@
 use oxc_ast::AstKind;
 use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
-use crate::{context::LintContext, fixer::Fix, rule::Rule};
+use crate::{context::LintContext, rule::Rule};
 
 fn no_unused_labels_diagnostic(x0: &str, span1: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("eslint(no-unused-labels): Disallow unused labels")
@@ -51,7 +50,7 @@ impl Rule for NoUnusedLabels {
                 // e.g. A: /* Comment */ function foo(){}
                 ctx.diagnostic_with_fix(
                     no_unused_labels_diagnostic(stmt.label.name.as_str(), stmt.label.span),
-                    || Fix::delete(stmt.label.span),
+                    |fixer| fixer.delete_range(stmt.label.span),
                 );
             }
         }
@@ -68,7 +67,10 @@ fn test() {
         ("A: if (a) { foo(); if (b) break A; bar(); }", None),
         ("A: for (var i = 0; i < 10; ++i) { foo(); if (a) break A; bar(); }", None),
         ("A: for (var i = 0; i < 10; ++i) { foo(); if (a) continue A; bar(); }", None),
-        ("A: { B: break B; C: for (var i = 0; i < 10; ++i) { foo(); if (a) break A; if (c) continue C; bar(); } }", None),
+        (
+            "A: { B: break B; C: for (var i = 0; i < 10; ++i) { foo(); if (a) break A; if (c) continue C; bar(); } }",
+            None,
+        ),
         ("A: { var A = 0; console.log(A); break A; console.log(A); }", None),
     ];
 

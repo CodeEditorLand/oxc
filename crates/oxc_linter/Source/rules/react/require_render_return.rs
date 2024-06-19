@@ -1,11 +1,10 @@
 use oxc_ast::{ast::Expression, AstKind};
-use oxc_diagnostics::OxcDiagnostic;
-
-use oxc_macros::declare_oxc_lint;
-use oxc_semantic::{
-    pg::neighbors_filtered_by_edge_weight, EdgeType, Instruction, InstructionKind,
+use oxc_cfg::{
+    graph::visit::neighbors_filtered_by_edge_weight, EdgeType, Instruction, InstructionKind,
     ReturnInstructionKind,
 };
+use oxc_diagnostics::OxcDiagnostic;
+use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 
 use crate::{
@@ -91,18 +90,21 @@ enum FoundReturn {
 const KEEP_WALKING_ON_THIS_PATH: bool = true;
 const STOP_WALKING_ON_THIS_PATH: bool = false;
 
-fn contains_return_statement<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> bool {
-    let cfg = ctx.semantic().cfg();
+fn contains_return_statement(node: &AstNode, ctx: &LintContext) -> bool {
+    let cfg = ctx.cfg();
     let state = neighbors_filtered_by_edge_weight(
-        &cfg.graph,
+        cfg.graph(),
         node.cfg_id(),
         &|edge| match edge {
             // We only care about normal edges having a return statement.
             EdgeType::Jump | EdgeType::Normal => None,
             // For these two type, we flag it as not found.
-            EdgeType::Unreachable | EdgeType::NewFunction | EdgeType::Backedge => {
-                Some(FoundReturn::No)
-            }
+            EdgeType::Unreachable
+            | EdgeType::Error(_)
+            | EdgeType::Finalize
+            | EdgeType::Join
+            | EdgeType::NewFunction
+            | EdgeType::Backedge => Some(FoundReturn::No),
         },
         &mut |basic_block_id, _state_going_into_this_rule| {
             // If its an arrow function with an expression, marked as founded and stop walking.
@@ -123,6 +125,8 @@ fn contains_return_statement<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> b
                     InstructionKind::Return(ReturnInstructionKind::ImplicitUndefined)
                     | InstructionKind::Break(_)
                     | InstructionKind::Continue(_)
+                    | InstructionKind::Iteration(_)
+                    | InstructionKind::Condition
                     | InstructionKind::Statement => {}
                 }
             }

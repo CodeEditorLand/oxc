@@ -1,14 +1,15 @@
+use oxc_allocator::Box;
 #[allow(clippy::wildcard_imports)]
 use oxc_ast::ast::*;
-
-use oxc_allocator::Box;
-use oxc_ast::Visit;
-use oxc_diagnostics::OxcDiagnostic;
+use oxc_ast::{syntax_directed_operations::BoundNames, Visit};
 use oxc_span::{GetSpan, SPAN};
 use oxc_syntax::scope::ScopeFlags;
 
 use crate::{
-    diagnostics::{inferred_type_of_expression, signature_computed_property_name},
+    diagnostics::{
+        binding_element_export, inferred_type_of_expression, signature_computed_property_name,
+        variable_must_have_explicit_type,
+    },
     IsolatedDeclarations,
 };
 
@@ -48,9 +49,13 @@ impl<'a> IsolatedDeclarations<'a> {
         check_binding: bool,
     ) -> Option<VariableDeclarator<'a>> {
         if decl.id.kind.is_destructuring_pattern() {
-            self.error(OxcDiagnostic::error(
-                "Binding elements can't be exported directly with --isolatedDeclarations.",
-            ));
+            if check_binding {
+                decl.id.bound_names(&mut |id| {
+                    if self.scope.has_reference(&id.name) {
+                        self.error(binding_element_export(id.span));
+                    }
+                });
+            }
             return None;
         }
 
@@ -76,10 +81,9 @@ impl<'a> IsolatedDeclarations<'a> {
             }
             if init.is_none() && binding_type.is_none() {
                 binding_type = Some(self.ast.ts_unknown_keyword(SPAN));
-                self.error(
-                  OxcDiagnostic::error("Variable must have an explicit type annotation with --isolatedDeclarations.")
-                      .with_label(decl.id.span()),
-              );
+                if !decl.init.as_ref().is_some_and(Expression::is_function) {
+                    self.error(variable_must_have_explicit_type(decl.id.span()));
+                }
             }
         }
         let id = binding_type.map_or_else(
@@ -272,6 +276,7 @@ impl<'a> Visit<'a> for IsolatedDeclarations<'a> {
         }
         self.report_signature_property_key(&signature.key, signature.computed);
     }
+
     fn visit_ts_property_signature(&mut self, signature: &TSPropertySignature<'a>) {
         self.report_signature_property_key(&signature.key, signature.computed);
     }

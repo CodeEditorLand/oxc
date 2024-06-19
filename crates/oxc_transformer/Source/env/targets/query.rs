@@ -16,6 +16,7 @@ use super::{version::Version, Versions};
 #[allow(clippy::large_enum_variant)]
 pub enum Targets {
     Query(Query),
+    #[allow(unused)]
     EsModules(EsModules),
     Versions(Versions),
     HashMap(FxHashMap<String, QueryOrVersion>),
@@ -120,6 +121,7 @@ impl Query {
             Query::Multiple(s) => s.join(","),
         }
     }
+
     fn exec(&self) -> QueryResult {
         fn query<T>(s: &[T]) -> QueryResult
         where

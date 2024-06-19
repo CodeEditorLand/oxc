@@ -1,7 +1,5 @@
 ---
 source: crates/oxc_linter/src/tester.rs
-assertion_line: 161
-expression: jsx_key
 ---
   ⚠ eslint-plugin-react(jsx-key): Missing "key" prop for element in array.
    ╭─[jsx_key.tsx:1:3]

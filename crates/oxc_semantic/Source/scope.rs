@@ -1,7 +1,6 @@
 use std::hash::BuildHasherDefault;
 
 use indexmap::IndexMap;
-
 use oxc_index::IndexVec;
 use oxc_span::CompactStr;
 pub use oxc_syntax::scope::{ScopeFlags, ScopeId};
@@ -75,6 +74,7 @@ impl ScopeTree {
         self.parent_ids.iter_enumerated().map(|(scope_id, _)| scope_id)
     }
 
+    #[inline]
     pub fn root_scope_id(&self) -> ScopeId {
         ScopeId::new(0)
     }

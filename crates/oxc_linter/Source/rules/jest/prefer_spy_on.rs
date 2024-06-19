@@ -6,14 +6,13 @@ use oxc_ast::{
     AstKind,
 };
 use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::AstNode;
 use oxc_span::Span;
 
 use crate::{
     context::LintContext,
-    fixer::Fix,
+    fixer::RuleFixer,
     rule::Rule,
     utils::{get_node_name, parse_general_jest_fn_call, PossibleJestNode},
 };
@@ -111,7 +110,7 @@ impl PreferSpyOn {
 
         ctx.diagnostic_with_fix(
             use_jest_spy_on(Span::new(call_expr.span.start, first_fn_member.span.end)),
-            || {
+            |fixer| {
                 let (end, has_mock_implementation) = if jest_fn_call.members.len() > 1 {
                     let second = &jest_fn_call.members[1];
                     let has_mock_implementation = jest_fn_call
@@ -127,8 +126,8 @@ impl PreferSpyOn {
                     )
                 };
                 let content =
-                    Self::build_code(call_expr, left_assign, has_mock_implementation, ctx);
-                Fix::new(content, Span::new(assign_expr.span.start, end))
+                    Self::build_code(call_expr, left_assign, has_mock_implementation, fixer);
+                fixer.replace(Span::new(assign_expr.span.start, end), content)
             },
         );
     }
@@ -137,9 +136,9 @@ impl PreferSpyOn {
         call_expr: &'a CallExpression<'a>,
         left_assign: &MemberExpression,
         has_mock_implementation: bool,
-        ctx: &LintContext,
+        fixer: RuleFixer<'_, 'a>,
     ) -> String {
-        let mut formatter = ctx.codegen();
+        let mut formatter = fixer.codegen();
         formatter.print_str(b"jest.spyOn(");
 
         match left_assign {
@@ -233,7 +232,10 @@ fn tests() {
         ("obj['prop' + 1] = jest['fn']()", None),
         ("obj.one.two = jest.fn(); const test = 10;", None),
         ("obj.a = jest.fn(() => 10,)", None),
-        ("obj.a.b = jest.fn(() => ({})).mockReturnValue('default').mockReturnValueOnce('first call'); test();", None),
+        (
+            "obj.a.b = jest.fn(() => ({})).mockReturnValue('default').mockReturnValueOnce('first call'); test();",
+            None,
+        ),
         ("window.fetch = jest.fn(() => ({})).one.two().three().four", None),
         ("foo[bar] = jest.fn().mockReturnValue(undefined)", None),
         (
@@ -246,19 +248,43 @@ fn tests() {
     ];
 
     let fix = vec![
-        ("obj.a = jest.fn(); const test = 10;", "jest.spyOn(obj, 'a').mockImplementation(); const test = 10;", None),
+        (
+            "obj.a = jest.fn(); const test = 10;",
+            "jest.spyOn(obj, 'a').mockImplementation(); const test = 10;",
+            None,
+        ),
         ("Date['now'] = jest['fn']()", "jest.spyOn(Date, 'now').mockImplementation()", None),
-        ("window[`${name}`] = jest[`fn`]()", "jest.spyOn(window, `${name}`).mockImplementation()", None),
-        ("obj['prop' + 1] = jest['fn']()", "jest.spyOn(obj, 'prop' + 1).mockImplementation()", None),
-        ("obj.one.two = jest.fn(); const test = 10;", "jest.spyOn(obj.one, 'two').mockImplementation(); const test = 10;", None),
+        (
+            "window[`${name}`] = jest[`fn`]()",
+            "jest.spyOn(window, `${name}`).mockImplementation()",
+            None,
+        ),
+        (
+            "obj['prop' + 1] = jest['fn']()",
+            "jest.spyOn(obj, 'prop' + 1).mockImplementation()",
+            None,
+        ),
+        (
+            "obj.one.two = jest.fn(); const test = 10;",
+            "jest.spyOn(obj.one, 'two').mockImplementation(); const test = 10;",
+            None,
+        ),
         ("obj.a = jest.fn(() => 10,)", "jest.spyOn(obj, 'a').mockImplementation(() => 10)", None),
         (
             "obj.a.b = jest.fn(() => ({})).mockReturnValue('default').mockReturnValueOnce('first call'); test();",
             "jest.spyOn(obj.a, 'b').mockImplementation(() => ({})).mockReturnValue('default').mockReturnValueOnce('first call'); test();",
             None,
         ),
-        ("window.fetch = jest.fn(() => ({})).one.two().three().four", "jest.spyOn(window, 'fetch').mockImplementation(() => ({})).one.two().three().four", None),
-        ("foo[bar] = jest.fn().mockReturnValue(undefined)", "jest.spyOn(foo, bar).mockImplementation().mockReturnValue(undefined)", None),
+        (
+            "window.fetch = jest.fn(() => ({})).one.two().three().four",
+            "jest.spyOn(window, 'fetch').mockImplementation(() => ({})).one.two().three().four",
+            None,
+        ),
+        (
+            "foo[bar] = jest.fn().mockReturnValue(undefined)",
+            "jest.spyOn(foo, bar).mockImplementation().mockReturnValue(undefined)",
+            None,
+        ),
         (
             "
                 foo.bar = jest.fn().mockImplementation(baz => baz)

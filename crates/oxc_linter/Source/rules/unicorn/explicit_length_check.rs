@@ -6,14 +6,14 @@ use oxc_ast::{
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
-use oxc_span::Span;
+use oxc_span::{GetSpan, Span};
 use oxc_syntax::operator::{BinaryOperator, LogicalOperator};
 
 use crate::{
     context::LintContext,
     rule::Rule,
     utils::{get_boolean_ancestor, is_boolean_node},
-    AstNode, Fix,
+    AstNode,
 };
 
 fn none_zero(span0: Span, x1: &str, x2: &str, x3: Option<String>) -> OxcDiagnostic {
@@ -25,7 +25,9 @@ fn none_zero(span0: Span, x1: &str, x2: &str, x3: Option<String>) -> OxcDiagnost
 }
 
 fn zero(span0: Span, x1: &str, x2: &str, x3: Option<String>) -> OxcDiagnostic {
-    let mut d = OxcDiagnostic::warn(format!("eslint-plugin-unicorn(explicit-length-check): Use `.{x1} {x2}` when checking {x1} is zero."));
+    let mut d = OxcDiagnostic::warn(format!(
+        "eslint-plugin-unicorn(explicit-length-check): Use `.{x1} {x2}` when checking {x1} is zero."
+    ));
     if let Some(x) = x3 {
         d = d.with_help(x);
     }
@@ -161,13 +163,6 @@ impl ExplicitLengthCheck {
         auto_fix: bool,
     ) {
         let kind = node.kind();
-        let span = match kind {
-            AstKind::BinaryExpression(expr) => expr.span,
-            AstKind::UnaryExpression(expr) => expr.span,
-            AstKind::CallExpression(expr) => expr.span,
-            AstKind::MemberExpression(MemberExpression::StaticMemberExpression(expr)) => expr.span,
-            _ => unreachable!(),
-        };
         let check_code = if is_zero_length_check {
             if matches!(kind, AstKind::BinaryExpression(BinaryExpression{operator:BinaryOperator::StrictEquality,right,..}) if right.is_number_0())
             {
@@ -192,6 +187,8 @@ impl ExplicitLengthCheck {
                 }
             }
         };
+
+        let span = kind.span();
         let mut need_pad_start = false;
         let mut need_pad_end = false;
         let parent = ctx.nodes().parent_kind(node.id());
@@ -216,31 +213,18 @@ impl ExplicitLengthCheck {
             if need_pad_end { " " } else { "" },
         );
         let property = static_member_expr.property.name.clone();
-        let diagnostic = if is_zero_length_check {
-            zero(
-                span,
-                property.as_str(),
-                check_code,
-                if auto_fix {
-                    None
-                } else {
-                    Some(format!("Replace `.{property}` with `.{property} {check_code}`."))
-                },
-            )
+        let help = if auto_fix {
+            None
         } else {
-            none_zero(
-                span,
-                property.as_str(),
-                check_code,
-                if auto_fix {
-                    None
-                } else {
-                    Some(format!("Replace `.{property}` with `.{property} {check_code}`."))
-                },
-            )
+            Some(format!("Replace `.{property}` with `.{property} {check_code}`."))
+        };
+        let diagnostic = if is_zero_length_check {
+            zero(span, property.as_str(), check_code, help)
+        } else {
+            none_zero(span, property.as_str(), check_code, help)
         };
         if auto_fix {
-            ctx.diagnostic_with_fix(diagnostic, || Fix::new(fixed, span));
+            ctx.diagnostic_with_fix(diagnostic, |fixer| fixer.replace(span, fixed));
         } else {
             ctx.diagnostic(diagnostic);
         }
@@ -290,6 +274,7 @@ impl Rule for ExplicitLengthCheck {
             };
         }
     }
+
     fn from_configuration(value: serde_json::Value) -> Self {
         Self {
             non_zero: value
@@ -351,7 +336,10 @@ fn test() {
         // ("const A_NUMBER = 2; const x = foo.length || A_NUMBER", None),
         ("class A { a(){ if(this.length); while(!this.size || foo);}}", None),
         // Use of .size but not in conditional "test" position
-        ("const totalCount = tests.reduce((count, test) => count + (test.enabled ? test.maxSize : test.size), 0)", None),
+        (
+            "const totalCount = tests.reduce((count, test) => count + (test.enabled ? test.maxSize : test.size), 0)",
+            None,
+        ),
     ];
 
     let fail = vec![

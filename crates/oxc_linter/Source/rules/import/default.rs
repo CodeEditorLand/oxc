@@ -1,5 +1,4 @@
 use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{Span, VALID_EXTENSIONS};
 use oxc_syntax::module_record::ImportImportName;
@@ -38,7 +37,7 @@ declare_oxc_lint!(
 
 impl Rule for Default {
     fn run_once(&self, ctx: &LintContext<'_>) {
-        let module_record = ctx.semantic().module_record();
+        let module_record = ctx.module_record();
         for import_entry in &module_record.import_entries {
             let ImportImportName::Default(default_span) = import_entry.import_name else {
                 continue;

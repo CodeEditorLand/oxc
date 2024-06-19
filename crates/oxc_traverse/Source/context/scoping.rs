@@ -1,7 +1,6 @@
 use std::str;
 
 use compact_str::{format_compact, CompactString};
-
 use oxc_semantic::{AstNodeId, Reference, ScopeTree, SymbolTable};
 use oxc_span::{CompactStr, SPAN};
 use oxc_syntax::{
@@ -183,6 +182,11 @@ impl TraverseScoping {
     /// Generate UID in current scope.
     pub fn generate_uid_in_current_scope(&mut self, name: &str, flags: SymbolFlags) -> SymbolId {
         self.generate_uid(name, self.current_scope_id, flags)
+    }
+
+    /// Generate UID in root scope.
+    pub fn generate_uid_in_root_scope(&mut self, name: &str, flags: SymbolFlags) -> SymbolId {
+        self.generate_uid(name, self.scopes.root_scope_id(), flags)
     }
 
     /// Create a reference bound to a `SymbolId`

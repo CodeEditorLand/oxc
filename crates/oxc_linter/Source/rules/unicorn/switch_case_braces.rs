@@ -1,10 +1,9 @@
 use oxc_ast::{ast::Statement, AstKind};
 use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 
-use crate::{context::LintContext, fixer::Fix, rule::Rule, AstNode};
+use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn switch_case_braces_diagnostic(span0: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("eslint-plugin-unicorn(switch-case-braces):  Empty switch case shouldn't have braces and not-empty case should have braces around it.")
@@ -54,7 +53,7 @@ impl Rule for SwitchCaseBraces {
                         if case_block.body.is_empty() {
                             ctx.diagnostic_with_fix(
                                 switch_case_braces_diagnostic(case_block.span),
-                                || Fix::new("", case_block.span),
+                                |fixer| fixer.delete_range(case_block.span),
                             );
                         }
                     }
@@ -72,10 +71,10 @@ impl Rule for SwitchCaseBraces {
 
                         ctx.diagnostic_with_fix(
                             switch_case_braces_diagnostic(case_body_span),
-                            || {
+                            |fixer| {
                                 use oxc_codegen::{Context, Gen};
                                 let modified_code = {
-                                    let mut formatter = ctx.codegen();
+                                    let mut formatter = fixer.codegen();
 
                                     if let Some(case_test) = &case.test {
                                         formatter.print_str(b"case ");
@@ -95,7 +94,7 @@ impl Rule for SwitchCaseBraces {
                                     formatter.into_source_text()
                                 };
 
-                                Fix::new(modified_code, case.span)
+                                fixer.replace(case.span, modified_code)
                             },
                         );
 

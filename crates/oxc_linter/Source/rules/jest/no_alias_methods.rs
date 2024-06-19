@@ -1,12 +1,10 @@
 use oxc_ast::AstKind;
 use oxc_diagnostics::OxcDiagnostic;
-
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
 use crate::{
     context::LintContext,
-    fixer::Fix,
     rule::Rule,
     utils::{collect_possible_jest_call_node, parse_expect_jest_fn_call, PossibleJestNode},
 };
@@ -71,18 +69,18 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
             if let Some(method_name) = BadAliasMethodName::from_str(alias.as_ref()) {
                 let (name, canonical_name) = method_name.name_with_canonical();
 
-                let mut start = matcher.span.start;
-                let mut end = matcher.span.end;
+                let mut span = matcher.span;
                 // expect(a).not['toThrowError']()
                 // matcher is the node of `toThrowError`, we only what to replace the content in the quotes.
                 if matcher.element.is_string_literal() {
-                    start += 1;
-                    end -= 1;
+                    span.start += 1;
+                    span.end -= 1;
                 }
 
                 ctx.diagnostic_with_fix(
                     no_alias_methods_diagnostic(name, canonical_name, matcher.span),
-                    || Fix::new(canonical_name, Span::new(start, end)),
+                    // || Fix::new(canonical_name, Span::new(start, end)),
+                    |fixer| fixer.replace(span, canonical_name),
                 );
             }
         }
@@ -120,6 +118,7 @@ impl BadAliasMethodName {
             _ => None,
         }
     }
+
     fn name_with_canonical(&self) -> (&'static str, &'static str) {
         match self {
             Self::ToBeCalled => ("toBeCalled", "toHaveBeenCalled"),

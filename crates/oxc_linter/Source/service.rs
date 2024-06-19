@@ -8,15 +8,14 @@ use std::{
 };
 
 use dashmap::DashMap;
-use rayon::{iter::ParallelBridge, prelude::ParallelIterator};
-use rustc_hash::FxHashSet;
-
 use oxc_allocator::Allocator;
 use oxc_diagnostics::{DiagnosticSender, DiagnosticService, Error, OxcDiagnostic};
 use oxc_parser::Parser;
 use oxc_resolver::Resolver;
 use oxc_semantic::{ModuleRecord, SemanticBuilder};
 use oxc_span::{SourceType, VALID_EXTENSIONS};
+use rayon::{iter::ParallelBridge, prelude::ParallelIterator};
+use rustc_hash::FxHashSet;
 
 use crate::{
     partial_loader::{JavaScriptSource, PartialLoader, LINT_PARTIAL_LOADER_EXT},
@@ -264,10 +263,13 @@ impl Runtime {
 
         let program = allocator.alloc(ret.program);
 
+        let trivias = ret.trivias;
+
         // Build the module record to unblock other threads from waiting for too long.
         // The semantic model is not built at this stage.
         let semantic_builder = SemanticBuilder::new(source_text, source_type)
-            .with_trivias(ret.trivias)
+            .with_cfg(true)
+            .with_trivias(trivias)
             .with_check_syntax_error(check_syntax_errors)
             .build_module_record(path.to_path_buf(), program);
         let module_record = semantic_builder.module_record();
