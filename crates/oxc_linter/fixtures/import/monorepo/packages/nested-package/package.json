@@ -1,0 +1,6 @@
+{
+  "name": "nested-monorepo-pkg",
+  "dependencies": {
+    "react": "18.3.1"
+  }
+}
