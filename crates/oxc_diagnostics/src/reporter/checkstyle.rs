@@ -1,8 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
-use crate::{Error, Severity};
-
 use super::{DiagnosticReporter, Info};
+use crate::{Error, Severity};
 
 #[derive(Default)]
 pub struct CheckstyleReporter {
@@ -22,6 +21,7 @@ impl DiagnosticReporter for CheckstyleReporter {
     }
 }
 
+#[allow(clippy::print_stdout)]
 fn format_checkstyle(diagnostics: &[Error]) {
     let infos = diagnostics.iter().map(Info::new).collect::<Vec<_>>();
     let mut grouped: HashMap<String, Vec<Info>> = HashMap::new();

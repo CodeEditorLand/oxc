@@ -157,40 +157,41 @@ pub enum TSType<'a> {
     TSAnyKeyword(Box<'a, TSAnyKeyword>) = 0,
     TSBigIntKeyword(Box<'a, TSBigIntKeyword>) = 1,
     TSBooleanKeyword(Box<'a, TSBooleanKeyword>) = 2,
-    TSNeverKeyword(Box<'a, TSNeverKeyword>) = 3,
-    TSNullKeyword(Box<'a, TSNullKeyword>) = 4,
-    TSNumberKeyword(Box<'a, TSNumberKeyword>) = 5,
-    TSObjectKeyword(Box<'a, TSObjectKeyword>) = 6,
-    TSStringKeyword(Box<'a, TSStringKeyword>) = 7,
-    TSSymbolKeyword(Box<'a, TSSymbolKeyword>) = 8,
-    TSThisType(Box<'a, TSThisType>) = 9,
-    TSUndefinedKeyword(Box<'a, TSUndefinedKeyword>) = 10,
-    TSUnknownKeyword(Box<'a, TSUnknownKeyword>) = 11,
-    TSVoidKeyword(Box<'a, TSVoidKeyword>) = 12,
+    TSIntrinsicKeyword(Box<'a, TSIntrinsicKeyword>) = 3,
+    TSNeverKeyword(Box<'a, TSNeverKeyword>) = 4,
+    TSNullKeyword(Box<'a, TSNullKeyword>) = 5,
+    TSNumberKeyword(Box<'a, TSNumberKeyword>) = 6,
+    TSObjectKeyword(Box<'a, TSObjectKeyword>) = 7,
+    TSStringKeyword(Box<'a, TSStringKeyword>) = 8,
+    TSSymbolKeyword(Box<'a, TSSymbolKeyword>) = 9,
+    TSThisType(Box<'a, TSThisType>) = 10,
+    TSUndefinedKeyword(Box<'a, TSUndefinedKeyword>) = 11,
+    TSUnknownKeyword(Box<'a, TSUnknownKeyword>) = 12,
+    TSVoidKeyword(Box<'a, TSVoidKeyword>) = 13,
     // Compound
-    TSArrayType(Box<'a, TSArrayType<'a>>) = 13,
-    TSConditionalType(Box<'a, TSConditionalType<'a>>) = 14,
-    TSConstructorType(Box<'a, TSConstructorType<'a>>) = 15,
-    TSFunctionType(Box<'a, TSFunctionType<'a>>) = 16,
-    TSImportType(Box<'a, TSImportType<'a>>) = 17,
-    TSIndexedAccessType(Box<'a, TSIndexedAccessType<'a>>) = 18,
-    TSInferType(Box<'a, TSInferType<'a>>) = 19,
-    TSIntersectionType(Box<'a, TSIntersectionType<'a>>) = 20,
-    TSLiteralType(Box<'a, TSLiteralType<'a>>) = 21,
-    TSMappedType(Box<'a, TSMappedType<'a>>) = 22,
-    TSNamedTupleMember(Box<'a, TSNamedTupleMember<'a>>) = 23,
-    TSQualifiedName(Box<'a, TSQualifiedName<'a>>) = 24,
-    TSTemplateLiteralType(Box<'a, TSTemplateLiteralType<'a>>) = 25,
-    TSTupleType(Box<'a, TSTupleType<'a>>) = 26,
-    TSTypeLiteral(Box<'a, TSTypeLiteral<'a>>) = 27,
-    TSTypeOperatorType(Box<'a, TSTypeOperator<'a>>) = 28,
-    TSTypePredicate(Box<'a, TSTypePredicate<'a>>) = 29,
-    TSTypeQuery(Box<'a, TSTypeQuery<'a>>) = 30,
-    TSTypeReference(Box<'a, TSTypeReference<'a>>) = 31,
-    TSUnionType(Box<'a, TSUnionType<'a>>) = 32,
+    TSArrayType(Box<'a, TSArrayType<'a>>) = 14,
+    TSConditionalType(Box<'a, TSConditionalType<'a>>) = 15,
+    TSConstructorType(Box<'a, TSConstructorType<'a>>) = 16,
+    TSFunctionType(Box<'a, TSFunctionType<'a>>) = 17,
+    TSImportType(Box<'a, TSImportType<'a>>) = 18,
+    TSIndexedAccessType(Box<'a, TSIndexedAccessType<'a>>) = 19,
+    TSInferType(Box<'a, TSInferType<'a>>) = 20,
+    TSIntersectionType(Box<'a, TSIntersectionType<'a>>) = 21,
+    TSLiteralType(Box<'a, TSLiteralType<'a>>) = 22,
+    TSMappedType(Box<'a, TSMappedType<'a>>) = 23,
+    TSNamedTupleMember(Box<'a, TSNamedTupleMember<'a>>) = 24,
+    TSQualifiedName(Box<'a, TSQualifiedName<'a>>) = 25,
+    TSTemplateLiteralType(Box<'a, TSTemplateLiteralType<'a>>) = 26,
+    TSTupleType(Box<'a, TSTupleType<'a>>) = 27,
+    TSTypeLiteral(Box<'a, TSTypeLiteral<'a>>) = 28,
+    TSTypeOperatorType(Box<'a, TSTypeOperator<'a>>) = 29,
+    TSTypePredicate(Box<'a, TSTypePredicate<'a>>) = 30,
+    TSTypeQuery(Box<'a, TSTypeQuery<'a>>) = 31,
+    TSTypeReference(Box<'a, TSTypeReference<'a>>) = 32,
+    TSUnionType(Box<'a, TSUnionType<'a>>) = 33,
     // JSDoc
-    JSDocNullableType(Box<'a, JSDocNullableType<'a>>) = 33,
-    JSDocUnknownType(Box<'a, JSDocUnknownType>) = 34,
+    JSDocNullableType(Box<'a, JSDocNullableType<'a>>) = 34,
+    JSDocUnknownType(Box<'a, JSDocUnknownType>) = 35,
 }
 
 /// Macro for matching `TSType`'s variants.
@@ -200,6 +201,7 @@ macro_rules! match_ts_type {
         $ty::TSAnyKeyword(_)
             | $ty::TSBigIntKeyword(_)
             | $ty::TSBooleanKeyword(_)
+            | $ty::TSIntrinsicKeyword(_)
             | $ty::TSNeverKeyword(_)
             | $ty::TSNullKeyword(_)
             | $ty::TSNumberKeyword(_)
@@ -237,6 +239,20 @@ macro_rules! match_ts_type {
 pub use match_ts_type;
 
 impl<'a> TSType<'a> {
+    pub fn get_identifier_reference(&self) -> Option<IdentifierReference<'a>> {
+        match self {
+            TSType::TSTypeReference(reference) => {
+                Some(TSTypeName::get_first_name(&reference.type_name))
+            }
+            TSType::TSQualifiedName(qualified) => Some(TSTypeName::get_first_name(&qualified.left)),
+            TSType::TSTypeQuery(query) => match &query.expr_name {
+                TSTypeQueryExprName::IdentifierReference(ident) => Some((*ident).clone()),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
     pub fn is_const_type_reference(&self) -> bool {
         matches!(self, TSType::TSTypeReference(reference) if reference.type_name.is_const())
     }
@@ -245,11 +261,23 @@ impl<'a> TSType<'a> {
     pub fn is_maybe_undefined(&self) -> bool {
         match self {
             TSType::TSUndefinedKeyword(_) => true,
-            TSType::TSUnionType(un) => {
-                un.types.iter().any(|t| matches!(t, TSType::TSUndefinedKeyword(_)))
-            }
+            TSType::TSUnionType(un) => un.types.iter().any(Self::is_maybe_undefined),
             _ => false,
         }
+    }
+
+    #[rustfmt::skip]
+    pub fn is_keyword(&self) -> bool {
+        matches!(self, TSType::TSAnyKeyword(_) | TSType::TSBigIntKeyword(_) | TSType::TSBooleanKeyword(_)
+                | TSType::TSNeverKeyword(_) | TSType::TSNullKeyword(_) | TSType::TSNumberKeyword(_)
+                | TSType::TSObjectKeyword(_) | TSType::TSStringKeyword(_)| TSType::TSVoidKeyword(_)
+                | TSType::TSIntrinsicKeyword(_) | TSType::TSSymbolKeyword(_) | TSType::TSThisType(_)
+                | TSType::TSUndefinedKeyword(_) | TSType::TSUnknownKeyword(_)
+        )
+    }
+
+    pub fn is_keyword_or_literal(&self) -> bool {
+        self.is_keyword() || matches!(self, TSType::TSLiteralType(_))
     }
 }
 
@@ -452,6 +480,16 @@ pub struct TSNumberKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[cfg_attr(feature = "serialize", serde(tag = "type"))]
 pub struct TSNeverKeyword {
+    #[cfg_attr(feature = "serialize", serde(flatten))]
+    pub span: Span,
+}
+
+/// `type Uppercase<T extends character> = intrinsic;`
+#[visited_node]
+#[derive(Debug, Hash)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
+#[cfg_attr(feature = "serialize", serde(tag = "type"))]
+pub struct TSIntrinsicKeyword {
     #[cfg_attr(feature = "serialize", serde(flatten))]
     pub span: Span,
 }
@@ -692,6 +730,12 @@ pub enum TSAccessibility {
     Private,
     Protected,
     Public,
+}
+
+impl TSAccessibility {
+    pub fn is_private(&self) -> bool {
+        matches!(self, TSAccessibility::Private)
+    }
 }
 
 #[visited_node]
@@ -1305,9 +1349,19 @@ impl<'a> Modifiers<'a> {
         self.contains(ModifierKind::Declare)
     }
 
+    pub fn is_contains_abstract(&self) -> bool {
+        self.contains(ModifierKind::Abstract)
+    }
+
     pub fn remove_type_modifiers(&mut self) {
         if let Some(list) = &mut self.0 {
             list.retain(|m| !m.kind.is_typescript_syntax());
+        }
+    }
+
+    pub fn add_modifier(&mut self, modifier: Modifier) {
+        if let Some(list) = self.0.as_mut() {
+            list.push(modifier);
         }
     }
 }
@@ -1369,6 +1423,7 @@ impl ImportOrExportKind {
 
 // [`JSDoc`](https://github.com/microsoft/TypeScript/blob/54a554d8af2657630307cbfa8a3e4f3946e36507/src/compiler/types.ts#L393)
 
+/// `type foo = ty?` or `type foo = ?ty`
 #[visited_node]
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]

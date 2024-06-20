@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
-use oxc_ast::Trivias;
-use oxc_codegen::{Codegen, CodegenOptions};
+use oxc_codegen::Codegen;
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::{GetSpan, Span};
 
@@ -65,11 +64,12 @@ impl<'c, 'a: 'c> RuleFixer<'c, 'a> {
 
     #[allow(clippy::unused_self)]
     pub fn codegen(self) -> Codegen<'a, false> {
-        Codegen::<false>::new("", "", Trivias::default(), CodegenOptions::default())
+        Codegen::<false>::new()
     }
 }
 
 pub struct FixResult<'a> {
+    #[allow(unused)]
     pub fixed: bool,
     pub fixed_code: Cow<'a, str>,
     pub messages: Vec<Message<'a>>,

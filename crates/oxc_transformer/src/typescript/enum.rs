@@ -1,4 +1,4 @@
-use oxc_allocator::{Box, Vec};
+use oxc_allocator::Vec;
 use oxc_ast::{ast::*, visit::walk_mut, VisitMut};
 use oxc_span::{Atom, SPAN};
 use oxc_syntax::{
@@ -19,6 +19,27 @@ impl<'a> TypeScriptEnum<'a> {
     pub fn new(ctx: Ctx<'a>) -> Self {
         Self { ctx, enums: FxHashMap::default() }
     }
+
+    pub fn transform_statement(&mut self, stmt: &mut Statement<'a>, ctx: &TraverseCtx<'a>) {
+        let new_stmt = match stmt {
+            Statement::TSEnumDeclaration(ts_enum_decl) => {
+                self.transform_ts_enum(ts_enum_decl, false, ctx)
+            }
+            Statement::ExportNamedDeclaration(decl) => {
+                if let Some(Declaration::TSEnumDeclaration(ts_enum_decl)) = &decl.declaration {
+                    self.transform_ts_enum(ts_enum_decl, true, ctx)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
+        if let Some(new_stmt) = new_stmt {
+            *stmt = new_stmt;
+        }
+    }
+
     /// ```TypeScript
     /// enum Foo {
     ///   X = 1,
@@ -32,9 +53,9 @@ impl<'a> TypeScriptEnum<'a> {
     ///   return Foo;
     /// })(Foo || {});
     /// ```
-    pub fn transform_ts_enum(
+    fn transform_ts_enum(
         &mut self,
-        decl: &Box<'a, TSEnumDeclaration<'a>>,
+        decl: &TSEnumDeclaration<'a>,
         is_export: bool,
         ctx: &TraverseCtx<'a>,
     ) -> Option<Statement<'a>> {
@@ -128,7 +149,7 @@ impl<'a> TypeScriptEnum<'a> {
         Some(stmt)
     }
 
-    pub fn transform_ts_enum_members(
+    fn transform_ts_enum_members(
         &mut self,
         members: &Vec<'a, TSEnumMember<'a>>,
         enum_name: &Atom<'a>,

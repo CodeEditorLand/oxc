@@ -11,11 +11,9 @@ use oxc_allocator::Vec;
 use oxc_ast::ast::*;
 use oxc_traverse::TraverseCtx;
 
-use crate::context::Ctx;
-
-use self::{annotations::TypeScriptAnnotations, r#enum::TypeScriptEnum};
-
 pub use self::options::TypeScriptOptions;
+use self::{annotations::TypeScriptAnnotations, r#enum::TypeScriptEnum};
+use crate::context::Ctx;
 
 /// [Preset TypeScript](https://babeljs.io/docs/babel-preset-typescript)
 ///
@@ -145,38 +143,16 @@ impl<'a> TypeScript<'a> {
         self.annotations.transform_property_definition(def);
     }
 
+    pub fn transform_statements(&mut self, stmts: &mut Vec<'a, Statement<'a>>) {
+        self.annotations.transform_statements(stmts);
+    }
+
     pub fn transform_statements_on_exit(&mut self, stmts: &mut Vec<'a, Statement<'a>>) {
         self.annotations.transform_statements_on_exit(stmts);
     }
 
     pub fn transform_statement(&mut self, stmt: &mut Statement<'a>, ctx: &TraverseCtx<'a>) {
-        let new_stmt = match stmt {
-            match_declaration!(Statement) => {
-                if let Declaration::TSEnumDeclaration(ts_enum_decl) = &stmt.to_declaration() {
-                    self.r#enum.transform_ts_enum(ts_enum_decl, false, ctx)
-                } else {
-                    None
-                }
-            }
-            match_module_declaration!(Statement) => {
-                if let ModuleDeclaration::ExportNamedDeclaration(decl) =
-                    stmt.to_module_declaration_mut()
-                {
-                    if let Some(Declaration::TSEnumDeclaration(ts_enum_decl)) = &decl.declaration {
-                        self.r#enum.transform_ts_enum(ts_enum_decl, true, ctx)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        };
-
-        if let Some(new_stmt) = new_stmt {
-            *stmt = new_stmt;
-        }
+        self.r#enum.transform_statement(stmt, ctx);
     }
 
     pub fn transform_if_statement(&mut self, stmt: &mut IfStatement<'a>) {
@@ -200,23 +176,6 @@ impl<'a> TypeScript<'a> {
         expr: &mut TaggedTemplateExpression<'a>,
     ) {
         self.annotations.transform_tagged_template_expression(expr);
-    }
-
-    pub fn transform_declaration(&mut self, decl: &mut Declaration<'a>, ctx: &mut TraverseCtx<'a>) {
-        match decl {
-            Declaration::TSImportEqualsDeclaration(ts_import_equals)
-                if ts_import_equals.import_kind.is_value() =>
-            {
-                *decl = self.transform_ts_import_equals(ts_import_equals, ctx);
-            }
-            _ => {}
-        }
-    }
-
-    pub fn transform_module_declaration(&mut self, module_decl: &mut ModuleDeclaration<'a>) {
-        if let ModuleDeclaration::TSExportAssignment(ts_export_assignment) = &mut *module_decl {
-            self.transform_ts_export_assignment(ts_export_assignment);
-        }
     }
 
     pub fn transform_jsx_element(&mut self, elem: &mut JSXElement<'a>) {

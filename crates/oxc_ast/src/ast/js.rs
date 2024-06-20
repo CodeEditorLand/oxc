@@ -22,8 +22,7 @@ use serde::Serialize;
 #[cfg(feature = "serialize")]
 use tsify::Tsify;
 
-use super::inherit_variants;
-use super::{jsx::*, literal::*, ts::*};
+use super::{inherit_variants, jsx::*, literal::*, ts::*};
 
 #[cfg(feature = "serialize")]
 #[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
@@ -902,6 +901,28 @@ pub struct StaticMemberExpression<'a> {
     pub optional: bool, // for optional chaining
 }
 
+impl<'a> StaticMemberExpression<'a> {
+    pub fn get_first_object(&self) -> &Expression<'a> {
+        match &self.object {
+            Expression::StaticMemberExpression(member) => {
+                if let Expression::StaticMemberExpression(expr) = &member.object {
+                    expr.get_first_object()
+                } else {
+                    &self.object
+                }
+            }
+            Expression::ChainExpression(chain) => {
+                if let ChainElement::StaticMemberExpression(expr) = &chain.expression {
+                    expr.get_first_object()
+                } else {
+                    &self.object
+                }
+            }
+            _ => &self.object,
+        }
+    }
+}
+
 /// `MemberExpression[?Yield, ?Await] . PrivateIdentifier`
 #[visited_node]
 #[derive(Debug, Hash)]
@@ -1151,6 +1172,7 @@ impl<'a> AssignmentTarget<'a> {
     pub fn get_identifier(&self) -> Option<&str> {
         self.as_simple_assignment_target().and_then(|it| it.get_identifier())
     }
+
     pub fn get_expression(&self) -> Option<&Expression<'a>> {
         self.as_simple_assignment_target().and_then(|it| it.get_expression())
     }
@@ -2181,6 +2203,10 @@ impl<'a> BindingPattern<'a> {
     pub fn get_identifier(&self) -> Option<&Atom<'a>> {
         self.kind.get_identifier()
     }
+
+    pub fn get_binding_identifier(&self) -> Option<&BindingIdentifier<'a>> {
+        self.kind.get_binding_identifier()
+    }
 }
 
 #[visited_node]
@@ -2210,8 +2236,20 @@ impl<'a> BindingPatternKind<'a> {
         }
     }
 
+    pub fn get_binding_identifier(&self) -> Option<&BindingIdentifier<'a>> {
+        match self {
+            Self::BindingIdentifier(ident) => Some(ident),
+            Self::AssignmentPattern(assign) => assign.left.get_binding_identifier(),
+            _ => None,
+        }
+    }
+
     pub fn is_destructuring_pattern(&self) -> bool {
-        matches!(self, Self::ObjectPattern(_) | Self::ArrayPattern(_))
+        match self {
+            Self::ObjectPattern(_) | Self::ArrayPattern(_) => true,
+            Self::AssignmentPattern(pattern) => pattern.left.kind.is_destructuring_pattern(),
+            Self::BindingIdentifier(_) => false,
+        }
     }
 
     pub fn is_binding_identifier(&self) -> bool {
@@ -2324,6 +2362,7 @@ pub struct Function<'a> {
     pub id: Option<BindingIdentifier<'a>>,
     pub generator: bool,
     pub r#async: bool,
+    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
     /// Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
     ///
     /// The JavaScript specification states that you cannot have a parameter called `this`,
@@ -2342,7 +2381,6 @@ pub struct Function<'a> {
     pub this_param: Option<TSThisParameter<'a>>,
     pub params: Box<'a, FormalParameters<'a>>,
     pub body: Option<Box<'a, FunctionBody<'a>>>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
     pub return_type: Option<Box<'a, TSTypeAnnotation<'a>>>,
     /// Valid modifiers: `export`, `default`, `async`
     pub modifiers: Modifiers<'a>,
@@ -2911,11 +2949,17 @@ impl MethodDefinitionKind {
     pub fn is_constructor(&self) -> bool {
         matches!(self, Self::Constructor)
     }
+
     pub fn is_method(&self) -> bool {
         matches!(self, Self::Method)
     }
+
     pub fn is_set(&self) -> bool {
         matches!(self, Self::Set)
+    }
+
+    pub fn is_get(&self) -> bool {
+        matches!(self, Self::Get)
     }
 
     pub fn scope_flags(self) -> ScopeFlags {
@@ -3315,7 +3359,6 @@ pub enum ExportDefaultDeclarationKind<'a> {
     ClassDeclaration(Box<'a, Class<'a>>) = 65,
 
     TSInterfaceDeclaration(Box<'a, TSInterfaceDeclaration<'a>>) = 66,
-    TSEnumDeclaration(Box<'a, TSEnumDeclaration<'a>>) = 67,
 
     // `Expression` variants added here by `inherit_variants!` macro
     @inherit Expression
@@ -3328,7 +3371,7 @@ impl<'a> ExportDefaultDeclarationKind<'a> {
         match self {
             Self::FunctionDeclaration(func) => func.is_typescript_syntax(),
             Self::ClassDeclaration(class) => class.is_typescript_syntax(),
-            Self::TSInterfaceDeclaration(_) | Self::TSEnumDeclaration(_) => true,
+            Self::TSInterfaceDeclaration(_) => true,
             _ => false,
         }
     }

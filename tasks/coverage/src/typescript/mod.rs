@@ -1,15 +1,16 @@
 mod meta;
+mod transpile_runner;
 
 use std::path::{Path, PathBuf};
 
 use oxc_span::SourceType;
 
+use self::meta::TestCaseContent;
+pub use self::transpile_runner::{TranspileRunner, TypeScriptTranspileCase};
 use crate::{
     project_root,
     suite::{Case, Suite, TestResult},
 };
-
-use self::meta::TestCaseContent;
 
 const TESTS_ROOT: &str = "tasks/coverage/typescript/tests/";
 
@@ -53,6 +54,7 @@ impl<T: Case> Suite<T> for TypeScriptSuite<T> {
     fn get_test_cases(&self) -> &Vec<T> {
         &self.test_cases
     }
+
     fn get_test_cases_mut(&mut self) -> &mut Vec<T> {
         &mut self.test_cases
     }

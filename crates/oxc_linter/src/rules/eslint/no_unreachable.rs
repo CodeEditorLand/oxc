@@ -1,13 +1,13 @@
 use oxc_ast::{ast::VariableDeclarationKind, AstKind};
-use oxc_diagnostics::OxcDiagnostic;
-use oxc_macros::declare_oxc_lint;
-use oxc_semantic::{
-    petgraph::{
+use oxc_cfg::{
+    graph::{
         visit::{depth_first_search, Control, DfsEvent, EdgeRef},
         Direction,
     },
-    EdgeType, InstructionKind,
+    EdgeType, ErrorEdgeKind, Instruction, InstructionKind,
 };
+use oxc_diagnostics::OxcDiagnostic;
+use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 
 use crate::{context::LintContext, rule::Rule};
@@ -26,15 +26,15 @@ declare_oxc_lint!(
     /// Disallow unreachable code after `return`, `throw`, `continue`, and `break` statements
     ///
     NoUnreachable,
-    correctness
+    nursery
 );
 
 impl Rule for NoUnreachable {
     fn run_once(&self, ctx: &LintContext) {
         let nodes = ctx.nodes();
         let Some(root) = nodes.root_node() else { return };
-        let cfg = ctx.semantic().cfg();
-        let graph = &cfg.graph;
+        let cfg = ctx.cfg();
+        let graph = cfg.graph();
 
         // A pre-allocated vector containing the reachability status of all the basic blocks.
         // We initialize this vector with all nodes set to `unreachable` since if we don't visit a
@@ -50,25 +50,29 @@ impl Rule for NoUnreachable {
         // In our first path we first check if each block is definitely unreachable, If it is then
         // we set it as such, If we encounter an infinite loop we keep its end block since it can
         // prevent other reachable blocks from ever getting executed.
-        let _: Control<()> = depth_first_search(graph, Some(root.cfg_id()), |event| match event {
-            DfsEvent::Finish(node, _) => {
-                let bb = cfg.basic_block(node);
-                let unreachable = if bb.unreachable {
-                    true
-                } else {
-                    graph
-                        .edges_directed(node, Direction::Incoming)
-                        .any(|edge| matches!(edge.weight(), EdgeType::Join))
-                };
+        let _: Control<()> = depth_first_search(graph, Some(root.cfg_id()), |event| {
+            if let DfsEvent::Finish(node, _) = event {
+                let unreachable = cfg.basic_block(node).unreachable;
                 unreachables[node.index()] = unreachable;
 
-                if let Some(it) = cfg.is_infinite_loop_start(node, nodes) {
-                    infinite_loops.push(it);
+                if !unreachable {
+                    if let Some(it) = cfg.is_infinite_loop_start(node, |instruction| {
+                        use oxc_cfg::EvalConstConditionResult::{Eval, Fail, NotFound};
+                        match instruction {
+                            Instruction { kind: InstructionKind::Condition, node_id: Some(id) } => {
+                                match nodes.kind(*id) {
+                                    AstKind::BooleanLiteral(lit) => Eval(lit.value),
+                                    _ => Fail,
+                                }
+                            }
+                            _ => NotFound,
+                        }
+                    }) {
+                        infinite_loops.push(it);
+                    }
                 }
-
-                Control::Continue
             }
-            _ => Control::Continue,
+            Control::Continue
         });
 
         // In the second path we go for each infinite loop end block and follow it marking all
@@ -91,7 +95,9 @@ impl Rule for NoUnreachable {
                         // `NewFunction` is always reachable
                         | EdgeType::NewFunction
                         // `Finalize` can be reachable if we encounter an error in the loop.
-                        | EdgeType::Finalize => true,
+                        | EdgeType::Finalize
+                        // Explicit `Error` can also be reachable if we encounter an error in the loop.
+                        | EdgeType::Error(ErrorEdgeKind::Explicit) => true,
 
                         // If we have an incoming `Jump` and it is from a `Break` instruction,
                         // We know with high confidence that we are visiting a reachable block.
@@ -252,6 +258,23 @@ fn test() {
                 a();
             }
         } finally {
+            b();
+        }
+        ",
+        "
+        try {
+            a();
+        } finally {
+            b();
+        }
+        c();
+        ",
+        "
+        try {
+            while (true) {
+                a();
+            }
+        } catch {
             b();
         }
         ",

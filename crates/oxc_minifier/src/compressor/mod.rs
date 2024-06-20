@@ -20,8 +20,7 @@ use oxc_syntax::{
     precedence::GetPrecedence,
 };
 
-pub use self::options::CompressOptions;
-use self::prepass::Prepass;
+pub use self::{options::CompressOptions, prepass::Prepass};
 
 pub struct Compressor<'a> {
     ast: AstBuilder<'a>,
@@ -319,7 +318,9 @@ impl<'a> VisitMut<'a> for Compressor<'a> {
             true
         });
 
-        self.join_vars(stmts);
+        if self.options.join_vars {
+            self.join_vars(stmts);
+        }
 
         walk_statements_mut(self, stmts);
     }

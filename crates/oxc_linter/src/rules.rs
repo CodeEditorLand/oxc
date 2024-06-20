@@ -133,6 +133,7 @@ mod typescript {
     pub mod no_empty_interface;
     pub mod no_explicit_any;
     pub mod no_extra_non_null_assertion;
+    pub mod no_import_type_side_effects;
     pub mod no_misused_new;
     pub mod no_namespace;
     pub mod no_non_null_asserted_optional_chain;
@@ -359,6 +360,7 @@ mod oxc {
     pub mod no_async_await;
     pub mod no_barrel_file;
     pub mod no_const_enum;
+    pub mod no_optional_chaining;
     pub mod no_rest_spread_properties;
     pub mod number_arg_out_of_range;
     pub mod only_used_in_recursion;
@@ -522,6 +524,7 @@ oxc_macros::declare_all_lint_rules! {
     typescript::no_empty_interface,
     typescript::no_explicit_any,
     typescript::no_extra_non_null_assertion,
+    typescript::no_import_type_side_effects,
     typescript::no_misused_new,
     typescript::no_namespace,
     typescript::no_non_null_asserted_optional_chain,
@@ -737,6 +740,7 @@ oxc_macros::declare_all_lint_rules! {
     oxc::const_comparisons,
     oxc::double_comparisons,
     oxc::erasing_op,
+    oxc::no_optional_chaining,
     oxc::no_rest_spread_properties,
     oxc::misrefactored_assign_op,
     oxc::missing_throw,

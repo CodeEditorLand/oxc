@@ -36,12 +36,10 @@ pub use crate::{
     compiler_assumptions::CompilerAssumptions,
     env::EnvOptions,
     es2015::{ArrowFunctionsOptions, ES2015Options},
-    options::BabelOptions,
-    options::TransformOptions,
+    options::{BabelOptions, TransformOptions},
     react::{ReactJsxRuntime, ReactOptions},
     typescript::TypeScriptOptions,
 };
-
 use crate::{
     context::{Ctx, TransformCtx},
     react::React,
@@ -236,6 +234,7 @@ impl<'a> Traverse<'a> for Transformer<'a> {
     }
 
     fn enter_statements(&mut self, stmts: &mut Vec<'a, Statement<'a>>, _ctx: &mut TraverseCtx<'a>) {
+        self.x0_typescript.transform_statements(stmts);
         self.x3_es2015.enter_statements(stmts);
     }
 
@@ -268,9 +267,11 @@ impl<'a> Traverse<'a> for Transformer<'a> {
     fn enter_if_statement(&mut self, stmt: &mut IfStatement<'a>, _ctx: &mut TraverseCtx<'a>) {
         self.x0_typescript.transform_if_statement(stmt);
     }
+
     fn enter_while_statement(&mut self, stmt: &mut WhileStatement<'a>, _ctx: &mut TraverseCtx<'a>) {
         self.x0_typescript.transform_while_statement(stmt);
     }
+
     fn enter_do_while_statement(
         &mut self,
         stmt: &mut DoWhileStatement<'a>,
@@ -278,15 +279,16 @@ impl<'a> Traverse<'a> for Transformer<'a> {
     ) {
         self.x0_typescript.transform_do_while_statement(stmt);
     }
+
     fn enter_for_statement(&mut self, stmt: &mut ForStatement<'a>, _ctx: &mut TraverseCtx<'a>) {
         self.x0_typescript.transform_for_statement(stmt);
     }
 
-    fn enter_module_declaration(
+    fn enter_ts_export_assignment(
         &mut self,
-        decl: &mut ModuleDeclaration<'a>,
+        export_assignment: &mut TSExportAssignment<'a>,
         _ctx: &mut TraverseCtx<'a>,
     ) {
-        self.x0_typescript.transform_module_declaration(decl);
+        self.x0_typescript.transform_ts_export_assignment(export_assignment);
     }
 }

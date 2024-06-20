@@ -549,6 +549,7 @@ impl<'a> GetSpan for TSType<'a> {
             Self::TSStringKeyword(t) => t.span,
             Self::TSNeverKeyword(t) => t.span,
             Self::TSBooleanKeyword(t) => t.span,
+            Self::TSIntrinsicKeyword(t) => t.span,
             Self::TSSymbolKeyword(t) => t.span,
             Self::TSBigIntKeyword(t) => t.span,
             Self::TSThisType(t) => t.span,
@@ -565,7 +566,6 @@ impl<'a> GetSpan for ExportDefaultDeclarationKind<'a> {
         match self {
             Self::ClassDeclaration(x) => x.span,
             Self::FunctionDeclaration(x) => x.span,
-            Self::TSEnumDeclaration(x) => x.span,
             Self::TSInterfaceDeclaration(x) => x.span,
             // `Expression`
             Self::BooleanLiteral(e) => e.span,
@@ -730,6 +730,17 @@ impl<'a> GetSpan for JSXMemberExpressionObject<'a> {
         match &self {
             JSXMemberExpressionObject::Identifier(ident) => ident.span,
             JSXMemberExpressionObject::MemberExpression(expr) => expr.span,
+        }
+    }
+}
+
+impl<'a> GetSpan for TSEnumMemberName<'a> {
+    fn span(&self) -> Span {
+        match self {
+            TSEnumMemberName::StaticIdentifier(ident) => ident.span,
+            TSEnumMemberName::StaticStringLiteral(literal) => literal.span,
+            TSEnumMemberName::StaticNumericLiteral(literal) => literal.span,
+            expr @ match_expression!(TSEnumMemberName) => expr.to_expression().span(),
         }
     }
 }
