@@ -88,7 +88,7 @@ impl<'a> IsolatedDeclarations<'a> {
         };
 
         declaration.map(|(var_decl, declaration)| {
-            let exported = ModuleExportName::Identifier(IdentifierName::new(
+            let exported = ModuleExportName::IdentifierName(IdentifierName::new(
                 SPAN,
                 self.ast.new_atom("default"),
             ));
@@ -111,7 +111,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 self.scope.has_reference(&specifier.local.name)
             }
             ImportDeclarationSpecifier::ImportNamespaceSpecifier(_) => {
-                self.scope.has_reference(&self.ast.new_atom(&specifier.name()))
+                self.scope.has_reference(specifier.name().as_str())
             }
         });
         if specifiers.is_empty() {
