@@ -414,7 +414,10 @@ impl<'a> ParserImpl<'a> {
         Ok(TemplateLiteral { span: self.end_span(span), quasis, expressions })
     }
 
-    fn parse_template_literal_expression(&mut self, tagged: bool) -> Result<Expression<'a>> {
+    pub(crate) fn parse_template_literal_expression(
+        &mut self,
+        tagged: bool,
+    ) -> Result<Expression<'a>> {
         self.parse_template_literal(tagged)
             .map(|template_literal| self.ast.template_literal_expression(template_literal))
     }
@@ -599,7 +602,7 @@ impl<'a> ParserImpl<'a> {
                 }
                 Kind::LAngle | Kind::ShiftLeft => {
                     if let Ok(Some(arguments)) =
-                        self.try_parse(Self::parse_ts_type_arguments_in_expression)
+                        self.try_parse(Self::parse_type_arguments_in_expression)
                     {
                         lhs = self.ast.ts_instantiation_expression(
                             self.end_span(lhs_span),
@@ -710,8 +713,7 @@ impl<'a> ParserImpl<'a> {
             *in_optional_chain = if optional_call { true } else { *in_optional_chain };
 
             if optional_call {
-                if let Ok(Some(args)) = self.try_parse(Self::parse_ts_type_arguments_in_expression)
-                {
+                if let Ok(Some(args)) = self.try_parse(Self::parse_type_arguments_in_expression) {
                     type_arguments = Some(args);
                 }
                 if self.cur_kind().is_template_start_of_tagged_template() {
