@@ -44,6 +44,12 @@ updates:
       versioning-strategy: lockfile-only
 
     - package-ecosystem: "cargo"
+      directory: "/crates/oxc_cfg"
+      schedule:
+          interval: "daily"
+      versioning-strategy: lockfile-only
+
+    - package-ecosystem: "cargo"
       directory: "/crates/oxc_cli"
       schedule:
           interval: "daily"
@@ -63,6 +69,12 @@ updates:
 
     - package-ecosystem: "cargo"
       directory: "/crates/oxc_index"
+      schedule:
+          interval: "daily"
+      versioning-strategy: lockfile-only
+
+    - package-ecosystem: "cargo"
+      directory: "/crates/oxc_isolated_declarations"
       schedule:
           interval: "daily"
       versioning-strategy: lockfile-only
@@ -146,6 +158,12 @@ updates:
       versioning-strategy: lockfile-only
 
     - package-ecosystem: "cargo"
+      directory: "/crates/oxc_transformer_dts"
+      schedule:
+          interval: "daily"
+      versioning-strategy: lockfile-only
+
+    - package-ecosystem: "cargo"
       directory: "/crates/oxc_traverse"
       schedule:
           interval: "daily"
@@ -187,8 +205,26 @@ updates:
           interval: "daily"
       versioning-strategy: increase
 
+    - package-ecosystem: "cargo"
+      directory: "/napi/transform"
+      schedule:
+          interval: "daily"
+      versioning-strategy: lockfile-only
+
+    - package-ecosystem: "npm"
+      directory: "/napi/transform"
+      schedule:
+          interval: "daily"
+      versioning-strategy: increase
+
     - package-ecosystem: "npm"
       directory: "/npm/oxc-parser"
+      schedule:
+          interval: "daily"
+      versioning-strategy: increase
+
+    - package-ecosystem: "npm"
+      directory: "/npm/oxc-transform"
       schedule:
           interval: "daily"
       versioning-strategy: increase
@@ -204,6 +240,12 @@ updates:
       schedule:
           interval: "daily"
       versioning-strategy: increase
+
+    - package-ecosystem: "cargo"
+      directory: "/tasks/ast_codegen"
+      schedule:
+          interval: "daily"
+      versioning-strategy: lockfile-only
 
     - package-ecosystem: "cargo"
       directory: "/tasks/benchmark"

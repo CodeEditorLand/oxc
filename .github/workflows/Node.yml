@@ -57,7 +57,7 @@ jobs:
                 node-version: [18, 19, 20]
 
         steps:
-            - uses: actions/checkout@v4.1.6
+            - uses: actions/checkout@v4.1.7
 
             - uses: pnpm/action-setup@v4.0.0
               with:
@@ -145,6 +145,31 @@ jobs:
               with:
                   node-version: ${{ matrix.node-version }}
                   cache: "pnpm"
+                  cache-dependency-path: ./napi/transform/pnpm-lock.yaml
+
+            - run: pnpm install
+              working-directory: ./napi/transform
+
+            - run: pnpm run build
+              working-directory: .
+
+            - uses: actions/upload-artifact@v4.3.3
+              with:
+                  name: .-napi-transform-Node-${{ matrix.node-version }}-Target
+                  path: ./napi/transform/Target
+
+            - run: pnpm run prepublishOnly
+              working-directory: .
+
+            - uses: actions/upload-artifact@v4.3.3
+              with:
+                  name: .-napi-transform-Node-${{ matrix.node-version }}-Target
+                  path: ./napi/transform/Target
+
+            - uses: actions/setup-node@v4.0.2
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  cache: "pnpm"
                   cache-dependency-path: ./npm/oxc-parser/pnpm-lock.yaml
 
             - run: pnpm install
@@ -157,6 +182,23 @@ jobs:
               with:
                   name: .-npm-oxc-parser-Node-${{ matrix.node-version }}-Target
                   path: ./npm/oxc-parser/Target
+
+            - uses: actions/setup-node@v4.0.2
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  cache: "pnpm"
+                  cache-dependency-path: ./npm/oxc-transform/pnpm-lock.yaml
+
+            - run: pnpm install
+              working-directory: ./npm/oxc-transform
+
+            - run: pnpm run prepublishOnly
+              working-directory: .
+
+            - uses: actions/upload-artifact@v4.3.3
+              with:
+                  name: .-npm-oxc-transform-Node-${{ matrix.node-version }}-Target
+                  path: ./npm/oxc-transform/Target
 
             - uses: actions/setup-node@v4.0.2
               with:

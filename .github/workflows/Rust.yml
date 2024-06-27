@@ -55,7 +55,7 @@ jobs:
                 toolchain: ["stable", "nightly"]
 
         steps:
-            - uses: actions/checkout@v4.1.6
+            - uses: actions/checkout@v4.1.7
 
             - uses: actions-rs/toolchain@v1.0.7
               with:
@@ -161,6 +161,21 @@ jobs:
                       ~/.cargo/git/db/
                       target/
                       Target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('./crates/oxc_cfg/Cargo.toml') }}
+            - uses: actions-rs/cargo@v1.0.3
+              with:
+                command: build
+                args: --release --all-features --manifest-path ./crates/oxc_cfg/Cargo.toml
+
+            - uses: actions/cache@v4.0.2
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                      Target/
                   key: ${{ runner.os }}-cargo-${{ hashFiles('./crates/oxc_cli/Cargo.toml') }}
             - uses: actions-rs/cargo@v1.0.3
               with:
@@ -211,6 +226,21 @@ jobs:
               with:
                 command: build
                 args: --release --all-features --manifest-path ./crates/oxc_index/Cargo.toml
+
+            - uses: actions/cache@v4.0.2
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                      Target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('./crates/oxc_isolated_declarations/Cargo.toml') }}
+            - uses: actions-rs/cargo@v1.0.3
+              with:
+                command: build
+                args: --release --all-features --manifest-path ./crates/oxc_isolated_declarations/Cargo.toml
 
             - uses: actions/cache@v4.0.2
               with:
@@ -416,6 +446,21 @@ jobs:
                       ~/.cargo/git/db/
                       target/
                       Target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('./crates/oxc_transformer_dts/Cargo.toml') }}
+            - uses: actions-rs/cargo@v1.0.3
+              with:
+                command: build
+                args: --release --all-features --manifest-path ./crates/oxc_transformer_dts/Cargo.toml
+
+            - uses: actions/cache@v4.0.2
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                      Target/
                   key: ${{ runner.os }}-cargo-${{ hashFiles('./crates/oxc_traverse/Cargo.toml') }}
             - uses: actions-rs/cargo@v1.0.3
               with:
@@ -466,6 +511,36 @@ jobs:
               with:
                 command: build
                 args: --release --all-features --manifest-path ./napi/parser/Cargo.toml
+
+            - uses: actions/cache@v4.0.2
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                      Target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('./napi/transform/Cargo.toml') }}
+            - uses: actions-rs/cargo@v1.0.3
+              with:
+                command: build
+                args: --release --all-features --manifest-path ./napi/transform/Cargo.toml
+
+            - uses: actions/cache@v4.0.2
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                      Target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('./tasks/ast_codegen/Cargo.toml') }}
+            - uses: actions-rs/cargo@v1.0.3
+              with:
+                command: build
+                args: --release --all-features --manifest-path ./tasks/ast_codegen/Cargo.toml
 
             - uses: actions/cache@v4.0.2
               with:
