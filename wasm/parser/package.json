@@ -43,7 +43,6 @@
 	},
 	"devDependencies": {
 		"@playform/build": "0.0.11",
-		"@playform/document": "0.0.11",
 		"wasm-pack": "0.12.1"
 	},
 	"publishConfig": {
