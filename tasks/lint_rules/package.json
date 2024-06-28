@@ -22,7 +22,6 @@
 	"type": "module",
 	"main": "./src/main.cjs",
 	"scripts": {
-		"Document": "Document 'Source/**/*.ts'",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"dependencies": {},

@@ -32,7 +32,6 @@
 		"web"
 	],
 	"scripts": {
-		"Document": "Document 'Source/**/*.ts'",
 		"build": "pnpm run build-node && pnpm run build-web && pnpm run copy-files && pnpm run clean-files",
 		"build-base": "wasm-pack build --release --no-pack",
 		"build-node": "pnpm run build-base --target nodejs --out-dir ../../npm/parser-wasm/node .",
