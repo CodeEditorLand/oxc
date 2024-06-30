@@ -1,43 +1,28 @@
 {
-	"name": "oxlint",
-	"version": "0.0.1",
-	"private": false,
-	"description": "Linter for the JavaScript Oxidation Compiler",
-	"keywords": [
-		"land"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"type": "module",
-	"bin": "bin/oxlint",
-	"files": [
-		"bin/oxlint",
-		"bin/oxc_language_server",
-		"configuration_schema.json",
-		"README.md"
-	],
-	"scripts": {
-		"prepublishOnly": "Build 'Source/**/*.ts'"
-	},
-	"devDependencies": {
-		"@playform/build": "0.0.11"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+  "name": "oxlint",
+  "version": "0.5.1",
+  "description": "Linter for the JavaScript Oxidation Compiler",
+  "keywords": [],
+  "author": "Boshen and oxc contributors",
+  "license": "MIT",
+  "homepage": "https://oxc.rs",
+  "bugs": "https://github.com/oxc-project/oxc/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oxc-project/oxc",
+    "directory": "npm/oxlint"
+  },
+  "bin": "bin/oxlint",
+  "funding": {
+    "url": "https://github.com/sponsors/Boshen"
+  },
+  "engines": {
+    "node": ">=14.*"
+  },
+  "files": [
+    "bin/oxlint",
+    "bin/oxc_language_server",
+    "configuration_schema.json",
+    "README.md"
+  ]
 }
