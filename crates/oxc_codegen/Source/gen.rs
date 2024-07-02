@@ -2095,6 +2095,9 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for Class<'a> {
             if let Some(id) = &self.id {
                 p.print_hard_space();
                 id.gen(p, ctx);
+                if let Some(type_parameters) = self.type_parameters.as_ref() {
+                    type_parameters.gen(p, ctx);
+                }
             }
             if let Some(super_class) = self.super_class.as_ref() {
                 p.print_str(b" extends ");
@@ -2444,6 +2447,9 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for PropertyDefinition<'a> {
         if self.r#static {
             p.print_str(b"static ");
         }
+        if self.readonly {
+            p.print_str(b"readonly ");
+        }
         if self.computed {
             p.print(b'[');
         }
@@ -2670,6 +2676,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSType<'a> {
             Self::TSArrayType(ty) => ty.gen(p, ctx),
             Self::TSTupleType(ty) => ty.gen(p, ctx),
             Self::TSUnionType(ty) => ty.gen(p, ctx),
+            Self::TSParenthesizedType(ty) => ty.gen(p, ctx),
             Self::TSIntersectionType(ty) => ty.gen(p, ctx),
             Self::TSConditionalType(ty) => ty.gen(p, ctx),
             Self::TSInferType(ty) => ty.gen(p, ctx),
@@ -2708,9 +2715,8 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSType<'a> {
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSArrayType<'a> {
     fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
-        p.print_str(b"(");
         self.element_type.gen(p, ctx);
-        p.print_str(b")[]");
+        p.print_str(b"[]");
     }
 }
 
@@ -2728,18 +2734,22 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSUnionType<'a> {
             self.types[0].gen(p, ctx);
             return;
         }
-        p.print_str(b"(");
         for (index, item) in self.types.iter().enumerate() {
             if index != 0 {
                 p.print_soft_space();
                 p.print_str(b"|");
                 p.print_soft_space();
             }
-            p.print_str(b"(");
             item.gen(p, ctx);
-            p.print_str(b")");
         }
-        p.print_str(b")");
+    }
+}
+
+impl<'a, const MINIFY: bool> Gen<MINIFY> for TSParenthesizedType<'a> {
+    fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+        p.print(b'(');
+        self.type_annotation.gen(p, ctx);
+        p.print(b')');
     }
 }
 
@@ -2749,28 +2759,23 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSIntersectionType<'a> {
             self.types[0].gen(p, ctx);
             return;
         }
-
-        p.print_str(b"(");
         for (index, item) in self.types.iter().enumerate() {
             if index != 0 {
                 p.print_soft_space();
                 p.print_str(b"&");
                 p.print_soft_space();
             }
-            p.print_str(b"(");
             item.gen(p, ctx);
-            p.print_str(b")");
         }
-        p.print_str(b")");
     }
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSConditionalType<'a> {
     fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
         self.check_type.gen(p, ctx);
-        p.print_str(b" extends (");
+        p.print_str(b" extends ");
         self.extends_type.gen(p, ctx);
-        p.print_str(b") ? ");
+        p.print_str(b" ? ");
         self.true_type.gen(p, ctx);
         p.print_str(b" : ");
         self.false_type.gen(p, ctx);
@@ -2818,6 +2823,10 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSMappedType<'a> {
         if let Some(default) = &self.type_parameter.default {
             p.print_str(b" = ");
             default.gen(p, ctx);
+        }
+        if let Some(name_type) = &self.name_type {
+            p.print_str(b" as ");
+            name_type.gen(p, ctx);
         }
         p.print_str(b"]");
         match self.optional {
@@ -3256,6 +3265,9 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTupleElement<'a> {
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSNamedTupleMember<'a> {
     fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
         self.label.gen(p, ctx);
+        if self.optional {
+            p.print_str(b"?");
+        }
         p.print_str(b":");
         p.print_soft_space();
         self.element_type.gen(p, ctx);
@@ -3476,6 +3488,11 @@ impl<'a, const MINIFY: bool> GenExpr<MINIFY> for TSTypeAssertion<'a> {
     fn gen_expr(&self, p: &mut Codegen<{ MINIFY }>, precedence: Precedence, ctx: Context) {
         p.wrap(precedence > self.precedence(), |p| {
             p.print_str(b"<");
+            // var r = < <T>(x: T) => T > ((x) => { return null; });
+            //          ^ make sure space is printed here.
+            if matches!(self.type_annotation, TSType::TSFunctionType(_)) {
+                p.print_hard_space();
+            }
             self.type_annotation.gen(p, ctx);
             p.print_str(b">");
             self.expression.gen_expr(p, Precedence::Grouping, ctx);

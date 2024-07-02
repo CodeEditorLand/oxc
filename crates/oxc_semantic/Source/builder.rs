@@ -200,7 +200,8 @@ impl<'a> SemanticBuilder<'a> {
 
     fn create_ast_node(&mut self, kind: AstKind<'a>) {
         let mut flags = self.current_node_flags;
-        if self.jsdoc.retrieve_attached_jsdoc(&kind) {
+
+        if self.build_jsdoc && self.jsdoc.retrieve_attached_jsdoc(&kind) {
             flags |= NodeFlags::JSDoc;
         }
 
@@ -313,22 +314,10 @@ impl<'a> SemanticBuilder<'a> {
         Some(symbol_id)
     }
 
-    pub fn declare_reference(
-        &mut self,
-        reference: Reference,
-        add_unresolved_reference: bool,
-    ) -> ReferenceId {
+    pub fn declare_reference(&mut self, reference: Reference) -> ReferenceId {
         let reference_name = reference.name().clone();
         let reference_id = self.symbols.create_reference(reference);
-        if add_unresolved_reference {
-            self.scope.add_unresolved_reference(
-                self.current_scope_id,
-                reference_name,
-                reference_id,
-            );
-        } else {
-            self.resolve_reference_ids(reference_name.clone(), vec![reference_id]);
-        }
+        self.scope.add_unresolved_reference(self.current_scope_id, reference_name, reference_id);
         reference_id
     }
 
@@ -1724,14 +1713,12 @@ impl<'a> SemanticBuilder<'a> {
                 element.bind(self);
             }
             AstKind::FormalParameters(_) => {
-                self.current_node_flags |= NodeFlags::Parameter;
                 self.current_symbol_flags -= SymbolFlags::Export;
             }
             AstKind::FormalParameter(param) => {
                 param.bind(self);
             }
             AstKind::CatchParameter(param) => {
-                self.current_node_flags |= NodeFlags::Parameter;
                 param.bind(self);
             }
             AstKind::TSModuleDeclaration(module_declaration) => {
@@ -1842,8 +1829,17 @@ impl<'a> SemanticBuilder<'a> {
             AstKind::ArrowFunctionExpression(_) => {
                 self.function_stack.pop();
             }
-            AstKind::FormalParameters(_) | AstKind::CatchParameter(_) => {
-                self.current_node_flags -= NodeFlags::Parameter;
+            AstKind::FormalParameters(parameters) => {
+                if parameters.has_parameter() {
+                    // `function foo({bar: identifier_reference}) {}`
+                    //                     ^^^^^^^^^^^^^^^^^^^^ Parameter initializer must be resolved
+                    //                                          after all parameters have been declared
+                    //                                          to avoid binding to variables inside the scope
+                    self.resolve_references_for_current_scope();
+                }
+            }
+            AstKind::CatchParameter(_) => {
+                self.resolve_references_for_current_scope();
             }
             AstKind::TSModuleBlock(_) => {
                 self.namespace_stack.pop();
@@ -1888,11 +1884,7 @@ impl<'a> SemanticBuilder<'a> {
         let flag = self.resolve_reference_usages();
         let name = ident.name.to_compact_str();
         let reference = Reference::new(ident.span, name, self.current_node_id, flag);
-        // `function foo({bar: identifier_reference}) {}`
-        //                     ^^^^^^^^^^^^^^^^^^^^ Parameter initializer must be resolved immediately
-        //                                          to avoid binding to variables inside the scope
-        let add_unresolved_reference = !self.current_node_flags.has_parameter();
-        let reference_id = self.declare_reference(reference, add_unresolved_reference);
+        let reference_id = self.declare_reference(reference);
         ident.reference_id.set(Some(reference_id));
     }
 
@@ -1921,7 +1913,7 @@ impl<'a> SemanticBuilder<'a> {
             self.current_node_id,
             ReferenceFlag::read(),
         );
-        self.declare_reference(reference, true);
+        self.declare_reference(reference);
     }
 
     fn is_not_expression_statement_parent(&self) -> bool {
