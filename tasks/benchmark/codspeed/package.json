@@ -1,10 +1,36 @@
 {
-  "name": "oxc_benchmark",
-  "version": "0.0.0",
-  "devDependencies": {
-    "axios": "^1.7.2",
-    "express": "^4.19.2",
-    "tar": "^7.2.0"
-  },
-  "packageManager": "pnpm@9.4.0"
+	"name": "oxc_benchmark",
+	"version": "0.0.1",
+	"private": false,
+	"keywords": [
+		"codeeditorland",
+		"land",
+		"playform"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"email": "Source/Open@Editor.Land",
+		"url": "HTTPS://Editor.Land"
+	},
+	"type": "module",
+	"scripts": {
+		"prepublishOnly": "Build 'Source/**/*.ts'"
+	},
+	"devDependencies": {
+		"@playform/build": "0.0.11",
+		"axios": "^1.7.2",
+		"tar": "^7.2.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }
