@@ -1,52 +1,40 @@
 {
-	"name": "@oxc-parser/wasm",
-	"version": "0.0.1",
-	"private": false,
-	"description": "Wasm target for the oxc parser.",
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"type": "module",
-	"main": "./node/oxc_parser_wasm.js",
-	"browser": "./web/oxc_parser_wasm.js",
-	"types": "./node/oxc_parser_wasm.d.ts",
-	"files": [
-		"node",
-		"web"
-	],
-	"scripts": {
-		"build": "pnpm run build-node && pnpm run build-web && pnpm run copy-files && pnpm run clean-files",
-		"build-base": "wasm-pack build --release --no-pack",
-		"build-node": "pnpm run build-base --target nodejs --out-dir ../../npm/parser-wasm/node .",
-		"build-web": "pnpm run build-base --target web --out-dir ../../npm/parser-wasm/web .",
-		"clean-files": "rm ../../npm/parser-wasm/*/.gitignore",
-		"copy-files": "cp ./package.json ../../npm/parser-wasm/package.json && cp ./README.md ../../npm/parser-wasm/README.md",
-		"prepublishOnly": "Build 'Source/**/*.ts'"
-	},
-	"devDependencies": {
-		"@playform/build": "0.0.11",
-		"wasm-pack": "^0.12.1"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+  "name": "@oxc-parser/wasm",
+  "version": "0.17.2",
+  "description": "Wasm target for the oxc parser.",
+  "keywords": [
+    "JavaScript",
+    "TypeScript",
+    "parser"
+  ],
+  "author": "Boshen and oxc contributors",
+  "license": "MIT",
+  "homepage": "https://oxc.rs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oxc-project/oxc",
+    "directory": "wasm/parser"
+  },
+  "funding": {
+    "url": "https://github.com/sponsors/Boshen"
+  },
+  "main": "./node/oxc_parser_wasm.js",
+  "browser": "./web/oxc_parser_wasm.js",
+  "types": "./node/oxc_parser_wasm.d.ts",
+  "files": [
+    "node",
+    "web"
+  ],
+  "scripts": {
+    "build": "pnpm run build-node && pnpm run build-web && pnpm run copy-files && pnpm run clean-files",
+    "build-node": "pnpm run build-base --target nodejs --out-dir ../../npm/parser-wasm/node .",
+    "build-web": "pnpm run build-base --target web --out-dir ../../npm/parser-wasm/web .",
+    "build-base": "wasm-pack build --release --no-pack",
+    "copy-files": "cp ./package.json ../../npm/parser-wasm/package.json && cp ./README.md ../../npm/parser-wasm/README.md",
+    "clean-files": "rm ../../npm/parser-wasm/*/.gitignore",
+    "test": "node ./test-node.mjs"
+  },
+  "devDependencies": {
+    "wasm-pack": "^0.13.0"
+  }
 }
