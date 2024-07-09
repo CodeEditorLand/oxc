@@ -6,6 +6,7 @@
 mod annotation_comment;
 mod context;
 mod gen;
+mod gen_comment;
 mod operator;
 mod sourcemap_builder;
 
@@ -73,7 +74,7 @@ pub struct Codegen<'a, const MINIFY: bool> {
     start_of_default_export: usize,
 
     /// Track the current indentation level
-    indent: u8,
+    indent: u32,
 
     // Builders
     sourcemap_builder: Option<SourcemapBuilder>,
@@ -520,9 +521,9 @@ pub(crate) type MoveCommentMap = FxHashMap<u32, (u32, Comment)>;
 
 // Comment related
 impl<'a, const MINIFY: bool> Codegen<'a, MINIFY> {
-    /// This method to avoid rustc borrow checker issue.
+    /// Avoid issue related to rustc borrow checker .
     /// Since if you want to print a range of source code, you need to borrow the source code
-    /// immutable first, and call the [Self::print_str] which is a mutable borrow.
+    /// as immutable first, and call the [Self::print_str] which is a mutable borrow.
     fn print_range_of_source_code(&mut self, range: Range<usize>) {
         self.code.extend_from_slice(self.source_text[range].as_bytes());
     }
