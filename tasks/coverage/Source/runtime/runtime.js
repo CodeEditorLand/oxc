@@ -1,8 +1,8 @@
-import vm from "node:vm"
-import path from "node:path"
-import fs from "node:fs"
-import process from "node:process";
-import { createServer } from "node:http";
+import vm from "vm"
+import path from "path"
+import fs from "fs"
+import process from "process";
+import { createServer } from "http";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const harnessDir = path.join(__dirname, '../..', 'test262', 'harness')

@@ -115,7 +115,7 @@ fn test() {
         // process.exit(1);
         // "),
         // (r"
-        // import foo from 'node:worker_threads';
+        // import foo from 'worker_threads';
         // process.exit(1);
         // "),
         // Not `CallExpression`

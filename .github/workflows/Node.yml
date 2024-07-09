@@ -51,6 +51,7 @@ jobs:
             STNOUPGRADE: 1
             STRIPE_CLI_TELEMETRY_OPTOUT: 1
             TELEMETRY_DISABLED: 1
+            TERRAFORM_TELEMETRY: 0
 
         strategy:
             matrix:
@@ -86,7 +87,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-crates-oxc_traverse-scripts-Node-${{ matrix.node-version }}-Target
                   path: ./crates/oxc_traverse/scripts/Target
@@ -103,7 +104,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-editors-vscode-Node-${{ matrix.node-version }}-Target
                   path: ./editors/vscode/Target
@@ -111,7 +112,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-editors-vscode-Node-${{ matrix.node-version }}-Target
                   path: ./editors/vscode/Target
@@ -128,7 +129,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-napi-parser-Node-${{ matrix.node-version }}-Target
                   path: ./napi/parser/Target
@@ -136,7 +137,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-napi-parser-Node-${{ matrix.node-version }}-Target
                   path: ./napi/parser/Target
@@ -153,7 +154,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-napi-transform-Node-${{ matrix.node-version }}-Target
                   path: ./napi/transform/Target
@@ -161,7 +162,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-napi-transform-Node-${{ matrix.node-version }}-Target
                   path: ./napi/transform/Target
@@ -178,7 +179,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-npm-oxc-parser-Node-${{ matrix.node-version }}-Target
                   path: ./npm/oxc-parser/Target
@@ -195,7 +196,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-npm-oxc-transform-Node-${{ matrix.node-version }}-Target
                   path: ./npm/oxc-transform/Target
@@ -212,7 +213,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-npm-oxc-Node-${{ matrix.node-version }}-Target
                   path: ./npm/oxc/Target
@@ -229,7 +230,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-npm-oxlint-Node-${{ matrix.node-version }}-Target
                   path: ./npm/oxlint/Target
@@ -246,7 +247,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-tasks-benchmark-codspeed-Node-${{ matrix.node-version }}-Target
                   path: ./tasks/benchmark/codspeed/Target
@@ -263,7 +264,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-tasks-coverage-Source-runtime-Node-${{ matrix.node-version }}-Target
                   path: ./tasks/coverage/Source/runtime/Target
@@ -280,7 +281,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-tasks-lint_rules-Node-${{ matrix.node-version }}-Target
                   path: ./tasks/lint_rules/Target
@@ -297,7 +298,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-wasm-parser-Node-${{ matrix.node-version }}-Target
                   path: ./wasm/parser/Target
@@ -305,7 +306,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-wasm-parser-Node-${{ matrix.node-version }}-Target
                   path: ./wasm/parser/Target
@@ -322,7 +323,7 @@ jobs:
             - run: pnpm run build
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-website-Node-${{ matrix.node-version }}-Target
                   path: ./website/Target
@@ -330,7 +331,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-website-Node-${{ matrix.node-version }}-Target
                   path: ./website/Target

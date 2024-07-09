@@ -16,7 +16,7 @@ import {
   ServerOptions,
 } from "vscode-languageclient/node";
 
-import { join } from "node:path";
+import { join } from "path";
 
 const languageClientId = "oxc-vscode";
 const languageClientName = "oxc";

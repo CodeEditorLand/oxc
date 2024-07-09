@@ -28,7 +28,7 @@ declare_oxc_lint!(
     /// // Bad
     /// import fs from "fs";
     /// // Good
-    /// import fs from "node:fs";
+    /// import fs from "fs";
     /// ```
     PreferNodeProtocol,
     restriction
@@ -85,7 +85,7 @@ fn test() {
         r#"import unicorn from "unicorn";"#,
         r#"import fs from "./fs";"#,
         r#"import fs from "unknown-builtin-module";"#,
-        r#"import fs from "node:fs";"#,
+        r#"import fs from "fs";"#,
         r#"import "punycode / ";"#,
         r#"const fs = require("node:fs");"#,
         r#"const fs = require("node:fs/promises");"#,

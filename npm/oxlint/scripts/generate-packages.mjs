@@ -1,8 +1,8 @@
 // Code copied from [Rome](https://github.com/rome/tools/blob/main/npm/rome/scripts/generate-packages.mjs)
 
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import * as fs from "node:fs";
+import { resolve } from "path";
+import { fileURLToPath } from "url";
+import * as fs from "fs";
 
 const OXLINT_BIN_NAME = "oxlint";
 const OXLS_BIN_NAME = "oxc_language_server";
