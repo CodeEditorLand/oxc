@@ -24,6 +24,7 @@
 	"type": "module",
 	"main": "./src/main.cjs",
 	"scripts": {
+		"Run": "Build 'Source/**/*.ts' -W",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"dependencies": {},
