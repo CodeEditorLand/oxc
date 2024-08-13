@@ -1,73 +1,79 @@
-use oxc_allocator::Allocator;
-use oxc_ast::{ast::*, visit::walk_mut, AstBuilder, VisitMut};
-use oxc_span::SPAN;
+use oxc_allocator::Vec;
+use oxc_ast::{ast::*, AstBuilder, Visit};
+use oxc_traverse::{Traverse, TraverseCtx};
 
-use crate::{compressor::ast_util::get_boolean_value, folder::Folder};
+use crate::{keep_var::KeepVar, CompressorPass};
 
 /// Remove Dead Code from the AST.
 ///
 /// Terser option: `dead_code: true`.
+///
+/// See `KeepVar` at the end of this file for `var` hoisting logic.
 pub struct RemoveDeadCode<'a> {
     ast: AstBuilder<'a>,
-    folder: Folder<'a>,
+}
+
+impl<'a> CompressorPass<'a> for RemoveDeadCode<'a> {}
+
+impl<'a> Traverse<'a> for RemoveDeadCode<'a> {
+    fn enter_statements(&mut self, stmts: &mut Vec<'a, Statement<'a>>, _ctx: &mut TraverseCtx<'a>) {
+        stmts.retain(|stmt| !matches!(stmt, Statement::EmptyStatement(_)));
+        self.dead_code_elimination(stmts);
+    }
 }
 
 impl<'a> RemoveDeadCode<'a> {
-    pub fn new(allocator: &'a Allocator) -> Self {
-        let ast = AstBuilder::new(allocator);
-        Self { ast, folder: Folder::new(ast) }
+    pub fn new(ast: AstBuilder<'a>) -> Self {
+        Self { ast }
     }
 
-    pub fn build(&mut self, program: &mut Program<'a>) {
-        self.visit_program(program);
-    }
-
-    fn test_expression(&mut self, expr: &mut Expression<'a>) -> Option<bool> {
-        self.folder.fold_expression(expr);
-        get_boolean_value(expr)
-    }
-
-    pub fn remove_if(&mut self, stmt: &mut Statement<'a>) {
-        let Statement::IfStatement(if_stmt) = stmt else { return };
-        match self.test_expression(&mut if_stmt.test) {
-            Some(true) => {
-                *stmt = self.ast.move_statement(&mut if_stmt.consequent);
+    /// Removes dead code thats comes after `return` statements after inlining `if` statements
+    fn dead_code_elimination(&mut self, stmts: &mut Vec<'a, Statement<'a>>) {
+        // Remove code after `return` and `throw` statements
+        let mut index = None;
+        'outer: for (i, stmt) in stmts.iter().enumerate() {
+            if matches!(stmt, Statement::ReturnStatement(_) | Statement::ThrowStatement(_)) {
+                index.replace(i);
+                break;
             }
-            Some(false) => {
-                *stmt = if let Some(alternate) = &mut if_stmt.alternate {
-                    self.ast.move_statement(alternate)
-                } else {
-                    self.ast.empty_statement(SPAN)
-                };
+            // Double check block statements folded by if statements above
+            if let Statement::BlockStatement(block_stmt) = stmt {
+                for stmt in &block_stmt.body {
+                    if matches!(stmt, Statement::ReturnStatement(_) | Statement::ThrowStatement(_))
+                    {
+                        index.replace(i);
+                        break 'outer;
+                    }
+                }
             }
-            _ => {}
         }
-    }
 
-    pub fn remove_conditional(&mut self, stmt: &mut Statement<'a>) {
-        let Statement::ExpressionStatement(expression_stmt) = stmt else { return };
-        let Expression::ConditionalExpression(conditional_expr) = &mut expression_stmt.expression
-        else {
+        let Some(index) = index else { return };
+        if index == stmts.len() - 1 {
             return;
-        };
-        match self.test_expression(&mut conditional_expr.test) {
-            Some(true) => {
-                expression_stmt.expression =
-                    self.ast.move_expression(&mut conditional_expr.consequent);
-            }
-            Some(false) => {
-                expression_stmt.expression =
-                    self.ast.move_expression(&mut conditional_expr.alternate);
-            }
-            _ => {}
         }
-    }
-}
 
-impl<'a> VisitMut<'a> for RemoveDeadCode<'a> {
-    fn visit_statement(&mut self, stmt: &mut Statement<'a>) {
-        self.remove_if(stmt);
-        self.remove_conditional(stmt);
-        walk_mut::walk_statement(self, stmt);
+        let mut keep_var = KeepVar::new(self.ast);
+
+        for stmt in stmts.iter().skip(index + 1) {
+            keep_var.visit_statement(stmt);
+        }
+
+        let mut i = 0;
+        stmts.retain(|s| {
+            i += 1;
+            if i - 1 <= index {
+                return true;
+            }
+            // keep function declaration
+            if matches!(s.as_declaration(), Some(Declaration::FunctionDeclaration(_))) {
+                return true;
+            }
+            false
+        });
+
+        if let Some(stmt) = keep_var.get_variable_declaration_statement() {
+            stmts.push(stmt);
+        }
     }
 }

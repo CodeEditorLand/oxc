@@ -1,5 +1,5 @@
 use oxc_ast::{
-    ast::{JSXAttributeItem, JSXAttributeValue, JSXElementName},
+    ast::{JSXAttributeItem, JSXAttributeValue, JSXElementName, JSXExpression},
     AstKind,
 };
 use oxc_diagnostics::OxcDiagnostic;
@@ -9,18 +9,18 @@ use oxc_span::Span;
 use crate::{
     context::LintContext,
     rule::Rule,
-    utils::{get_element_type, get_prop_value, has_jsx_prop_lowercase},
+    utils::{get_element_type, get_prop_value, has_jsx_prop_ignore_case},
     AstNode,
 };
 
 fn missing_lang_prop(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-jsx-a11y(html-has-lang): Missing lang attribute.")
+    OxcDiagnostic::warn("Missing lang attribute.")
         .with_help("Add a lang attribute to the html element whose value represents the primary language of document.")
         .with_label(span0)
 }
 
 fn missing_lang_value(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-jsx-a11y(html-has-lang): Missing value for lang attribute")
+    OxcDiagnostic::warn("Missing value for lang attribute")
         .with_help("Must have meaningful value for `lang` prop.")
         .with_label(span0)
 }
@@ -41,7 +41,7 @@ declare_oxc_lint!(
     ///
     ///
     /// ### Example
-    /// ```javascript
+    /// ```jsx
     /// // Bad
     /// <html />
     ///
@@ -70,7 +70,7 @@ impl Rule for HtmlHasLang {
             return;
         };
 
-        has_jsx_prop_lowercase(jsx_el, "lang").map_or_else(
+        has_jsx_prop_ignore_case(jsx_el, "lang").map_or_else(
             || ctx.diagnostic(missing_lang_prop(identifier.span)),
             |lang_prop| {
                 if !is_valid_lang_prop(lang_prop) {
@@ -83,9 +83,19 @@ impl Rule for HtmlHasLang {
 
 fn is_valid_lang_prop(item: &JSXAttributeItem) -> bool {
     match get_prop_value(item) {
-        Some(JSXAttributeValue::ExpressionContainer(container)) => {
-            !container.expression.is_expression() || !container.expression.is_undefined()
-        }
+        Some(JSXAttributeValue::ExpressionContainer(container)) => match &container.expression {
+            JSXExpression::EmptyExpression(_)
+            | JSXExpression::NullLiteral(_)
+            | JSXExpression::BooleanLiteral(_)
+            | JSXExpression::NumericLiteral(_) => false,
+            JSXExpression::Identifier(id) => id.name != "undefined",
+            JSXExpression::StringLiteral(str) => !str.value.as_str().is_empty(),
+            JSXExpression::TemplateLiteral(t) => {
+                !t.expressions.is_empty()
+                    || t.quasis.iter().filter(|q| !q.value.raw.is_empty()).count() > 0
+            }
+            _ => true,
+        },
         Some(JSXAttributeValue::StringLiteral(str)) => !str.value.as_str().is_empty(),
         _ => true,
     }
@@ -109,6 +119,9 @@ fn test() {
         (r"<div />;", None, None, None),
         (r#"<html lang="en" />"#, None, None, None),
         (r#"<html lang="en-US" />"#, None, None, None),
+        (r#"<html lang={"en-US"} />"#, None, None, None),
+        (r"<html lang={`en-US`} />", None, None, None),
+        (r"<html lang={`${foo}`} />", None, None, None),
         (r"<html lang={foo} />;", None, None, None),
         (r"<html lang />;", None, None, None),
         (r"<HTML />;", None, None, None),
@@ -119,6 +132,11 @@ fn test() {
         (r"<html />;", None, None, None),
         (r"<html {...props} />;", None, None, None),
         (r"<html lang={undefined} />;", None, None, None),
+        (r"<html lang={null} />;", None, None, None),
+        (r"<html lang={false} />;", None, None, None),
+        (r"<html lang={1} />;", None, None, None),
+        (r"<html lang={''} />;", None, None, None),
+        (r"<html lang={``} />;", None, None, None),
         (r#"<html lang="" />;"#, None, None, None),
         ("<HTMLTop />", None, Some(settings()), None),
     ];

@@ -16,11 +16,12 @@ use crate::{
 };
 
 fn over_method(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-unicorn(prefer-array-some): Prefer `.some(…)` over `.find(…)`or `.findLast(…)`.").with_label(span0)
+    OxcDiagnostic::warn("Prefer `.some(…)` over `.find(…)`or `.findLast(…)`.").with_label(span0)
 }
 
 fn non_zero_filter(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-unicorn(prefer-array-some): Prefer `.some(…)` over non-zero length check from `.filter(…)`.").with_label(span0)
+    OxcDiagnostic::warn("Prefer `.some(…)` over non-zero length check from `.filter(…)`.")
+        .with_label(span0)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -44,7 +45,8 @@ declare_oxc_lint!(
     /// const foo = array.some(fn) ? bar : baz;
     /// ```
     PreferArraySome,
-    pedantic
+    pedantic,
+    pending
 );
 
 impl Rule for PreferArraySome {

@@ -6,7 +6,7 @@ use oxc_span::Span;
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn no_var_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint(no-var): Unexpected var, use let or const instead.")
+    OxcDiagnostic::warn("Unexpected var, use let or const instead.")
         .with_help("Replace var with let or const")
         .with_label(span0)
 }
@@ -20,8 +20,11 @@ pub struct NoVar;
 
 declare_oxc_lint!(
     /// ### What it does
-    /// ECMAScript 6 allows programmers to create variables with block scope instead of function scope using the `let` and `const` keywords.
-    /// Block scope is common in many other programming languages and helps programmers avoid mistakes
+    ///
+    /// ECMAScript 6 allows programmers to create variables with block scope
+    /// instead of function scope using the `let` and `const` keywords.  Block
+    /// scope is common in many other programming languages and helps
+    /// programmers avoid mistakes.
     ///
     /// ### Why is this bad?
     /// Using `var` in an es6 environment triggers this error
@@ -37,7 +40,8 @@ declare_oxc_lint!(
     /// const CONFIG = {};
     /// ```
     NoVar,
-    restriction
+    restriction,
+    pending // TODO: add suggestion that replaces `var` with `let` or `const` depending on if its written to
 );
 
 impl Rule for NoVar {

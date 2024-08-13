@@ -11,9 +11,11 @@ fn no_unnecessary_type_constraint_diagnostic(
     span2: Span,
     span3: Span,
 ) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("typescript-eslint(no-unnecessary-type-constraint): constraining the generic type {x0:?} to {x1:?} does nothing and is unnecessary"))
-        .with_help(format!("Remove the unnecessary {x1:?} constraint"))
-        .with_labels([span2, span3])
+    OxcDiagnostic::warn(format!(
+        "constraining the generic type {x0:?} to {x1:?} does nothing and is unnecessary"
+    ))
+    .with_help(format!("Remove the unnecessary {x1:?} constraint"))
+    .with_labels([span2, span3])
 }
 
 #[derive(Debug, Default, Clone)]
@@ -26,11 +28,11 @@ declare_oxc_lint!(
     ///
     /// ### Why is this bad?
     ///
-    /// Generic type parameters (<T>) in TypeScript may be "constrained" with an extends keyword.
+    /// Generic type parameters (`<T>`) in TypeScript may be "constrained" with an extends keyword.
     /// When no extends is provided, type parameters default a constraint to unknown. It is therefore redundant to extend from any or unknown.
     ///
     /// ### Example
-    /// ```javascript
+    /// ```typescript
     /// interface FooAny<T extends any> {}
     /// interface FooUnknown<T extends unknown> {}
     /// type BarAny<T extends any> = {};
@@ -64,6 +66,10 @@ impl Rule for NoUnnecessaryTypeConstraint {
                 }
             }
         }
+    }
+
+    fn should_run(&self, ctx: &LintContext) -> bool {
+        ctx.source_type().is_typescript()
     }
 }
 

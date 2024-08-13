@@ -7,7 +7,7 @@ use oxc_ast::{
     },
     AstKind,
 };
-use oxc_semantic::{AstNode, ReferenceId};
+use oxc_semantic::{AstNode, ReferenceFlag, ReferenceId};
 use phf::phf_set;
 
 use crate::LintContext;
@@ -26,6 +26,7 @@ pub const JEST_METHOD_NAMES: phf::Set<&'static str> = phf_set![
     "beforeEach",
     "describe",
     "expect",
+    "expectTypeOf",
     "fdescribe",
     "fit",
     "it",
@@ -40,6 +41,7 @@ pub const JEST_METHOD_NAMES: phf::Set<&'static str> = phf_set![
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum JestFnKind {
     Expect,
+    ExpectTypeOf,
     General(JestGeneralFnKind),
     Unknown,
 }
@@ -48,6 +50,7 @@ impl JestFnKind {
     pub fn from(name: &str) -> Self {
         match name {
             "expect" => Self::Expect,
+            "expectTypeOf" => Self::ExpectTypeOf,
             "jest" => Self::General(JestGeneralFnKind::Jest),
             "describe" | "fdescribe" | "xdescribe" => Self::General(JestGeneralFnKind::Describe),
             "fit" | "it" | "test" | "xit" | "xtest" => Self::General(JestGeneralFnKind::Test),
@@ -113,7 +116,7 @@ pub fn parse_general_jest_fn_call<'a>(
 ) -> Option<ParsedGeneralJestFnCall<'a>> {
     let jest_fn_call = parse_jest_fn_call(call_expr, possible_jest_node, ctx)?;
 
-    if let ParsedJestFnCallNew::GeneralJestFnCall(jest_fn_call) = jest_fn_call {
+    if let ParsedJestFnCallNew::GeneralJest(jest_fn_call) = jest_fn_call {
         return Some(jest_fn_call);
     }
     None
@@ -126,7 +129,7 @@ pub fn parse_expect_jest_fn_call<'a>(
 ) -> Option<ParsedExpectFnCall<'a>> {
     let jest_fn_call = parse_jest_fn_call(call_expr, possible_jest_node, ctx)?;
 
-    if let ParsedJestFnCallNew::ExpectFnCall(jest_fn_call) = jest_fn_call {
+    if let ParsedJestFnCallNew::Expect(jest_fn_call) = jest_fn_call {
         return Some(jest_fn_call);
     }
     None
@@ -159,7 +162,7 @@ pub fn collect_possible_jest_call_node<'a, 'b>(
             collect_ids_referenced_to_global(ctx)
                 .iter()
                 // set the original of global test function to None
-                .map(|id| (*id, None)),
+                .map(|(id, _)| (*id, None)),
         );
     }
 
@@ -198,7 +201,7 @@ fn collect_ids_referenced_to_import<'a>(
         .resolved_references
         .iter_enumerated()
         .filter_map(|(symbol_id, reference_ids)| {
-            if ctx.symbols().get_flag(symbol_id).is_import_binding() {
+            if ctx.symbols().get_flag(symbol_id).is_import() {
                 let id = ctx.symbols().get_declaration(symbol_id);
                 let Some(AstKind::ImportDeclaration(import_decl)) = ctx.nodes().parent_kind(id)
                 else {
@@ -236,13 +239,13 @@ fn find_original_name<'a>(import_decl: &'a ImportDeclaration<'a>, name: &str) ->
     })
 }
 
-fn collect_ids_referenced_to_global(ctx: &LintContext) -> Vec<ReferenceId> {
+fn collect_ids_referenced_to_global(ctx: &LintContext) -> Vec<(ReferenceId, ReferenceFlag)> {
     ctx.scopes()
         .root_unresolved_references()
         .iter()
         .filter(|(name, _)| JEST_METHOD_NAMES.contains(name.as_str()))
         .flat_map(|(_, reference_ids)| reference_ids.clone())
-        .collect::<Vec<ReferenceId>>()
+        .collect::<Vec<(ReferenceId, ReferenceFlag)>>()
 }
 
 /// join name of the expression. e.g.

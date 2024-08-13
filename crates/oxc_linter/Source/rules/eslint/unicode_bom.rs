@@ -5,13 +5,13 @@ use oxc_span::{Span, SPAN};
 use crate::{context::LintContext, rule::Rule};
 
 fn unexpected_unicode_bom_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint(unicode-bom): Unexpected Unicode BOM (Byte Order Mark)")
+    OxcDiagnostic::warn("Unexpected Unicode BOM (Byte Order Mark)")
         .with_help("File must not begin with the Unicode BOM")
         .with_label(span0)
 }
 
 fn expected_unicode_bom_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint(unicode-bom): Expected Unicode BOM (Byte Order Mark)")
+    OxcDiagnostic::warn("Expected Unicode BOM (Byte Order Mark)")
         .with_help("File must begin with the Unicode BOM")
         .with_label(span0)
 }
@@ -36,10 +36,11 @@ declare_oxc_lint!(
     ///
     /// ### Example
     /// ```javascript
-    /// ﻿var a = 123;"
+    /// ﻿var a = 123;
     /// ```
     UnicodeBom,
     restriction,
+    fix
 );
 
 impl Rule for UnicodeBom {

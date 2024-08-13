@@ -1,18 +1,25 @@
-#![allow(clippy::wildcard_imports, clippy::unused_self)]
+#![allow(clippy::wildcard_imports)]
+
 //! ECMAScript Minifier
 
 mod ast_passes;
 mod compressor;
-mod folder;
-mod mangler;
+mod keep_var;
+mod node_util;
+mod options;
+mod plugins;
+mod tri;
+mod ty;
 
 use oxc_allocator::Allocator;
 use oxc_ast::ast::Program;
+use oxc_mangler::{Mangler, ManglerBuilder};
 
 pub use crate::{
-    ast_passes::{RemoveDeadCode, RemoveParens, ReplaceGlobalDefines, ReplaceGlobalDefinesConfig},
-    compressor::{CompressOptions, Compressor},
-    mangler::ManglerBuilder,
+    ast_passes::{CompressorPass, RemoveDeadCode, RemoveSyntax},
+    compressor::Compressor,
+    options::CompressOptions,
+    plugins::*,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -27,6 +34,10 @@ impl Default for MinifierOptions {
     }
 }
 
+pub struct MinifierReturn {
+    pub mangler: Option<Mangler>,
+}
+
 pub struct Minifier {
     options: MinifierOptions,
 }
@@ -36,11 +47,9 @@ impl Minifier {
         Self { options }
     }
 
-    pub fn build<'a>(self, allocator: &'a Allocator, program: &mut Program<'a>) {
+    pub fn build<'a>(self, allocator: &'a Allocator, program: &mut Program<'a>) -> MinifierReturn {
         Compressor::new(allocator, self.options.compress).build(program);
-        // if self.options.mangle {
-        // let mangler = ManglerBuilder.build(program);
-        // printer.with_mangler(mangler);
-        // }
+        let mangler = self.options.mangle.then(|| ManglerBuilder::default().build(program));
+        MinifierReturn { mangler }
     }
 }

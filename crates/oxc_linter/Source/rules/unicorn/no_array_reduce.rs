@@ -12,9 +12,11 @@ use crate::{
 };
 
 fn no_array_reduce_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-unicorn(no-array-reduce): Don't use `Array#reduce()` and `Array#reduceRight()`, use `for` loops instead.")
-        .with_help("Refactor your code to use `for` loops instead.")
-        .with_label(span0)
+    OxcDiagnostic::warn(
+        "Don't use `Array#reduce()` and `Array#reduceRight()`, use `for` loops instead.",
+    )
+    .with_help("Refactor your code to use `for` loops instead.")
+    .with_label(span0)
 }
 
 #[derive(Debug, Clone)]
@@ -41,6 +43,8 @@ declare_oxc_lint!(
     ///
     /// ### Example
     /// ```javascript
+    /// array.reduce(reducer, initialValue);
+    /// array.reduceRight(reducer, initialValue);
     /// ```
     NoArrayReduce,
     restriction

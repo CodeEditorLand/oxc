@@ -13,7 +13,7 @@ use crate::{
 };
 
 fn unexpected_lowercase(x0: &str, span1: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-jest(prefer-lowercase-title): Enforce lowercase test names")
+    OxcDiagnostic::warn("Enforce lowercase test names")
         .with_help(format!("`{x0:?}`s should begin with lowercase"))
         .with_label(span1)
 }
@@ -129,6 +129,7 @@ declare_oxc_lint!(
     ///
     PreferLowercaseTitle,
     style,
+    fix
 );
 
 impl Rule for PreferLowercaseTitle {
@@ -173,7 +174,7 @@ impl PreferLowercaseTitle {
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
-        let Some(ParsedJestFnCallNew::GeneralJestFnCall(jest_fn_call)) =
+        let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
             parse_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;

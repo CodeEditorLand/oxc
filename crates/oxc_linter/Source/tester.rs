@@ -9,8 +9,8 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::{
-    rules::RULES, AllowWarnDeny, Fixer, LintOptions, LintService, LintServiceOptions, Linter,
-    OxlintConfig, RuleEnum, RuleWithSeverity,
+    fixer::FixKind, rules::RULES, AllowWarnDeny, Fixer, LintOptions, LintService,
+    LintServiceOptions, Linter, OxlintConfig, RuleEnum, RuleWithSeverity,
 };
 
 #[derive(Eq, PartialEq)]
@@ -65,24 +65,96 @@ impl From<(&str, Option<Value>, Option<Value>, Option<PathBuf>)> for TestCase {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum ExpectFixKind {
+    /// We expect no fix to be applied
+    #[default]
+    None,
+    /// We expect some fix to be applied, but don't care what kind it is
+    Any,
+    /// We expect a fix of a certain [`FixKind`] to be applied
+    Specific(FixKind),
+}
+
+impl ExpectFixKind {
+    #[inline]
+    pub fn is_none(self) -> bool {
+        matches!(self, Self::None)
+    }
+
+    #[inline]
+    pub fn is_some(self) -> bool {
+        !self.is_none()
+    }
+}
+
+impl From<FixKind> for ExpectFixKind {
+    fn from(kind: FixKind) -> Self {
+        Self::Specific(kind)
+    }
+}
+impl From<ExpectFixKind> for FixKind {
+    fn from(expected_kind: ExpectFixKind) -> Self {
+        match expected_kind {
+            ExpectFixKind::None => FixKind::None,
+            ExpectFixKind::Any => FixKind::All,
+            ExpectFixKind::Specific(kind) => kind,
+        }
+    }
+}
+
+impl From<Option<FixKind>> for ExpectFixKind {
+    fn from(maybe_kind: Option<FixKind>) -> Self {
+        match maybe_kind {
+            Some(kind) => Self::Specific(kind),
+            None => Self::Any, // intentionally not None
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ExpectFix {
     /// Source code being tested
     source: String,
     /// Expected source code after fix has been applied
     expected: String,
+    kind: ExpectFixKind,
     rule_config: Option<Value>,
 }
 
 impl<S: Into<String>> From<(S, S, Option<Value>)> for ExpectFix {
     fn from(value: (S, S, Option<Value>)) -> Self {
-        Self { source: value.0.into(), expected: value.1.into(), rule_config: value.2 }
+        Self {
+            source: value.0.into(),
+            expected: value.1.into(),
+            kind: ExpectFixKind::Any,
+            rule_config: value.2,
+        }
     }
 }
 
 impl<S: Into<String>> From<(S, S)> for ExpectFix {
     fn from(value: (S, S)) -> Self {
-        Self { source: value.0.into(), expected: value.1.into(), rule_config: None }
+        Self {
+            source: value.0.into(),
+            expected: value.1.into(),
+            kind: ExpectFixKind::Any,
+            rule_config: None,
+        }
+    }
+}
+impl<S, F> From<(S, S, Option<Value>, F)> for ExpectFix
+where
+    S: Into<String>,
+    F: Into<ExpectFixKind>,
+{
+    fn from((source, expected, config, kind): (S, S, Option<Value>, F)) -> Self {
+        Self {
+            source: source.into(),
+            expected: expected.into(),
+            kind: kind.into(),
+            rule_config: config,
+        }
     }
 }
 
@@ -93,6 +165,10 @@ pub struct Tester {
     expect_fail: Vec<TestCase>,
     expect_fix: Vec<ExpectFix>,
     snapshot: String,
+    /// Suffix added to end of snapshot name.
+    ///
+    /// See: [insta::Settings::set_snapshot_suffix]
+    snapshot_suffix: Option<&'static str>,
     current_working_directory: Box<Path>,
     import_plugin: bool,
     jest_plugin: bool,
@@ -120,6 +196,7 @@ impl Tester {
             expect_fail,
             expect_fix: vec![],
             snapshot: String::new(),
+            snapshot_suffix: None,
             current_working_directory,
             import_plugin: false,
             jest_plugin: false,
@@ -139,6 +216,11 @@ impl Tester {
     /// Change the extension of the path
     pub fn change_rule_path_extension(mut self, ext: &str) -> Self {
         self.rule_path = self.rule_path.with_extension(ext);
+        self
+    }
+
+    pub fn with_snapshot_suffix(mut self, suffix: &'static str) -> Self {
+        self.snapshot_suffix = Some(suffix);
         self
     }
 
@@ -210,16 +292,24 @@ impl Tester {
         self.snapshot();
     }
 
-    pub fn snapshot(&self) {
+    fn snapshot(&self) {
         let name = self.rule_name.replace('-', "_");
-        insta::with_settings!({ prepend_module_to_snapshot => false, omit_expression => true }, {
+        let mut settings = insta::Settings::clone_current();
+
+        settings.set_prepend_module_to_snapshot(false);
+        settings.set_omit_expression(true);
+        if let Some(suffix) = self.snapshot_suffix {
+            settings.set_snapshot_suffix(suffix);
+        }
+
+        settings.bind(|| {
             insta::assert_snapshot!(name, self.snapshot);
         });
     }
 
     fn test_pass(&mut self) {
         for TestCase { source, rule_config, eslint_config, path } in self.expect_pass.clone() {
-            let result = self.run(&source, rule_config, &eslint_config, path, false);
+            let result = self.run(&source, rule_config, &eslint_config, path, ExpectFixKind::None);
             let passed = result == TestResult::Passed;
             assert!(passed, "expect test to pass: {source} {}", self.snapshot);
         }
@@ -227,7 +317,7 @@ impl Tester {
 
     fn test_fail(&mut self) {
         for TestCase { source, rule_config, eslint_config, path } in self.expect_fail.clone() {
-            let result = self.run(&source, rule_config, &eslint_config, path, false);
+            let result = self.run(&source, rule_config, &eslint_config, path, ExpectFixKind::None);
             let failed = result == TestResult::Failed;
             assert!(failed, "expect test to fail: {source}");
         }
@@ -235,8 +325,8 @@ impl Tester {
 
     fn test_fix(&mut self) {
         for fix in self.expect_fix.clone() {
-            let ExpectFix { source, expected, rule_config: config } = fix;
-            let result = self.run(&source, config, &None, None, true);
+            let ExpectFix { source, expected, kind, rule_config: config } = fix;
+            let result = self.run(&source, config, &None, None, kind);
             match result {
                 TestResult::Fixed(fixed_str) => assert_eq!(
                     expected, fixed_str,
@@ -254,12 +344,12 @@ impl Tester {
         rule_config: Option<Value>,
         eslint_config: &Option<Value>,
         path: Option<PathBuf>,
-        is_fix: bool,
+        fix: ExpectFixKind,
     ) -> TestResult {
         let allocator = Allocator::default();
         let rule = self.find_rule().read_json(rule_config.unwrap_or_default());
         let options = LintOptions::default()
-            .with_fix(is_fix)
+            .with_fix(fix.into())
             .with_import_plugin(self.import_plugin)
             .with_jest_plugin(self.jest_plugin)
             .with_vitest_plugin(self.vitest_plugin)
@@ -294,7 +384,7 @@ impl Tester {
             return TestResult::Passed;
         }
 
-        if is_fix {
+        if fix.is_some() {
             let fix_result = Fixer::new(source_text, result).fix();
             return TestResult::Fixed(fix_result.fixed_code.to_string());
         }

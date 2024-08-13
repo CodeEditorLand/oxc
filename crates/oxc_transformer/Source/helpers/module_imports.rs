@@ -3,8 +3,10 @@ use std::cell::{Cell, RefCell};
 use indexmap::IndexMap;
 use oxc_allocator::{Allocator, Vec};
 use oxc_ast::{ast::*, AstBuilder};
+use oxc_semantic::ReferenceFlag;
 use oxc_span::{Atom, SPAN};
 use oxc_syntax::symbol::SymbolId;
+use oxc_traverse::TraverseCtx;
 
 pub struct NamedImport<'a> {
     imported: Atom<'a>,
@@ -72,13 +74,13 @@ impl<'a> ModuleImports<'a> {
         }
     }
 
-    pub fn get_import_statements(&self) -> Vec<'a, Statement<'a>> {
-        self.ast.new_vec_from_iter(self.imports.borrow_mut().drain(..).map(
-            |(import_type, names)| match import_type.kind {
+    pub fn get_import_statements(&self, ctx: &mut TraverseCtx<'a>) -> Vec<'a, Statement<'a>> {
+        self.ast.vec_from_iter(self.imports.borrow_mut().drain(..).map(|(import_type, names)| {
+            match import_type.kind {
                 ImportKind::Import => self.get_named_import(import_type.source, names),
-                ImportKind::Require => self.get_require(import_type.source, names),
-            },
-        ))
+                ImportKind::Require => self.get_require(import_type.source, names, ctx),
+            }
+        }))
     }
 
     fn get_named_import(
@@ -86,7 +88,7 @@ impl<'a> ModuleImports<'a> {
         source: Atom<'a>,
         names: std::vec::Vec<NamedImport<'a>>,
     ) -> Statement<'a> {
-        let specifiers = self.ast.new_vec_from_iter(names.into_iter().map(|name| {
+        let specifiers = self.ast.vec_from_iter(names.into_iter().map(|name| {
             let local = name.local.unwrap_or_else(|| name.imported.clone());
             ImportDeclarationSpecifier::ImportSpecifier(self.ast.alloc(ImportSpecifier {
                 span: SPAN,
@@ -102,30 +104,31 @@ impl<'a> ModuleImports<'a> {
                 import_kind: ImportOrExportKind::Value,
             }))
         }));
-        let import_stmt = self.ast.import_declaration(
+        let import_stmt = self.ast.module_declaration_import_declaration(
             SPAN,
             Some(specifiers),
             StringLiteral::new(SPAN, source),
             None,
             ImportOrExportKind::Value,
         );
-        self.ast.module_declaration(ModuleDeclaration::ImportDeclaration(import_stmt))
+        self.ast.statement_module_declaration(import_stmt)
     }
 
     fn get_require(
         &self,
         source: Atom<'a>,
         names: std::vec::Vec<NamedImport<'a>>,
+        ctx: &mut TraverseCtx<'a>,
     ) -> Statement<'a> {
         let var_kind = VariableDeclarationKind::Var;
-        let callee = {
-            let ident = IdentifierReference::new(SPAN, Atom::from("require"));
-            self.ast.identifier_reference_expression(ident)
-        };
+        let symbol_id = ctx.scopes().get_root_binding("require");
+        let ident =
+            ctx.create_reference_id(SPAN, Atom::from("require"), symbol_id, ReferenceFlag::read());
+        let callee = self.ast.expression_from_identifier_reference(ident);
+
         let args = {
-            let string = StringLiteral::new(SPAN, source);
-            let arg = Argument::from(self.ast.literal_string_expression(string));
-            self.ast.new_vec_single(arg)
+            let arg = Argument::from(self.ast.expression_string_literal(SPAN, source));
+            self.ast.vec1(arg)
         };
         let name = names.into_iter().next().unwrap();
         let id = {
@@ -134,14 +137,24 @@ impl<'a> ModuleImports<'a> {
                 name: name.imported,
                 symbol_id: Cell::new(Some(name.symbol_id)),
             };
-            self.ast.binding_pattern(self.ast.binding_pattern_identifier(ident), None, false)
+            self.ast.binding_pattern(
+                self.ast.binding_pattern_kind_from_binding_identifier(ident),
+                Option::<TSTypeAnnotation>::None,
+                false,
+            )
         };
         let decl = {
-            let init = self.ast.call_expression(SPAN, callee, args, false, None);
+            let init = self.ast.expression_call(
+                SPAN,
+                args,
+                callee,
+                Option::<TSTypeParameterInstantiation>::None,
+                false,
+            );
             let decl = self.ast.variable_declarator(SPAN, var_kind, id, Some(init), false);
-            self.ast.new_vec_single(decl)
+            self.ast.vec1(decl)
         };
-        let var_decl = self.ast.variable_declaration(SPAN, var_kind, decl, false);
-        Statement::VariableDeclaration(var_decl)
+        let var_decl = self.ast.declaration_variable(SPAN, var_kind, decl, false);
+        self.ast.statement_declaration(var_decl)
     }
 }

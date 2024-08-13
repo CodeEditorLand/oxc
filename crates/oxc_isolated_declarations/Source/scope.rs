@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use oxc_allocator::{Allocator, Vec};
 #[allow(clippy::wildcard_imports)]
 use oxc_ast::ast::*;
@@ -5,7 +7,7 @@ use oxc_ast::AstBuilder;
 #[allow(clippy::wildcard_imports)]
 use oxc_ast::{visit::walk::*, Visit};
 use oxc_span::Atom;
-use oxc_syntax::scope::ScopeFlags;
+use oxc_syntax::scope::{ScopeFlags, ScopeId};
 use rustc_hash::FxHashSet;
 
 /// Declaration scope.
@@ -38,8 +40,7 @@ pub struct ScopeTree<'a> {
 impl<'a> ScopeTree<'a> {
     pub fn new(allocator: &'a Allocator) -> Self {
         let ast = AstBuilder::new(allocator);
-        let mut levels = ast.new_vec_with_capacity(1);
-        levels.push(Scope::new(ScopeFlags::Top));
+        let levels = ast.vec1(Scope::new(ScopeFlags::Top));
         Self { levels }
     }
 
@@ -49,8 +50,7 @@ impl<'a> ScopeTree<'a> {
     }
 
     pub fn has_reference(&self, name: &str) -> bool {
-        // XXX(lucab): this should probably unwrap?
-        let Some(scope) = self.levels.last() else { return false };
+        let Some(scope) = self.levels.last() else { unreachable!() };
         scope.value_references.contains(name) || scope.type_references.contains(name)
     }
 
@@ -101,7 +101,7 @@ impl<'a> ScopeTree<'a> {
 }
 
 impl<'a> Visit<'a> for ScopeTree<'a> {
-    fn enter_scope(&mut self, flags: ScopeFlags) {
+    fn enter_scope(&mut self, flags: ScopeFlags, _: &Cell<Option<ScopeId>>) {
         let scope = Scope::new(flags);
         self.levels.push(scope);
     }
@@ -192,130 +192,5 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
             }
         }
         walk_declaration(self, declaration);
-    }
-
-    // ==================== TSTypeParameter ====================
-
-    fn visit_ts_type_parameter(&mut self, it: &TSTypeParameter<'a>) {
-        self.add_type_binding(it.name.name.clone());
-        if let Some(constraint) = &it.constraint {
-            self.visit_ts_type(constraint);
-        }
-        if let Some(default) = &it.default {
-            self.visit_ts_type(default);
-        }
-    }
-
-    /// ```ts
-    /// function foo<T>(x: T): T {
-    ///             ^^^
-    ///             `T` is a type parameter
-    ///    return x;
-    /// }
-    /// ```
-    /// We should create a new scope for TSTypeParameterDeclaration
-    /// Because the type parameter is can be used in following nodes
-    /// until the end of the function. So we leave the scope in the parent node (Function)
-    fn visit_ts_type_parameter_declaration(&mut self, decl: &TSTypeParameterDeclaration<'a>) {
-        self.enter_scope(ScopeFlags::empty());
-        decl.params.iter().for_each(|param| self.visit_ts_type_parameter(param));
-        // exit scope in parent AST node
-    }
-
-    fn visit_class(&mut self, class: &Class<'a>) {
-        walk_class(self, class);
-        if class.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    fn visit_function(&mut self, func: &Function<'a>, flags: Option<ScopeFlags>) {
-        walk_function(self, func, flags);
-        if func.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    fn visit_arrow_function_expression(&mut self, expr: &ArrowFunctionExpression<'a>) {
-        walk_arrow_function_expression(self, expr);
-        if expr.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    fn visit_ts_type_alias_declaration(&mut self, decl: &TSTypeAliasDeclaration<'a>) {
-        walk_ts_type_alias_declaration(self, decl);
-        if decl.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    fn visit_ts_interface_declaration(&mut self, decl: &TSInterfaceDeclaration<'a>) {
-        walk_ts_interface_declaration(self, decl);
-        if decl.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    fn visit_ts_call_signature_declaration(&mut self, signature: &TSCallSignatureDeclaration<'a>) {
-        walk_ts_call_signature_declaration(self, signature);
-        if signature.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    fn visit_ts_method_signature(&mut self, signature: &TSMethodSignature<'a>) {
-        walk_ts_method_signature(self, signature);
-        if signature.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    fn visit_ts_construct_signature_declaration(
-        &mut self,
-        signature: &TSConstructSignatureDeclaration<'a>,
-    ) {
-        walk_ts_construct_signature_declaration(self, signature);
-        if signature.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    fn visit_ts_function_type(&mut self, signature: &TSFunctionType<'a>) {
-        walk_ts_function_type(self, signature);
-        if signature.type_parameters.is_some() {
-            self.leave_scope();
-        }
-    }
-
-    /// `type D = { [key in keyof T]: K };`
-    ///             ^^^^^^^^^^^^^^^^^^^^
-    /// We need to add both `T` and `K` to the scope
-    fn visit_ts_mapped_type(&mut self, ty: &TSMappedType<'a>) {
-        // copy from walk_ts_mapped_type
-        self.enter_scope(ScopeFlags::empty());
-        self.visit_ts_type_parameter(&ty.type_parameter);
-        if let Some(name) = &ty.name_type {
-            self.visit_ts_type(name);
-        }
-        if let Some(type_annotation) = &ty.type_annotation {
-            self.visit_ts_type(type_annotation);
-        }
-        self.leave_scope();
-    }
-
-    /// `export type Flatten<Type> = Type extends Array<infer Item> ? Item : Type;`
-    ///                                                ^^^^^^^^^^
-    ///                                                  `Item` is a type parameter
-    /// We need to add `Item` to the scope
-    fn visit_conditional_expression(&mut self, expr: &ConditionalExpression<'a>) {
-        self.enter_scope(ScopeFlags::empty());
-        walk_conditional_expression(self, expr);
-        self.leave_scope();
-    }
-
-    fn visit_ts_infer_type(&mut self, ty: &TSInferType<'a>) {
-        // copy from walk_ts_infer_type
-        self.visit_ts_type_parameter(&ty.type_parameter);
     }
 }

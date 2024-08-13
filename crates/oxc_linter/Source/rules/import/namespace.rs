@@ -13,28 +13,23 @@ use oxc_syntax::module_record::{ExportExportName, ExportImportName, ImportImport
 use crate::{context::LintContext, rule::Rule};
 
 fn no_export(span0: Span, x1: &str, x2: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!(
-        "eslint-plugin-import(namespace): {x1:?} not found in imported namespace {x2:?}."
-    ))
-    .with_label(span0)
+    OxcDiagnostic::warn(format!("{x1:?} not found in imported namespace {x2:?}.")).with_label(span0)
 }
 
 fn no_export_in_deeply_imported_namespace(span0: Span, x1: &str, x2: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!(
-        "eslint-plugin-import(namespace): {x1:?} not found in deeply imported namespace {x2:?}."
-    ))
-    .with_label(span0)
+    OxcDiagnostic::warn(format!("{x1:?} not found in deeply imported namespace {x2:?}."))
+        .with_label(span0)
 }
 
 fn computed_reference(span0: Span, x1: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("eslint-plugin-import(namespace): Unable to validate computed reference to imported namespace {x1:?}.")).with_label(span0)
+    OxcDiagnostic::warn(format!(
+        "Unable to validate computed reference to imported namespace {x1:?}."
+    ))
+    .with_label(span0)
 }
 
 fn assignment(span0: Span, x1: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!(
-        "eslint-plugin-import(namespace): Assignment to member of namespace {x1:?}.'"
-    ))
-    .with_label(span0)
+    OxcDiagnostic::warn(format!("Assignment to member of namespace {x1:?}.'")).with_label(span0)
 }
 
 /// <https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/namespace.md>
@@ -45,10 +40,12 @@ pub struct Namespace {
 
 declare_oxc_lint!(
     /// ### What it does
-    /// Enforces names exist at the time they are dereferenced, when imported as a full namespace (i.e. import * as foo from './foo'; foo.bar(); will report if bar is not exported by ./foo.).
-    /// Will report at the import declaration if there are no exported names found.
-    /// Also, will report for computed references (i.e. foo["bar"]()).
-    /// Reports on assignment to a member of an imported namespace.
+    /// Enforces names exist at the time they are dereferenced, when imported as
+    /// a full namespace (i.e. `import * as foo from './foo'; foo.bar();` will
+    /// report if bar is not exported by `./foo.`).  Will report at the import
+    /// declaration if there are no exported names found.  Also, will report for
+    /// computed references (i.e. `foo["bar"]()`).  Reports on assignment to a
+    /// member of an imported namespace.
     Namespace,
     correctness
 );
@@ -104,7 +101,7 @@ impl Rule for Namespace {
             }
 
             let Some(symbol_id) =
-                ctx.semantic().symbols().get_symbol_id_from_span(&entry.local_name.span())
+                ctx.semantic().symbols().get_symbol_id_from_span(entry.local_name.span())
             else {
                 return;
             };

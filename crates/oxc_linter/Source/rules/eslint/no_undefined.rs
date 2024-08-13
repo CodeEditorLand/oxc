@@ -9,7 +9,7 @@ use crate::{context::LintContext, rule::Rule, AstNode};
 pub struct NoUndefined;
 
 fn no_undefined_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint(no-undefined): Disallow the use of `undefined` as an identifier")
+    OxcDiagnostic::warn("Disallow the use of `undefined` as an identifier")
         .with_help("Unexpected use of undefined.")
         .with_label(span0)
 }
@@ -29,15 +29,14 @@ declare_oxc_lint!(
     /// var undefined = "foo";
     ///
     /// if (foo === undefined) {
-    /// ...
+    ///     // ...
     /// }
     ///
     /// function baz(undefined) {
-    /// ...
+    ///     // ...
     /// }
     ///
     /// bar(undefined, "lorem");
-    ///
     /// ```
     ///
     /// ### Example of good code
@@ -47,7 +46,7 @@ declare_oxc_lint!(
     /// var Undefined = "foo";
     ///
     /// if (typeof foo === "undefined") {
-    /// ...
+    ///     // ...
     /// }
     ///
     /// global.undefined = "foo";

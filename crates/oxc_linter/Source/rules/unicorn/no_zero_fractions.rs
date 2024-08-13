@@ -6,19 +6,15 @@ use oxc_span::Span;
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn zero_fraction(span0: Span, x1: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(
-        "eslint-plugin-unicorn(no-zero-fractions): Don't use a zero fraction in the number.",
-    )
-    .with_help(format!("Replace the number literal with `{x1}`"))
-    .with_label(span0)
+    OxcDiagnostic::warn("Don't use a zero fraction in the number.")
+        .with_help(format!("Replace the number literal with `{x1}`"))
+        .with_label(span0)
 }
 
 fn dangling_dot(span0: Span, x1: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(
-        "eslint-plugin-unicorn(no-zero-fractions): Don't use a dangling dot in the number.",
-    )
-    .with_help(format!("Replace the number literal with `{x1}`"))
-    .with_label(span0)
+    OxcDiagnostic::warn("Don't use a dangling dot in the number.")
+        .with_help(format!("Replace the number literal with `{x1}`"))
+        .with_label(span0)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -47,7 +43,8 @@ declare_oxc_lint!(
     /// const foo = 1.1;
     /// ```
     NoZeroFractions,
-    style
+    style,
+    fix
 );
 
 impl Rule for NoZeroFractions {
@@ -137,5 +134,35 @@ fn test() {
         r"function foo(){return.0+.1}",
     ];
 
-    Tester::new(NoZeroFractions::NAME, pass, fail).test_and_snapshot();
+    let fix = vec![
+        (r"const foo = 1.0", r"const foo = 1"),
+        (r"const foo = 1.0 + 1", r"const foo = 1 + 1"),
+        (r"foo(1.0 + 1)", r"foo(1 + 1)"),
+        (r"const foo = 1.00", r"const foo = 1"),
+        (r"const foo = 1.00000", r"const foo = 1"),
+        (r"const foo = -1.0", r"const foo = -1"),
+        (r"const foo = 123123123.0", r"const foo = 123123123"),
+        (r"const foo = 123.11100000000", r"const foo = 123.111"),
+        (r"const foo = 1.", r"const foo = 1"),
+        (r"const foo = +1.", r"const foo = +1"),
+        (r"const foo = -1.", r"const foo = -1"),
+        // maybe todo
+        // In the following tests, the comments did not pass the fixer.
+
+        // (r"const foo = 1.e10", r"const foo = 1e10"),
+        // (r"const foo = +1.e-10", r"const foo = +1e-10"),
+        // (r"const foo = -1.e+10", r"const foo = -1e+10"),
+        (r"const foo = (1.).toString()", r"const foo = (1).toString()"),
+        // (r"1.00.toFixed(2)", r"(1).toFixed(2)"),
+        // (r"1.00 .toFixed(2)", r"(1) .toFixed(2)"),
+        (r"(1.00).toFixed(2)", r"(1).toFixed(2)"),
+        // (r"1.00?.toFixed(2)", r"(1)?.toFixed(2)"),
+        (r"a = .0;", r"a = 0;"),
+        // (r"a = .0.toString()", r"a = (0).toString()"),
+        // (r"function foo(){return.0}", r"function foo(){return 0}"),
+        // (r"function foo(){return.0.toString()}", r"function foo(){return (0).toString()}"),
+        // (r"function foo(){return.0+.1}", r"function foo(){return 0+.1}"),
+    ];
+
+    Tester::new(NoZeroFractions::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
 }

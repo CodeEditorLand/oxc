@@ -8,10 +8,8 @@ use phf::{phf_set, Set};
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn not_string(x0: Option<&'static str>, span1: Span) -> OxcDiagnostic {
-    let mut d = OxcDiagnostic::warn(
-        "eslint(valid-typeof): Typeof comparisons should be to string literals.",
-    )
-    .with_label(span1);
+    let mut d =
+        OxcDiagnostic::warn("Typeof comparisons should be to string literals.").with_label(span1);
     if let Some(x) = x0 {
         d = d.with_help(x);
     }
@@ -19,8 +17,7 @@ fn not_string(x0: Option<&'static str>, span1: Span) -> OxcDiagnostic {
 }
 
 fn invalid_value(x0: Option<&'static str>, span1: Span) -> OxcDiagnostic {
-    let mut d = OxcDiagnostic::warn("eslint(valid-typeof): Invalid typeof comparison value.")
-        .with_label(span1);
+    let mut d = OxcDiagnostic::warn("Invalid typeof comparison value.").with_label(span1);
     if let Some(x) = x0 {
         d = d.with_help(x);
     }
@@ -37,22 +34,25 @@ declare_oxc_lint!(
     /// Enforce comparing `typeof` expressions against valid strings
     ///
     /// ### Why is this bad?
-    /// It is usually a typing mistake to compare the result of a typeof operator to other string literals.
+    /// It is usually a typing mistake to compare the result of a `typeof`
+    /// operator to other string literals.
+    ///
     /// ### Example
-    /// ```javascript
-    /// requireStringLiterals: false
-    /// incorrect:
+    /// ```js
+    /// // requireStringLiterals: false
+    /// // incorrect:
     /// typeof foo === "strnig"
-    /// correct:
+    /// // correct:
     /// typeof foo === "string"
     /// typeof foo === baz
     ///
-    /// requireStringLiterals: true
-    /// incorrect:
+    /// // requireStringLiterals: true
+    /// // incorrect:
     /// typeof foo === baz
     /// ```
     ValidTypeof,
     correctness,
+    conditional_fix
 );
 
 impl Rule for ValidTypeof {

@@ -50,10 +50,8 @@ impl<'a> ParserImpl<'a> {
         let range = self.cur_token().span();
         // SAFETY:
         // range comes from the parser, which are ensured to meeting the criteria of `get_unchecked`.
-        #[allow(unsafe_code)]
-        unsafe {
-            self.source_text.get_unchecked(range.start as usize..range.end as usize)
-        }
+
+        unsafe { self.source_text.get_unchecked(range.start as usize..range.end as usize) }
     }
 
     /// Get current string
@@ -172,7 +170,7 @@ impl<'a> ParserImpl<'a> {
     /// # Errors
     pub(crate) fn asi(&mut self) -> Result<()> {
         if !self.can_insert_semicolon() {
-            let span = Span::new(self.prev_token_end, self.cur_token().start);
+            let span = Span::new(self.prev_token_end, self.prev_token_end);
             return Err(diagnostics::auto_semicolon_insertion(span));
         }
         if self.at(Kind::Semicolon) {
@@ -333,7 +331,7 @@ impl<'a> ParserImpl<'a> {
 
     pub(crate) fn consume_decorators(&mut self) -> Vec<'a, Decorator<'a>> {
         let decorators = std::mem::take(&mut self.state.decorators);
-        self.ast.new_vec_from_iter(decorators)
+        self.ast.vec_from_iter(decorators)
     }
 
     pub(crate) fn parse_normal_list<F, T>(
@@ -346,7 +344,7 @@ impl<'a> ParserImpl<'a> {
         F: Fn(&mut Self) -> Result<Option<T>>,
     {
         self.expect(open)?;
-        let mut list = self.ast.new_vec();
+        let mut list = self.ast.vec();
         loop {
             let kind = self.cur_kind();
             if kind == close || kind == Kind::Eof {
@@ -372,7 +370,7 @@ impl<'a> ParserImpl<'a> {
     where
         F: Fn(&mut Self) -> Result<T>,
     {
-        let mut list = self.ast.new_vec();
+        let mut list = self.ast.vec();
         let mut first = true;
         loop {
             let kind = self.cur_kind();
@@ -406,7 +404,7 @@ impl<'a> ParserImpl<'a> {
         R: Fn(&mut Self) -> Result<B>,
         B: GetSpan,
     {
-        let mut list = self.ast.new_vec();
+        let mut list = self.ast.vec();
         let mut rest = None;
         let mut first = true;
         loop {

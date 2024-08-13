@@ -9,11 +9,9 @@ use oxc_span::Span;
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn consistent_indexed_object_style_diagnostic(a: &str, b: &str, span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!(
-        "typescript-eslint(consistent-indexed-object-style):A {a} is preferred over an {b}."
-    ))
-    .with_help(format!("A {a} is preferred over an {b}."))
-    .with_label(span)
+    OxcDiagnostic::warn(format!("A {a} is preferred over an {b}."))
+        .with_help(format!("A {a} is preferred over an {b}."))
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -38,7 +36,7 @@ declare_oxc_lint!(
     /// ### Example
     /// With "record":
     ///
-    /// ```javascript
+    /// ```ts
     /// // bad
     /// interface Foo {
     ///  [key: string]: unknown;
@@ -50,12 +48,13 @@ declare_oxc_lint!(
     ///
     /// With "index-signature":
     ///
-    /// ```javascript
+    /// ```ts
     /// // bad
     /// type Foo = Record<string, unknown>;
     /// ```
     ConsistentIndexedObjectStyle,
-    style
+    style,
+    conditional_fix
 );
 
 impl Rule for ConsistentIndexedObjectStyle {
@@ -230,8 +229,8 @@ impl Rule for ConsistentIndexedObjectStyle {
                         ),
                         |fixer| {
                             let key = fixer.source_range(first.span);
-                            let params_span = Span::new(first.span.end + 2, tref.span.end - 1);
-                            let params = fixer.source_range(params_span);
+                            let params_span = Span::new(first.span.end + 1, tref.span.end - 1);
+                            let params = fixer.source_range(params_span).trim();
                             let content = format!("{{ [key: {key}]: {params} }}");
                             fixer.replace(tref.span, content)
                         },
@@ -245,6 +244,10 @@ impl Rule for ConsistentIndexedObjectStyle {
                 }
             }
         }
+    }
+
+    fn should_run(&self, ctx: &LintContext) -> bool {
+        ctx.source_type().is_typescript()
     }
 }
 
@@ -261,6 +264,11 @@ fn test() {
         (
             "type Foo<T> = Record<string, T>;",
             "type Foo<T> = { [key: string]: T };",
+            Some(serde_json::json!(["index-signature"])),
+        ),
+        (
+            "export function getCookies (headers: Headers): Record<string,Østring>",
+            "export function getCookies (headers: Headers): { [key: string]: Østring }",
             Some(serde_json::json!(["index-signature"])),
         ),
     ];

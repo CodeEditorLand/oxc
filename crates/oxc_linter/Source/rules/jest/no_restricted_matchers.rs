@@ -17,19 +17,15 @@ use crate::{
 };
 
 fn restricted_chain(x0: &str, span1: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn(
-        "eslint-plugin-jest(no-restricted-matchers): Disallow specific matchers & modifiers",
-    )
-    .with_help(format!("Use of `{x0:?}` is disallowed`"))
-    .with_label(span1)
+    OxcDiagnostic::warn("Disallow specific matchers & modifiers")
+        .with_help(format!("Use of `{x0:?}` is disallowed`"))
+        .with_label(span1)
 }
 
 fn restricted_chain_with_message(x0: &str, span1: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn(
-        "eslint-plugin-jest(no-restricted-matchers): Disallow specific matchers & modifiers",
-    )
-    .with_help(format!("{x0:?}"))
-    .with_label(span1)
+    OxcDiagnostic::warn("Disallow specific matchers & modifiers")
+        .with_help(format!("{x0:?}"))
+        .with_label(span1)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -57,7 +53,7 @@ declare_oxc_lint!(
     /// ```javascript
     ///
     /// it('is false', () => {
-    ///   if this has a modifier (i.e. `not.toBeFalsy`), it would be considered fine
+    ///   // if this has a modifier (i.e. `not.toBeFalsy`), it would be considered fine
     ///   expect(a).toBeFalsy();
     /// });
     ///
@@ -72,6 +68,7 @@ declare_oxc_lint!(
     ///     expect(uploadFileMock).not.toHaveBeenCalledWith('file.name');
     ///   });
     /// });
+    /// ```
     ///
     NoRestrictedMatchers,
     style,

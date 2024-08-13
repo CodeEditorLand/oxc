@@ -6,7 +6,7 @@ use oxc_span::Span;
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn no_continue_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint(no-continue): Unexpected use of `continue` statement.")
+    OxcDiagnostic::warn("Unexpected use of `continue` statement.")
         .with_help("Do not use the `continue` statement.")
         .with_label(span0)
 }
@@ -24,15 +24,15 @@ declare_oxc_lint!(
     /// ### Example
     /// ```javascript
     /// var sum = 0,
-    //     i;
-    //
-    // for(i = 0; i < 10; i++) {
-    //     if(i >= 5) {
-    //         continue;
-    //     }
-    //
-    //     sum += i;
-    // }
+    ///     i;
+    ///
+    /// for(i = 0; i < 10; i++) {
+    ///     if(i >= 5) {
+    ///         continue;
+    ///     }
+    ///
+    ///     sum += i;
+    /// }
     /// ```
     NoContinue,
     style

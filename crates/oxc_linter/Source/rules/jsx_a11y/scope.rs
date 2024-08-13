@@ -7,16 +7,14 @@ use crate::{
     context::LintContext,
     globals::HTML_TAG,
     rule::Rule,
-    utils::{get_element_type, has_jsx_prop_lowercase},
+    utils::{get_element_type, has_jsx_prop_ignore_case},
     AstNode,
 };
 
 fn scope_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn(
-        "eslint-plugin-jsx-a11y(scope): The scope prop can only be used on <th> elements",
-    )
-    .with_help("Must use scope prop only on <th> elements")
-    .with_label(span0)
+    OxcDiagnostic::warn("The scope prop can only be used on <th> elements")
+        .with_help("Must use scope prop only on <th> elements")
+        .with_label(span0)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -25,7 +23,7 @@ pub struct Scope;
 declare_oxc_lint!(
     /// ### What it does
     ///
-    /// The scope prop should be used only on <th> elements.
+    /// The scope prop should be used only on `<th>` elements.
     ///
     /// ### Why is this bad?
     /// The scope attribute makes table navigation much easier for screen reader users, provided that it is used correctly.
@@ -33,7 +31,7 @@ declare_oxc_lint!(
     /// A screen reader operates under the assumption that a table has a header and that this header specifies a scope. Because of the way screen readers function, having an accurate header makes viewing a table far more accessible and more efficient for people who use the device.
     ///
     /// ### Example
-    /// ```javascript
+    /// ```jsx
     /// // Bad
     /// <div scope />
     ///
@@ -42,7 +40,8 @@ declare_oxc_lint!(
     /// <th scope={scope} />
     /// ```
     Scope,
-    correctness
+    correctness,
+    pending
 );
 
 impl Rule for Scope {
@@ -51,7 +50,7 @@ impl Rule for Scope {
             return;
         };
 
-        let scope_attribute = match has_jsx_prop_lowercase(jsx_el, "scope") {
+        let scope_attribute = match has_jsx_prop_ignore_case(jsx_el, "scope") {
             Some(v) => match v {
                 JSXAttributeItem::Attribute(attr) => attr,
                 JSXAttributeItem::SpreadAttribute(_) => {

@@ -7,7 +7,7 @@ use oxc_syntax::operator::UnaryOperator;
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn no_void_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint(no-void): Disallow `void` operators")
+    OxcDiagnostic::warn("Disallow `void` operators")
         .with_help("Expected 'undefined' and instead saw 'void'.")
         .with_label(span0)
 }
@@ -30,9 +30,9 @@ declare_oxc_lint!(
     /// var foo = void 0;
     ///
     /// // success
-    /// "var foo = bar()",
-    /// "foo.void()",
-    /// "foo.void = bar",
+    /// "var foo = bar()";
+    /// "foo.void()";
+    /// "foo.void = bar";
     /// ```
     NoVoid,
     restriction,

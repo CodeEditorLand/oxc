@@ -6,7 +6,7 @@ use oxc_span::{GetSpan, Span};
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn no_iterator_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint(no-iterator): Reserved name '__iterator__'")
+    OxcDiagnostic::warn("Reserved name '__iterator__'")
         .with_help("Disallow the use of the `__iterator__` property.")
         .with_label(span0)
 }
@@ -19,7 +19,11 @@ declare_oxc_lint!(
     /// Disallow the use of the __iterator__ property
     ///
     /// ### Why is this bad?
-    /// The __iterator__ property was a SpiderMonkey extension to JavaScript that could be used to create custom iterators that are compatible with JavaScript’s for in and for each constructs. However, this property is now obsolete, so it should not be used. Here’s an example of how this used to work:
+    /// The __iterator__ property was a SpiderMonkey extension to JavaScript
+    /// that could be used to create custom iterators that are compatible with
+    /// JavaScript’s for in and for each constructs. However, this property is
+    /// now obsolete, so it should not be used. Here’s an example of how this
+    /// used to work:
     ///
     /// ### Example
     /// ```javascript

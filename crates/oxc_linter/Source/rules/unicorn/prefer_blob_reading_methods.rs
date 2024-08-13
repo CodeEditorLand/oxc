@@ -6,7 +6,8 @@ use oxc_span::Span;
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn prefer_blob_reading_methods_diagnostic(span0: Span, x1: &str, x2: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("eslint-plugin-unicorn(prefer-blob-reading-methods): Prefer `Blob#{x1}()` over `FileReader#{x2}(blob)`.")).with_label(span0)
+    OxcDiagnostic::warn(format!("Prefer `Blob#{x1}()` over `FileReader#{x2}(blob)`."))
+        .with_label(span0)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -23,20 +24,22 @@ declare_oxc_lint!(
     ///
     /// ### Example
     /// ```javascript
-    /// // bad
-    /// const arrayBuffer = await new Promise((resolve, reject) => {
-    /// 	const fileReader = new FileReader();
-    /// 	fileReader.addEventListener('load', () => {
-    /// 		resolve(fileReader.result);
-    /// 	});
-    /// 	fileReader.addEventListener('error', () => {
-    /// 		reject(fileReader.error);
-    /// 	});
-    /// 	fileReader.readAsArrayBuffer(blob);
-    /// });
+    /// async function bad() {
+    ///     const arrayBuffer = await new Promise((resolve, reject) => {
+    ///         const fileReader = new FileReader();
+    ///         fileReader.addEventListener('load', () => {
+    ///             resolve(fileReader.result);
+    ///         });
+    ///         fileReader.addEventListener('error', () => {
+    ///             reject(fileReader.error);
+    ///         });
+    ///         fileReader.readAsArrayBuffer(blob);
+    ///     });
+    /// }
     ///
-    /// // good
-    /// const arrayBuffer = await blob.arrayBuffer();
+    /// async function good() {
+    ///     const arrayBuffer = await blob.arrayBuffer();
+    /// }
     /// ```
     PreferBlobReadingMethods,
     pedantic

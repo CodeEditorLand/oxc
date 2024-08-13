@@ -1,7 +1,7 @@
 use oxc_allocator::Box;
 use oxc_ast::ast::*;
 use oxc_diagnostics::Result;
-use oxc_span::Span;
+use oxc_span::{GetSpan, Span};
 
 use crate::{
     diagnostics,
@@ -40,7 +40,7 @@ impl<'a> ParserImpl<'a> {
             ModifierFlags::DECLARE | ModifierFlags::CONST,
             diagnostics::modifier_cannot_be_used_here,
         );
-        Ok(self.ast.ts_enum_declaration(
+        Ok(self.ast.declaration_ts_enum(
             span,
             id,
             members,
@@ -59,27 +59,54 @@ impl<'a> ParserImpl<'a> {
             None
         };
 
-        Ok(TSEnumMember { span: self.end_span(span), id, initializer })
+        let span = self.end_span(span);
+        if initializer.is_some() && matches!(id, TSEnumMemberName::StaticTemplateLiteral(_)) {
+            self.error(diagnostics::invalid_assignment(span));
+        }
+
+        Ok(self.ast.ts_enum_member(span, id, initializer))
     }
 
     fn parse_ts_enum_member_name(&mut self) -> Result<TSEnumMemberName<'a>> {
         match self.cur_kind() {
             Kind::LBrack => {
                 let node = self.parse_computed_property_name()?;
-                Ok(self.ast.ts_enum_member_name_computed_property_name(node))
+                self.check_invalid_ts_enum_computed_property(&node);
+                Ok(self.ast.ts_enum_member_name_expression(node))
             }
             Kind::Str => {
                 let node = self.parse_literal_string()?;
-                Ok(self.ast.ts_enum_member_name_string_literal(node))
+                Ok(self.ast.ts_enum_member_name_from_string_literal(node))
+            }
+            Kind::NoSubstitutionTemplate | Kind::TemplateHead => {
+                let node = self.parse_template_literal(false)?;
+                if !node.expressions.is_empty() {
+                    self.error(diagnostics::computed_property_names_not_allowed_in_enums(
+                        node.span(),
+                    ));
+                }
+                Ok(self.ast.ts_enum_member_name_from_template_literal(node))
             }
             kind if kind.is_number() => {
                 let node = self.parse_literal_number()?;
-                Ok(self.ast.ts_enum_member_name_number_literal(node))
+                self.error(diagnostics::enum_member_cannot_have_numeric_name(node.span()));
+                Ok(self.ast.ts_enum_member_name_from_numeric_literal(node))
             }
             _ => {
                 let node = self.parse_identifier_name()?;
-                Ok(self.ast.ts_enum_member_name_identifier(node))
+                Ok(self.ast.ts_enum_member_name_from_identifier_name(node))
             }
+        }
+    }
+    fn check_invalid_ts_enum_computed_property(&mut self, property: &Expression<'a>) {
+        match property {
+            Expression::StringLiteral(_) => {}
+            Expression::TemplateLiteral(template) if template.expressions.is_empty() => {}
+            Expression::NumericLiteral(_) => {
+                self.error(diagnostics::enum_member_cannot_have_numeric_name(property.span()));
+            }
+            _ => self
+                .error(diagnostics::computed_property_names_not_allowed_in_enums(property.span())),
         }
     }
 
@@ -97,7 +124,7 @@ impl<'a> ParserImpl<'a> {
         let span = self.start_span();
         self.bump_any(); // bump ':'
         let type_annotation = self.parse_ts_type()?;
-        Ok(Some(self.ast.ts_type_annotation(self.end_span(span), type_annotation)))
+        Ok(Some(self.ast.alloc_ts_type_annotation(self.end_span(span), type_annotation)))
     }
 
     pub(crate) fn parse_ts_type_alias_declaration(
@@ -122,11 +149,11 @@ impl<'a> ParserImpl<'a> {
             diagnostics::modifier_cannot_be_used_here,
         );
 
-        Ok(self.ast.ts_type_alias_declaration(
+        Ok(self.ast.declaration_ts_type_alias(
             span,
             id,
-            annotation,
             params,
+            annotation,
             modifiers.contains_declare(),
         ))
     }
@@ -151,12 +178,12 @@ impl<'a> ParserImpl<'a> {
             diagnostics::modifier_cannot_be_used_here,
         );
 
-        Ok(self.ast.ts_interface_declaration(
+        Ok(self.ast.declaration_ts_interface(
             self.end_span(span),
             id,
-            body,
-            type_parameters,
             extends,
+            type_parameters,
+            body,
             modifiers.contains_declare(),
         ))
     }
@@ -165,7 +192,7 @@ impl<'a> ParserImpl<'a> {
         let span = self.start_span();
         let body_list =
             self.parse_normal_list(Kind::LCurly, Kind::RCurly, Self::parse_ts_type_signature)?;
-        Ok(self.ast.ts_interface_body(self.end_span(span), body_list))
+        Ok(self.ast.alloc_ts_interface_body(self.end_span(span), body_list))
     }
 
     pub(crate) fn is_at_interface_declaration(&mut self) -> bool {
@@ -256,7 +283,7 @@ impl<'a> ParserImpl<'a> {
         let (directives, statements) =
             self.parse_directives_and_statements(/* is_top_level */ false)?;
         self.expect(Kind::RCurly)?;
-        Ok(self.ast.ts_module_block(self.end_span(span), directives, statements))
+        Ok(self.ast.alloc_ts_module_block(self.end_span(span), directives, statements))
     }
 
     pub(crate) fn parse_ts_namespace_or_module_declaration_body(
@@ -265,6 +292,11 @@ impl<'a> ParserImpl<'a> {
         kind: TSModuleDeclarationKind,
         modifiers: &Modifiers<'a>,
     ) -> Result<Box<'a, TSModuleDeclaration<'a>>> {
+        self.verify_modifiers(
+            modifiers,
+            ModifierFlags::DECLARE | ModifierFlags::EXPORT,
+            diagnostics::modifier_cannot_be_used_here,
+        );
         let id = match self.cur_kind() {
             Kind::Str => self.parse_literal_string().map(TSModuleDeclarationName::StringLiteral),
             _ => self.parse_identifier_name().map(TSModuleDeclarationName::Identifier),
@@ -291,7 +323,7 @@ impl<'a> ParserImpl<'a> {
             diagnostics::modifier_cannot_be_used_here,
         );
 
-        Ok(self.ast.ts_module_declaration(
+        Ok(self.ast.alloc_ts_module_declaration(
             self.end_span(span),
             id,
             body,
@@ -396,7 +428,7 @@ impl<'a> ParserImpl<'a> {
         self.expect(Kind::RAngle)?;
         let lhs_span = self.start_span();
         let expression = self.parse_simple_unary_expression(lhs_span)?;
-        Ok(self.ast.ts_type_assertion(self.end_span(span), type_annotation, expression))
+        Ok(self.ast.expression_ts_type_assertion(self.end_span(span), expression, type_annotation))
     }
 
     pub(crate) fn parse_ts_import_equals_declaration(
@@ -418,10 +450,10 @@ impl<'a> ParserImpl<'a> {
             self.expect(Kind::LParen)?;
             let expression = self.parse_literal_string()?;
             self.expect(Kind::RParen)?;
-            self.ast.ts_module_reference_external_module_reference(TSExternalModuleReference {
-                span: self.end_span(reference_span),
+            self.ast.ts_module_reference_external_module_reference(
+                self.end_span(reference_span),
                 expression,
-            })
+            )
         } else {
             let node = self.parse_ts_type_name()?;
             self.ast.ts_module_reference_type_name(node)
@@ -429,7 +461,7 @@ impl<'a> ParserImpl<'a> {
 
         self.asi()?;
 
-        Ok(self.ast.ts_import_equals_declaration(
+        Ok(self.ast.declaration_ts_import_equals(
             self.end_span(span),
             id,
             module_reference,
@@ -443,7 +475,7 @@ impl<'a> ParserImpl<'a> {
         self.eat_decorators()?;
         let this = {
             let (span, name) = self.parse_identifier_kind(Kind::This);
-            IdentifierName { span, name }
+            self.ast.identifier_name(span, name)
         };
         let type_annotation = self.parse_ts_type_annotation()?;
         Ok(self.ast.ts_this_parameter(self.end_span(span), this, type_annotation))

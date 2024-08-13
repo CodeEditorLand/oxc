@@ -16,11 +16,13 @@ enum ConstantValue {
 }
 
 impl<'a> IsolatedDeclarations<'a> {
+    /// # Panics
+    /// if the enum member is a template literal with substitutions.
     pub fn transform_ts_enum_declaration(
         &mut self,
         decl: &TSEnumDeclaration<'a>,
     ) -> Option<Declaration<'a>> {
-        let mut members = self.ast.new_vec();
+        let mut members = self.ast.vec();
         let mut prev_initializer_value = Some(ConstantValue::Number(-1.0));
         let mut prev_members = FxHashMap::default();
         for member in &decl.members {
@@ -45,6 +47,9 @@ impl<'a> IsolatedDeclarations<'a> {
                 let member_name = match &member.id {
                     TSEnumMemberName::StaticIdentifier(id) => &id.name,
                     TSEnumMemberName::StaticStringLiteral(str) => &str.value,
+                    TSEnumMemberName::StaticTemplateLiteral(template) => {
+                        &template.quasi().expect("Template enum members cannot have substitutions.")
+                    }
                     #[allow(clippy::unnested_or_patterns)] // Clippy is wrong
                     TSEnumMemberName::StaticNumericLiteral(_)
                     | match_expression!(TSEnumMemberName) => {
@@ -63,35 +68,31 @@ impl<'a> IsolatedDeclarations<'a> {
 
                         // Infinity
                         let expr = if v.is_infinite() {
-                            let ident =
-                                IdentifierReference::new(SPAN, self.ast.new_atom("Infinity"));
-                            self.ast.identifier_reference_expression(ident)
+                            self.ast.expression_identifier_reference(SPAN, "Infinity")
                         } else {
                             let value = if is_negative { -v } else { v };
-                            self.ast.literal_number_expression(NumericLiteral {
-                                span: SPAN,
+                            self.ast.expression_numeric_literal(
+                                SPAN,
                                 value,
-                                raw: self.ast.new_str(&value.to_string()),
-                                base: NumberBase::Decimal,
-                            })
+                                value.to_string(),
+                                NumberBase::Decimal,
+                            )
                         };
 
                         if is_negative {
-                            self.ast.unary_expression(SPAN, UnaryOperator::UnaryNegation, expr)
+                            self.ast.expression_unary(SPAN, UnaryOperator::UnaryNegation, expr)
                         } else {
                             expr
                         }
                     }
-                    ConstantValue::String(v) => {
-                        self.ast.literal_string_expression(self.ast.string_literal(SPAN, &v))
-                    }
+                    ConstantValue::String(v) => self.ast.expression_string_literal(SPAN, v),
                 }),
             );
 
             members.push(member);
         }
 
-        Some(self.ast.ts_enum_declaration(
+        Some(self.ast.declaration_ts_enum(
             decl.span,
             self.ast.copy(&decl.id),
             members,

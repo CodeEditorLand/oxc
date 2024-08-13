@@ -5,18 +5,31 @@
 
 //! # Oxc AST
 //!
+//! Abstract Syntax Tree nodes for Oxc. Supports both TypeScript and JavaScript.
+//!
 //! This is almost similar to [estree](https://github.com/estree/estree) except a few places:
-//! * `Identifier` is replaced with explicit `BindingIdentifier`, `IdentifierReference`, `IdentifierName` per spec
-//! * `AssignmentExpression`.`left` `Pattern` is replaced with `AssignmentTarget`
+//! * `Identifier` is replaced with explicit [`BindingIdentifier`], [`IdentifierReference`], [`IdentifierName`] per spec
+//! * `AssignmentExpression`.`left` `Pattern` is replaced with [`AssignmentTarget`]
+//!
+//! ## Parsing
+//!
+//! You can obtain an AST by parsing source code with a [`Parser`] from [`oxc_parser`].
 //!
 //! ## Cargo Features
 //! * `"serde"` enables support for serde serialization
+//!
+//! [`BindingIdentifier`]: ast::BindingIdentifier
+//! [`IdentifierReference`]: ast::IdentifierReference
+//! [`IdentifierName`]: ast::IdentifierName
+//! [`AssignmentTarget`]: ast::AssignmentTarget
+//! [`oxc_parser`]: <https://docs.rs/oxc_parser>
+//! [`Parser`]: <https://docs.rs/oxc_parser/latest/oxc_parser/struct.Parser.html>
 
 #[cfg(feature = "serialize")]
 mod serialize;
 
 pub mod ast;
-mod ast_builder;
+mod ast_builder_impl;
 mod ast_impl;
 mod ast_kind_impl;
 pub mod precedence;
@@ -24,8 +37,13 @@ pub mod syntax_directed_operations;
 mod trivia;
 
 mod generated {
+    #[cfg(debug_assertions)]
+    pub mod assert_layouts;
+    pub mod ast_builder;
     pub mod ast_kind;
-    pub mod span;
+    pub mod derive_clone_in;
+    pub mod derive_get_span;
+    pub mod derive_get_span_mut;
     pub mod visit;
     pub mod visit_mut;
 }
@@ -35,6 +53,7 @@ pub mod visit {
     pub use crate::generated::visit_mut::*;
 }
 
+pub use generated::ast_builder;
 pub use generated::ast_kind;
 
 pub use num_bigint::BigUint;

@@ -8,7 +8,7 @@ use crate::{
 };
 
 fn no_empty_file_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-unicorn(no-empty-file): Empty files are not allowed.")
+    OxcDiagnostic::warn("Empty files are not allowed.")
         .with_help("Delete this file or add some code to it.")
         .with_label(span0)
 }
@@ -69,11 +69,11 @@ impl Rule for NoEmptyFile {
 }
 
 fn has_triple_slash_directive(ctx: &LintContext<'_>) -> bool {
-    for (kind, span) in ctx.semantic().trivias().comments() {
-        if !kind.is_single_line() {
+    for comment in ctx.semantic().trivias().comments() {
+        if !comment.kind.is_single_line() {
             continue;
         }
-        let text = span.source_text(ctx.source_text());
+        let text = comment.span.source_text(ctx.source_text());
         if text.starts_with("///") {
             return true;
         }

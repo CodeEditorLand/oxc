@@ -9,7 +9,7 @@ use crate::{
 };
 
 fn require_array_join_separator_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-unicorn(require-array-join-separator): Enforce using the separator argument with Array#join()")
+    OxcDiagnostic::warn("Enforce using the separator argument with Array#join()")
         .with_help("Missing the separator argument.")
         .with_label(span0)
 }
@@ -36,7 +36,8 @@ declare_oxc_lint!(
     /// foo.join(",")
     /// ```
     RequireArrayJoinSeparator,
-    style
+    style,
+    pending
 );
 
 fn is_array_prototype_property(member_expr: &MemberExpression, property: &str) -> bool {

@@ -6,7 +6,7 @@ use serde_json::Value;
 use crate::{context::LintContext, rule::Rule};
 
 fn max_lines_diagnostic(count: usize, max: usize, span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("eslint(max-lines): File has too many lines ({count})."))
+    OxcDiagnostic::warn(format!("File has too many lines ({count})."))
         .with_help(format!("Maximum allowed is {max}."))
         .with_label(span)
 }
@@ -37,16 +37,15 @@ impl Default for MaxLinesConfig {
 
 declare_oxc_lint!(
     /// ### What it does
-    /// Enforce a maximum number of lines per file
+    /// Enforce a maximum number of lines per file.
     ///
     /// ### Why is this bad?
     ///
-    /// Some people consider large files a code smell. Large files tend to do a lot of things and can make it hard following what’s going.
-    /// While there is not an objective maximum number of lines considered acceptable in a file, most people would agree it should not be in the thousands. Recommendations usually range from 100 to 500 lines.
-    ///
-    /// ### Example
-    /// ```javascript
-    /// ```
+    /// Some people consider large files a code smell. Large files tend to do a
+    /// lot of things and can make it hard following what’s going.  While there
+    /// is not an objective maximum number of lines considered acceptable in a
+    /// file, most people would agree it should not be in the thousands.
+    /// Recommendations usually range from 100 to 500 lines.
     MaxLines,
     pedantic
 );
@@ -82,23 +81,29 @@ impl Rule for MaxLines {
     fn run_once(&self, ctx: &LintContext) {
         let comment_lines = if self.skip_comments {
             let mut comment_lines: usize = 0;
-            for (kind, span) in ctx.semantic().trivias().comments() {
-                if kind.is_single_line() {
-                    let comment_line =
-                        ctx.source_text()[..span.start as usize].lines().next_back().unwrap_or("");
+            for comment in ctx.semantic().trivias().comments() {
+                if comment.kind.is_single_line() {
+                    let comment_line = ctx.source_text()[..comment.span.start as usize]
+                        .lines()
+                        .next_back()
+                        .unwrap_or("");
                     if line_has_just_comment(comment_line, "//") {
                         comment_lines += 1;
                     }
                 } else {
-                    let mut start_line = ctx.source_text()[..span.start as usize].lines().count();
-                    let comment_start_line =
-                        ctx.source_text()[..span.start as usize].lines().next_back().unwrap_or("");
+                    let mut start_line =
+                        ctx.source_text()[..comment.span.start as usize].lines().count();
+                    let comment_start_line = ctx.source_text()[..comment.span.start as usize]
+                        .lines()
+                        .next_back()
+                        .unwrap_or("");
                     if !line_has_just_comment(comment_start_line, "/*") {
                         start_line += 1;
                     }
-                    let mut end_line = ctx.source_text()[..=span.end as usize].lines().count();
+                    let mut end_line =
+                        ctx.source_text()[..=comment.span.end as usize].lines().count();
                     let comment_end_line =
-                        ctx.source_text()[span.end as usize..].lines().next().unwrap_or("");
+                        ctx.source_text()[comment.span.end as usize..].lines().next().unwrap_or("");
                     if line_has_just_comment(comment_end_line, "*/") {
                         end_line += 1;
                     }

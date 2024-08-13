@@ -13,11 +13,11 @@ use oxc_span::Span;
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn needs_more_children(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-react(jsx-no-useless-fragment): Fragments should contain more than one child.").with_label(span0)
+    OxcDiagnostic::warn("Fragments should contain more than one child.").with_label(span0)
 }
 
 fn child_of_html_element(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("eslint-plugin-react(jsx-no-useless-fragment): Passing a fragment to a HTML element is useless.").with_label(span0)
+    OxcDiagnostic::warn("Passing a fragment to a HTML element is useless.").with_label(span0)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -36,7 +36,7 @@ declare_oxc_lint!(
     /// Fragments are a useful tool when you need to group multiple children without adding a node to the DOM tree. However, sometimes you might end up with a fragment with a single child. When this child is an element, string, or expression, it's not necessary to use a fragment.
     ///
     /// ### Example
-    /// ```javascript
+    /// ```jsx
     /// // Bad
     /// <>foo</>
     /// <div><>foo</></div>
@@ -73,6 +73,10 @@ impl Rule for JsxNoUselessFragment {
             }
             _ => {}
         }
+    }
+
+    fn should_run(&self, ctx: &LintContext) -> bool {
+        ctx.source_type().is_jsx()
     }
 }
 

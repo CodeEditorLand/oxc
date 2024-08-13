@@ -1,5 +1,6 @@
 #![allow(clippy::print_stdout, clippy::print_stderr)]
 use std::{
+    borrow::Cow,
     collections::HashMap,
     fmt::{self, Display, Formatter},
 };
@@ -54,6 +55,12 @@ const NODE_TEST_PATH: &str =
 
 const TREE_SHAKING_PATH: &str =
     "https://raw.githubusercontent.com/lukastaegert/eslint-plugin-tree-shaking/master/src/rules";
+
+const PROMISE_TEST_PATH: &str =
+    "https://raw.githubusercontent.com/eslint-community/eslint-plugin-promise/main/__tests__";
+
+const VITEST_TEST_PATH: &str =
+    "https://raw.githubusercontent.com/veritem/eslint-plugin-vitest/main/tests";
 
 struct TestCase {
     source_text: String,
@@ -313,6 +320,10 @@ pub struct Context {
     fail_cases: String,
     fix_cases: Option<String>,
     has_filename: bool,
+    /// Language examples are written in.
+    ///
+    /// Should be `"js"`, `"jsx"`, `"ts"`, `"tsx"`. Defaults to `"js"`.
+    language: Cow<'static, str>,
 }
 
 impl Context {
@@ -329,6 +340,7 @@ impl Context {
             fail_cases,
             fix_cases: None,
             has_filename: false,
+            language: Cow::Borrowed("js"),
         }
     }
 
@@ -339,6 +351,11 @@ impl Context {
 
     fn with_fix_cases(mut self, fix_cases: String) -> Self {
         self.fix_cases = Some(fix_cases);
+        self
+    }
+
+    fn with_language<S: Into<Cow<'static, str>>>(mut self, language: S) -> Self {
+        self.language = language.into();
         self
     }
 }
@@ -570,6 +587,8 @@ pub enum RuleKind {
     JSDoc,
     Node,
     TreeShaking,
+    Promise,
+    Vitest,
 }
 
 impl RuleKind {
@@ -586,6 +605,8 @@ impl RuleKind {
             "jsdoc" => Self::JSDoc,
             "n" => Self::Node,
             "tree-shaking" => Self::TreeShaking,
+            "promise" => Self::Promise,
+            "vitest" => Self::Vitest,
             _ => Self::ESLint,
         }
     }
@@ -606,6 +627,8 @@ impl Display for RuleKind {
             Self::JSDoc => write!(f, "eslint-plugin-jsdoc"),
             Self::Node => write!(f, "eslint-plugin-n"),
             Self::TreeShaking => write!(f, "eslint-plugin-tree-shaking"),
+            Self::Promise => write!(f, "eslint-plugin-promise"),
+            Self::Vitest => write!(f, "eslint-plugin-vitest"),
         }
     }
 }
@@ -632,7 +655,15 @@ fn main() {
         RuleKind::JSDoc => format!("{JSDOC_TEST_PATH}/{camel_rule_name}.js"),
         RuleKind::Node => format!("{NODE_TEST_PATH}/{kebab_rule_name}.js"),
         RuleKind::TreeShaking => format!("{TREE_SHAKING_PATH}/{kebab_rule_name}.test.ts"),
+        RuleKind::Promise => format!("{PROMISE_TEST_PATH}/{kebab_rule_name}.js"),
+        RuleKind::Vitest => format!("{VITEST_TEST_PATH}/{kebab_rule_name}.test.ts"),
         RuleKind::Oxc => String::new(),
+    };
+    let language = match rule_kind {
+        RuleKind::Typescript | RuleKind::Oxc => "ts",
+        RuleKind::NextJS => "tsx",
+        RuleKind::React | RuleKind::ReactPerf | RuleKind::JSXA11y | RuleKind::TreeShaking => "jsx",
+        _ => "js",
     };
 
     println!("Reading test file from {rule_test_path}");
@@ -705,6 +736,7 @@ fn main() {
             let (fail_cases, fix_cases) = gen_cases_string(fail_cases);
 
             Context::new(plugin_name, &rule_name, pass_cases, fail_cases)
+                .with_language(language)
                 .with_filename(has_filename)
                 .with_fix_cases(fix_cases)
         }

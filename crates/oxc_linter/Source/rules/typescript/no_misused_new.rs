@@ -9,15 +9,13 @@ use oxc_span::{GetSpan, Span};
 use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn no_misused_new_interface_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn(
-        "typescript-eslint(no-misused-new): Interfaces cannot be constructed, only classes.",
-    )
-    .with_help("Consider removing this method from your interface.")
-    .with_label(span0)
+    OxcDiagnostic::warn("Interfaces cannot be constructed, only classes.")
+        .with_help("Consider removing this method from your interface.")
+        .with_label(span0)
 }
 
 fn no_misused_new_class_diagnostic(span0: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("typescript-eslint(no-misused-new): Class cannot have method named `new`.")
+    OxcDiagnostic::warn("Class cannot have method named `new`.")
         .with_help("This method name is confusing, consider renaming the method to `constructor`")
         .with_label(span0)
 }
@@ -34,21 +32,22 @@ declare_oxc_lint!(
     ///
     /// JavaScript classes may define a constructor method that runs
     /// when a class instance is newly created.
-    /// TypeScript allows interfaces that describe a static class object to define
-    /// a new() method (though this is rarely used in real world code).
+    ///
+    /// TypeScript allows interfaces that describe a static class object to
+    /// define a `new()` method (though this is rarely used in real world code).
     /// Developers new to JavaScript classes and/or TypeScript interfaces may
     /// sometimes confuse when to use constructor or new.
     ///
     /// ### Example
     /// ```typescript
-    // declare class C {
-    //   new(): C;
-    // }
-
-    // interface I {
-    //   new (): I;
-    //   constructor(): void;
-    // }
+    /// declare class C {
+    ///   new(): C;
+    /// }
+    ///
+    /// interface I {
+    ///   new (): I;
+    ///   constructor(): void;
+    /// }
     /// ```
     NoMisusedNew,
     correctness

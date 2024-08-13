@@ -38,7 +38,7 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_binding_pattern_identifier(&mut self) -> Result<BindingPatternKind<'a>> {
         let ident = self.parse_binding_identifier()?;
-        Ok(self.ast.binding_pattern_identifier(ident))
+        Ok(self.ast.binding_pattern_kind_from_binding_identifier(ident))
     }
 
     /// Section 14.3.3 Object Binding Pattern
@@ -56,7 +56,11 @@ impl<'a> ParserImpl<'a> {
             }
         }
         self.expect(Kind::RCurly)?;
-        Ok(self.ast.object_pattern(self.end_span(span), list, rest.map(|r| self.ast.alloc(r))))
+        Ok(self.ast.binding_pattern_kind_object_pattern(
+            self.end_span(span),
+            list,
+            rest.map(|r| self.ast.alloc(r)),
+        ))
     }
 
     /// Section 14.3.3 Array Binding Pattern
@@ -69,7 +73,11 @@ impl<'a> ParserImpl<'a> {
             Self::parse_rest_binding,
         )?;
         self.expect(Kind::RBrack)?;
-        Ok(self.ast.array_pattern(self.end_span(span), list, rest.map(|r| self.ast.alloc(r))))
+        Ok(self.ast.binding_pattern_kind_array_pattern(
+            self.end_span(span),
+            list,
+            rest.map(|r| self.ast.alloc(r)),
+        ))
     }
 
     fn parse_array_binding_element(&mut self) -> Result<Option<BindingPattern<'a>>> {
@@ -81,7 +89,6 @@ impl<'a> ParserImpl<'a> {
     }
 
     fn parse_rest_binding(&mut self) -> Result<BindingRestElement<'a>> {
-        // self.eat_decorators()?;
         let elem = self.parse_rest_element()?;
         if self.at(Kind::Comma) {
             if matches!(self.peek_kind(), Kind::RCurly | Kind::RBrack) {
@@ -117,7 +124,7 @@ impl<'a> ParserImpl<'a> {
             .context(Context::In, Context::empty(), |p| p.parse_initializer(init_span, pattern))?;
         let span = self.end_span(span);
 
-        Ok(BindingRestElement { span, argument })
+        Ok(self.ast.binding_rest_element(span, argument))
     }
 
     /// `BindingProperty`[Yield, Await] :
@@ -136,9 +143,10 @@ impl<'a> ParserImpl<'a> {
             //       ^ BindingIdentifier
             if let PropertyKey::StaticIdentifier(ident) = &key {
                 shorthand = true;
-                let binding_identifier = BindingIdentifier::new(ident.span, ident.name.clone());
-                let identifier = self.ast.binding_pattern_identifier(binding_identifier);
-                let left = self.ast.binding_pattern(identifier, None, false);
+                let identifier =
+                    self.ast.binding_pattern_kind_binding_identifier(ident.span, &ident.name);
+                let left =
+                    self.ast.binding_pattern(identifier, Option::<TSTypeAnnotation>::None, false);
                 self.context(Context::In, Context::empty(), |p| p.parse_initializer(span, left))?
             } else {
                 return Err(self.unexpected());
@@ -162,7 +170,11 @@ impl<'a> ParserImpl<'a> {
     ) -> Result<BindingPattern<'a>> {
         if self.eat(Kind::Eq) {
             let expr = self.parse_assignment_expression_or_higher()?;
-            Ok(self.ast.assignment_pattern(self.end_span(span), left, expr))
+            Ok(self.ast.binding_pattern(
+                self.ast.binding_pattern_kind_assignment_pattern(self.end_span(span), left, expr),
+                Option::<TSTypeAnnotation>::None,
+                false,
+            ))
         } else {
             Ok(left)
         }

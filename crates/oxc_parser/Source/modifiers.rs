@@ -216,10 +216,8 @@ impl GetSpan for Modifiers<'_> {
         debug_assert!(!modifiers.is_empty());
         // SAFETY: One of Modifier's invariants is that Some(modifiers) always
         // contains a non-empty Vec; otherwise it must be `None`.
-        #[allow(unsafe_code)]
-        unsafe {
-            modifiers.iter().map(|m| m.span).reduce(|a, b| a.merge(&b)).unwrap_unchecked()
-        }
+
+        unsafe { modifiers.iter().map(|m| m.span).reduce(|a, b| a.merge(&b)).unwrap_unchecked() }
     }
 }
 
@@ -296,7 +294,7 @@ impl std::fmt::Display for ModifierKind {
 impl<'a> ParserImpl<'a> {
     pub(crate) fn eat_modifiers_before_declaration(&mut self) -> Result<Modifiers<'a>> {
         let mut flags = ModifierFlags::empty();
-        let mut modifiers = self.ast.new_vec();
+        let mut modifiers = self.ast.vec();
         while self.at_modifier() {
             let span = self.start_span();
             let modifier_flag = self.cur_kind().into();
@@ -360,7 +358,7 @@ impl<'a> ParserImpl<'a> {
         let mut has_leading_modifier = false;
         let mut has_trailing_decorator = false;
 
-        let mut modifiers = self.ast.new_vec();
+        let mut modifiers = self.ast.vec();
         let mut modifier_flags = ModifierFlags::empty();
 
         // parse leading decorators
@@ -416,7 +414,11 @@ impl<'a> ParserImpl<'a> {
         let span = self.start_span();
         let kind = self.cur_kind();
 
-        if matches!(self.cur_kind(), Kind::Const) && permit_const_as_modifier {
+        if matches!(self.cur_kind(), Kind::Const) {
+            if !permit_const_as_modifier {
+                return None;
+            }
+
             // We need to ensure that any subsequent modifiers appear on the same line
             // so that when 'const' is a standalone declaration, we don't issue
             // an error.
