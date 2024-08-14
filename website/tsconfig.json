@@ -1,20 +1,13 @@
 {
-	"compilerOptions": {
-		"allowImportingTsExtensions": true,
-		"baseUrl": "./",
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"isolatedModules": true,
-		"module": "esnext",
-		"moduleResolution": "bundler",
-		"outDir": "Target",
-		"rootDir": "Source",
-		"skipLibCheck": true,
-		"strict": true,
-		"target": "esnext"
-	},
-	"extends": "@playform/build/tsconfig",
-	"include": [
-		"Source"
-	]
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  }
 }

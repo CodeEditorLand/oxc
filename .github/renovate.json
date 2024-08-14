@@ -1,0 +1,31 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>Boshen/renovate"],
+  "ignorePaths": [
+    "crates/oxc_linter/fixtures/**"
+  ],
+  "packageRules": [
+    {
+      "groupName": "rust crates",
+      "matchManagers": ["cargo"],
+      "ignoreDeps": ["syn", "ureq"]
+    },
+    {
+      "groupName": "website npm packages",
+      "matchFileNames": ["website/package.json"],
+      "matchManagers": ["npm"]
+    },
+    {
+      "groupName": "vscode npm packages",
+      "matchFileNames": ["editors/vscode/package.json"],
+      "matchManagers": ["npm"],
+      "ignoreDeps": ["@types/vscode"]
+    },
+    {
+      "groupName": "off",
+      "matchFileNames": ["napi/*/package.json", "npm/*/package.json"],
+      "matchManagers": ["npm"],
+      "enabled": false
+    }
+  ]
+}
