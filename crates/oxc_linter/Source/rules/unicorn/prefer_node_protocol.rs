@@ -28,7 +28,7 @@ declare_oxc_lint!(
     /// // Bad
     /// import fs from "fs";
     /// // Good
-    /// import fs from "fs";
+    /// import fs from "node:fs";
     /// ```
     PreferNodeProtocol,
     restriction,
