@@ -18,6 +18,7 @@
 	"extends": "@playform/build/tsconfig",
 	"include": [
 		"./client",
+		"Source",
 		"Source"
 	]
 }
