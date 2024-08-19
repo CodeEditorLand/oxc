@@ -19,6 +19,7 @@
 	"include": [
 		"./client",
 		"Source",
+		"Source",
 		"Source"
 	]
 }
