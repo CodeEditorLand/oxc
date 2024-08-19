@@ -1,15 +1,16 @@
-use std::{collections::HashSet, path::PathBuf};
+use std::{collections::HashSet, ops::ControlFlow, path::PathBuf};
 
-use oxc_allocator::Allocator;
+use oxc::CompilerInterface;
+
 #[allow(clippy::wildcard_imports)]
-use oxc_ast::{ast::*, visit::walk, Trivias, Visit};
-use oxc_codegen::{CodeGenerator, CommentOptions, WhitespaceRemover};
-use oxc_diagnostics::OxcDiagnostic;
-use oxc_minifier::{CompressOptions, Compressor};
-use oxc_parser::{Parser, ParserReturn};
-use oxc_semantic::{ScopeFlags, Semantic, SemanticBuilder};
-use oxc_span::{SourceType, Span};
-use oxc_transformer::{TransformOptions, Transformer};
+use oxc::ast::{ast::*, Trivias};
+use oxc::codegen::CodegenOptions;
+use oxc::diagnostics::OxcDiagnostic;
+use oxc::minifier::CompressOptions;
+use oxc::parser::{ParseOptions, ParserReturn};
+use oxc::semantic::{post_transform_checker::PostTransformChecker, SemanticBuilderReturn};
+use oxc::span::{SourceType, Span};
+use oxc::transformer::{TransformOptions, TransformerReturn};
 
 use crate::suite::TestResult;
 
@@ -22,11 +23,90 @@ pub struct Driver {
     pub compress: bool,
     pub remove_whitespace: bool,
     pub codegen: bool,
+    pub check_semantic: bool,
     pub allow_return_outside_function: bool,
     // results
     pub panicked: bool,
     pub errors: Vec<OxcDiagnostic>,
     pub printed: String,
+    // states
+    pub checker: PostTransformChecker,
+}
+
+impl CompilerInterface for Driver {
+    fn parser_options(&self) -> ParseOptions {
+        ParseOptions {
+            allow_return_outside_function: self.allow_return_outside_function,
+            ..ParseOptions::default()
+        }
+    }
+
+    fn transform_options(&self) -> Option<TransformOptions> {
+        self.transform.clone()
+    }
+
+    fn compress_options(&self) -> Option<CompressOptions> {
+        self.compress.then(CompressOptions::all_true)
+    }
+
+    fn codegen_options(&self) -> Option<CodegenOptions> {
+        self.codegen.then(CodegenOptions::default)
+    }
+
+    fn remove_whitespace(&self) -> bool {
+        self.remove_whitespace
+    }
+
+    fn handle_errors(&mut self, errors: Vec<OxcDiagnostic>) {
+        self.errors.extend(errors);
+    }
+
+    fn after_parse(&mut self, parser_return: &mut ParserReturn) -> ControlFlow<()> {
+        let ParserReturn { program, trivias, panicked, .. } = parser_return;
+        self.panicked = *panicked;
+        if self.check_comments(trivias) {
+            return ControlFlow::Break(());
+        }
+        // Make sure serialization doesn't crash; also for code coverage.
+        let _serializer = program.serializer();
+        ControlFlow::Continue(())
+    }
+
+    fn after_semantic(
+        &mut self,
+        program: &mut Program<'_>,
+        _semantic_return: &mut SemanticBuilderReturn,
+    ) -> ControlFlow<()> {
+        if self.check_semantic {
+            if let Some(errors) = self.checker.before_transform(program) {
+                self.errors.extend(errors);
+                return ControlFlow::Break(());
+            }
+        };
+        ControlFlow::Continue(())
+    }
+
+    fn after_transform(
+        &mut self,
+        program: &mut Program<'_>,
+        transformer_return: &mut TransformerReturn,
+    ) -> ControlFlow<()> {
+        if self.check_semantic {
+            if let Some(errors) = self.checker.after_transform(
+                &transformer_return.symbols,
+                &transformer_return.scopes,
+                program,
+            ) {
+                self.errors.extend(errors);
+                return ControlFlow::Break(());
+            }
+        }
+        ControlFlow::Continue(())
+    }
+
+    fn after_codegen(&mut self, printed: String) {
+        self.printed = printed;
+    }
 }
 
 impl Driver {
@@ -52,70 +132,8 @@ impl Driver {
     }
 
     pub fn run(&mut self, source_text: &str, source_type: SourceType) {
-        let allocator = Allocator::default();
-        let ParserReturn { mut program, errors, trivias, panicked } =
-            Parser::new(&allocator, source_text, source_type)
-                .allow_return_outside_function(self.allow_return_outside_function)
-                .parse();
-        self.panicked = panicked;
-
-        if self.check_comments(&trivias) {
-            return;
-        }
-
-        // Make sure serialization doesn't crash; also for code coverage.
-        let _serializer = program.serializer();
-
-        if !errors.is_empty() {
-            self.errors.extend(errors);
-        }
-
-        let semantic_ret = SemanticBuilder::new(source_text, source_type)
-            .with_trivias(trivias.clone())
-            .with_check_syntax_error(true)
-            .build_module_record(self.path.clone(), &program)
-            .build(&program);
-
-        if !semantic_ret.errors.is_empty() {
-            self.errors.extend(semantic_ret.errors);
-            return;
-        }
-
-        if let Some(errors) = SemanticChecker::new(&semantic_ret.semantic).check(&program) {
-            self.errors.extend(errors);
-            return;
-        }
-
-        if let Some(options) = self.transform.clone() {
-            Transformer::new(
-                &allocator,
-                &self.path,
-                source_type,
-                source_text,
-                trivias.clone(),
-                options,
-            )
-            .build(&mut program);
-        }
-
-        if self.compress {
-            Compressor::new(&allocator, CompressOptions::all_true()).build(&mut program);
-        }
-
-        if self.codegen {
-            let comment_options = CommentOptions { preserve_annotate_comments: true };
-
-            let printed = if self.remove_whitespace {
-                WhitespaceRemover::new().build(&program).source_text
-            } else {
-                CodeGenerator::new()
-                    .enable_comment(source_text, trivias, comment_options)
-                    .build(&program)
-                    .source_text
-            };
-
-            self.printed = printed;
-        }
+        let path = self.path.clone();
+        self.compile(source_text, source_type, &path);
     }
 
     fn check_comments(&mut self, trivias: &Trivias) -> bool {
@@ -128,90 +146,5 @@ impl Driver {
             }
         }
         false
-    }
-}
-
-struct SemanticChecker<'a, 'b> {
-    #[allow(unused)]
-    semantic: &'b Semantic<'a>,
-
-    missing_references: Vec<Span>,
-    missing_symbols: Vec<Span>,
-}
-
-impl<'a, 'b> Visit<'a> for SemanticChecker<'a, 'b> {
-    // Check missing `ReferenceId` on `IdentifierReference`.
-    fn visit_identifier_reference(&mut self, ident: &IdentifierReference<'a>) {
-        if ident.reference_id.get().is_none() {
-            self.missing_references.push(ident.span);
-        }
-    }
-
-    // Check missing `SymbolId` on `BindingIdentifier`.
-    fn visit_binding_identifier(&mut self, ident: &BindingIdentifier<'a>) {
-        if ident.symbol_id.get().is_none() {
-            self.missing_symbols.push(ident.span);
-        }
-    }
-
-    fn visit_function(&mut self, func: &Function<'a>, flags: ScopeFlags) {
-        if func.is_ts_declare_function() {
-            return;
-        }
-        walk::walk_function(self, func, flags);
-    }
-
-    fn visit_declaration(&mut self, it: &Declaration<'a>) {
-        if it.is_typescript_syntax() {
-            return;
-        }
-        walk::walk_declaration(self, it);
-    }
-
-    fn visit_if_statement(&mut self, stmt: &IfStatement<'a>) {
-        // skip `if (function foo() {}) {}`
-        if !matches!(stmt.test, Expression::FunctionExpression(_)) {
-            self.visit_expression(&stmt.test);
-        }
-        // skip `if (true) function foo() {} else function bar() {}`
-        if !stmt.consequent.is_declaration() {
-            self.visit_statement(&stmt.consequent);
-        }
-        if let Some(alternate) = &stmt.alternate {
-            if !alternate.is_declaration() {
-                self.visit_statement(alternate);
-            }
-        }
-    }
-
-    fn visit_ts_type(&mut self, _it: &TSType<'a>) {
-        /* noop */
-    }
-}
-
-impl<'a, 'b> SemanticChecker<'a, 'b> {
-    fn new(semantic: &'b Semantic<'a>) -> Self {
-        Self { semantic, missing_references: vec![], missing_symbols: vec![] }
-    }
-
-    fn check(mut self, program: &Program<'a>) -> Option<Vec<OxcDiagnostic>> {
-        if program.source_type.is_typescript_definition() {
-            return None;
-        }
-
-        self.visit_program(program);
-
-        let diagnostics = self
-            .missing_references
-            .into_iter()
-            .map(|span| OxcDiagnostic::error("Missing ReferenceId").with_label(span))
-            .chain(
-                self.missing_symbols
-                    .into_iter()
-                    .map(|span| OxcDiagnostic::error("Missing SymbolId").with_label(span)),
-            )
-            .collect::<Vec<_>>();
-
-        (!diagnostics.is_empty()).then_some(diagnostics)
     }
 }

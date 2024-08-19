@@ -325,6 +325,11 @@ impl<'a> IsolatedDeclarations<'a> {
                         new_ast_stmts.push(Statement::ImportDeclaration(decl));
                     }
                 }
+                Statement::TSModuleDeclaration(decl) => {
+                    if decl.kind.is_global() || decl.id.is_string_literal() {
+                        new_ast_stmts.push(Statement::TSModuleDeclaration(decl));
+                    }
+                }
                 _ => {}
             }
         }
@@ -420,8 +425,18 @@ impl<'a> IsolatedDeclarations<'a> {
     ) -> FxHashMap<&'a str, FxHashSet<Atom>> {
         let mut assignable_properties_for_namespace = FxHashMap::<&str, FxHashSet<Atom>>::default();
         for stmt in stmts {
-            let Statement::ExportNamedDeclaration(decl) = stmt else { continue };
-            let Some(Declaration::TSModuleDeclaration(decl)) = &decl.declaration else { continue };
+            let decl = match stmt {
+                Statement::ExportNamedDeclaration(decl) => {
+                    if let Some(Declaration::TSModuleDeclaration(decl)) = &decl.declaration {
+                        decl
+                    } else {
+                        continue;
+                    }
+                }
+                Statement::TSModuleDeclaration(decl) => decl,
+                _ => continue,
+            };
+
             if decl.kind != TSModuleDeclarationKind::Namespace {
                 continue;
             }
