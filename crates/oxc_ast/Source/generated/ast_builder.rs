@@ -14,7 +14,6 @@ use crate::ast::*;
 
 /// AST builder for creating AST nodes
 #[derive(Clone, Copy)]
-#[non_exhaustive]
 pub struct AstBuilder<'a> {
     pub allocator: &'a Allocator,
 }
@@ -680,17 +679,17 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// - span: The [`Span`] covering this node
-    /// - arguments
     /// - callee
     /// - type_parameters
+    /// - arguments
     /// - optional
     #[inline]
     pub fn expression_call<T1>(
         self,
         span: Span,
-        arguments: Vec<'a, Argument<'a>>,
         callee: Expression<'a>,
         type_parameters: T1,
+        arguments: Vec<'a, Argument<'a>>,
         optional: bool,
     ) -> Expression<'a>
     where
@@ -698,9 +697,9 @@ impl<'a> AstBuilder<'a> {
     {
         Expression::CallExpression(self.alloc(self.call_expression(
             span,
-            arguments,
             callee,
             type_parameters,
+            arguments,
             optional,
         )))
     }
@@ -1509,7 +1508,6 @@ impl<'a> AstBuilder<'a> {
             span,
             name: name.into_in(self.allocator),
             reference_id: Default::default(),
-            reference_flag: Default::default(),
         }
     }
 
@@ -2295,17 +2293,17 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// - span: The [`Span`] covering this node
-    /// - arguments
     /// - callee
     /// - type_parameters
+    /// - arguments
     /// - optional
     #[inline]
     pub fn call_expression<T1>(
         self,
         span: Span,
-        arguments: Vec<'a, Argument<'a>>,
         callee: Expression<'a>,
         type_parameters: T1,
+        arguments: Vec<'a, Argument<'a>>,
         optional: bool,
     ) -> CallExpression<'a>
     where
@@ -2313,9 +2311,9 @@ impl<'a> AstBuilder<'a> {
     {
         CallExpression {
             span,
-            arguments,
             callee,
             type_parameters: type_parameters.into_in(self.allocator),
+            arguments,
             optional,
         }
     }
@@ -2326,24 +2324,24 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// - span: The [`Span`] covering this node
-    /// - arguments
     /// - callee
     /// - type_parameters
+    /// - arguments
     /// - optional
     #[inline]
     pub fn alloc_call_expression<T1>(
         self,
         span: Span,
-        arguments: Vec<'a, Argument<'a>>,
         callee: Expression<'a>,
         type_parameters: T1,
+        arguments: Vec<'a, Argument<'a>>,
         optional: bool,
     ) -> Box<'a, CallExpression<'a>>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
     {
         Box::new_in(
-            self.call_expression(span, arguments, callee, type_parameters, optional),
+            self.call_expression(span, callee, type_parameters, arguments, optional),
             self.allocator,
         )
     }
@@ -3497,17 +3495,17 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// - span: The [`Span`] covering this node
-    /// - arguments
     /// - callee
     /// - type_parameters
+    /// - arguments
     /// - optional
     #[inline]
     pub fn chain_element_call_expression<T1>(
         self,
         span: Span,
-        arguments: Vec<'a, Argument<'a>>,
         callee: Expression<'a>,
         type_parameters: T1,
+        arguments: Vec<'a, Argument<'a>>,
         optional: bool,
     ) -> ChainElement<'a>
     where
@@ -3515,9 +3513,9 @@ impl<'a> AstBuilder<'a> {
     {
         ChainElement::CallExpression(self.alloc(self.call_expression(
             span,
-            arguments,
             callee,
             type_parameters,
+            arguments,
             optional,
         )))
     }

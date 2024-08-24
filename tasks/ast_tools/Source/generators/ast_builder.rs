@@ -57,7 +57,6 @@ impl Generator for AstBuilderGenerator {
                 ///@@line_break
                 /// AST builder for creating AST nodes
                 #[derive(Clone, Copy)]
-                #[non_exhaustive]
                 pub struct AstBuilder<'a> {
                     pub allocator: &'a Allocator,
                 }
@@ -235,7 +234,7 @@ fn default_init_field(field: &FieldDef) -> bool {
             field!(scope_id: Cell<Option<ScopeId>>),
             field!(symbol_id: Cell<Option<SymbolId>>),
             field!(reference_id: Cell<Option<ReferenceId>>),
-            field!(reference_flag: ReferenceFlag),
+            field!(reference_flags: ReferenceFlags),
         ]);
     }
 

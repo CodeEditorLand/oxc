@@ -1,0 +1,23 @@
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+    changes:
+      default:
+        informational: true
+
+ignore:
+  - "**/main.rs"
+  - "**/examples"
+  - "tasks"
+  - "editor"
+  - "napi"
+  - "crates/oxc_ast/src/generated"
+  - "crates/oxc_traverse"
+  - "crates/oxc_wasm" # Remove this once wasm is completed
+  - "crates/oxc_diagnostics"
+  - "crates/oxc_regular_expression" # not ready
