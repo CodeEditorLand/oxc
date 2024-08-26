@@ -2265,6 +2265,7 @@ pub enum AccessorPropertyType {
 #[derive(Debug, Hash)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
+#[serde(rename_all = "camelCase")]
 pub struct AccessorProperty<'a> {
     pub r#type: AccessorPropertyType,
     #[serde(flatten)]
@@ -2281,6 +2282,8 @@ pub struct AccessorProperty<'a> {
     pub computed: bool,
     /// Property was declared with a `static` modifier
     pub r#static: bool,
+    /// Property has a `!` after its key.
+    pub definite: bool,
     /// Type annotation on the property.
     ///
     /// Will only ever be [`Some`] for TypeScript files.
