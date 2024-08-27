@@ -35,7 +35,7 @@
 		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
 	},
 	"scripts": {
-		"Run": "Build 'Source/**/*.ts' -W",
+		"Run": "Build 'Source/**/*.ts' --Watch",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"type": "module",
