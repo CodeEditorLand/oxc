@@ -6,7 +6,7 @@ Based on Oxc and conforms to TypeScript Compiler's `--isolated-declaration` `.d.
 
 This is still in alpha and may yield incorrect results, feel free to [submit a bug report](https://github.com/oxc-project/oxc/issues/new?assignees=&labels=C-bug&projects=&template=bug_report.md&title=isolated-declarations:).
 
-### Usage
+### 🛠️ Usage
 
 ```javascript
 import assert from 'assert';

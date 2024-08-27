@@ -1,6 +1,6 @@
 # Website
 
-## Installation
+## 🚀 Installation
 
 ```bash
 corepack enable
