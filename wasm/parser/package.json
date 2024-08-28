@@ -11,7 +11,7 @@
 	"description": "Wasm target for the oxc parser.",
 	"devDependencies": {
 		"@playform/build": "0.1.3",
-		"wasm-pack": "^0.13.0"
+		"wasm-pack": "0.13.0"
 	},
 	"files": [
 		"node",
