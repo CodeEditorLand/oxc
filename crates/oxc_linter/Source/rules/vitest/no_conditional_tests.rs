@@ -12,10 +12,10 @@ use crate::{
     },
 };
 
-fn no_conditional_tests(span0: Span) -> OxcDiagnostic {
+fn no_conditional_tests(span: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("Avoid having conditionals in tests")
         .with_help("Remove the surrounding if statement.")
-        .with_label(span0)
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -23,7 +23,15 @@ pub struct NoConditionalTests;
 
 declare_oxc_lint!(
     /// ### What it does
-    /// The rule disallows the use of conditional statements within test cases to ensure that tests are deterministic and clearly readable.
+    ///
+    /// The rule disallows the use of conditional statements within test cases to
+    /// ensure that tests are deterministic and clearly readable.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// Conditional statements in test cases can make tests unpredictable and
+    /// harder to understand. Tests should be consistent and straightforward to
+    /// ensure reliable results and maintainability.
     ///
     /// ### Examples
     ///

@@ -199,7 +199,22 @@ impl Rule for NoNull {
             }
             (AstKind::ReturnStatement(_), _) => {
                 ctx.diagnostic_with_fix(no_null_diagnostic(null_literal.span), |fixer| {
-                    fixer.delete(null_literal)
+                    let mut null_span = null_literal.span;
+                    // Find the last parent that is a TSAsExpression (`null as any`) or TSNonNullExpression (`null!`)
+                    for parent in ctx.nodes().iter_parents(node.id()).skip(1) {
+                        let parent = parent.kind();
+                        if matches!(
+                            parent,
+                            AstKind::TSAsExpression(_) | AstKind::TSNonNullExpression(_)
+                        ) {
+                            null_span = parent.span();
+                        }
+                        if matches!(parent, AstKind::ReturnStatement(_)) {
+                            break;
+                        }
+                    }
+
+                    fixer.delete(&null_span)
                 });
             }
             (AstKind::SwitchCase(_), Some(AstKind::SwitchStatement(switch))) => {
@@ -368,6 +383,29 @@ fn test() {
             "if (foo === null || foo === undefined) {}",
             "if (foo === undefined || foo === undefined) {}",
             Some(check_strict_equality(true)),
+        ),
+        ("() => { return null! }", "() => { return  }", None),
+        ("() => { return null as any as typeof Array }", "() => { return  }", None),
+        (
+            r"const newDecorations = enabled ?
+	this._debugService.getModel().getBreakpoints().map(breakpoint => {
+		const parsed = test()
+		if (!parsed ) {
+			return null;
+		}
+		return { handle: parsed.handle};
+	}).filter(x => !!x) as INotebookDeltaDecoration[]
+	: [];",
+            r"const newDecorations = enabled ?
+	this._debugService.getModel().getBreakpoints().map(breakpoint => {
+		const parsed = test()
+		if (!parsed ) {
+			return ;
+		}
+		return { handle: parsed.handle};
+	}).filter(x => !!x) as INotebookDeltaDecoration[]
+	: [];",
+            None,
         ),
     ];
     Tester::new(NoNull::NAME, pass, fail).expect_fix(fix).test_and_snapshot();

@@ -1,43 +1,94 @@
-commit: 12619ffe
+commit: 3bcfee23
 
-Passed: 10/36
+Passed: 13/41
 
 # All Passed:
+* babel-plugin-transform-nullish-coalescing-operator
 * babel-plugin-transform-optional-catch-binding
-* babel-plugin-transform-arrow-functions
+* babel-preset-typescript
 
 
-# babel-plugin-transform-typescript (2/7)
+# babel-plugin-transform-arrow-functions (1/2)
+* with-this-member-expression/input.jsx
+  x Unresolved references mismatch:
+  | after transform: ["this"]
+  | rebuilt        : []
+
+
+
+# babel-plugin-transform-typescript (2/8)
+* class-property-definition/input.ts
+  x Unresolved references mismatch:
+  | after transform: ["const"]
+  | rebuilt        : []
+
+
 * computed-constant-value/input.ts
-  x Semantic Collector failed after transform
+  x Missing ReferenceId: Infinity
 
   x Missing ReferenceId: Infinity
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/computed-constant-value/input.ts:1:1]
- 1 | enum A {
-   : ^
- 2 |   a = Infinity,
-   `----
 
   x Missing ReferenceId: Infinity
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/computed-constant-value/input.ts:1:1]
- 1 | enum A {
-   : ^
- 2 |   a = Infinity,
-   `----
 
   x Missing ReferenceId: Infinity
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/computed-constant-value/input.ts:1:1]
- 1 | enum A {
-   : ^
- 2 |   a = Infinity,
-   `----
 
-  x Missing ReferenceId: Infinity
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/computed-constant-value/input.ts:1:1]
- 1 | enum A {
-   : ^
- 2 |   a = Infinity,
-   `----
+  x Bindings mismatch:
+  | after transform: ScopeId(1): ["A", "a", "b", "c", "d", "e"]
+  | rebuilt        : ScopeId(1): ["A"]
+
+  x Scope flags mismatch:
+  | after transform: ScopeId(1): ScopeFlags(StrictMode)
+  | rebuilt        : ScopeId(1): ScopeFlags(StrictMode | Function)
+
+  x Bindings mismatch:
+  | after transform: ScopeId(2): ["B", "a", "b", "c", "d", "e"]
+  | rebuilt        : ScopeId(2): ["B"]
+
+  x Scope flags mismatch:
+  | after transform: ScopeId(2): ScopeFlags(StrictMode)
+  | rebuilt        : ScopeId(2): ScopeFlags(StrictMode | Function)
+
+  x Bindings mismatch:
+  | after transform: ScopeId(3): ["C", "a", "b", "c"]
+  | rebuilt        : ScopeId(3): ["C"]
+
+  x Scope flags mismatch:
+  | after transform: ScopeId(3): ScopeFlags(StrictMode)
+  | rebuilt        : ScopeId(3): ScopeFlags(StrictMode | Function)
+
+  x Bindings mismatch:
+  | after transform: ScopeId(4): ["D", "a", "b", "c"]
+  | rebuilt        : ScopeId(4): ["D"]
+
+  x Scope flags mismatch:
+  | after transform: ScopeId(4): ScopeFlags(StrictMode)
+  | rebuilt        : ScopeId(4): ScopeFlags(StrictMode | Function)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(0): SymbolFlags(RegularEnum)
+  | rebuilt        : SymbolId(0): SymbolFlags(FunctionScopedVariable)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(6): SymbolFlags(RegularEnum)
+  | rebuilt        : SymbolId(2): SymbolFlags(FunctionScopedVariable)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(12): SymbolFlags(RegularEnum)
+  | rebuilt        : SymbolId(4): SymbolFlags(FunctionScopedVariable)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(16): SymbolFlags(RegularEnum)
+  | rebuilt        : SymbolId(6): SymbolFlags(FunctionScopedVariable)
+
+  x Unresolved references mismatch:
+  | after transform: ["Infinity", "NaN"]
+  | rebuilt        : ["Infinity"]
+
+  x Unresolved reference IDs mismatch for "Infinity":
+  | after transform: [ReferenceId(0), ReferenceId(1), ReferenceId(2),
+  | ReferenceId(3)]
+  | rebuilt        : [ReferenceId(2), ReferenceId(5), ReferenceId(8),
+  | ReferenceId(12)]
 
 
 * elimination-declare/input.ts
@@ -51,53 +102,83 @@ Passed: 10/36
 
 
 * enum-member-reference/input.ts
-  x Semantic Collector failed after transform
-
   x Missing ReferenceId: Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/enum-member-reference/input.ts:1:1]
- 1 | var x = 10;
-   : ^
- 2 | 
-   `----
+
+  x Bindings mismatch:
+  | after transform: ScopeId(1): ["Foo", "a", "b", "c"]
+  | rebuilt        : ScopeId(1): ["Foo"]
+
+  x Scope flags mismatch:
+  | after transform: ScopeId(1): ScopeFlags(StrictMode)
+  | rebuilt        : ScopeId(1): ScopeFlags(StrictMode | Function)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(1): SymbolFlags(RegularEnum)
+  | rebuilt        : SymbolId(1): SymbolFlags(FunctionScopedVariable)
+
+  x Symbol reference IDs mismatch:
+  | after transform: SymbolId(5): [ReferenceId(3), ReferenceId(4),
+  | ReferenceId(5), ReferenceId(6), ReferenceId(7), ReferenceId(8),
+  | ReferenceId(9)]
+  | rebuilt        : SymbolId(2): [ReferenceId(0), ReferenceId(1),
+  | ReferenceId(2), ReferenceId(3), ReferenceId(4), ReferenceId(5),
+  | ReferenceId(6), ReferenceId(8)]
 
 
 * export-elimination/input.ts
-  x Semantic Collector failed after transform
-
   x Missing SymbolId: Name
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/export-elimination/input.ts:1:1]
- 1 | import Im, {Ok} from 'a';
-   : ^
- 2 | class Foo {}
-   `----
 
   x Missing SymbolId: _Name
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/export-elimination/input.ts:1:1]
- 1 | import Im, {Ok} from 'a';
-   : ^
- 2 | class Foo {}
-   `----
 
   x Missing ReferenceId: _Name
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/export-elimination/input.ts:1:1]
- 1 | import Im, {Ok} from 'a';
-   : ^
- 2 | class Foo {}
-   `----
 
   x Missing ReferenceId: Name
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/export-elimination/input.ts:1:1]
- 1 | import Im, {Ok} from 'a';
-   : ^
- 2 | class Foo {}
-   `----
 
   x Missing ReferenceId: Name
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-typescript/test/fixtures/export-elimination/input.ts:1:1]
- 1 | import Im, {Ok} from 'a';
-   : ^
- 2 | class Foo {}
-   `----
+
+  x Bindings mismatch:
+  | after transform: ScopeId(0): ["Baq", "Bar", "Baz", "Foo", "Func", "Im",
+  | "Name", "Ok", "T"]
+  | rebuilt        : ScopeId(0): ["Bar", "Foo", "Func", "Im", "Name", "Ok",
+  | "T"]
+
+  x Scope children mismatch:
+  | after transform: ScopeId(0): [ScopeId(1), ScopeId(2), ScopeId(3),
+  | ScopeId(4), ScopeId(5), ScopeId(6), ScopeId(7)]
+  | rebuilt        : ScopeId(0): [ScopeId(1), ScopeId(2), ScopeId(3),
+  | ScopeId(4)]
+
+  x Binding symbols mismatch:
+  | after transform: ScopeId(5): [SymbolId(8), SymbolId(10)]
+  | rebuilt        : ScopeId(3): [SymbolId(6), SymbolId(7)]
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(8): SymbolFlags(BlockScopedVariable |
+  | ConstVariable | Export)
+  | rebuilt        : SymbolId(7): SymbolFlags(BlockScopedVariable |
+  | ConstVariable)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(9): SymbolFlags(BlockScopedVariable | Export |
+  | Function | TypeAlias)
+  | rebuilt        : SymbolId(8): SymbolFlags(BlockScopedVariable | Export
+  | | Function)
+
+  x Symbol span mismatch:
+  | after transform: SymbolId(9): Span { start: 205, end: 206 }
+  | rebuilt        : SymbolId(8): Span { start: 226, end: 227 }
+
+  x Symbol reference IDs mismatch:
+  | after transform: SymbolId(9): [ReferenceId(8), ReferenceId(9)]
+  | rebuilt        : SymbolId(8): [ReferenceId(9)]
+
+  x Symbol redeclarations mismatch:
+  | after transform: SymbolId(9): [Span { start: 226, end: 227 }]
+  | rebuilt        : SymbolId(8): []
+
+  x Reference symbol mismatch:
+  | after transform: ReferenceId(7): Some("Name")
+  | rebuilt        : ReferenceId(8): Some("Name")
 
 
 * redeclarations/input.ts
@@ -154,7 +235,6 @@ Passed: 10/36
 
 # babel-plugin-transform-react-jsx (6/27)
 * refresh/can-handle-implicit-arrow-returns/input.jsx
-  x Output mismatch
   x Symbol reference IDs mismatch:
   | after transform: SymbolId(9): [ReferenceId(23), ReferenceId(24),
   | ReferenceId(25)]
@@ -162,24 +242,24 @@ Passed: 10/36
 
   x Symbol reference IDs mismatch:
   | after transform: SymbolId(10): [ReferenceId(26), ReferenceId(27),
-  | ReferenceId(28)]
-  | rebuilt        : SymbolId(1): [ReferenceId(18), ReferenceId(19)]
+  | ReferenceId(29)]
+  | rebuilt        : SymbolId(1): [ReferenceId(10), ReferenceId(13)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(11): [ReferenceId(29), ReferenceId(30),
-  | ReferenceId(31), ReferenceId(32)]
-  | rebuilt        : SymbolId(2): [ReferenceId(29), ReferenceId(32),
-  | ReferenceId(33)]
+  | after transform: SymbolId(11): [ReferenceId(30), ReferenceId(31),
+  | ReferenceId(32)]
+  | rebuilt        : SymbolId(2): [ReferenceId(18), ReferenceId(19)]
 
   x Symbol reference IDs mismatch:
   | after transform: SymbolId(12): [ReferenceId(33), ReferenceId(34),
   | ReferenceId(36)]
-  | rebuilt        : SymbolId(3): [ReferenceId(10), ReferenceId(13)]
+  | rebuilt        : SymbolId(3): [ReferenceId(22), ReferenceId(25)]
 
   x Symbol reference IDs mismatch:
   | after transform: SymbolId(13): [ReferenceId(37), ReferenceId(38),
-  | ReferenceId(40)]
-  | rebuilt        : SymbolId(4): [ReferenceId(22), ReferenceId(25)]
+  | ReferenceId(39), ReferenceId(40)]
+  | rebuilt        : SymbolId(4): [ReferenceId(29), ReferenceId(32),
+  | ReferenceId(33)]
 
   x Symbol reference IDs mismatch:
   | after transform: SymbolId(14): [ReferenceId(41), ReferenceId(42),
@@ -220,7 +300,7 @@ Passed: 10/36
   | rebuilt        : ReferenceId(1): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(29): Some("_s3")
+  | after transform: ReferenceId(30): Some("_s3")
   | rebuilt        : ReferenceId(2): None
 
   x Reference symbol mismatch:
@@ -267,28 +347,12 @@ Passed: 10/36
 
 * refresh/does-not-consider-require-like-methods-to-be-hocs/input.jsx
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(0): [ReferenceId(6), ReferenceId(12)]
-  | rebuilt        : SymbolId(2): [ReferenceId(8)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(1): [ReferenceId(7), ReferenceId(14)]
-  | rebuilt        : SymbolId(3): [ReferenceId(10)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(2): [ReferenceId(8), ReferenceId(16)]
-  | rebuilt        : SymbolId(4): [ReferenceId(12)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(3): [ReferenceId(9), ReferenceId(18)]
-  | rebuilt        : SymbolId(5): [ReferenceId(14)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(5): [ReferenceId(10), ReferenceId(21),
-  | ReferenceId(22)]
+  | after transform: SymbolId(5): [ReferenceId(10), ReferenceId(17),
+  | ReferenceId(18)]
   | rebuilt        : SymbolId(7): [ReferenceId(15), ReferenceId(18)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(21): Some("_c")
+  | after transform: ReferenceId(17): Some("_c")
   | rebuilt        : ReferenceId(17): None
 
   x Unresolved references mismatch:
@@ -454,13 +518,11 @@ Passed: 10/36
 
 
 * refresh/generates-valid-signature-for-exotic-ways-to-call-hooks/input.jsx
+  x Missing ScopeId
+
   x Scope children mismatch:
   | after transform: ScopeId(0): [ScopeId(1)]
   | rebuilt        : ScopeId(0): [ScopeId(1), ScopeId(3)]
-
-  x Bindings mismatch:
-  | after transform: No scope
-  | rebuilt        : ScopeId(3): []
 
   x Symbol reference IDs mismatch:
   | after transform: SymbolId(10): [ReferenceId(17), ReferenceId(18),
@@ -468,8 +530,8 @@ Passed: 10/36
   | rebuilt        : SymbolId(0): [ReferenceId(1), ReferenceId(16)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(9): [ReferenceId(12), ReferenceId(13),
-  | ReferenceId(15)]
+  | after transform: SymbolId(8): [ReferenceId(11), ReferenceId(12),
+  | ReferenceId(14)]
   | rebuilt        : SymbolId(4): [ReferenceId(3), ReferenceId(7)]
 
   x Symbol reference IDs mismatch:
@@ -482,7 +544,7 @@ Passed: 10/36
   | rebuilt        : ReferenceId(0): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(12): Some("_s")
+  | after transform: ReferenceId(11): Some("_s")
   | rebuilt        : ReferenceId(2): None
 
   x Reference symbol mismatch:
@@ -496,27 +558,23 @@ Passed: 10/36
 
 
 * refresh/includes-custom-hooks-into-the-signatures/input.jsx
+  x Missing ScopeId
+
+  x Missing ScopeId
+
   x Scope children mismatch:
   | after transform: ScopeId(0): [ScopeId(1), ScopeId(2), ScopeId(4)]
   | rebuilt        : ScopeId(0): [ScopeId(1), ScopeId(2), ScopeId(3),
   | ScopeId(5), ScopeId(6)]
 
-  x Bindings mismatch:
-  | after transform: No scope
-  | rebuilt        : ScopeId(2): []
-
-  x Bindings mismatch:
-  | after transform: No scope
-  | rebuilt        : ScopeId(6): []
-
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(8): [ReferenceId(10), ReferenceId(11),
-  | ReferenceId(13)]
+  | after transform: SymbolId(7): [ReferenceId(9), ReferenceId(10),
+  | ReferenceId(12)]
   | rebuilt        : SymbolId(1): [ReferenceId(3), ReferenceId(7)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(9): [ReferenceId(14), ReferenceId(15),
-  | ReferenceId(17)]
+  | after transform: SymbolId(8): [ReferenceId(13), ReferenceId(14),
+  | ReferenceId(16)]
   | rebuilt        : SymbolId(2): [ReferenceId(10), ReferenceId(12)]
 
   x Symbol reference IDs mismatch:
@@ -530,11 +588,11 @@ Passed: 10/36
   | rebuilt        : SymbolId(10): [ReferenceId(21), ReferenceId(24)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(10): Some("_s")
+  | after transform: ReferenceId(9): Some("_s")
   | rebuilt        : ReferenceId(0): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(14): Some("_s2")
+  | after transform: ReferenceId(13): Some("_s2")
   | rebuilt        : ReferenceId(1): None
 
   x Reference symbol mismatch:
@@ -599,99 +657,57 @@ Passed: 10/36
 * refresh/registers-identifiers-used-in-jsx-at-definition-site/input.jsx
   x Output mismatch
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(0): [ReferenceId(5), ReferenceId(7),
-  | ReferenceId(8), ReferenceId(9), ReferenceId(19), ReferenceId(21),
-  | ReferenceId(34)]
-  | rebuilt        : SymbolId(0): [ReferenceId(9), ReferenceId(13),
-  | ReferenceId(14), ReferenceId(17), ReferenceId(37), ReferenceId(41)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(2): [ReferenceId(16), ReferenceId(23),
-  | ReferenceId(48)]
-  | rebuilt        : SymbolId(4): [ReferenceId(3), ReferenceId(31)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(3): [ReferenceId(11), ReferenceId(25),
-  | ReferenceId(38)]
-  | rebuilt        : SymbolId(5): [ReferenceId(6), ReferenceId(21)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(4): [ReferenceId(12), ReferenceId(40)]
-  | rebuilt        : SymbolId(6): [ReferenceId(23)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(5): [ReferenceId(13), ReferenceId(42)]
-  | rebuilt        : SymbolId(7): [ReferenceId(25)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(7): [ReferenceId(14), ReferenceId(44)]
-  | rebuilt        : SymbolId(9): [ReferenceId(27)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(8): [ReferenceId(15), ReferenceId(46)]
-  | rebuilt        : SymbolId(10): [ReferenceId(29)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(9): [ReferenceId(17), ReferenceId(50)]
-  | rebuilt        : SymbolId(11): [ReferenceId(33)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(11): [ReferenceId(10), ReferenceId(31),
-  | ReferenceId(36)]
-  | rebuilt        : SymbolId(13): [ReferenceId(19), ReferenceId(39)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(13): [ReferenceId(22), ReferenceId(53),
-  | ReferenceId(54)]
+  | after transform: SymbolId(13): [ReferenceId(22), ReferenceId(44),
+  | ReferenceId(45)]
   | rebuilt        : SymbolId(15): [ReferenceId(2), ReferenceId(45)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(14): [ReferenceId(24), ReferenceId(55),
-  | ReferenceId(56)]
+  | after transform: SymbolId(14): [ReferenceId(24), ReferenceId(46),
+  | ReferenceId(47)]
   | rebuilt        : SymbolId(16): [ReferenceId(5), ReferenceId(47)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(15): [ReferenceId(26), ReferenceId(57),
-  | ReferenceId(58)]
+  | after transform: SymbolId(15): [ReferenceId(26), ReferenceId(48),
+  | ReferenceId(49)]
   | rebuilt        : SymbolId(17): [ReferenceId(11), ReferenceId(49)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(16): [ReferenceId(28), ReferenceId(59),
-  | ReferenceId(60)]
+  | after transform: SymbolId(16): [ReferenceId(28), ReferenceId(50),
+  | ReferenceId(51)]
   | rebuilt        : SymbolId(18): [ReferenceId(34), ReferenceId(51)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(17): [ReferenceId(30), ReferenceId(61),
-  | ReferenceId(62)]
+  | after transform: SymbolId(17): [ReferenceId(30), ReferenceId(52),
+  | ReferenceId(53)]
   | rebuilt        : SymbolId(19): [ReferenceId(38), ReferenceId(53)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(18): [ReferenceId(32), ReferenceId(63),
-  | ReferenceId(64)]
+  | after transform: SymbolId(18): [ReferenceId(32), ReferenceId(54),
+  | ReferenceId(55)]
   | rebuilt        : SymbolId(20): [ReferenceId(42), ReferenceId(55)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(53): Some("_c")
+  | after transform: ReferenceId(44): Some("_c")
   | rebuilt        : ReferenceId(44): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(55): Some("_c2")
+  | after transform: ReferenceId(46): Some("_c2")
   | rebuilt        : ReferenceId(46): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(57): Some("_c3")
+  | after transform: ReferenceId(48): Some("_c3")
   | rebuilt        : ReferenceId(48): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(59): Some("_c4")
+  | after transform: ReferenceId(50): Some("_c4")
   | rebuilt        : ReferenceId(50): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(61): Some("_c5")
+  | after transform: ReferenceId(52): Some("_c5")
   | rebuilt        : ReferenceId(52): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(63): Some("_c6")
+  | after transform: ReferenceId(54): Some("_c6")
   | rebuilt        : ReferenceId(54): None
 
   x Unresolved references mismatch:
@@ -955,35 +971,30 @@ Passed: 10/36
 
 * refresh/registers-top-level-exported-function-declarations/input.jsx
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(0): [ReferenceId(1), ReferenceId(5),
-  | ReferenceId(11)]
-  | rebuilt        : SymbolId(1): [ReferenceId(3), ReferenceId(5)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(7): [ReferenceId(4), ReferenceId(14),
-  | ReferenceId(15)]
+  | after transform: SymbolId(7): [ReferenceId(4), ReferenceId(13),
+  | ReferenceId(14)]
   | rebuilt        : SymbolId(8): [ReferenceId(2), ReferenceId(14)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(8): [ReferenceId(6), ReferenceId(16),
-  | ReferenceId(17)]
+  | after transform: SymbolId(8): [ReferenceId(6), ReferenceId(15),
+  | ReferenceId(16)]
   | rebuilt        : SymbolId(9): [ReferenceId(6), ReferenceId(16)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(9): [ReferenceId(8), ReferenceId(18),
-  | ReferenceId(19)]
+  | after transform: SymbolId(9): [ReferenceId(8), ReferenceId(17),
+  | ReferenceId(18)]
   | rebuilt        : SymbolId(10): [ReferenceId(9), ReferenceId(18)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(14): Some("_c")
+  | after transform: ReferenceId(13): Some("_c")
   | rebuilt        : ReferenceId(13): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(16): Some("_c2")
+  | after transform: ReferenceId(15): Some("_c2")
   | rebuilt        : ReferenceId(15): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(18): Some("_c3")
+  | after transform: ReferenceId(17): Some("_c3")
   | rebuilt        : ReferenceId(17): None
 
   x Unresolved references mismatch:
@@ -993,27 +1004,21 @@ Passed: 10/36
 
 * refresh/registers-top-level-exported-named-arrow-functions/input.jsx
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(0): [ReferenceId(1), ReferenceId(2),
-  | ReferenceId(4), ReferenceId(8), ReferenceId(10)]
-  | rebuilt        : SymbolId(1): [ReferenceId(3), ReferenceId(5),
-  | ReferenceId(9)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(4): [ReferenceId(3), ReferenceId(12),
-  | ReferenceId(13)]
+  | after transform: SymbolId(4): [ReferenceId(3), ReferenceId(10),
+  | ReferenceId(11)]
   | rebuilt        : SymbolId(5): [ReferenceId(2), ReferenceId(11)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(5): [ReferenceId(5), ReferenceId(14),
-  | ReferenceId(15)]
+  | after transform: SymbolId(5): [ReferenceId(5), ReferenceId(12),
+  | ReferenceId(13)]
   | rebuilt        : SymbolId(6): [ReferenceId(6), ReferenceId(13)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(12): Some("_c")
+  | after transform: ReferenceId(10): Some("_c")
   | rebuilt        : ReferenceId(10): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(14): Some("_c2")
+  | after transform: ReferenceId(12): Some("_c2")
   | rebuilt        : ReferenceId(12): None
 
   x Unresolved references mismatch:
@@ -1023,26 +1028,21 @@ Passed: 10/36
 
 * refresh/registers-top-level-function-declarations/input.jsx
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(0): [ReferenceId(1), ReferenceId(3),
-  | ReferenceId(7)]
-  | rebuilt        : SymbolId(1): [ReferenceId(3), ReferenceId(5)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(3): [ReferenceId(2), ReferenceId(9),
-  | ReferenceId(10)]
+  | after transform: SymbolId(3): [ReferenceId(2), ReferenceId(8),
+  | ReferenceId(9)]
   | rebuilt        : SymbolId(4): [ReferenceId(2), ReferenceId(9)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(4): [ReferenceId(4), ReferenceId(11),
-  | ReferenceId(12)]
+  | after transform: SymbolId(4): [ReferenceId(4), ReferenceId(10),
+  | ReferenceId(11)]
   | rebuilt        : SymbolId(5): [ReferenceId(6), ReferenceId(11)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(9): Some("_c")
+  | after transform: ReferenceId(8): Some("_c")
   | rebuilt        : ReferenceId(8): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(11): Some("_c2")
+  | after transform: ReferenceId(10): Some("_c2")
   | rebuilt        : ReferenceId(10): None
 
   x Unresolved references mismatch:
@@ -1052,35 +1052,30 @@ Passed: 10/36
 
 * refresh/registers-top-level-variable-declarations-with-arrow-functions/input.jsx
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(0): [ReferenceId(1), ReferenceId(3),
-  | ReferenceId(9)]
-  | rebuilt        : SymbolId(1): [ReferenceId(3), ReferenceId(5)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(5): [ReferenceId(2), ReferenceId(12),
-  | ReferenceId(13)]
+  | after transform: SymbolId(5): [ReferenceId(2), ReferenceId(11),
+  | ReferenceId(12)]
   | rebuilt        : SymbolId(6): [ReferenceId(2), ReferenceId(12)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(6): [ReferenceId(4), ReferenceId(14),
-  | ReferenceId(15)]
+  | after transform: SymbolId(6): [ReferenceId(4), ReferenceId(13),
+  | ReferenceId(14)]
   | rebuilt        : SymbolId(7): [ReferenceId(6), ReferenceId(14)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(7): [ReferenceId(6), ReferenceId(16),
-  | ReferenceId(17)]
+  | after transform: SymbolId(7): [ReferenceId(6), ReferenceId(15),
+  | ReferenceId(16)]
   | rebuilt        : SymbolId(8): [ReferenceId(9), ReferenceId(16)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(12): Some("_c")
+  | after transform: ReferenceId(11): Some("_c")
   | rebuilt        : ReferenceId(11): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(14): Some("_c2")
+  | after transform: ReferenceId(13): Some("_c2")
   | rebuilt        : ReferenceId(13): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(16): Some("_c3")
+  | after transform: ReferenceId(15): Some("_c3")
   | rebuilt        : ReferenceId(15): None
 
   x Unresolved references mismatch:
@@ -1090,26 +1085,21 @@ Passed: 10/36
 
 * refresh/registers-top-level-variable-declarations-with-function-expressions/input.jsx
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(0): [ReferenceId(1), ReferenceId(3),
-  | ReferenceId(7)]
-  | rebuilt        : SymbolId(1): [ReferenceId(3), ReferenceId(5)]
-
-  x Symbol reference IDs mismatch:
-  | after transform: SymbolId(7): [ReferenceId(2), ReferenceId(9),
-  | ReferenceId(10)]
+  | after transform: SymbolId(7): [ReferenceId(2), ReferenceId(8),
+  | ReferenceId(9)]
   | rebuilt        : SymbolId(8): [ReferenceId(2), ReferenceId(9)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(8): [ReferenceId(4), ReferenceId(11),
-  | ReferenceId(12)]
+  | after transform: SymbolId(8): [ReferenceId(4), ReferenceId(10),
+  | ReferenceId(11)]
   | rebuilt        : SymbolId(9): [ReferenceId(6), ReferenceId(11)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(9): Some("_c")
+  | after transform: ReferenceId(8): Some("_c")
   | rebuilt        : ReferenceId(8): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(11): Some("_c2")
+  | after transform: ReferenceId(10): Some("_c2")
   | rebuilt        : ReferenceId(10): None
 
   x Unresolved references mismatch:
@@ -1119,176 +1109,127 @@ Passed: 10/36
 
 * refresh/supports-typescript-namespace-syntax/input.tsx
   x Output mismatch
-  x Semantic Collector failed after transform
-
   x Missing SymbolId: Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing SymbolId: _Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing SymbolId: Bar
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing SymbolId: _Bar
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: _Bar
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: _Bar
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: Bar
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: Bar
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: _Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: _Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: _Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: _Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: D
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing SymbolId: NotExported
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing SymbolId: _NotExported
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: _NotExported
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: NotExported
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: NotExported
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
 
   x Missing ReferenceId: Foo
-   ,-[tasks/transform_conformance/tests/babel-plugin-transform-react-jsx/test/fixtures/refresh/supports-typescript-namespace-syntax/input.tsx:1:1]
- 1 | namespace Foo {
-   : ^
- 2 |   export namespace Bar {
-   `----
+
+  x Binding symbols mismatch:
+  | after transform: ScopeId(0): [SymbolId(0)]
+  | rebuilt        : ScopeId(0): [SymbolId(0)]
+
+  x Binding symbols mismatch:
+  | after transform: ScopeId(1): [SymbolId(1), SymbolId(5), SymbolId(6),
+  | SymbolId(7), SymbolId(9)]
+  | rebuilt        : ScopeId(1): [SymbolId(1), SymbolId(2), SymbolId(7),
+  | SymbolId(8), SymbolId(9)]
+
+  x Binding symbols mismatch:
+  | after transform: ScopeId(2): [SymbolId(2), SymbolId(3), SymbolId(4),
+  | SymbolId(10)]
+  | rebuilt        : ScopeId(2): [SymbolId(3), SymbolId(4), SymbolId(5),
+  | SymbolId(6)]
+
+  x Binding symbols mismatch:
+  | after transform: ScopeId(7): [SymbolId(8), SymbolId(11)]
+  | rebuilt        : ScopeId(7): [SymbolId(10), SymbolId(11)]
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(2): SymbolFlags(BlockScopedVariable |
+  | ConstVariable | Export | ArrowFunction)
+  | rebuilt        : SymbolId(4): SymbolFlags(BlockScopedVariable |
+  | ConstVariable)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(3): SymbolFlags(BlockScopedVariable | Function)
+  | rebuilt        : SymbolId(5): SymbolFlags(FunctionScopedVariable)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(4): SymbolFlags(BlockScopedVariable |
+  | ConstVariable | Export)
+  | rebuilt        : SymbolId(6): SymbolFlags(BlockScopedVariable |
+  | ConstVariable)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(5): SymbolFlags(BlockScopedVariable |
+  | ConstVariable | Export | ArrowFunction)
+  | rebuilt        : SymbolId(7): SymbolFlags(BlockScopedVariable |
+  | ConstVariable)
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(6): SymbolFlags(BlockScopedVariable | Export
+  | | Function)
+  | rebuilt        : SymbolId(8): SymbolFlags(FunctionScopedVariable)
+
+  x Symbol reference IDs mismatch:
+  | after transform: SymbolId(6): []
+  | rebuilt        : SymbolId(8): [ReferenceId(9)]
+
+  x Symbol flags mismatch:
+  | after transform: SymbolId(8): SymbolFlags(BlockScopedVariable |
+  | ConstVariable | Export | ArrowFunction)
+  | rebuilt        : SymbolId(11): SymbolFlags(BlockScopedVariable |
+  | ConstVariable)
 
 
 * refresh/uses-custom-identifiers-for-refresh-reg-and-refresh-sig/input.jsx
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(3): [ReferenceId(7), ReferenceId(8),
-  | ReferenceId(10)]
+  | after transform: SymbolId(3): [ReferenceId(6), ReferenceId(7),
+  | ReferenceId(9)]
   | rebuilt        : SymbolId(1): [ReferenceId(1), ReferenceId(6)]
 
   x Symbol reference IDs mismatch:
-  | after transform: SymbolId(1): [ReferenceId(3), ReferenceId(11),
-  | ReferenceId(12)]
+  | after transform: SymbolId(1): [ReferenceId(3), ReferenceId(10),
+  | ReferenceId(11)]
   | rebuilt        : SymbolId(3): [ReferenceId(8), ReferenceId(11)]
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(7): Some("_s")
+  | after transform: ReferenceId(6): Some("_s")
   | rebuilt        : ReferenceId(0): None
 
   x Reference symbol mismatch:
-  | after transform: ReferenceId(11): Some("_c")
+  | after transform: ReferenceId(10): Some("_c")
   | rebuilt        : ReferenceId(10): None
 
   x Unresolved references mismatch:
   | after transform: ["Foo", "X", "useContext"]
   | rebuilt        : ["Foo", "X", "import.meta.refreshReg",
   | "import.meta.refreshSig", "useContext"]
-
-  x Unresolved reference IDs mismatch for "Foo":
-  | after transform: [ReferenceId(2), ReferenceId(5)]
-  | rebuilt        : [ReferenceId(5)]
 
 
 * refresh/uses-original-function-declaration-if-it-get-reassigned/input.jsx

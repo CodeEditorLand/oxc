@@ -12,7 +12,10 @@ use oxc_span::Span;
 
 use crate::{
     context::LintContext,
-    utils::jest::{is_pure_string, JestFnKind, JestGeneralFnKind, PossibleJestNode},
+    utils::{
+        jest::{is_pure_string, JestFnKind, JestGeneralFnKind, PossibleJestNode},
+        vitest::VALID_VITEST_FN_CALL_CHAINS,
+    },
 };
 
 pub fn parse_jest_fn_call<'a>(
@@ -100,7 +103,12 @@ pub fn parse_jest_fn_call<'a>(
 
         let mut call_chains = Vec::from([Cow::Borrowed(name)]);
         call_chains.extend(members.iter().filter_map(KnownMemberExpressionProperty::name));
-        if !is_valid_jest_call(&call_chains) {
+
+        if ctx.frameworks().is_jest() && !is_valid_jest_call(&call_chains) {
+            return None;
+        }
+
+        if ctx.frameworks().is_vitest() && !is_valid_vitest_call(&call_chains) {
             return None;
         }
 
@@ -138,8 +146,10 @@ fn parse_jest_expect_fn_call<'a>(
         }
     }
 
+    let kind = if is_type_of { JestFnKind::ExpectTypeOf } else { JestFnKind::Expect };
+
     let parsed_expect_fn = ParsedExpectFnCall {
-        kind: JestFnKind::Expect,
+        kind,
         head,
         members,
         name: Cow::Borrowed(name),
@@ -298,6 +308,10 @@ fn is_valid_jest_call(members: &[Cow<str>]) -> bool {
         .is_ok()
 }
 
+fn is_valid_vitest_call(members: &[Cow<str>]) -> bool {
+    VALID_VITEST_FN_CALL_CHAINS.contains(&members.join("."))
+}
+
 fn resolve_to_jest_fn<'a>(
     call_expr: &'a CallExpression<'a>,
     original: Option<&'a str>,
@@ -318,6 +332,7 @@ fn resolve_first_ident<'a>(expr: &'a Expression<'a>) -> Option<&'a IdentifierRef
     }
 }
 
+#[derive(Debug)]
 pub enum ParsedJestFnCall<'a> {
     GeneralJest(ParsedGeneralJestFnCall<'a>),
     Expect(ParsedExpectFnCall<'a>),
@@ -333,6 +348,7 @@ impl<'a> ParsedJestFnCall<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct ParsedGeneralJestFnCall<'a> {
     pub kind: JestFnKind,
     pub members: Vec<KnownMemberExpressionProperty<'a>>,

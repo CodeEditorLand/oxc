@@ -1,5 +1,5 @@
 use oxc_ast::{
-    ast::{JSXAttributeItem, JSXAttributeName, JSXElementName},
+    ast::{JSXAttributeItem, JSXAttributeName},
     AstKind,
 };
 use oxc_diagnostics::OxcDiagnostic;
@@ -9,8 +9,8 @@ use oxc_span::Span;
 
 use crate::{context::LintContext, rule::Rule, AstNode};
 
-fn text_encoding_identifier_case_diagnostic(span0: Span, x1: &str, x2: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("Prefer `{x1}` over `{x2}`.")).with_label(span0)
+fn text_encoding_identifier_case_diagnostic(span: Span, x1: &str, x2: &str) -> OxcDiagnostic {
+    OxcDiagnostic::warn(format!("Prefer `{x1}` over `{x2}`.")).with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -118,11 +118,9 @@ fn is_jsx_meta_elem_with_charset_attr(id: AstNodeId, ctx: &LintContext) -> bool 
         return false;
     };
 
-    let JSXElementName::Identifier(name) = &opening_elem.name else {
-        return false;
-    };
+    let Some(tag_name) = opening_elem.name.get_identifier_name() else { return false };
 
-    if !name.name.eq_ignore_ascii_case("meta") {
+    if !tag_name.eq_ignore_ascii_case("meta") {
         return false;
     }
 

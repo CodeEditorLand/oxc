@@ -37,7 +37,7 @@ fn assert_generated_derives(attrs: &[syn::Attribute]) -> TokenStream2 {
         .into_iter()
     }
 
-    // TODO: benchmark this to see if a lazy static cell would perform better.
+    // TODO: benchmark this to see if a lazy static cell containing `HashMap` would perform better.
     #[inline]
     fn abs_trait(
         ident: &syn::Ident,
@@ -48,8 +48,11 @@ fn assert_generated_derives(attrs: &[syn::Attribute]) -> TokenStream2 {
             (quote!(::oxc_span::GetSpan), TokenStream2::default())
         } else if ident == "GetSpanMut" {
             (quote!(::oxc_span::GetSpanMut), TokenStream2::default())
+        } else if ident == "ContentEq" {
+            (quote!(::oxc_span::cmp::ContentEq), quote!(<()>))
         } else {
-            panic!("Invalid derive trait(generate_derive): {ident}");
+            panic!("Invalid derive trait(generate_derive): {ident}.\
+                    Help: If you are trying to implement a new `generate_derive` trait, Make sure to add it to the list above.");
         }
     }
 
@@ -166,33 +169,4 @@ pub fn ast(_args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Ast, attributes(scope, visit, span, generate_derive, clone_in, serde, tsify))]
 pub fn ast_derive(_item: TokenStream) -> TokenStream {
     TokenStream::new()
-}
-
-/// Derive macro generating an impl of the trait `CloneIn`.
-///
-/// NOTE: This is an internal macro!
-/// # Panics
-///
-#[proc_macro_derive(CloneIn)]
-pub fn derive_clone_in(item: TokenStream) -> TokenStream {
-    let item = syn::parse_macro_input!(item as syn::Item);
-    match &item {
-        syn::Item::Struct(syn::ItemStruct { ident, generics, .. })
-        | syn::Item::Enum(syn::ItemEnum { ident, generics, .. })
-            if generics.params.is_empty() =>
-        {
-            quote! {
-                #[automatically_derived]
-                impl<'alloc> ::oxc_allocator::CloneIn<'alloc> for #ident {
-                    type Cloned = #ident;
-
-                    fn clone_in(&self, _: &'alloc ::oxc_allocator::Allocator) -> Self::Cloned {
-                        std::clone::Clone::clone(self)
-                    }
-                }
-            }
-            .into()
-        }
-        _ => panic!("At the moment `CloneIn` derive macro only works for types without lifetimes and/or generic params"),
-    }
 }

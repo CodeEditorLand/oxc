@@ -1,12 +1,21 @@
 // Auto-generated code, DO NOT EDIT DIRECTLY!
-// To edit this generated file you have to edit `tasks/ast_tools/src/generators/derive_get_span.rs`
+// To edit this generated file you have to edit `tasks/ast_tools/src/derives/get_span.rs`
 
 #![allow(clippy::match_same_arms)]
 
-use oxc_span::GetSpan;
+use oxc_span::{GetSpan, Span};
 
 #[allow(clippy::wildcard_imports)]
-use crate::ast::*;
+use crate::ast::js::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::jsx::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::literal::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::ts::*;
 
 impl GetSpan for BooleanLiteral {
     #[inline]
@@ -642,7 +651,6 @@ impl<'a> GetSpan for Statement<'a> {
             Self::VariableDeclaration(it) => it.span(),
             Self::FunctionDeclaration(it) => it.span(),
             Self::ClassDeclaration(it) => it.span(),
-            Self::UsingDeclaration(it) => it.span(),
             Self::TSTypeAliasDeclaration(it) => it.span(),
             Self::TSInterfaceDeclaration(it) => it.span(),
             Self::TSEnumDeclaration(it) => it.span(),
@@ -685,7 +693,6 @@ impl<'a> GetSpan for Declaration<'a> {
             Self::VariableDeclaration(it) => it.span(),
             Self::FunctionDeclaration(it) => it.span(),
             Self::ClassDeclaration(it) => it.span(),
-            Self::UsingDeclaration(it) => it.span(),
             Self::TSTypeAliasDeclaration(it) => it.span(),
             Self::TSInterfaceDeclaration(it) => it.span(),
             Self::TSEnumDeclaration(it) => it.span(),
@@ -703,13 +710,6 @@ impl<'a> GetSpan for VariableDeclaration<'a> {
 }
 
 impl<'a> GetSpan for VariableDeclarator<'a> {
-    #[inline]
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl<'a> GetSpan for UsingDeclaration<'a> {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -762,7 +762,6 @@ impl<'a> GetSpan for ForStatementInit<'a> {
     fn span(&self) -> Span {
         match self {
             Self::VariableDeclaration(it) => it.span(),
-            Self::UsingDeclaration(it) => it.span(),
             Self::BooleanLiteral(it) => it.span(),
             Self::NullLiteral(it) => it.span(),
             Self::NumericLiteral(it) => it.span(),
@@ -820,7 +819,6 @@ impl<'a> GetSpan for ForStatementLeft<'a> {
     fn span(&self) -> Span {
         match self {
             Self::VariableDeclaration(it) => it.span(),
-            Self::UsingDeclaration(it) => it.span(),
             Self::AssignmentTargetIdentifier(it) => it.span(),
             Self::TSAsExpression(it) => it.span(),
             Self::TSSatisfiesExpression(it) => it.span(),
@@ -2041,6 +2039,7 @@ impl<'a> GetSpan for JSXElementName<'a> {
     fn span(&self) -> Span {
         match self {
             Self::Identifier(it) => it.span(),
+            Self::IdentifierReference(it) => it.span(),
             Self::NamespacedName(it) => it.span(),
             Self::MemberExpression(it) => it.span(),
         }
@@ -2064,7 +2063,7 @@ impl<'a> GetSpan for JSXMemberExpression<'a> {
 impl<'a> GetSpan for JSXMemberExpressionObject<'a> {
     fn span(&self) -> Span {
         match self {
-            Self::Identifier(it) => it.span(),
+            Self::IdentifierReference(it) => it.span(),
             Self::MemberExpression(it) => it.span(),
         }
     }

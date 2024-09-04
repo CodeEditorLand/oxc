@@ -1,8 +1,8 @@
-commit: 12619ffe
+commit: 3bcfee23
 
 semantic_babel Summary:
-AST Parsed     : 2100/2100 (100.00%)
-Positive Passed: 1735/2100 (82.62%)
+AST Parsed     : 2101/2101 (100.00%)
+Positive Passed: 1736/2101 (82.63%)
 tasks/coverage/babel/packages/babel-parser/test/fixtures/annex-b/enabled/3.3-function-in-if-body/input.js
 semantic error: Scope children mismatch:
 after transform: ScopeId(0): [ScopeId(1), ScopeId(2)]
@@ -803,12 +803,20 @@ after transform: SymbolId(3): SymbolFlags(Export | RegularEnum)
 rebuilt        : SymbolId(3): SymbolFlags(BlockScopedVariable | Export)
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/export/nested-same-name/input.ts
-semantic error: Semantic Collector failed after transform
-Missing SymbolId: N
+semantic error: Missing SymbolId: N
 Missing SymbolId: _N
 Missing ReferenceId: _N
 Missing ReferenceId: N
 Missing ReferenceId: N
+Binding symbols mismatch:
+after transform: ScopeId(0): [SymbolId(0), SymbolId(1)]
+rebuilt        : ScopeId(0): [SymbolId(0), SymbolId(1)]
+Binding symbols mismatch:
+after transform: ScopeId(1): [SymbolId(2), SymbolId(3)]
+rebuilt        : ScopeId(1): [SymbolId(2), SymbolId(3)]
+Symbol flags mismatch:
+after transform: SymbolId(2): SymbolFlags(BlockScopedVariable | ConstVariable | Export)
+rebuilt        : SymbolId(3): SymbolFlags(BlockScopedVariable | ConstVariable)
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/function/annotated/input.ts
 semantic error: Bindings mismatch:
@@ -870,12 +878,16 @@ after transform: ScopeId(0): [ScopeId(1), ScopeId(2)]
 rebuilt        : ScopeId(0): []
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/equals/input.ts
-semantic error: Semantic Collector failed after transform
-Missing SymbolId: A
+semantic error: Missing SymbolId: A
+Binding symbols mismatch:
+after transform: ScopeId(0): [SymbolId(0)]
+rebuilt        : ScopeId(0): [SymbolId(0)]
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/equals-in-unambiguous/input.ts
-semantic error: Semantic Collector failed after transform
-Missing SymbolId: A
+semantic error: Missing SymbolId: A
+Binding symbols mismatch:
+after transform: ScopeId(0): [SymbolId(0)]
+rebuilt        : ScopeId(0): [SymbolId(0)]
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/equals-require/input.ts
 semantic error: `import lib = require(...);` is only supported when compiling modules to CommonJS.
@@ -886,8 +898,10 @@ semantic error: `import lib = require(...);` is only supported when compiling mo
 Please consider using `import lib from '...';` alongside Typescript's --allowSyntheticDefaultImports option, or add @babel/plugin-transform-modules-commonjs to your Babel config.
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/export-import/input.ts
-semantic error: Semantic Collector failed after transform
-Missing SymbolId: A
+semantic error: Missing SymbolId: A
+Binding symbols mismatch:
+after transform: ScopeId(0): [SymbolId(0)]
+rebuilt        : ScopeId(0): [SymbolId(0)]
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/export-import-require/input.ts
 semantic error: `import lib = require(...);` is only supported when compiling modules to CommonJS.
@@ -1265,11 +1279,16 @@ after transform: ScopeId(0): [ScopeId(1), ScopeId(2), ScopeId(3)]
 rebuilt        : ScopeId(0): []
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/body/input.ts
-semantic error: Semantic Collector failed after transform
-Missing SymbolId: N
+semantic error: Missing SymbolId: N
 Missing SymbolId: _N
 Missing ReferenceId: N
 Missing ReferenceId: N
+Binding symbols mismatch:
+after transform: ScopeId(0): [SymbolId(0)]
+rebuilt        : ScopeId(0): [SymbolId(0)]
+Binding symbols mismatch:
+after transform: ScopeId(1): [SymbolId(1), SymbolId(2)]
+rebuilt        : ScopeId(1): [SymbolId(1), SymbolId(2)]
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/body-declare/input.ts
 semantic error: Bindings mismatch:
@@ -1666,8 +1685,19 @@ after transform: ScopeId(0): [ScopeId(1)]
 rebuilt        : ScopeId(0): []
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/scope/redeclaration-import-equals-var/input.ts
-semantic error: Semantic Collector failed after transform
-Missing SymbolId: a
+semantic error: Missing SymbolId: a
+Bindings mismatch:
+after transform: ScopeId(0): ["M", "a"]
+rebuilt        : ScopeId(0): ["a"]
+Scope children mismatch:
+after transform: ScopeId(0): [ScopeId(1)]
+rebuilt        : ScopeId(0): []
+Symbol flags mismatch:
+after transform: SymbolId(1): SymbolFlags(FunctionScopedVariable | Import)
+rebuilt        : SymbolId(0): SymbolFlags(FunctionScopedVariable)
+Symbol span mismatch:
+after transform: SymbolId(1): Span { start: 20, end: 21 }
+rebuilt        : SymbolId(0): Span { start: 0, end: 0 }
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/scope/redeclaration-import-let/input.ts
 semantic error: Symbol flags mismatch:
@@ -2023,10 +2053,7 @@ after transform: ["Generator"]
 rebuilt        : []
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/tsx/brace-is-block/input.tsx
-semantic error: Symbol reference IDs mismatch:
-after transform: SymbolId(0): [ReferenceId(2), ReferenceId(3)]
-rebuilt        : SymbolId(2): [ReferenceId(2)]
-Unresolved references mismatch:
+semantic error: Unresolved references mismatch:
 after transform: ["D", "T"]
 rebuilt        : ["D"]
 
@@ -2133,9 +2160,6 @@ rebuilt        : ScopeId(0): [ScopeId(1), ScopeId(2), ScopeId(3), ScopeId(4), Sc
 Unresolved references mismatch:
 after transform: ["f", "true"]
 rebuilt        : ["f"]
-Unresolved reference IDs mismatch for "f":
-after transform: [ReferenceId(0), ReferenceId(2), ReferenceId(4), ReferenceId(6), ReferenceId(8), ReferenceId(10), ReferenceId(13), ReferenceId(16), ReferenceId(17), ReferenceId(18), ReferenceId(19)]
-rebuilt        : [ReferenceId(0), ReferenceId(1), ReferenceId(2), ReferenceId(3), ReferenceId(4), ReferenceId(5), ReferenceId(7)]
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments/instantiation-expression-binary-operator/input.ts
 semantic error: Unresolved references mismatch:
@@ -2179,7 +2203,7 @@ rebuilt        : ["C"]
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments/tsx/input.ts
 semantic error: Unresolved reference IDs mismatch for "C":
-after transform: [ReferenceId(0), ReferenceId(1), ReferenceId(2), ReferenceId(3), ReferenceId(6)]
+after transform: [ReferenceId(0), ReferenceId(1), ReferenceId(2)]
 rebuilt        : [ReferenceId(1), ReferenceId(4)]
 
 tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments/whitespace/input.ts

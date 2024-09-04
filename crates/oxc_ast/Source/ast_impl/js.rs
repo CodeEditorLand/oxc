@@ -4,7 +4,9 @@ use std::{borrow::Cow, cell::Cell, fmt, hash::Hash};
 
 use oxc_allocator::{Box, FromIn, Vec};
 use oxc_span::{Atom, GetSpan, SourceType, Span};
-use oxc_syntax::{operator::UnaryOperator, reference::ReferenceId, scope::ScopeFlags};
+use oxc_syntax::{
+    operator::UnaryOperator, reference::ReferenceId, scope::ScopeFlags, symbol::SymbolId,
+};
 
 #[cfg(feature = "serialize")]
 #[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
@@ -763,7 +765,6 @@ impl<'a> Declaration<'a> {
             Self::VariableDeclaration(decl) => decl.is_typescript_syntax(),
             Self::FunctionDeclaration(func) => func.is_typescript_syntax(),
             Self::ClassDeclaration(class) => class.is_typescript_syntax(),
-            Self::UsingDeclaration(_) => false,
             _ => true,
         }
     }
@@ -789,7 +790,7 @@ impl<'a> Declaration<'a> {
             Declaration::TSTypeAliasDeclaration(decl) => decl.declare,
             Declaration::TSModuleDeclaration(decl) => decl.declare,
             Declaration::TSInterfaceDeclaration(decl) => decl.declare,
-            _ => false,
+            Declaration::TSImportEqualsDeclaration(_) => false,
         }
     }
 }
@@ -817,11 +818,17 @@ impl VariableDeclarationKind {
         matches!(self, Self::Const | Self::Let)
     }
 
+    pub fn is_await(&self) -> bool {
+        matches!(self, Self::AwaitUsing)
+    }
+
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Var => "var",
             Self::Const => "const",
             Self::Let => "let",
+            Self::Using => "using",
+            Self::AwaitUsing => "await using",
         }
     }
 }
@@ -1023,7 +1030,7 @@ impl<'a> Function<'a> {
         generator: bool,
         r#async: bool,
         declare: bool,
-        this_param: Option<TSThisParameter<'a>>,
+        this_param: Option<Box<'a, TSThisParameter<'a>>>,
         params: Box<'a, FormalParameters<'a>>,
         body: Option<Box<'a, FunctionBody<'a>>>,
         type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
@@ -1043,6 +1050,20 @@ impl<'a> Function<'a> {
             return_type,
             scope_id: Cell::default(),
         }
+    }
+
+    /// Returns this [`Function`]'s name, if it has one.
+    #[inline]
+    pub fn name(&self) -> Option<Atom<'a>> {
+        self.id.as_ref().map(|id| id.name.clone())
+    }
+
+    /// Get the [`SymbolId`] this [`Function`] is bound to.
+    ///
+    /// Returns [`None`] for anonymous functions, or if semantic analysis was skipped.
+    #[inline]
+    pub fn symbol_id(&self) -> Option<SymbolId> {
+        self.id.as_ref().and_then(|id| id.symbol_id.get())
     }
 
     pub fn is_typescript_syntax(&self) -> bool {

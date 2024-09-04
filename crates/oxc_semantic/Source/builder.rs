@@ -2,7 +2,7 @@
 
 use std::{
     cell::{Cell, RefCell},
-    path::PathBuf,
+    path::Path,
     sync::Arc,
 };
 
@@ -186,6 +186,12 @@ impl<'a> SemanticBuilder<'a> {
         self
     }
 
+    #[must_use]
+    pub fn with_scope_tree_child_ids(mut self, yes: bool) -> Self {
+        self.scope.build_child_ids = yes;
+        self
+    }
+
     /// Get the built module record from `build_module_record`
     pub fn module_record(&self) -> Arc<ModuleRecord> {
         Arc::clone(&self.module_record)
@@ -195,10 +201,11 @@ impl<'a> SemanticBuilder<'a> {
     #[must_use]
     pub fn build_module_record(
         mut self,
-        resolved_absolute_path: PathBuf,
+        resolved_absolute_path: &Path,
         program: &Program<'a>,
     ) -> Self {
-        let mut module_record_builder = ModuleRecordBuilder::new(resolved_absolute_path);
+        let mut module_record_builder =
+            ModuleRecordBuilder::new(resolved_absolute_path.to_path_buf());
         module_record_builder.visit(program);
         self.module_record = Arc::new(module_record_builder.build());
         self
@@ -209,7 +216,7 @@ impl<'a> SemanticBuilder<'a> {
     /// # Panics
     pub fn build(mut self, program: &Program<'a>) -> SemanticBuilderReturn<'a> {
         if self.source_type.is_typescript_definition() {
-            let scope_id = self.scope.add_root_scope(AstNodeId::DUMMY, ScopeFlags::Top);
+            let scope_id = self.scope.add_scope(None, AstNodeId::DUMMY, ScopeFlags::Top);
             program.scope_id.set(Some(scope_id));
         } else {
             // Count the number of nodes, scopes, symbols, and references.
@@ -548,7 +555,8 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
     fn enter_scope(&mut self, flags: ScopeFlags, scope_id: &Cell<Option<ScopeId>>) {
         let parent_scope_id = self.current_scope_id;
         let flags = self.scope.get_new_scope_flags(flags, parent_scope_id);
-        self.current_scope_id = self.scope.add_scope(parent_scope_id, self.current_node_id, flags);
+        self.current_scope_id =
+            self.scope.add_scope(Some(parent_scope_id), self.current_node_id, flags);
         scope_id.set(Some(self.current_scope_id));
 
         self.unresolved_references.increment_scope_depth();
@@ -617,7 +625,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         if program.is_strict() {
             flags |= ScopeFlags::StrictMode;
         }
-        self.current_scope_id = self.scope.add_root_scope(self.current_node_id, flags);
+        self.current_scope_id = self.scope.add_scope(None, self.current_node_id, flags);
         program.scope_id.set(Some(self.current_scope_id));
         // NB: Don't call `self.unresolved_references.increment_scope_depth()`
         // as scope depth is initialized as 1 already (the scope depth for `Program`).
@@ -653,7 +661,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         let node_id = self.current_node_id;
         /* cfg */
 
-        if let Some(ref break_target) = stmt.label {
+        if let Some(break_target) = &stmt.label {
             self.visit_label_identifier(break_target);
         }
 
@@ -1715,10 +1723,8 @@ impl<'a> SemanticBuilder<'a> {
             AstKind::ExportDefaultDeclaration(decl) => {
                 // Only if the declaration has an ID, we mark it as an export
                 if match &decl.declaration {
-                    ExportDefaultDeclarationKind::FunctionDeclaration(ref func) => {
-                        func.id.is_some()
-                    }
-                    ExportDefaultDeclarationKind::ClassDeclaration(ref class) => class.id.is_some(),
+                    ExportDefaultDeclarationKind::FunctionDeclaration(func) => func.id.is_some(),
+                    ExportDefaultDeclarationKind::ClassDeclaration(class) => class.id.is_some(),
                     ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => true,
                     _ => false,
                 } {
@@ -1864,9 +1870,6 @@ impl<'a> SemanticBuilder<'a> {
             AstKind::IdentifierReference(ident) => {
                 self.reference_identifier(ident);
             }
-            AstKind::JSXIdentifier(ident) => {
-                self.reference_jsx_identifier(ident);
-            }
             AstKind::UpdateExpression(_) => {
                 if !self.current_reference_flags.is_type()
                     && self.is_not_expression_statement_parent()
@@ -1995,25 +1998,23 @@ impl<'a> SemanticBuilder<'a> {
         }
     }
 
-    fn reference_jsx_identifier(&mut self, ident: &JSXIdentifier<'a>) {
-        match self.nodes.parent_kind(self.current_node_id) {
-            Some(AstKind::JSXElementName(_)) => {
-                if !ident.name.chars().next().is_some_and(char::is_uppercase) {
-                    return;
-                }
-            }
-            Some(AstKind::JSXMemberExpressionObject(_)) => {}
-            _ => return,
-        }
-        let reference = Reference::new(self.current_node_id, ReferenceFlags::read());
-        self.declare_reference(ident.name.clone(), reference);
-    }
-
     fn is_not_expression_statement_parent(&self) -> bool {
         for node in self.nodes.iter_parents(self.current_node_id).skip(1) {
             return match node.kind() {
                 AstKind::ParenthesizedExpression(_) => continue,
-                AstKind::ExpressionStatement(_) => false,
+                AstKind::ExpressionStatement(_) => {
+                    if self.current_scope_flags().is_arrow() {
+                        if let Some(node) = self.nodes.iter_parents(node.id()).nth(2) {
+                            // (x) => x++
+                            //        ^^^ implicit return, we need to treat `x` as a read reference
+                            if matches!(node.kind(), AstKind::ArrowFunctionExpression(arrow) if arrow.expression)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                    false
+                }
                 _ => true,
             };
         }

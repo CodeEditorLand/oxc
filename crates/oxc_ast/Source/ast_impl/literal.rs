@@ -10,7 +10,9 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use oxc_span::{Atom, Span};
+use oxc_allocator::CloneIn;
+use oxc_regular_expression::ast::Pattern;
+use oxc_span::{cmp::ContentEq, Atom, Span};
 use oxc_syntax::number::NumberBase;
 
 impl BooleanLiteral {
@@ -115,6 +117,70 @@ impl<'a> fmt::Display for BigIntLiteral<'a> {
 impl<'a> fmt::Display for RegExp<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "/{}/{}", self.pattern, self.flags)
+    }
+}
+
+impl<'a> RegExpPattern<'a> {
+    pub fn len(&self) -> usize {
+        match self {
+            Self::Raw(it) | Self::Invalid(it) => it.len(),
+            Self::Pattern(it) => it.span.size() as usize,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn source_text(&self, source_text: &'a str) -> &'a str {
+        match self {
+            Self::Raw(raw) | Self::Invalid(raw) => raw,
+            Self::Pattern(pat) => pat.span.source_text(source_text),
+        }
+    }
+
+    /// # Panics
+    /// If `self` is anything but `RegExpPattern::Pattern`.
+    pub fn require_pattern(&self) -> &Pattern<'a> {
+        if let Some(it) = self.as_pattern() {
+            it
+        } else {
+            unreachable!(
+                "Required `{}` to be `{}`",
+                stringify!(RegExpPattern),
+                stringify!(Pattern)
+            );
+        }
+    }
+
+    pub fn as_pattern(&self) -> Option<&Pattern<'a>> {
+        if let Self::Pattern(it) = self {
+            Some(it.as_ref())
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> fmt::Display for RegExpPattern<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Raw(it) | Self::Invalid(it) => write!(f, "{it}"),
+            Self::Pattern(it) => it.fmt(f),
+        }
+    }
+}
+
+impl ContentEq for RegExpFlags {
+    fn content_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl<'alloc> CloneIn<'alloc> for RegExpFlags {
+    type Cloned = Self;
+    fn clone_in(&self, _: &'alloc oxc_allocator::Allocator) -> Self::Cloned {
+        *self
     }
 }
 

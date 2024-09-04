@@ -9,7 +9,7 @@ use oxc::diagnostics::OxcDiagnostic;
 use oxc::minifier::CompressOptions;
 use oxc::parser::{ParseOptions, ParserReturn};
 use oxc::semantic::{
-    post_transform_checker::{check_semantic_after_transform, SemanticIds},
+    post_transform_checker::{check_semantic_after_transform, check_semantic_ids},
     SemanticBuilderReturn,
 };
 use oxc::span::{SourceType, Span};
@@ -41,6 +41,10 @@ impl CompilerInterface for Driver {
             allow_return_outside_function: self.allow_return_outside_function,
             ..ParseOptions::default()
         }
+    }
+
+    fn semantic_child_scope_ids(&self) -> bool {
+        true
     }
 
     fn transform_options(&self) -> Option<TransformOptions> {
@@ -77,8 +81,7 @@ impl CompilerInterface for Driver {
         _semantic_return: &mut SemanticBuilderReturn,
     ) -> ControlFlow<()> {
         if self.check_semantic {
-            let mut ids = SemanticIds::default();
-            if let Some(errors) = ids.check(program) {
+            if let Some(errors) = check_semantic_ids(program) {
                 self.errors.extend(errors);
                 return ControlFlow::Break(());
             }

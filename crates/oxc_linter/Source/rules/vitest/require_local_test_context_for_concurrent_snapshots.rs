@@ -39,10 +39,10 @@ fn is_test_or_describe_node(member_expr: &MemberExpression) -> bool {
     false
 }
 
-fn require_local_test_context_for_concurrent_snapshots_diagnostic(span0: Span) -> OxcDiagnostic {
+fn require_local_test_context_for_concurrent_snapshots_diagnostic(span: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("Require local Test Context for concurrent snapshot tests")
         .with_help("Use local Test Context instead")
-        .with_label(span0)
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -50,12 +50,21 @@ pub struct RequireLocalTestContextForConcurrentSnapshots;
 
 declare_oxc_lint!(
     /// ### What it does
-    /// The rule is intended to ensure that concurrent snapshot tests are executed within a properly configured local test context.
+    ///
+    /// The rule is intended to ensure that concurrent snapshot tests are executed
+    /// within a properly configured local test context.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// Running snapshot tests concurrently without a proper context can lead to
+    /// unreliable or inconsistent snapshots. Ensuring that concurrent tests are
+    /// correctly configured with the appropriate context helps maintain accurate
+    /// and stable snapshots, avoiding potential conflicts or failures.
     ///
     /// ### Examples
     ///
     /// Examples of **incorrect** code for this rule:
-    /// ```js
+    /// ```javascript
     /// test.concurrent('myLogic', () => {
     ///     expect(true).toMatchSnapshot();
     /// })
@@ -69,7 +78,7 @@ declare_oxc_lint!(
     /// ```
     ///
     /// Examples of **correct** code for this rule:
-    /// ```js
+    /// ```javascript
     /// test.concurrent('myLogic', ({ expect }) => {
     ///     expect(true).toMatchSnapshot();
     /// })

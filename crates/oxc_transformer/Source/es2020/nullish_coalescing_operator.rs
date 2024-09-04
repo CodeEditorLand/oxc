@@ -99,12 +99,11 @@ impl<'a> Traverse<'a> for NullishCoalescingOperator<'a> {
             return;
         }
 
-        // ctx.ancestor(1) is AssignmentPattern
-        // ctx.ancestor(2) is BindingPattern;
-        // ctx.ancestor(3) is FormalParameter
-        let is_parent_formal_parameter = ctx
-            .ancestor(3)
-            .is_some_and(|ancestor| matches!(ancestor, Ancestor::FormalParameterPattern(_)));
+        // ctx.ancestor(0) is AssignmentPattern
+        // ctx.ancestor(1) is BindingPattern
+        // ctx.ancestor(2) is FormalParameter
+        let is_parent_formal_parameter =
+            matches!(ctx.ancestor(2), Ancestor::FormalParameterPattern(_));
 
         let current_scope_id = if is_parent_formal_parameter {
             ctx.create_child_scope_of_current(ScopeFlags::Arrow | ScopeFlags::Function)
@@ -117,7 +116,7 @@ impl<'a> Traverse<'a> for NullishCoalescingOperator<'a> {
 
         let left =
             AssignmentTarget::from(ctx.ast.simple_assignment_target_from_identifier_reference(
-                ctx.clone_identifier_reference(&ident, ReferenceFlags::Write),
+                ctx.clone_identifier_reference(&ident, ReferenceFlags::read_write()),
             ));
 
         let reference = ctx.ast.expression_from_identifier_reference(ident);

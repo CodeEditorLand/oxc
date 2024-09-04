@@ -1,12 +1,21 @@
 // Auto-generated code, DO NOT EDIT DIRECTLY!
-// To edit this generated file you have to edit `tasks/ast_tools/src/generators/derive_clone_in.rs`
+// To edit this generated file you have to edit `tasks/ast_tools/src/derives/clone_in.rs`
 
 #![allow(clippy::default_trait_access)]
 
 use oxc_allocator::{Allocator, CloneIn};
 
 #[allow(clippy::wildcard_imports)]
-use crate::ast::*;
+use crate::ast::js::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::jsx::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::literal::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::ts::*;
 
 impl<'alloc> CloneIn<'alloc> for BooleanLiteral {
     type Cloned = BooleanLiteral;
@@ -63,6 +72,17 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExp<'old_alloc> {
     type Cloned = RegExp<'new_alloc>;
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         RegExp { pattern: self.pattern.clone_in(allocator), flags: self.flags.clone_in(allocator) }
+    }
+}
+
+impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExpPattern<'old_alloc> {
+    type Cloned = RegExpPattern<'new_alloc>;
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        match self {
+            Self::Raw(it) => RegExpPattern::Raw(it.clone_in(allocator)),
+            Self::Invalid(it) => RegExpPattern::Invalid(it.clone_in(allocator)),
+            Self::Pattern(it) => RegExpPattern::Pattern(it.clone_in(allocator)),
+        }
     }
 }
 
@@ -1078,7 +1098,6 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Statement<'old_alloc> {
             Self::VariableDeclaration(it) => Statement::VariableDeclaration(it.clone_in(allocator)),
             Self::FunctionDeclaration(it) => Statement::FunctionDeclaration(it.clone_in(allocator)),
             Self::ClassDeclaration(it) => Statement::ClassDeclaration(it.clone_in(allocator)),
-            Self::UsingDeclaration(it) => Statement::UsingDeclaration(it.clone_in(allocator)),
             Self::TSTypeAliasDeclaration(it) => {
                 Statement::TSTypeAliasDeclaration(it.clone_in(allocator))
             }
@@ -1148,7 +1167,6 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Declaration<'old_alloc> {
                 Declaration::FunctionDeclaration(it.clone_in(allocator))
             }
             Self::ClassDeclaration(it) => Declaration::ClassDeclaration(it.clone_in(allocator)),
-            Self::UsingDeclaration(it) => Declaration::UsingDeclaration(it.clone_in(allocator)),
             Self::TSTypeAliasDeclaration(it) => {
                 Declaration::TSTypeAliasDeclaration(it.clone_in(allocator))
             }
@@ -1185,6 +1203,8 @@ impl<'alloc> CloneIn<'alloc> for VariableDeclarationKind {
             Self::Var => VariableDeclarationKind::Var,
             Self::Const => VariableDeclarationKind::Const,
             Self::Let => VariableDeclarationKind::Let,
+            Self::Using => VariableDeclarationKind::Using,
+            Self::AwaitUsing => VariableDeclarationKind::AwaitUsing,
         }
     }
 }
@@ -1198,17 +1218,6 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for VariableDeclarator<'old_all
             id: self.id.clone_in(allocator),
             init: self.init.clone_in(allocator),
             definite: self.definite.clone_in(allocator),
-        }
-    }
-}
-
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for UsingDeclaration<'old_alloc> {
-    type Cloned = UsingDeclaration<'new_alloc>;
-    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        UsingDeclaration {
-            span: self.span.clone_in(allocator),
-            is_await: self.is_await.clone_in(allocator),
-            declarations: self.declarations.clone_in(allocator),
         }
     }
 }
@@ -1284,9 +1293,6 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'old_alloc
         match self {
             Self::VariableDeclaration(it) => {
                 ForStatementInit::VariableDeclaration(it.clone_in(allocator))
-            }
-            Self::UsingDeclaration(it) => {
-                ForStatementInit::UsingDeclaration(it.clone_in(allocator))
             }
             Self::BooleanLiteral(it) => ForStatementInit::BooleanLiteral(it.clone_in(allocator)),
             Self::NullLiteral(it) => ForStatementInit::NullLiteral(it.clone_in(allocator)),
@@ -1391,9 +1397,6 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForStatementLeft<'old_alloc
         match self {
             Self::VariableDeclaration(it) => {
                 ForStatementLeft::VariableDeclaration(it.clone_in(allocator))
-            }
-            Self::UsingDeclaration(it) => {
-                ForStatementLeft::UsingDeclaration(it.clone_in(allocator))
             }
             Self::AssignmentTargetIdentifier(it) => {
                 ForStatementLeft::AssignmentTargetIdentifier(it.clone_in(allocator))
@@ -1956,6 +1959,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AccessorProperty<'old_alloc
             r#static: self.r#static.clone_in(allocator),
             definite: self.definite.clone_in(allocator),
             type_annotation: self.type_annotation.clone_in(allocator),
+            accessibility: self.accessibility.clone_in(allocator),
         }
     }
 }
@@ -2274,7 +2278,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSThisParameter<'old_alloc>
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSThisParameter {
             span: self.span.clone_in(allocator),
-            this: self.this.clone_in(allocator),
+            this_span: self.this_span.clone_in(allocator),
             type_annotation: self.type_annotation.clone_in(allocator),
         }
     }
@@ -3498,6 +3502,9 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXElementName<'old_alloc> 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         match self {
             Self::Identifier(it) => JSXElementName::Identifier(it.clone_in(allocator)),
+            Self::IdentifierReference(it) => {
+                JSXElementName::IdentifierReference(it.clone_in(allocator))
+            }
             Self::NamespacedName(it) => JSXElementName::NamespacedName(it.clone_in(allocator)),
             Self::MemberExpression(it) => JSXElementName::MemberExpression(it.clone_in(allocator)),
         }
@@ -3530,7 +3537,9 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXMemberExpressionObject<'
     type Cloned = JSXMemberExpressionObject<'new_alloc>;
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         match self {
-            Self::Identifier(it) => JSXMemberExpressionObject::Identifier(it.clone_in(allocator)),
+            Self::IdentifierReference(it) => {
+                JSXMemberExpressionObject::IdentifierReference(it.clone_in(allocator))
+            }
             Self::MemberExpression(it) => {
                 JSXMemberExpressionObject::MemberExpression(it.clone_in(allocator))
             }

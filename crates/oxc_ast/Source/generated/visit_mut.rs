@@ -1072,11 +1072,6 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
-    fn visit_using_declaration(&mut self, it: &mut UsingDeclaration<'a>) {
-        walk_using_declaration(self, it);
-    }
-
-    #[inline]
     fn visit_for_of_statement(&mut self, it: &mut ForOfStatement<'a>) {
         walk_for_of_statement(self, it);
     }
@@ -2179,7 +2174,6 @@ pub mod walk_mut {
     ) {
         let kind = AstType::TSThisParameter;
         visitor.enter_node(kind);
-        visitor.visit_identifier_name(&mut it.this);
         if let Some(type_annotation) = &mut it.type_annotation {
             visitor.visit_ts_type_annotation(type_annotation);
         }
@@ -3467,6 +3461,7 @@ pub mod walk_mut {
         visitor.enter_node(kind);
         match it {
             JSXElementName::Identifier(it) => visitor.visit_jsx_identifier(it),
+            JSXElementName::IdentifierReference(it) => visitor.visit_identifier_reference(it),
             JSXElementName::NamespacedName(it) => visitor.visit_jsx_namespaced_name(it),
             JSXElementName::MemberExpression(it) => visitor.visit_jsx_member_expression(it),
         }
@@ -3512,7 +3507,9 @@ pub mod walk_mut {
         let kind = AstType::JSXMemberExpressionObject;
         visitor.enter_node(kind);
         match it {
-            JSXMemberExpressionObject::Identifier(it) => visitor.visit_jsx_identifier(it),
+            JSXMemberExpressionObject::IdentifierReference(it) => {
+                visitor.visit_identifier_reference(it)
+            }
             JSXMemberExpressionObject::MemberExpression(it) => {
                 visitor.visit_jsx_member_expression(it)
             }
@@ -3710,7 +3707,6 @@ pub mod walk_mut {
     ) {
         match it {
             ForStatementLeft::VariableDeclaration(it) => visitor.visit_variable_declaration(it),
-            ForStatementLeft::UsingDeclaration(it) => visitor.visit_using_declaration(it),
             match_assignment_target!(ForStatementLeft) => {
                 visitor.visit_assignment_target(it.to_assignment_target_mut())
             }
@@ -3749,17 +3745,6 @@ pub mod walk_mut {
         if let Some(init) = &mut it.init {
             visitor.visit_expression(init);
         }
-        visitor.leave_node(kind);
-    }
-
-    #[inline]
-    pub fn walk_using_declaration<'a, V: VisitMut<'a>>(
-        visitor: &mut V,
-        it: &mut UsingDeclaration<'a>,
-    ) {
-        let kind = AstType::UsingDeclaration;
-        visitor.enter_node(kind);
-        visitor.visit_variable_declarators(&mut it.declarations);
         visitor.leave_node(kind);
     }
 
@@ -3806,7 +3791,6 @@ pub mod walk_mut {
         visitor.enter_node(kind);
         match it {
             ForStatementInit::VariableDeclaration(it) => visitor.visit_variable_declaration(it),
-            ForStatementInit::UsingDeclaration(it) => visitor.visit_using_declaration(it),
             match_expression!(ForStatementInit) => visitor.visit_expression(it.to_expression_mut()),
         }
         visitor.leave_node(kind);
@@ -3963,7 +3947,6 @@ pub mod walk_mut {
                 visitor.visit_function(it, flags)
             }
             Declaration::ClassDeclaration(it) => visitor.visit_class(it),
-            Declaration::UsingDeclaration(it) => visitor.visit_using_declaration(it),
             Declaration::TSTypeAliasDeclaration(it) => visitor.visit_ts_type_alias_declaration(it),
             Declaration::TSInterfaceDeclaration(it) => visitor.visit_ts_interface_declaration(it),
             Declaration::TSEnumDeclaration(it) => visitor.visit_ts_enum_declaration(it),

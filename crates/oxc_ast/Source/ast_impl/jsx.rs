@@ -11,6 +11,7 @@ impl<'a> JSXIdentifier<'a> {
         Self { span, name }
     }
 }
+
 impl<'a> fmt::Display for JSXIdentifier<'a> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -25,40 +26,11 @@ impl<'a> fmt::Display for JSXNamespacedName<'a> {
 }
 
 impl<'a> JSXElementName<'a> {
-    pub fn as_identifier(&self) -> Option<&JSXIdentifier<'a>> {
+    pub fn get_identifier_name(&self) -> Option<Atom<'a>> {
         match self {
-            Self::Identifier(id) => Some(id.as_ref()),
+            Self::Identifier(id) => Some(id.as_ref().name.clone()),
+            Self::IdentifierReference(id) => Some(id.as_ref().name.clone()),
             _ => None,
-        }
-    }
-}
-
-impl<'a> JSXMemberExpression<'a> {
-    pub fn get_object_identifier(&self) -> &JSXIdentifier {
-        let mut member_expr = self;
-        loop {
-            match &member_expr.object {
-                JSXMemberExpressionObject::Identifier(ident) => {
-                    break ident;
-                }
-                JSXMemberExpressionObject::MemberExpression(expr) => {
-                    member_expr = expr;
-                }
-            }
-        }
-    }
-
-    pub fn get_object_identifier_mut(&mut self) -> &mut JSXIdentifier<'a> {
-        let mut member_expr = self;
-        loop {
-            match &mut member_expr.object {
-                JSXMemberExpressionObject::Identifier(ident) => {
-                    break &mut *ident;
-                }
-                JSXMemberExpressionObject::MemberExpression(expr) => {
-                    member_expr = expr;
-                }
-            }
         }
     }
 }
@@ -72,7 +44,7 @@ impl<'a> fmt::Display for JSXMemberExpression<'a> {
 impl<'a> fmt::Display for JSXMemberExpressionObject<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Identifier(id) => id.fmt(f),
+            Self::IdentifierReference(id) => id.fmt(f),
             Self::MemberExpression(expr) => expr.fmt(f),
         }
     }
@@ -82,6 +54,7 @@ impl<'a> fmt::Display for JSXElementName<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Identifier(ident) => ident.fmt(f),
+            Self::IdentifierReference(ident) => ident.fmt(f),
             Self::NamespacedName(namespaced) => namespaced.fmt(f),
             Self::MemberExpression(member_expr) => member_expr.fmt(f),
         }

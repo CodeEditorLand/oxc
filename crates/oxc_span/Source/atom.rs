@@ -8,7 +8,7 @@ use compact_str::CompactString;
 #[cfg(feature = "serialize")]
 use serde::{Serialize, Serializer};
 
-use crate::Span;
+use crate::{cmp::ContentEq, Span};
 use oxc_allocator::{Allocator, CloneIn, FromIn};
 
 #[cfg(feature = "serialize")]
@@ -167,9 +167,40 @@ impl<'a> PartialEq<Atom<'a>> for Cow<'_, str> {
         self.as_ref() == other.as_str()
     }
 }
+
 impl<'a> PartialEq<&Atom<'a>> for Cow<'_, str> {
     fn eq(&self, other: &&Atom<'a>) -> bool {
         self.as_ref() == other.as_str()
+    }
+}
+
+impl<'a> ContentEq for Atom<'a> {
+    fn content_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl<'a> ContentEq<Atom<'a>> for &str {
+    fn content_eq(&self, other: &Atom<'a>) -> bool {
+        self == other
+    }
+}
+
+impl<'a> ContentEq<str> for Atom<'a> {
+    fn content_eq(&self, other: &str) -> bool {
+        self == other
+    }
+}
+
+impl<'a> ContentEq<Atom<'a>> for Cow<'_, str> {
+    fn content_eq(&self, other: &Atom<'a>) -> bool {
+        self == other
+    }
+}
+
+impl<'a> ContentEq<&Atom<'a>> for Cow<'_, str> {
+    fn content_eq(&self, other: &&Atom<'a>) -> bool {
+        self == other
     }
 }
 
@@ -248,6 +279,12 @@ impl CompactStr {
     #[inline]
     pub fn into_string(self) -> String {
         self.0.into_string()
+    }
+
+    /// Convert a [`CompactStr`] into a [`CompactString`].
+    #[inline]
+    pub fn into_compact_string(self) -> CompactString {
+        self.0
     }
 
     /// Get length of [`CompactStr`].
@@ -420,6 +457,7 @@ impl schemars::JsonSchema for CompactStr {
 #[cfg(test)]
 mod test {
     use super::CompactStr;
+    use compact_str::CompactString;
 
     #[test]
     fn test_compactstr_eq() {
@@ -428,5 +466,6 @@ mod test {
         assert_eq!(&foo, "foo");
         assert_eq!("foo", foo);
         assert_eq!("foo", &foo);
+        assert_eq!(foo.into_compact_string(), CompactString::new("foo"));
     }
 }

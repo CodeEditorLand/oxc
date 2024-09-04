@@ -1,12 +1,21 @@
 // Auto-generated code, DO NOT EDIT DIRECTLY!
-// To edit this generated file you have to edit `tasks/ast_tools/src/generators/derive_get_span.rs`
+// To edit this generated file you have to edit `tasks/ast_tools/src/derives/get_span.rs`
 
 #![allow(clippy::match_same_arms)]
 
-use oxc_span::GetSpanMut;
+use oxc_span::{GetSpanMut, Span};
 
 #[allow(clippy::wildcard_imports)]
-use crate::ast::*;
+use crate::ast::js::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::jsx::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::literal::*;
+
+#[allow(clippy::wildcard_imports)]
+use crate::ast::ts::*;
 
 impl GetSpanMut for BooleanLiteral {
     #[inline]
@@ -642,7 +651,6 @@ impl<'a> GetSpanMut for Statement<'a> {
             Self::VariableDeclaration(it) => it.span_mut(),
             Self::FunctionDeclaration(it) => it.span_mut(),
             Self::ClassDeclaration(it) => it.span_mut(),
-            Self::UsingDeclaration(it) => it.span_mut(),
             Self::TSTypeAliasDeclaration(it) => it.span_mut(),
             Self::TSInterfaceDeclaration(it) => it.span_mut(),
             Self::TSEnumDeclaration(it) => it.span_mut(),
@@ -685,7 +693,6 @@ impl<'a> GetSpanMut for Declaration<'a> {
             Self::VariableDeclaration(it) => it.span_mut(),
             Self::FunctionDeclaration(it) => it.span_mut(),
             Self::ClassDeclaration(it) => it.span_mut(),
-            Self::UsingDeclaration(it) => it.span_mut(),
             Self::TSTypeAliasDeclaration(it) => it.span_mut(),
             Self::TSInterfaceDeclaration(it) => it.span_mut(),
             Self::TSEnumDeclaration(it) => it.span_mut(),
@@ -703,13 +710,6 @@ impl<'a> GetSpanMut for VariableDeclaration<'a> {
 }
 
 impl<'a> GetSpanMut for VariableDeclarator<'a> {
-    #[inline]
-    fn span_mut(&mut self) -> &mut Span {
-        &mut self.span
-    }
-}
-
-impl<'a> GetSpanMut for UsingDeclaration<'a> {
     #[inline]
     fn span_mut(&mut self) -> &mut Span {
         &mut self.span
@@ -762,7 +762,6 @@ impl<'a> GetSpanMut for ForStatementInit<'a> {
     fn span_mut(&mut self) -> &mut Span {
         match self {
             Self::VariableDeclaration(it) => it.span_mut(),
-            Self::UsingDeclaration(it) => it.span_mut(),
             Self::BooleanLiteral(it) => it.span_mut(),
             Self::NullLiteral(it) => it.span_mut(),
             Self::NumericLiteral(it) => it.span_mut(),
@@ -820,7 +819,6 @@ impl<'a> GetSpanMut for ForStatementLeft<'a> {
     fn span_mut(&mut self) -> &mut Span {
         match self {
             Self::VariableDeclaration(it) => it.span_mut(),
-            Self::UsingDeclaration(it) => it.span_mut(),
             Self::AssignmentTargetIdentifier(it) => it.span_mut(),
             Self::TSAsExpression(it) => it.span_mut(),
             Self::TSSatisfiesExpression(it) => it.span_mut(),
@@ -2041,6 +2039,7 @@ impl<'a> GetSpanMut for JSXElementName<'a> {
     fn span_mut(&mut self) -> &mut Span {
         match self {
             Self::Identifier(it) => it.span_mut(),
+            Self::IdentifierReference(it) => it.span_mut(),
             Self::NamespacedName(it) => it.span_mut(),
             Self::MemberExpression(it) => it.span_mut(),
         }
@@ -2064,7 +2063,7 @@ impl<'a> GetSpanMut for JSXMemberExpression<'a> {
 impl<'a> GetSpanMut for JSXMemberExpressionObject<'a> {
     fn span_mut(&mut self) -> &mut Span {
         match self {
-            Self::Identifier(it) => it.span_mut(),
+            Self::IdentifierReference(it) => it.span_mut(),
             Self::MemberExpression(it) => it.span_mut(),
         }
     }
