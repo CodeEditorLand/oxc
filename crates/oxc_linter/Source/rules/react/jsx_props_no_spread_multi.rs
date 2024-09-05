@@ -42,11 +42,14 @@ declare_oxc_lint!(
     /// Even when that is not the case this will lead to unnecessary computations being performed.
     ///
     /// ### Example
-    /// ```jsx
-    /// // Bad
-    /// <App {...props} myAttr="1" {...props} />
     ///
-    /// // Good
+    /// Examples of **incorrect** code for this rule:
+    /// ```jsx
+    /// <App {...props} myAttr="1" {...props} />
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```jsx
     /// <App myAttr="1" {...props} />
     /// <App {...props} myAttr="1" />
     /// ```
@@ -66,7 +69,7 @@ impl Rule for JsxPropsNoSpreadMulti {
             let mut duplicate_spreads: FxHashMap<&Atom, Vec<Span>> = FxHashMap::default();
 
             for spread_attr in spread_attrs {
-                let argument_without_parenthesized = spread_attr.argument.without_parenthesized();
+                let argument_without_parenthesized = spread_attr.argument.without_parentheses();
 
                 if let Some(identifier_name) =
                     argument_without_parenthesized.get_identifier_reference().map(|arg| &arg.name)
