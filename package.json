@@ -10,8 +10,8 @@
 	"devDependencies": {
 		"@napi-rs/cli": "3.0.0-alpha.61",
 		"@playform/build": "0.1.4",
-		"es-module-lexer": "^1.4.1",
-		"tinybench": "^2.6.0"
+		"es-module-lexer": "1.5.4",
+		"tinybench": "2.9.0"
 	},
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"keywords": [
