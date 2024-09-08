@@ -11,7 +11,7 @@ use oxc_syntax::{
 };
 use oxc_traverse::{Traverse, TraverseCtx};
 
-use super::{diagnostics, utils::get_line_column};
+use super::diagnostics;
 pub use super::{
     jsx_self::ReactJsxSelf,
     jsx_source::ReactJsxSource,
@@ -371,19 +371,13 @@ impl<'a> Traverse<'a> for ReactJsx<'a> {
     }
 
     fn enter_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
-        let new_expr = match expr {
-            Expression::JSXElement(e) => {
-                Some(self.transform_jsx(&JSXElementOrFragment::Element(e), ctx))
-            }
+        *expr = match expr {
+            Expression::JSXElement(e) => self.transform_jsx(&JSXElementOrFragment::Element(e), ctx),
             Expression::JSXFragment(e) => {
-                Some(self.transform_jsx(&JSXElementOrFragment::Fragment(e), ctx))
+                self.transform_jsx(&JSXElementOrFragment::Fragment(e), ctx)
             }
-            _ => None,
+            _ => return,
         };
-
-        if let Some(new_expr) = new_expr {
-            *expr = new_expr;
-        }
     }
 }
 
@@ -560,7 +554,7 @@ impl<'a> ReactJsx<'a> {
                 if let Some(span) = source_attr_span {
                     self.jsx_source.report_error(span);
                 } else {
-                    let (line, column) = get_line_column(e.span().start, self.ctx.source_text);
+                    let (line, column) = self.jsx_source.get_line_column(e.span().start);
                     properties.push(
                         self.jsx_source.get_object_property_kind_for_jsx_plugin(line, column, ctx),
                     );
@@ -574,6 +568,12 @@ impl<'a> ReactJsx<'a> {
         // TODO(improve-on-babel): Change this if we can handle differing output in tests.
         let argument_expr = match e {
             JSXElementOrFragment::Element(e) => {
+                if let Some(closing_element) = &e.closing_element {
+                    if let Some(ident) = closing_element.name.get_identifier() {
+                        ctx.delete_reference_for_identifier(ident);
+                    }
+                }
+
                 self.transform_element_name(&e.opening_element.name)
             }
             JSXElementOrFragment::Fragment(_) => self.get_fragment(ctx),
@@ -614,7 +614,7 @@ impl<'a> ReactJsx<'a> {
                     if let Some(span) = source_attr_span {
                         self.jsx_source.report_error(span);
                     } else {
-                        let (line, column) = get_line_column(e.span().start, self.ctx.source_text);
+                        let (line, column) = self.jsx_source.get_line_column(e.span().start);
                         let expr = self.jsx_source.get_source_object(line, column, ctx);
                         arguments.push(Argument::from(expr));
                     }

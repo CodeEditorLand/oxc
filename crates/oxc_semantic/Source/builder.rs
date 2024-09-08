@@ -117,14 +117,14 @@ pub struct SemanticBuilderReturn<'a> {
 }
 
 impl<'a> SemanticBuilder<'a> {
-    pub fn new(source_text: &'a str, source_type: SourceType) -> Self {
+    pub fn new(source_text: &'a str) -> Self {
         let scope = ScopeTree::default();
         let current_scope_id = scope.root_scope_id();
 
         let trivias = Trivias::default();
         Self {
             source_text,
-            source_type,
+            source_type: SourceType::default(),
             trivias: trivias.clone(),
             errors: RefCell::new(vec![]),
             current_node_id: AstNodeId::new(0),
@@ -215,6 +215,7 @@ impl<'a> SemanticBuilder<'a> {
     ///
     /// # Panics
     pub fn build(mut self, program: &Program<'a>) -> SemanticBuilderReturn<'a> {
+        self.source_type = program.source_type;
         if self.source_type.is_typescript_definition() {
             let scope_id = self.scope.add_scope(None, AstNodeId::DUMMY, ScopeFlags::Top);
             program.scope_id.set(Some(scope_id));
@@ -1891,9 +1892,9 @@ impl<'a> SemanticBuilder<'a> {
                 }
             }
             AstKind::MemberExpression(_) => {
-                if !self.current_reference_flags.is_type() {
-                    self.current_reference_flags = ReferenceFlags::Read;
-                }
+                // A.B = 1;
+                // ^^^ we can't treat A as Write reference, because it's the property(B) of A that change
+                self.current_reference_flags -= ReferenceFlags::Write;
             }
             AstKind::AssignmentTarget(_) => {
                 self.current_reference_flags |= ReferenceFlags::Write;
@@ -1966,8 +1967,7 @@ impl<'a> SemanticBuilder<'a> {
                     self.current_reference_flags -= ReferenceFlags::Read;
                 }
             }
-            AstKind::MemberExpression(_)
-            | AstKind::ExportNamedDeclaration(_)
+            AstKind::ExportNamedDeclaration(_)
             | AstKind::TSTypeQuery(_)
             // Clear the reference flags that are set in AstKind::PropertySignature
             | AstKind::PropertyKey(_) => {

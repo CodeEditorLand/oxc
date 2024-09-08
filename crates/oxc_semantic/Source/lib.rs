@@ -218,7 +218,7 @@ mod tests {
         let parse = oxc_parser::Parser::new(allocator, source, source_type).parse();
         assert!(parse.errors.is_empty());
         let program = allocator.alloc(parse.program);
-        let semantic = SemanticBuilder::new(source, source_type).build(program);
+        let semantic = SemanticBuilder::new(source).build(program);
         assert!(semantic.errors.is_empty(), "Parse error: {}", semantic.errors[0]);
         semantic.semantic
     }
@@ -295,7 +295,7 @@ mod tests {
     fn test_reference_resolutions_simple_read_write() {
         let alloc = Allocator::default();
         let target_symbol_name = Atom::from("a");
-        let typescript = SourceType::default().with_typescript(true).with_module(true);
+        let typescript = SourceType::ts();
         let sources = [
             // simple cases
             (SourceType::default(), "let a = 1; a = 2", ReferenceFlags::write()),

@@ -39,6 +39,7 @@ mod eslint {
     pub mod max_classes_per_file;
     pub mod max_lines;
     pub mod max_params;
+    pub mod no_alert;
     pub mod no_array_constructor;
     pub mod no_async_promise_executor;
     pub mod no_await_in_loop;
@@ -76,6 +77,7 @@ mod eslint {
     pub mod no_global_assign;
     pub mod no_import_assign;
     pub mod no_inner_declarations;
+    pub mod no_invalid_regexp;
     pub mod no_irregular_whitespace;
     pub mod no_iterator;
     pub mod no_label_var;
@@ -124,6 +126,7 @@ mod eslint {
     pub mod require_await;
     pub mod require_yield;
     pub mod sort_imports;
+    pub mod sort_vars;
     pub mod symbol_description;
     pub mod unicode_bom;
     pub mod use_isnan;
@@ -148,6 +151,7 @@ mod typescript {
     pub mod no_extra_non_null_assertion;
     pub mod no_extraneous_class;
     pub mod no_import_type_side_effects;
+    pub mod no_magic_numbers;
     pub mod no_misused_new;
     pub mod no_namespace;
     pub mod no_non_null_asserted_nullish_coalescing;
@@ -493,13 +497,13 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_ternary,
     eslint::no_this_before_super,
     eslint::no_template_curly_in_string,
+    eslint::no_alert,
     eslint::no_array_constructor,
     eslint::no_async_promise_executor,
     eslint::no_bitwise,
     eslint::no_caller,
     eslint::no_case_declarations,
     eslint::no_class_assign,
-    eslint::no_multi_str,
     eslint::no_label_var,
     eslint::require_await,
     eslint::no_compare_neg_zero,
@@ -534,6 +538,7 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_irregular_whitespace,
     eslint::no_iterator,
     eslint::no_loss_of_precision,
+    eslint::no_multi_str,
     eslint::no_new,
     eslint::no_new_func,
     eslint::no_new_wrappers,
@@ -564,12 +569,14 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_useless_concat,
     eslint::no_useless_constructor,
     eslint::no_var,
+    eslint::no_invalid_regexp,
     eslint::no_void,
     eslint::no_with,
     eslint::radix,
     eslint::require_yield,
     eslint::symbol_description,
     eslint::sort_imports,
+    eslint::sort_vars,
     eslint::unicode_bom,
     eslint::use_isnan,
     eslint::valid_typeof,
@@ -593,6 +600,7 @@ oxc_macros::declare_all_lint_rules! {
     typescript::no_explicit_any,
     typescript::no_extra_non_null_assertion,
     typescript::no_import_type_side_effects,
+    typescript::no_magic_numbers,
     typescript::no_misused_new,
     typescript::no_namespace,
     typescript::no_non_null_asserted_optional_chain,

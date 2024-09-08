@@ -12,10 +12,10 @@ use crate::{context::LintContext, rule::Rule};
 const GLOBAL_THIS: &str = "globalThis";
 const NON_CALLABLE_GLOBALS: [&str; 5] = ["Atomics", "Intl", "JSON", "Math", "Reflect"];
 
-fn no_obj_calls_diagnostic(x0: &str, span1: Span) -> OxcDiagnostic {
+fn no_obj_calls_diagnostic(obj_name: &str, span: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("Disallow calling some global objects as functions")
-        .with_help(format!("{x0} is not a function."))
-        .with_label(span1)
+        .with_help(format!("{obj_name} is not a function."))
+        .with_label(span)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -116,7 +116,7 @@ fn resolve_global_binding<'a, 'b: 'a>(
                 }
                 // handles "let a = globalThis.JSON; let b = a; a();"
                 Some(parent_expr) if parent_expr.is_member_expression() => {
-                    return global_this_member(parent_expr.to_member_expression())
+                    return global_this_member(parent_expr.to_member_expression());
                 }
                 _ => None,
             }

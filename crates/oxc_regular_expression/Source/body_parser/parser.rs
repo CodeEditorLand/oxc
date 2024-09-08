@@ -4,7 +4,8 @@ use oxc_span::Atom as SpanAtom;
 
 use crate::{
     ast,
-    body_parser::{diagnostics, reader::Reader, state::State, unicode, unicode_property},
+    body_parser::{reader::Reader, state::State, unicode, unicode_property},
+    diagnostics,
     options::ParserOptions,
     span::SpanFactory,
     surrogate_pair,
@@ -562,6 +563,7 @@ impl<'a> PatternParser<'a> {
             kind,
         })
     }
+
     // ```
     // CharacterClassEscape[UnicodeMode] ::
     //   [+UnicodeMode] p{ UnicodePropertyValueExpression }
@@ -771,7 +773,10 @@ impl<'a> PatternParser<'a> {
         &mut self,
     ) -> Result<(ast::CharacterClassContentsKind, Vec<'a, ast::CharacterClassContents<'a>>)> {
         // [empty]
-        if self.reader.peek().filter(|&cp| cp == ']' as u32).is_some() {
+        if self.reader.peek().filter(|&cp| cp == ']' as u32).is_some()
+            // Unterminated
+            || self.reader.peek().is_none()
+        {
             return Ok((ast::CharacterClassContentsKind::Union, Vec::new_in(self.allocator)));
         }
 

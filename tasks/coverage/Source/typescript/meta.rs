@@ -2,11 +2,13 @@
 
 use std::{collections::HashMap, fs, path::Path, sync::Arc};
 
-use oxc::allocator::Allocator;
-use oxc::codegen::CodeGenerator;
-use oxc::diagnostics::{NamedSource, OxcDiagnostic};
-use oxc::parser::Parser;
-use oxc::span::SourceType;
+use oxc::{
+    allocator::Allocator,
+    codegen::CodeGenerator,
+    diagnostics::{NamedSource, OxcDiagnostic},
+    parser::Parser,
+    span::SourceType,
+};
 use regex::Regex;
 
 use crate::workspace_root;
@@ -17,7 +19,7 @@ lazy_static::lazy_static! {
     static ref TEST_BRACES: Regex = Regex::new(r"^[[:space:]]*[{|}][[:space:]]*$").unwrap();
 }
 
-#[allow(unused)]
+#[expect(unused)]
 #[derive(Debug)]
 pub struct CompilerSettings {
     pub modules: Vec<String>,
@@ -155,17 +157,11 @@ impl TestCaseContent {
     }
 
     fn get_source_type(path: &Path, options: &CompilerSettings) -> Option<SourceType> {
-        let is_module = ["esnext", "es2022", "es2020", "es2015"]
-            .into_iter()
-            .any(|module| options.modules.contains(&module.to_string()));
-        Some(
-            SourceType::from_path(path)
-                .ok()?
-                .with_script(true)
-                .with_module(is_module)
-                .with_jsx(!options.jsx.is_empty())
-                .with_typescript_definition(options.declaration),
-        )
+        let source_type = SourceType::from_path(path)
+            .ok()?
+            .with_jsx(!options.jsx.is_empty())
+            .with_unambiguous(true);
+        Some(source_type)
     }
 
     // TypeScript error files can be:

@@ -21,19 +21,23 @@ declare_oxc_lint!(
     ///
     /// When using the `Array` constructor with one argument, it's not clear whether the argument is meant to be the length of the array or the only element.
     ///
-    /// ### Example
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
     /// ```javascript
-    /// // bad
     /// const array = new Array(1);
     /// const array = new Array(42);
     /// const array = new Array(foo);
+    /// ```
     ///
-    /// // good
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
     /// const array = Array.from({ length: 42 });
     /// const array = [42];
     /// ```
     NoNewArray,
-    correctness
+    correctness,
+    pending
 );
 
 impl Rule for NoNewArray {

@@ -1,8 +1,9 @@
-use crate::utils::ReactPerfRule;
 use oxc_ast::{ast::Expression, AstKind};
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::SymbolId;
 use oxc_span::{GetSpan, Span};
+
+use crate::utils::ReactPerfRule;
 
 #[derive(Debug, Default, Clone)]
 pub struct JsxNoJsxAsProp;
@@ -50,9 +51,7 @@ impl ReactPerfRule for JsxNoJsxAsProp {
         kind: &AstKind<'_>,
         _symbol_id: SymbolId,
     ) -> Option<(/* decl */ Span, /* init */ Option<Span>)> {
-        let AstKind::VariableDeclarator(decl) = kind else {
-            return None;
-        };
+        let decl = kind.as_variable_declarator()?;
         let init_span = decl.init.as_ref().and_then(check_expression)?;
         Some((decl.id.span(), Some(init_span)))
     }

@@ -23,16 +23,20 @@ declare_oxc_lint!(
     ///
     /// An empty case before the last default case is useless.
     ///
-    /// ### Example
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
     /// ```javascript
-    /// // bad
     /// switch (foo) {
     /// 	case 1:
     /// 	default:
     /// 		handleDefaultCase();
     /// 		break;
     /// }
-    /// // good:
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
     /// switch (foo) {
     ///	case 1:
     ///	case 2:
@@ -41,7 +45,8 @@ declare_oxc_lint!(
     /// }
     /// ```
     NoUselessSwitchCase,
-    pedantic
+    pedantic,
+    pending
 );
 
 impl Rule for NoUselessSwitchCase {
@@ -61,7 +66,7 @@ impl Rule for NoUselessSwitchCase {
         let default_case = default_cases[0];
 
         // Check if the `default` case is the last case
-        if default_case as *const _ != cases.last().unwrap() as *const _ {
+        if std::ptr::from_ref(default_case) != std::ptr::from_ref(cases.last().unwrap()) {
             return;
         }
 

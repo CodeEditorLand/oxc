@@ -2,6 +2,7 @@
 
 pub mod ast;
 mod body_parser;
+mod diagnostics;
 mod display;
 mod flag_parser;
 mod literal_parser;
@@ -15,7 +16,7 @@ mod generated {
     mod derive_content_hash;
 }
 
-pub use crate::body_parser::PatternParser;
-pub use crate::flag_parser::FlagsParser;
-pub use crate::literal_parser::Parser;
-pub use crate::options::ParserOptions;
+pub use crate::{
+    body_parser::PatternParser, flag_parser::FlagsParser, literal_parser::Parser,
+    options::ParserOptions,
+};

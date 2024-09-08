@@ -13,10 +13,10 @@ use crate::{
     AstNode,
 };
 
-fn consistent_function_scoping(x0: Span) -> OxcDiagnostic {
+fn consistent_function_scoping(span: Span) -> OxcDiagnostic {
     OxcDiagnostic::warn("Function does not capture any variables from the outer scope.")
         .with_help("Move this function to the outer scope.")
-        .with_label(x0)
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -157,6 +157,7 @@ impl Rule for ConsistentFunctionScoping {
 
         Self(Box::new(configuration))
     }
+
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         let (function_declaration_symbol_id, function_body, reporter_span) = match node.kind() {
             AstKind::Function(function) => {
@@ -284,6 +285,7 @@ impl<'a> Visit<'a> for ReferencesFinder {
             self.in_function += 1;
         }
     }
+
     fn leave_node(&mut self, kind: AstKind<'a>) {
         if let AstKind::Function(_) = kind {
             self.in_function -= 1;

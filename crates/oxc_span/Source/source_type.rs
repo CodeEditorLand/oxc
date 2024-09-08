@@ -1,22 +1,86 @@
-mod error;
-mod types;
+// Silence erroneous warnings from Rust Analyser for `#[derive(Tsify)]`
+#![allow(non_snake_case)]
 
-pub use error::UnknownExtension;
-use oxc_allocator::{Allocator, CloneIn};
+mod error;
+
 use std::{hash::Hash, path::Path};
-pub use types::*;
+
+use oxc_allocator::{Allocator, CloneIn};
+use oxc_ast_macros::ast;
+#[cfg(feature = "serialize")]
+use {serde::Serialize, tsify::Tsify};
 
 use crate::{cmp::ContentEq, hash::ContentHash};
+pub use error::UnknownExtension;
+
+/// Source Type for JavaScript vs TypeScript / Script vs Module / JSX
+#[ast]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
+#[serde(rename_all = "camelCase")]
+pub struct SourceType {
+    /// JavaScript or TypeScript, default JavaScript
+    pub(super) language: Language,
+
+    /// Script or Module, default Module
+    pub(super) module_kind: ModuleKind,
+
+    /// Support JSX for JavaScript and TypeScript? default without JSX
+    pub(super) variant: LanguageVariant,
+}
+
+/// JavaScript or TypeScript
+#[ast]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
+#[serde(rename_all = "lowercase")]
+pub enum Language {
+    JavaScript = 0,
+    TypeScript = 1,
+    #[serde(rename = "typescriptDefinition")]
+    TypeScriptDefinition = 2,
+}
+
+/// Script or Module
+#[ast]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
+#[serde(rename_all = "camelCase")]
+pub enum ModuleKind {
+    /// Regular JS script or CommonJS file
+    Script = 0,
+    /// ES6 Module
+    Module = 1,
+    /// Consider the file a "module" if ESM syntax is present, or else consider it a "script".
+    ///
+    /// ESM syntax includes `import` statement, `export` statement and `import.meta`.
+    ///
+    /// Note: Dynamic import expression is not ESM syntax.
+    ///
+    /// See <https://babel.dev/docs/options#misc-options>
+    Unambiguous = 2,
+}
+
+/// JSX for JavaScript and TypeScript
+#[ast]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
+#[serde(rename_all = "camelCase")]
+pub enum LanguageVariant {
+    Standard = 0,
+    Jsx = 1,
+}
 
 impl Default for SourceType {
     #[inline]
     fn default() -> Self {
-        Self::js()
+        Self::mjs()
     }
 }
 
 impl<'a> CloneIn<'a> for SourceType {
     type Cloned = Self;
+
     #[inline]
     fn clone_in(&self, _: &'a Allocator) -> Self {
         *self
@@ -50,7 +114,7 @@ impl SourceType {
     /// ```
     /// # use oxc_span::SourceType;
     ///
-    /// let js = SourceType::js();
+    /// let js = SourceType::cjs();
     /// assert!(js.is_javascript());
     /// assert!(js.is_script()); // not a module
     /// assert!(!js.is_jsx());
@@ -59,12 +123,27 @@ impl SourceType {
     /// [`JavaScript`]: Language::JavaScript
     /// [`module`]: ModuleKind::Module
     /// [`JSX`]: LanguageVariant::Jsx
-    pub const fn js() -> Self {
+    pub const fn cjs() -> Self {
         Self {
             language: Language::JavaScript,
             module_kind: ModuleKind::Script,
             variant: LanguageVariant::Standard,
-            always_strict: false,
+        }
+    }
+
+    pub const fn mjs() -> Self {
+        Self {
+            language: Language::JavaScript,
+            module_kind: ModuleKind::Module,
+            variant: LanguageVariant::Standard,
+        }
+    }
+
+    pub const fn unambiguous() -> Self {
+        Self {
+            language: Language::JavaScript,
+            module_kind: ModuleKind::Unambiguous,
+            variant: LanguageVariant::Standard,
         }
     }
 
@@ -81,12 +160,12 @@ impl SourceType {
     ///
     /// [`JavaScript`]: Language::JavaScript
     pub const fn jsx() -> Self {
-        Self::js().with_jsx(true)
+        Self::mjs().with_jsx(true)
     }
 
     /// Creates a [`SourceType`] representing a [`TypeScript`] file.
     ///
-    /// Unlike [`SourceType::js`], this method creates [`modules`]. Use
+    /// Unlike [`SourceType::cjs`], this method creates [`modules`]. Use
     /// [`SourceType::tsx`] for TypeScript files with [`JSX`] support.
     ///
     /// ## Example
@@ -108,7 +187,6 @@ impl SourceType {
             language: Language::TypeScript,
             module_kind: ModuleKind::Module,
             variant: LanguageVariant::Standard,
-            always_strict: false,
         }
     }
 
@@ -148,7 +226,6 @@ impl SourceType {
             language: Language::TypeScriptDefinition,
             module_kind: ModuleKind::Module,
             variant: LanguageVariant::Standard,
-            always_strict: false,
         }
     }
 
@@ -158,6 +235,10 @@ impl SourceType {
 
     pub fn is_module(self) -> bool {
         self.module_kind == ModuleKind::Module
+    }
+
+    pub fn is_unambiguous(self) -> bool {
+        self.module_kind == ModuleKind::Unambiguous
     }
 
     pub fn module_kind(self) -> ModuleKind {
@@ -183,12 +264,8 @@ impl SourceType {
         self.variant == LanguageVariant::Jsx
     }
 
-    pub fn always_strict(self) -> bool {
-        self.always_strict
-    }
-
     pub fn is_strict(self) -> bool {
-        self.is_module() || self.always_strict
+        self.is_module()
     }
 
     #[must_use]
@@ -205,6 +282,14 @@ impl SourceType {
             self.module_kind = ModuleKind::Module;
         } else {
             self.module_kind = ModuleKind::Script;
+        }
+        self
+    }
+
+    #[must_use]
+    pub const fn with_unambiguous(mut self, yes: bool) -> Self {
+        if yes {
+            self.module_kind = ModuleKind::Unambiguous;
         }
         self
     }
@@ -233,12 +318,6 @@ impl SourceType {
         self
     }
 
-    #[must_use]
-    pub const fn with_always_strict(mut self, yes: bool) -> Self {
-        self.always_strict = yes;
-        self
-    }
-
     /// Converts a file [`Path`] to [`SourceType`].
     ///
     /// ## Examples
@@ -262,7 +341,7 @@ impl SourceType {
     /// babel) also do not make a distinction between `.js` and `.jsx`. However,
     /// for TypeScript files, only `.tsx` files are treated as JSX.
     ///
-    /// Note that this behavior deviates from [`SourceType::js`], which produces
+    /// Note that this behavior deviates from [`SourceType::cjs`], which produces
     /// [`scripts`].
     ///
     /// ### Modules vs. Scripts.
@@ -327,7 +406,7 @@ impl SourceType {
             _ => LanguageVariant::Standard,
         };
 
-        Ok(Self { language, module_kind, variant, always_strict: false })
+        Ok(Self { language, module_kind, variant })
     }
 }
 
@@ -428,7 +507,7 @@ mod tests {
             assert!(!ty.is_typescript(), "{ty:?}");
         }
 
-        assert_eq!(SourceType::js().with_jsx(true).with_module(true), js);
+        assert_eq!(SourceType::jsx(), js);
         assert_eq!(SourceType::jsx().with_module(true), jsx);
 
         assert!(js.is_module());

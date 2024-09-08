@@ -3,6 +3,7 @@ use itertools::Itertools;
 use quote::{format_ident, quote};
 use syn::{parse_quote, Arm, Ident, ImplItemFn, Type, Variant};
 
+use super::define_generator;
 use crate::{
     codegen::{generated_header, LateCtx},
     output,
@@ -10,8 +11,6 @@ use crate::{
     util::ToIdent,
     Generator, GeneratorOutput,
 };
-
-use super::define_generator;
 
 define_generator! {
     pub struct AstKindGenerator;
@@ -162,7 +161,8 @@ impl Generator for AstKindGenerator {
                     format_ident!("as_{}", ident.to_string().to_case(Case::Snake));
                 parse_quote!(
                     ///@@line_break
-                    pub fn #snake_case_name(&self) -> Option<&#typ> {
+                    #[inline]
+                    pub fn #snake_case_name(&self) -> Option<&'a #typ> {
                         if let Self::#ident(v) = self {
                             Some(*v)
                         } else {

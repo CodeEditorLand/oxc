@@ -178,8 +178,7 @@ impl TraverseScoping {
     ///
     /// This function is fairly expensive, because it aims to replicate Babel's output.
     /// `name_is_unique` method below searches through every single binding in the entire program
-    /// and does a string comparison on each. It also searches through every reference in entire program
-    /// (though it will avoid string comparison on most of them).
+    /// and does a string comparison on each.
     /// If the first name tried is already in use, it will repeat that entire search with a new name,
     /// potentially multiple times.
     ///
@@ -355,6 +354,25 @@ impl TraverseScoping {
         self.create_reference(name, symbol_id, flags)
     }
 
+    /// Delete a reference.
+    ///
+    /// Provided `name` must match `reference_id`.
+    pub fn delete_reference(&mut self, reference_id: ReferenceId, name: &str) {
+        let symbol_id = self.symbols.get_reference(reference_id).symbol_id();
+        if let Some(symbol_id) = symbol_id {
+            self.symbols.delete_resolved_reference(symbol_id, reference_id);
+        } else {
+            self.scopes.delete_root_unresolved_reference(name, reference_id);
+        }
+    }
+
+    /// Delete reference for an `IdentifierReference`.
+    #[allow(clippy::missing_panics_doc)]
+    pub fn delete_reference_for_identifier(&mut self, ident: &IdentifierReference) {
+        // `unwrap` should never panic as `IdentifierReference`s should always have a `ReferenceId`
+        self.delete_reference(ident.reference_id().unwrap(), &ident.name);
+    }
+
     /// Clone `IdentifierReference` based on the original reference's `SymbolId` and name.
     ///
     /// This method makes a lookup of the `SymbolId` for the reference. If you need to create multiple
@@ -435,7 +453,7 @@ impl TraverseScoping {
         // `CompactStr`, rather than generating a new string on each attempt.
         // Postfixes greater than 99 should be very uncommon, so don't bother optimizing.
 
-        // Try single-digit postfixes (i.e. `_temp1`, `_temp2` ... `_temp9`)
+        // Try single-digit postfixes (i.e. `_temp2`, `_temp3` ... `_temp9`)
         name.push('2');
         if self.name_is_unique(&name) {
             return name;
@@ -507,7 +525,6 @@ fn create_uid_name_base(name: &str) -> CompactString {
     }
     // SAFETY: We started with a valid UTF8 `&str` and have only trimmed off ASCII characters,
     // so remainder must still be valid UTF8
-
     let name = unsafe { str::from_utf8_unchecked(bytes) };
 
     // Create `CompactString` prepending name with `_`, and with 1 byte excess capacity.

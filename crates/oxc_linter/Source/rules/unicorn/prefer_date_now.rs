@@ -15,8 +15,8 @@ fn prefer_date_now(span: Span) -> OxcDiagnostic {
         .with_label(span)
 }
 
-fn prefer_date_now_over_methods(span: Span, x1: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("Prefer `Date.now()` over `new Date().{x1}()`"))
+fn prefer_date_now_over_methods(span: Span, bad_method: &str) -> OxcDiagnostic {
+    OxcDiagnostic::warn(format!("Prefer `Date.now()` over `new Date().{bad_method}()`"))
         .with_help("Change to `Date.now()`.")
         .with_label(span)
 }
@@ -39,14 +39,15 @@ declare_oxc_lint!(
     ///
     /// Using `Date.now()` is shorter and nicer than `new Date().getTime()`, and avoids unnecessary instantiation of `Date` objects.
     ///
-    ///
-    /// ### Example
+    /// ### Examples
+    /// Examples of **incorrect** code for this rule:
     /// ```javascript
-    /// // bad
     /// const ts = new Date().getTime();
     /// const ts = new Date().valueOf();
+    /// ```
     ///
-    /// // good
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
     /// const ts = Date.now();
     /// ```
     PreferDateNow,

@@ -73,11 +73,8 @@ mod generated {
     pub mod traverse;
     pub(super) mod walk;
 }
-pub use generated::ancestor;
-pub use generated::ancestor::Ancestor;
-use generated::scopes_collector;
-pub use generated::traverse::Traverse;
-use generated::walk;
+pub use generated::{ancestor, ancestor::Ancestor, traverse::Traverse};
+use generated::{scopes_collector, walk};
 
 mod compile_fail_tests;
 
@@ -164,5 +161,5 @@ pub fn walk_program<'a, Tr: Traverse<'a>>(
     ctx: &mut TraverseCtx<'a>,
 ) {
     // SAFETY: Walk functions are constructed to avoid unsoundness
-    unsafe { walk::walk_program(traverser, program as *mut Program, ctx) };
+    unsafe { walk::walk_program(traverser, std::ptr::from_mut::<Program>(program), ctx) };
 }

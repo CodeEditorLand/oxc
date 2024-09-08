@@ -11,12 +11,14 @@ use crate::{
     AstNode,
 };
 
-fn known_method(span: Span, x1: &str, x2: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("Prefer using `{x1}.prototype.{x2}`.")).with_label(span)
+fn known_method(span: Span, obj_name: &str, method_name: &str) -> OxcDiagnostic {
+    OxcDiagnostic::warn(format!("Prefer using `{obj_name}.prototype.{method_name}`."))
+        .with_label(span)
 }
 
-fn unknown_method(span: Span, x1: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("Prefer using method from `{x1}.prototype`.")).with_label(span)
+fn unknown_method(span: Span, obj_name: &str) -> OxcDiagnostic {
+    OxcDiagnostic::warn(format!("Prefer using method from `{obj_name}.prototype`."))
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
@@ -28,16 +30,20 @@ declare_oxc_lint!(
     /// This rule prefers borrowing methods from the prototype instead of the instance.
     ///
     /// ### Why is this bad?
+    ///
     /// “Borrowing” a method from an instance of `Array` or `Object` is less clear than getting it from the corresponding prototype.
     ///
-    /// ### Example
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
     /// ```javascript
-    /// // Fail
     /// const array = [].slice.apply(bar);
     /// const type = {}.toString.call(foo);
     /// Reflect.apply([].forEach, arrayLike, [callback]);
+    /// ```
     ///
-    /// // Pass
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
     /// const array = Array.prototype.slice.apply(bar);
     /// const type = Object.prototype.toString.call(foo);
     /// Reflect.apply(Array.prototype.forEach, arrayLike, [callback]);

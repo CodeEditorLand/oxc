@@ -4,14 +4,13 @@ use oxc_ast::{
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
-use oxc_span::{CompactStr, Span};
-
-use oxc_span::GetSpan;
+use oxc_span::{CompactStr, GetSpan, Span};
 
 use crate::{ast_util::extract_regex_flags, context::LintContext, rule::Rule, AstNode};
 
-fn string_literal(span: Span, x1: &str) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("This pattern can be replaced with `{x1}`.")).with_label(span)
+fn string_literal(span: Span, replacement: &str) -> OxcDiagnostic {
+    OxcDiagnostic::warn(format!("This pattern can be replaced with `{replacement}`."))
+        .with_label(span)
 }
 
 fn use_replace_all(span: Span) -> OxcDiagnostic {
