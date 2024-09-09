@@ -8,7 +8,7 @@ use std::path::Path;
 use oxc_diagnostics::OxcDiagnostic;
 use rustc_hash::FxHashSet;
 use schemars::JsonSchema;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub use self::{
     env::OxlintEnv,
@@ -53,16 +53,31 @@ use crate::{
 ///   }
 ///  }
 /// ```
-#[derive(Debug, Default, Deserialize, JsonSchema)]
+#[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
 #[serde(default)]
 pub struct OxlintConfig {
     /// See [Oxlint Rules](https://oxc.rs/docs/guide/usage/linter/rules.html).
-    pub(crate) rules: OxlintRules,
+    pub rules: OxlintRules,
+    pub settings: OxlintSettings,
+    /// Environments enable and disable collections of global variables.
+    pub env: OxlintEnv,
+    /// Enabled or disabled specific global variables.
+    pub globals: OxlintGlobals,
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct LintConfig {
     pub(crate) settings: OxlintSettings,
     /// Environments enable and disable collections of global variables.
     pub(crate) env: OxlintEnv,
     /// Enabled or disabled specific global variables.
     pub(crate) globals: OxlintGlobals,
+}
+
+impl From<OxlintConfig> for LintConfig {
+    fn from(config: OxlintConfig) -> Self {
+        Self { settings: config.settings, env: config.env, globals: config.globals }
+    }
 }
 
 impl OxlintConfig {

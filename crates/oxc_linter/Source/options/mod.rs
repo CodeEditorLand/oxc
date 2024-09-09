@@ -3,16 +3,18 @@ mod plugins;
 
 use std::{convert::From, path::PathBuf};
 
+pub use allow_warn_deny::AllowWarnDeny;
 use oxc_diagnostics::Error;
+pub use plugins::LintPluginOptions;
 use rustc_hash::FxHashSet;
 
 use crate::{
-    config::OxlintConfig, fixer::FixKind, rules::RULES, utils::is_jest_rule_adapted_to_vitest,
+    config::{LintConfig, OxlintConfig},
+    fixer::FixKind,
+    rules::RULES,
+    utils::is_jest_rule_adapted_to_vitest,
     FrameworkFlags, RuleCategory, RuleEnum, RuleWithSeverity,
 };
-
-pub use allow_warn_deny::AllowWarnDeny;
-pub use plugins::LintPluginOptions;
 
 #[derive(Debug)]
 pub struct LintOptions {
@@ -144,13 +146,21 @@ impl LintOptions {
         self.plugins.promise = yes;
         self
     }
+
+    #[must_use]
+    pub fn with_node_plugin(mut self, yes: bool) -> Self {
+        self.plugins.node = yes;
+        self
+    }
 }
 
 impl LintOptions {
     /// # Errors
     ///
     /// * Returns `Err` if there are any errors parsing the configuration file.
-    pub fn derive_rules_and_config(&self) -> Result<(Vec<RuleWithSeverity>, OxlintConfig), Error> {
+    pub(crate) fn derive_rules_and_config(
+        &self,
+    ) -> Result<(Vec<RuleWithSeverity>, LintConfig), Error> {
         let config =
             self.config_path.as_ref().map(|path| OxlintConfig::from_file(path)).transpose()?;
 
@@ -211,7 +221,7 @@ impl LintOptions {
         // for stable diagnostics output ordering
         rules.sort_unstable_by_key(|rule| rule.id());
 
-        Ok((rules, config.unwrap_or_default()))
+        Ok((rules, config.map(Into::into).unwrap_or_default()))
     }
 
     /// Get final filtered rules by reading `self.xxx_plugin`
@@ -240,6 +250,7 @@ impl LintOptions {
                 "oxc" => self.plugins.oxc,
                 "eslint" | "tree_shaking" => true,
                 "promise" => self.plugins.promise,
+                "node" => self.plugins.node,
                 name => panic!("Unhandled plugin: {name}"),
             })
             .cloned()

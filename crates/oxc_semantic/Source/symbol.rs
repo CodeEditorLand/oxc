@@ -54,15 +54,11 @@ impl SymbolTable {
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.spans.is_empty()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = SymbolId> + '_ {
+    pub fn symbol_ids(&self) -> impl Iterator<Item = SymbolId> + '_ {
         self.spans.iter_enumerated().map(|(symbol_id, _)| symbol_id)
-    }
-
-    pub fn iter_rev(&self) -> impl Iterator<Item = SymbolId> + '_ {
-        self.spans.iter_enumerated().rev().map(|(symbol_id, _)| symbol_id)
     }
 
     pub fn get_symbol_id_from_span(&self, span: Span) -> Option<SymbolId> {
