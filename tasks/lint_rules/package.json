@@ -11,7 +11,7 @@
 		"eslint-plugin-vitest": "latest"
 	},
 	"devDependencies": {
-		"@playform/build": "0.1.4"
+		"@playform/build": "0.1.6"
 	},
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"keywords": [

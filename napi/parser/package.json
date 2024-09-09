@@ -9,7 +9,7 @@
 	},
 	"devDependencies": {
 		"@napi-rs/cli": "catalog:",
-		"@playform/build": "0.1.4",
+		"@playform/build": "0.1.6",
 		"es-module-lexer": "^1.4.1",
 		"tinybench": "^2.6.0"
 	},

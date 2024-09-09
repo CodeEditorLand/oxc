@@ -9,7 +9,7 @@
 	},
 	"description": "Oxc transform Node API",
 	"devDependencies": {
-		"@playform/build": "0.1.4"
+		"@playform/build": "0.1.6"
 	},
 	"files": [
 		"index.d.ts",
