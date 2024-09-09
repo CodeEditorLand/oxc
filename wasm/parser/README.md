@@ -19,7 +19,7 @@ Checkout [oxc-parser](https://www.npmjs.com/package/oxc-parser) for usage in nod
 
 Source code: https://github.com/oxc-project/oxc/tree/main/wasm/parser
 
-## 🛠️ Usage
+## Usage
 
 ```js
 import initWasm, { parseSync } from '@oxc-parser/wasm';

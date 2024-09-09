@@ -790,6 +790,7 @@ let M2;
 		return En;
 	})(En || {});
 }
+
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/boolean-value/input.ts
@@ -1046,6 +1047,7 @@ var constants = (constants => {
 		return E;
 	})(E || {});
 }
+
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/string-value/input.ts
