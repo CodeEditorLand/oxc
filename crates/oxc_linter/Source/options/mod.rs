@@ -6,6 +6,7 @@ use std::{convert::From, path::PathBuf};
 pub use allow_warn_deny::AllowWarnDeny;
 use oxc_diagnostics::Error;
 pub use plugins::LintPluginOptions;
+use plugins::LintPlugins;
 use rustc_hash::FxHashSet;
 
 use crate::{
@@ -16,8 +17,31 @@ use crate::{
     FrameworkFlags, RuleCategory, RuleEnum, RuleWithSeverity,
 };
 
+/// Subset of options used directly by the [`Linter`]. Derived from
+/// [`OxlintOptions`], which is the public-facing API. Do not expose this
+/// outside of this crate.
+///
+/// [`Linter`]: crate::Linter
+#[derive(Debug, Default)]
+#[cfg_attr(test, derive(PartialEq))]
+pub(crate) struct LintOptions {
+    pub fix: FixKind,
+    pub framework_hints: FrameworkFlags,
+    pub plugins: LintPlugins,
+}
+
+impl From<OxlintOptions> for LintOptions {
+    fn from(options: OxlintOptions) -> Self {
+        Self {
+            fix: options.fix,
+            framework_hints: options.framework_hints,
+            plugins: options.plugins.into(),
+        }
+    }
+}
+
 #[derive(Debug)]
-pub struct LintOptions {
+pub struct OxlintOptions {
     /// Allow / Deny rules in order. [("allow" / "deny", rule name)]
     /// Defaults to [("deny", "correctness")]
     pub filter: Vec<(AllowWarnDeny, String)>,
@@ -32,7 +56,7 @@ pub struct LintOptions {
     pub framework_hints: FrameworkFlags,
 }
 
-impl Default for LintOptions {
+impl Default for OxlintOptions {
     fn default() -> Self {
         Self {
             filter: vec![(AllowWarnDeny::Warn, String::from("correctness"))],
@@ -44,7 +68,7 @@ impl Default for LintOptions {
     }
 }
 
-impl LintOptions {
+impl OxlintOptions {
     #[must_use]
     pub fn with_filter(mut self, filter: Vec<(AllowWarnDeny, String)>) -> Self {
         if !filter.is_empty() {
@@ -154,7 +178,7 @@ impl LintOptions {
     }
 }
 
-impl LintOptions {
+impl OxlintOptions {
     /// # Errors
     ///
     /// * Returns `Err` if there are any errors parsing the configuration file.
