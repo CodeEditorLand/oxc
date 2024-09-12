@@ -1,11 +1,12 @@
 // Silence erroneous warnings from Rust Analyser for `#[derive(Tsify)]`
 #![allow(non_snake_case)]
 
-pub use oxc_syntax::reference::{ReferenceFlags, ReferenceId};
 #[cfg(feature = "serialize")]
 use serde::Serialize;
 #[cfg(feature = "serialize")]
 use tsify::Tsify;
+
+pub use oxc_syntax::reference::{ReferenceFlags, ReferenceId};
 
 use crate::{symbol::SymbolId, AstNodeId};
 
@@ -112,6 +113,11 @@ impl Reference {
     #[inline]
     pub fn is_write(&self) -> bool {
         self.flags.is_write()
+    }
+
+    /// Returns `true` if this reference is used in a value context.
+    pub fn is_value(&self) -> bool {
+        self.flags.is_value()
     }
 
     /// Returns `true` if this reference is used in a type context.
