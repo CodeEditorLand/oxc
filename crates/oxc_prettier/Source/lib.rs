@@ -145,6 +145,7 @@ impl<'a> Prettier<'a> {
         self.should_print_comma_impl(false)
     }
 
+    #[allow(unused)]
     fn should_print_all_comma(&self) -> bool {
         self.should_print_comma_impl(true)
     }

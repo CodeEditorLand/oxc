@@ -1,0 +1,163 @@
+<!DOCTYPE html><html class="default" lang="en"><head><meta charset="utf-8"/><meta name="keywords" content="codeeditorland, land, playform"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>oxc_ast_scripts - v0.0.1</title><meta name="description" content="Documentation for oxc_ast_scripts"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><link rel="stylesheet" href="assets/custom.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><use href="assets/icons.svg#icon-search"></use></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div><div class="field"><div id="tsd-toolbar-links"></div></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">oxc_ast_scripts - v0.0.1</a></div><div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget tsd-toolbar-icon menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h2>oxc_ast_scripts - v0.0.1</h2></div><div class="tsd-panel tsd-typography"><p align="center">
+  <img alt="OXC Logo" src="https://cdn.jsdelivr.net/gh/oxc-project/oxc-assets/preview-universal.png" width="700">
+</p>
+<div align="center">
+<p><a href="https://github.com/oxc-project/oxc/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT licensed"></a>
+<a href="https://github.com/oxc-project/oxc/actions/workflows/ci.yml?query=event%3Apush+branch%3Amain"><img src="https://github.com/oxc-project/oxc/actions/workflows/ci.yml/badge.svg?event=push&amp;branch=main" alt="Build Status"></a>
+<a href="https://codecov.io/gh/oxc-project/oxc"><img src="https://codecov.io/github/oxc-project/oxc/branch/main/graph/badge.svg" alt="Code Coverage"></a>
+<a href="https://codspeed.io/oxc-project/oxc"><img src="https://img.shields.io/endpoint?url=https://codspeed.io/badge.json" alt="CodSpeed Badge"></a>
+<a href="https://github.com/sponsors/Boshen"><img src="https://img.shields.io/github/sponsors/Boshen" alt="Sponsors"></a></p>
+<p><a href="https://discord.gg/9uXCAwqQZW"><img src="https://img.shields.io/discord/1079625926024900739?logo=discord&amp;label=Discord" alt="Discord chat"></a>
+<a href="https://oxc-project.github.io/oxc/playground"><img src="https://img.shields.io/badge/Playground-blue?color=9BE4E0" alt="Playground"></a>
+<a href="https://oxc.rs"><img src="https://img.shields.io/badge/Website-blue" alt="Website"></a></p>
+</div>
+<a id="md:⚓-oxc" class="tsd-anchor"></a><h2 class="tsd-anchor-link">⚓ Oxc<a href="#md:⚓-oxc" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>The Oxidation Compiler is creating a collection of high-performance tools for JavaScript and TypeScript.</p>
+<p>Oxc is building a parser, linter, formatter, transpiler, minifier, resolver ... all written in Rust.</p>
+<p>See more at <a href="https://oxc.rs">oxc.rs</a>!</p>
+<a id="md:🙋whos-using-oxc" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🙋Who's using Oxc?<a href="#md:🙋whos-using-oxc" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li><a href="https://rolldown.rs">Rolldown</a> uses the <a href="https://docs.rs/oxc">oxc</a> crate for parsing and transpiling.</li>
+<li><a href="https://trynova.dev">Nova engine</a> uses the <a href="https://docs.rs/oxc">oxc</a> crate for parsing.</li>
+<li><a href="https://rolldown.rs">Rolldown</a>, <a href="https://biomejs.dev/">Biome</a> and <a href="https://github.com/swc-project/swc-node">swc-node</a> uses the <a href="https://docs.rs/oxc_resolver">oxc_resolver</a> crate for module resolution.</li>
+<li>Projects and companies like <a href="https://github.com/preactjs/preact/blob/4c20c23c16dd60f380ce9fe98afc93041a7e1562/oxlint.json">Preact</a>, <a href="https://oxc.rs/blog/2023-12-12-announcing-oxlint.html#_50-100-times-faster-than-eslint">Shopify</a>, ByteDance and Shopee uses oxlint for linting.</li>
+</ul>
+<a id="md:⚡️-linter-quick-start" class="tsd-anchor"></a><h2 class="tsd-anchor-link">⚡️ Linter Quick Start<a href="#md:⚡️-linter-quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>The linter is ready to catch mistakes for you. It comes with 91 rules turned on by default (out of 340+ in total) and no configuration is required.</p>
+<p>To get started, run <a href="https://www.npmjs.com/package/oxlint">oxlint</a> or via <code>npx</code>:</p>
+<pre><code class="bash"><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">oxlint@latest</span>
+</code><button type="button">Copy</button></pre>
+
+<p>To give you an idea of its capabilities, here is an example from the <a href="https://github.com/microsoft/vscode">vscode</a> repository, which finishes linting 4800+ files in 0.7 seconds.</p>
+<p float="left" align="left">
+  <img src="https://cdn.jsdelivr.net/gh/oxc-project/oxc-assets/linter-screenshot.png" width="60%">
+</p>
+<a id="md:⚡️-performance" class="tsd-anchor"></a><h2 class="tsd-anchor-link">⚡️ Performance<a href="#md:⚡️-performance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>The parser aims to be the fastest Rust-based ready-for-production parser.</li>
+<li>The linter is more than 50 times faster than <a href="https://eslint.org/">ESLint</a>, and scales with the number of CPU cores.</li>
+</ul>
+<p float="left" align="middle">
+  <img src="https://raw.githubusercontent.com/Boshen/bench-javascript-parser-written-in-rust/main/bar-graph.svg" width="49%">
+  <img src="https://raw.githubusercontent.com/Boshen/bench-javascript-linter/main/bar-graph.svg" width="49%">
+</p>
+<a id="md:⌨️-rust-nodejs-and-wasm-usage" class="tsd-anchor"></a><h2 class="tsd-anchor-link">⌨️ Rust, Node.js and Wasm Usage<a href="#md:⌨️-rust-nodejs-and-wasm-usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><a id="md:rust" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Rust<a href="#md:rust" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Individual crates are published, you may use them to build your own JavaScript tools.</p>
+<ul>
+<li>The umbrella crate <a href="https://docs.rs/oxc">oxc</a> exports all public crates from this repository.</li>
+<li>The AST and parser crates <a href="https://docs.rs/oxc_ast">oxc_ast</a> and <a href="https://docs.rs/oxc_parser">oxc_parser</a> are production ready.</li>
+<li>The resolver crate <a href="https://docs.rs/oxc_resolver">oxc_resolver</a> for module resolution is also production ready.</li>
+<li>Example usages of these crates can be found in their respective <code>crates/*/examples</code> directory.</li>
+</ul>
+<p>While Rust has gained a reputation for its comparatively slower compilation speed,
+we have dedicated significant effort to fine-tune the Rust compilation speed.
+Our aim is to minimize any impact on your development workflow,
+ensuring that developing your own Oxc based tools remains a smooth and efficient experience.</p>
+<p>This is demonstrated by our <a href="https://github.com/oxc-project/oxc/actions/workflows/ci.yml?query=branch%3Amain">CI runs</a>,
+where warm runs complete in 3 minutes.</p>
+<a id="md:nodejs" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Node.js<a href="#md:nodejs" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>via napi: <a href="https://www.npmjs.com/package/oxc-parser">oxc-parser</a></li>
+</ul>
+<a id="md:wasm" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Wasm<a href="#md:wasm" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li><a href="https://www.npmjs.com/package/@oxc-parser/wasm">@oxc-parser/wasm</a></li>
+</ul>
+<hr>
+<a id="md:🎯-tools" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🎯 Tools<a href="#md:🎯-tools" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li><a href="#md:-ast-and-parser">AST and Parser</a></li>
+<li><a href="#md:-linter">Linter</a></li>
+<li><a href="#md:-resolver">Resolver</a></li>
+<li><a href="#md:-minifier">Minifier</a></li>
+<li><a href="#md:-formatter">Formatter</a></li>
+<li><a href="#md:-transpiler">Transpiler</a></li>
+</ul>
+<a id="md:🔸-ast-and-parser" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🔸 AST and Parser<a href="#md:🔸-ast-and-parser" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Oxc maintains its own AST and parser, which is by far the fastest and most conformant JavaScript and TypeScript (including JSX and TSX) parser written in Rust.</p>
+<p>As the parser often represents a key performance bottleneck in JavaScript tooling,
+any minor improvements can have a cascading effect on our downstream tools.
+By developing our parser, we have the opportunity to explore and implement well-researched performance techniques.</p>
+<p>While many existing JavaScript tools rely on <a href="https://github.com/estree/estree">estree</a> as their AST specification,
+a notable drawback is its abundance of ambiguous nodes.
+This ambiguity often leads to confusion during development with <a href="https://github.com/estree/estree">estree</a>.</p>
+<p>The Oxc AST differs slightly from the <a href="https://github.com/estree/estree">estree</a> AST by removing ambiguous nodes and introducing distinct types.
+For example, instead of using a generic <a href="https://github.com/estree/estree">estree</a> <code>Identifier</code>,
+the Oxc AST provides specific types such as <code>BindingIdentifier</code>, <code>IdentifierReference</code>, and <code>IdentifierName</code>.
+This clear distinction greatly enhances the development experience by aligning more closely with the ECMAScript specification.</p>
+<a id="md:🏆-parser-performance" class="tsd-anchor"></a><h4 class="tsd-anchor-link">🏆 Parser Performance<a href="#md:🏆-parser-performance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><p>Our <a href="https://github.com/Boshen/bench-javascript-parser-written-in-rust">benchmark</a> reveals that the Oxc parser surpasses the speed of the <a href="https://swc.rs">swc</a> parser by approximately 3 times and the <a href="https://biomejs.dev/">Biome</a> parser by 5 times.</p>
+<details>
+  <summary>How is it so fast?</summary>
+  <ul>
+    <li>AST is allocated in a memory arena (<a href="https://crates.io/crates/bumpalo">bumpalo</a>) for fast AST memory allocation and deallocation.</li>
+    <li>Short strings are inlined by <a href="https://crates.io/crates/compact_str">CompactString</a>.</li>
+    <li>No other heap allocations are done except the above two.</li>
+    <li>Scope binding, symbol resolution and some syntax errors are not done in the parser, they are delegated to the semantic analyzer.</li>
+  </ul>
+</details>
+<a id="md:🔸-linter" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🔸 Linter<a href="#md:🔸-linter" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>The linter embraces convention over configuration, eliminating the need for extensive configuration and plugin setup.
+Unlike other linters like <a href="https://eslint.org/">ESLint</a>, which often require intricate configurations and plugin installations (e.g. <a href="https://typescript-eslint.io">@typescript-eslint</a>),
+our linter only requires a single command that you can immediately run on your codebase:</p>
+<pre><code class="bash"><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">oxlint@latest</span>
+</code><button type="button">Copy</button></pre>
+
+<a id="md:🏆-linter-performance" class="tsd-anchor"></a><h4 class="tsd-anchor-link">🏆 Linter Performance<a href="#md:🏆-linter-performance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><p>The linter is 50 - 100 times faster than <a href="https://eslint.org/">ESLint</a> depending on the number of rules and number of CPU cores used.
+It completes in less than a second for most codebases with a few hundred files and completes in a few seconds for
+larger monorepos. See <a href="https://github.com/Boshen/bench-javascript-linter">bench-javascript-linter</a> for details.</p>
+<p>As an upside, the binary is approximately 5MB, whereas <a href="https://eslint.org/">ESLint</a> and its associated plugin dependencies can easily exceed 100.</p>
+<p>You may also download the linter binary from the <a href="https://github.com/oxc-project/oxc/releases/latest">latest release tag</a> as a standalone binary,
+this lets you run the linter without a Node.js installation in your CI.</p>
+<details>
+  <summary>How is it so fast?</summary>
+  <ul>
+    <li>Oxc parser is used.</li>
+    <li>AST visit is a fast operation due to linear memory scan from the memory arena.</li>
+    <li>Files are linted in a multi-threaded environment, so scales with the total number of CPU cores.</li>
+    <li>Every single lint rule is tuned for performance.</li>
+  </ul>
+</details>
+<a id="md:🔸-resolver" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🔸 Resolver<a href="#md:🔸-resolver" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Module resolution plays a crucial role in JavaScript tooling, especially for tasks like multi-file analysis or bundling. However, it can often become a performance bottleneck.
+To address this, we developed <a href="https://docs.rs/oxc_resolver">oxc_resolver</a>.</p>
+<p>The resolver is production-ready and is currently being used in <a href="https://rolldown.rs">Rolldown</a>. Usage and examples can be found in its own <a href="https://github.com/oxc-project/oxc_resolver">repository</a>.</p>
+<a id="md:🔸-transformer-transpiler" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🔸 Transformer (Transpiler)<a href="#md:🔸-transformer-transpiler" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>A transformer is responsible for turning higher versions of ECMAScript to a lower version that can be used in older browsers.
+We are currently focusing on the architecture. See <a href="https://github.com/oxc-project/oxc/issues/2859">Milestone 1</a> for details.</p>
+<a id="md:🔸-isolated-declarations" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🔸 Isolated Declarations<a href="#md:🔸-isolated-declarations" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p><a href="https://devblogs.microsoft.com/typescript/announcing-typescript-5-5-beta/#isolated-declarations">TypeScript Isolated Declarations Emit</a> without using the TypeScript compiler.</p>
+<p>Our <a href="https://github.com/oxc-project/bench-transformer">benchmark</a> indications that our implementation is at least 20 times faster than the TypeScript compiler.</p>
+<p>The <a href="https://www.npmjs.com/package/oxc-transform">npm package</a> or <a href="https://crates.io/crates/oxc_isolated_declarations">crate</a> can be used for this task.</p>
+<a id="md:🔸-minifier" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🔸 Minifier<a href="#md:🔸-minifier" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>JavaScript minification plays a crucial role in optimizing website performance as it reduces the amount of data sent to users,
+resulting in faster page loads.
+This holds tremendous economic value, particularly for e-commerce websites, where every second can equate to millions of dollars.</p>
+<p>However, existing minifiers typically require a trade-off between compression quality and speed.
+You have to choose between the slowest for the best compression or the fastest for less compression.
+But what if we could develop a faster minifier without compromising on compression?</p>
+<p>We are actively working on a prototype that aims to achieve this goal,
+by porting all test cases from well-known minifiers such as <a href="https://github.com/google/closure-compiler">google-closure-compiler</a>, <a href="https://terser.org">terser</a>, <a href="https://esbuild.github.io/">esbuild</a>, and <a href="https://github.com/tdewolff/minify">tdewolff-minify</a>.</p>
+<p>Preliminary results indicate that we are on track to achieve our objectives.
+With the Oxc minifier, you can expect faster minification times without sacrificing compression quality.</p>
+<a id="md:🔸-formatter" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🔸 Formatter<a href="#md:🔸-formatter" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>While <a href="https://prettier.io">prettier</a> has established itself as the de facto code formatter for JavaScript, there is a significant demand in the developer community for a less opinionated alternative. Recognizing this need, our ambition is to undertake research and development to create a new JavaScript formatter that offers increased flexibility and customization options.</p>
+<p>The <a href="https://github.com/oxc-project/oxc/tree/main/crates/oxc_prettier">prototype</a> is currently work in progress.</p>
+<hr>
+<a id="md:✍️-contribute" class="tsd-anchor"></a><h2 class="tsd-anchor-link">✍️ Contribute<a href="#md:✍️-contribute" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>See <a href="media/CONTRIBUTING.md">CONTRIBUTING.md</a> for guidance.</p>
+<p>Check out some of the <a href="https://github.com/oxc-project/oxc/contribute">good first issues</a> or ask us on <a href="https://discord.gg/9uXCAwqQZW">Discord</a>.</p>
+<p>If you are unable to contribute by code, you can still participate by:</p>
+<ul>
+<li>Add a <a href="https://github.com/oxc-project/oxc/stargazers">GitHub Star</a> to the project.</li>
+<li>Join us on <a href="https://discord.gg/9uXCAwqQZW">Discord</a>.</li>
+<li><a href="https://twitter.com/boshen_c">Follow me on twitter</a> and tweet about this project.</li>
+</ul>
+<a id="md:📚-learning-resources" class="tsd-anchor"></a><h2 class="tsd-anchor-link">📚 Learning Resources<a href="#md:📚-learning-resources" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>My small tutorial on <a href="https://oxc.rs/docs/learn/parser_in_rust/intro.html">how to write a JavaScript Parser in Rust</a></li>
+<li>My small article <a href="https://oxc.rs/docs/learn/performance.html">Pursuit of Performance on Building a JavaScript Compiler</a></li>
+<li><a href="https://oxc.rs/docs/learn/references.html">And more</a></li>
+</ul>
+<a id="md:🤝-credits" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🤝 Credits<a href="#md:🤝-credits" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>This project was incubated with the assistance of these exceptional mentors and their projects:</p>
+<ul>
+<li><a href="https://biomejs.dev/">Biome</a> - <a href="https://github.com/ematipico">@ematipico</a></li>
+<li><a href="https://beta.ruff.rs">Ruff</a> - <a href="https://github.com/charliermarsh">@charliermarsh</a>, <a href="https://github.com/MichaReiser">@MichaReiser</a></li>
+<li><a href="https://quick-lint-js.com">quick-lint-js</a> - <a href="https://github.com/strager">@strager</a></li>
+<li><a href="https://package.elm-lang.org/packages/jfmengels/elm-review/latest">elm-review</a> - <a href="https://github.com/jfmengels">@jfmengels</a></li>
+</ul>
+<p>Special thanks go to</p>
+<ul>
+<li><a href="https://github.com/domonji">@domonji</a> for bootstrapping this project together, and also completing the TypeScript parser.</li>
+<li><a href="https://github.com/tongtong-lu">@tongtong-lu</a> and <a href="https://github.com/guan-wy">@guan-wy</a> for designing the <a href="https://github.com/oxc-project/oxc-assets">project logo</a>.</li>
+</ul>
+<a id="md:❤-whos-sponsoring-oxc" class="tsd-anchor"></a><h2 class="tsd-anchor-link">❤ Who's <a href="https://github.com/sponsors/Boshen">Sponsoring Oxc</a>?<a href="#md:❤-whos-sponsoring-oxc" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p align="center">
+  <a href="https://github.com/sponsors/Boshen">
+    <img src="https://raw.githubusercontent.com/Boshen/sponsors/main/sponsors.svg" alt="My sponsors" />
+  </a>
+</p>
+<a id="md:📖-license" class="tsd-anchor"></a><h2 class="tsd-anchor-link">📖 License<a href="#md:📖-license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Oxc is free and open-source software licensed under the <a href="media/LICENSE">MIT License</a>.</p>
+<p>Oxc ports or copies code from other open source projects, their licenses are listed in <a href="media/THIRD-PARTY-LICENSE"><strong>Third-party library licenses</strong></a>.</p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><use href="assets/icons.svg#icon-chevronDown"></use></svg>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><use href="assets/icons.svg#icon-chevronDown"></use></svg>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#md:⚓-oxc"><span>⚓ <wbr/>Oxc</span></a><a href="#md:🙋whos-using-oxc"><span>🙋<wbr/>Who&#39;s using <wbr/>Oxc?</span></a><a href="#md:⚡️-linter-quick-start"><span>⚡️ <wbr/>Linter <wbr/>Quick <wbr/>Start</span></a><a href="#md:⚡️-performance"><span>⚡️ <wbr/>Performance</span></a><a href="#md:⌨️-rust-nodejs-and-wasm-usage"><span>⌨️ <wbr/>Rust, <wbr/>Node.js and <wbr/>Wasm <wbr/>Usage</span></a><ul><li><a href="#md:rust"><span>Rust</span></a></li><li><a href="#md:nodejs"><span>Node.js</span></a></li><li><a href="#md:wasm"><span>Wasm</span></a></li></ul><a href="#md:🎯-tools"><span>🎯 <wbr/>Tools</span></a><ul><li><a href="#md:🔸-ast-and-parser"><span>🔸 AST and <wbr/>Parser</span></a></li><li><ul><li><a href="#md:🏆-parser-performance"><span>🏆 <wbr/>Parser <wbr/>Performance</span></a></li></ul></li><li><a href="#md:🔸-linter"><span>🔸 <wbr/>Linter</span></a></li><li><ul><li><a href="#md:🏆-linter-performance"><span>🏆 <wbr/>Linter <wbr/>Performance</span></a></li></ul></li><li><a href="#md:🔸-resolver"><span>🔸 <wbr/>Resolver</span></a></li><li><a href="#md:🔸-transformer-transpiler"><span>🔸 <wbr/>Transformer (<wbr/>Transpiler)</span></a></li><li><a href="#md:🔸-isolated-declarations"><span>🔸 <wbr/>Isolated <wbr/>Declarations</span></a></li><li><a href="#md:🔸-minifier"><span>🔸 <wbr/>Minifier</span></a></li><li><a href="#md:🔸-formatter"><span>🔸 <wbr/>Formatter</span></a></li></ul><a href="#md:✍️-contribute"><span>✍️ <wbr/>Contribute</span></a><a href="#md:📚-learning-resources"><span>📚 <wbr/>Learning <wbr/>Resources</span></a><a href="#md:🤝-credits"><span>🤝 <wbr/>Credits</span></a><a href="#md:❤-whos-sponsoring-oxc"><span>❤ <wbr/>Who&#39;s <wbr/>Sponsoring <wbr/>Oxc?</span></a><a href="#md:📖-license"><span>📖 <wbr/>License</span></a></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html" class="current"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="assets/icons.svg#icon-1"></use></svg><span>oxc_ast_scripts - v0.0.1</span></a><ul class="tsd-small-nested-navigation" id="tsd-nav-container" data-base="."><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

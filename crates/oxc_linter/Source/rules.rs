@@ -90,7 +90,6 @@ mod eslint {
     pub mod no_new_wrappers;
     pub mod no_nonoctal_decimal_escape;
     pub mod no_obj_calls;
-    pub mod no_plusplus;
     pub mod no_proto;
     pub mod no_prototype_builtins;
     pub mod no_redeclare;
@@ -549,7 +548,6 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_new_wrappers,
     eslint::no_nonoctal_decimal_escape,
     eslint::no_obj_calls,
-    eslint::no_plusplus,
     eslint::no_proto,
     eslint::no_prototype_builtins,
     eslint::no_redeclare,
