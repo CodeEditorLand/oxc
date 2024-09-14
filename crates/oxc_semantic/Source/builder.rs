@@ -22,14 +22,14 @@ use crate::{
     binder::Binder,
     checker,
     class::ClassTableBuilder,
-    counter::Counts,
     diagnostics::redeclaration,
     jsdoc::JSDocBuilder,
     label::UnusedLabels,
     module_record::ModuleRecordBuilder,
-    node::{AstNodeId, AstNodes, NodeFlags},
+    node::{AstNodes, NodeFlags, NodeId},
     reference::{Reference, ReferenceFlags, ReferenceId},
     scope::{Bindings, ScopeFlags, ScopeId, ScopeTree},
+    stats::Stats,
     symbol::{SymbolFlags, SymbolId, SymbolTable},
     unresolved_stack::UnresolvedReferencesStack,
     JSDocFinder, Semantic,
@@ -72,12 +72,12 @@ pub struct SemanticBuilder<'a> {
     errors: RefCell<Vec<OxcDiagnostic>>,
 
     // states
-    pub(crate) current_node_id: AstNodeId,
+    pub(crate) current_node_id: NodeId,
     pub(crate) current_node_flags: NodeFlags,
     pub(crate) current_symbol_flags: SymbolFlags,
     pub(crate) current_scope_id: ScopeId,
     /// Stores current `AstKind::Function` and `AstKind::ArrowFunctionExpression` during AST visit
-    pub(crate) function_stack: Vec<AstNodeId>,
+    pub(crate) function_stack: Vec<NodeId>,
     // To make a namespace/module value like
     // we need the to know the modules we are inside
     // and when we reach a value declaration we set it
@@ -98,6 +98,7 @@ pub struct SemanticBuilder<'a> {
     unused_labels: UnusedLabels<'a>,
     build_jsdoc: bool,
     jsdoc: JSDocBuilder<'a>,
+    stats: Option<Stats>,
 
     /// Should additional syntax checks be performed?
     ///
@@ -108,7 +109,7 @@ pub struct SemanticBuilder<'a> {
 
     pub(crate) class_table_builder: ClassTableBuilder,
 
-    ast_node_records: Vec<AstNodeId>,
+    ast_node_records: Vec<NodeId>,
 }
 
 /// Data returned by [`SemanticBuilder::build`].
@@ -128,7 +129,7 @@ impl<'a> SemanticBuilder<'a> {
             source_type: SourceType::default(),
             trivias: trivias.clone(),
             errors: RefCell::new(vec![]),
-            current_node_id: AstNodeId::new(0),
+            current_node_id: NodeId::new(0),
             current_node_flags: NodeFlags::empty(),
             current_symbol_flags: SymbolFlags::empty(),
             current_reference_flags: ReferenceFlags::empty(),
@@ -144,6 +145,7 @@ impl<'a> SemanticBuilder<'a> {
             unused_labels: UnusedLabels::default(),
             build_jsdoc: false,
             jsdoc: JSDocBuilder::new(source_text, trivias),
+            stats: None,
             check_syntax_error: false,
             cfg: None,
             class_table_builder: ClassTableBuilder::new(),
@@ -193,6 +195,19 @@ impl<'a> SemanticBuilder<'a> {
         self
     }
 
+    /// Provide statistics about AST to optimize memory usage of semantic analysis.
+    ///
+    /// Accurate statistics can greatly improve performance, especially for large ASTs.
+    /// If no stats are provided, [`SemanticBuilder::build`] will compile stats by performing
+    /// a complete AST traversal.
+    /// If semantic analysis has already been performed on this AST, get the existing stats with
+    /// [`Semantic::stats`], and pass them in with this method, to avoid the stats collection AST pass.
+    #[must_use]
+    pub fn with_stats(mut self, stats: Stats) -> Self {
+        self.stats = Some(stats);
+        self
+    }
+
     /// Get the built module record from `build_module_record`
     pub fn module_record(&self) -> Arc<ModuleRecord> {
         Arc::clone(&self.module_record)
@@ -218,38 +233,44 @@ impl<'a> SemanticBuilder<'a> {
     pub fn build(mut self, program: &Program<'a>) -> SemanticBuilderReturn<'a> {
         self.source_type = program.source_type;
         if self.source_type.is_typescript_definition() {
-            let scope_id = self.scope.add_scope(None, AstNodeId::DUMMY, ScopeFlags::Top);
+            let scope_id = self.scope.add_scope(None, NodeId::DUMMY, ScopeFlags::Top);
             program.scope_id.set(Some(scope_id));
         } else {
-            // Count the number of nodes, scopes, symbols, and references.
-            // Use these counts to reserve sufficient capacity in `AstNodes`, `ScopeTree`
-            // and `SymbolTable` to store them.
+            // Use counts of nodes, scopes, symbols, and references to pre-allocate sufficient capacity
+            // in `AstNodes`, `ScopeTree` and `SymbolTable`.
+            //
             // This means that as we traverse the AST and fill up these structures with data,
             // they never need to grow and reallocate - which is an expensive operation as it
             // involves copying all the memory from the old allocation to the new one.
             // For large source files, these structures are very large, so growth is very costly
             // as it involves copying massive chunks of memory.
             // Avoiding this growth produces up to 30% perf boost on our benchmarks.
-            // TODO: It would be even more efficient to calculate counts in parser to avoid
-            // this extra AST traversal.
-            let counts = Counts::count(program);
-            self.nodes.reserve(counts.nodes);
-            self.scope.reserve(counts.scopes);
-            self.symbols.reserve(counts.symbols, counts.references);
+            //
+            // If user did not provide existing `Stats`, calculate them by visiting AST.
+            let (stats, check_stats) = if let Some(stats) = self.stats {
+                (stats, false)
+            } else {
+                let stats = Stats::count(program);
+                (stats, true)
+            };
+            self.nodes.reserve(stats.nodes as usize);
+            self.scope.reserve(stats.scopes as usize);
+            self.symbols.reserve(stats.symbols as usize, stats.references as usize);
 
             // Visit AST to generate scopes tree etc
             self.visit_program(program);
 
-            // Check that estimated counts accurately
+            // Check that estimated counts accurately (unless in release mode)
             #[cfg(debug_assertions)]
-            {
-                let actual_counts = Counts {
-                    nodes: self.nodes.len(),
-                    scopes: self.scope.len(),
-                    symbols: self.symbols.len(),
-                    references: self.symbols.references.len(),
-                };
-                Counts::assert_accurate(&actual_counts, &counts);
+            if check_stats {
+                #[allow(clippy::cast_possible_truncation)]
+                let actual_stats = Stats::new(
+                    self.nodes.len() as u32,
+                    self.scope.len() as u32,
+                    self.symbols.len() as u32,
+                    self.symbols.references.len() as u32,
+                );
+                stats.assert_accurate(actual_stats);
             }
 
             // Checking syntax error on module record requires scope information from the previous AST pass
@@ -314,13 +335,13 @@ impl<'a> SemanticBuilder<'a> {
     #[inline]
     fn record_ast_nodes(&mut self) {
         if self.cfg.is_some() {
-            self.ast_node_records.push(AstNodeId::DUMMY);
+            self.ast_node_records.push(NodeId::DUMMY);
         }
     }
 
     #[inline]
     #[allow(clippy::unnecessary_wraps)]
-    fn retrieve_recorded_ast_node(&mut self) -> Option<AstNodeId> {
+    fn retrieve_recorded_ast_node(&mut self) -> Option<NodeId> {
         if self.cfg.is_some() {
             Some(self.ast_node_records.pop().expect("there is no ast node record to stop."))
         } else {
@@ -335,7 +356,7 @@ impl<'a> SemanticBuilder<'a> {
         // <https://github.com/oxc-project/oxc/pull/4273>
         if self.cfg.is_some() {
             if let Some(record) = self.ast_node_records.last_mut() {
-                if *record == AstNodeId::DUMMY {
+                if *record == NodeId::DUMMY {
                     *record = self.current_node_id;
                 }
             }
