@@ -1,16 +1,16 @@
 [package]
-name                   = "oxc_cli"
-version                = "0.0.0"
-publish                = false
-authors.workspace      = true
-description.workspace  = true
-edition.workspace      = true
-homepage.workspace     = true
-keywords.workspace     = true
-license.workspace      = true
-repository.workspace   = true
+name = "oxc_cli"
+version = "0.0.0"
+publish = false
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
 rust-version.workspace = true
-categories.workspace   = true
+categories.workspace = true
 
 [lints]
 workspace = true
@@ -40,21 +40,25 @@ jemallocator = { workspace = true, optional = true }
 mimalloc = { workspace = true, optional = true }
 
 [dependencies]
-oxc_allocator   = { workspace = true }
+oxc_allocator = { workspace = true }
 oxc_diagnostics = { workspace = true }
-oxc_linter      = { workspace = true }
-oxc_parser      = { workspace = true }
-oxc_prettier    = { workspace = true }
-oxc_span        = { workspace = true }
+oxc_linter = { workspace = true }
+oxc_parser = { workspace = true }
+oxc_prettier = { workspace = true }
+oxc_span = { workspace = true }
 
-glob               = { workspace = true }
-ignore             = { workspace = true, features = ["simd-accel"] }
-miette             = { workspace = true }
-tempfile           = { workspace = true }
-rayon              = { workspace = true }
-bpaf               = { workspace = true, features = ["derive", "autocomplete", "bright-color"] }
+glob = { workspace = true }
+ignore = { workspace = true, features = ["simd-accel"] }
+miette = { workspace = true }
+tempfile = { workspace = true }
+rayon = { workspace = true }
+bpaf = { workspace = true, features = [
+	"derive",
+	"autocomplete",
+	"bright-color",
+] }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-default   = []
+default = []
 allocator = ["dep:jemallocator", "dep:mimalloc"]

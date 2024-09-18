@@ -1,17 +1,17 @@
 [package]
-name                   = "oxc_transformer_dts"
-version                = "0.14.0"
-publish                = true
-authors.workspace      = true
-description.workspace  = true
-edition.workspace      = true
-homepage.workspace     = true
-keywords.workspace     = true
-license.workspace      = true
-repository.workspace   = true
+name = "oxc_transformer_dts"
+version = "0.14.0"
+publish = true
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
 rust-version.workspace = true
-categories.workspace   = true
-include                = ["/examples", "/src"]
+categories.workspace = true
+include = ["/examples", "/src"]
 
 [lints]
 workspace = true
@@ -20,12 +20,12 @@ workspace = true
 doctest = false
 
 [dependencies]
-oxc_codegen     = { workspace = true }
-oxc_ast         = { workspace = true }
-oxc_span        = { workspace = true }
-oxc_allocator   = { workspace = true }
+oxc_codegen = { workspace = true }
+oxc_ast = { workspace = true }
+oxc_span = { workspace = true }
+oxc_allocator = { workspace = true }
 oxc_diagnostics = { workspace = true }
-oxc_syntax      = { workspace = true }
+oxc_syntax = { workspace = true }
 
 rustc-hash = { workspace = true }
 
