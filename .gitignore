@@ -14,7 +14,6 @@ target/
 
 npm/cli-*
 
-# Ignore accidental files from the root
 /*.js
 /*.jsx
 /*.ts
