@@ -406,6 +406,16 @@ pub enum TSTypeOperatorOperator {
     Readonly = 2,
 }
 
+impl TSTypeOperatorOperator {
+    pub fn to_str(self) -> &'static str {
+        match self {
+            TSTypeOperatorOperator::Keyof => "keyof",
+            TSTypeOperatorOperator::Readonly => "readonly",
+            TSTypeOperatorOperator::Unique => "unique",
+        }
+    }
+}
+
 /// TypeScript Array Type
 ///
 /// Does not include tuple types, which are stored as [`TSTupleType`].
@@ -1080,6 +1090,14 @@ pub enum TSModuleDeclarationKind {
 impl TSModuleDeclarationKind {
     pub fn is_global(self) -> bool {
         matches!(self, TSModuleDeclarationKind::Global)
+    }
+
+    pub fn to_str(self) -> &'static str {
+        match self {
+            TSModuleDeclarationKind::Global => "global",
+            TSModuleDeclarationKind::Namespace => "namespace",
+            TSModuleDeclarationKind::Module => "module",
+        }
     }
 }
 
