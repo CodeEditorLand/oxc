@@ -1,0 +1,50 @@
+---
+source: crates/oxc_linter/src/tester.rs
+---
+  ⚠ eslint-plugin-unicorn(no-anonymous-default-export): This class default export is missing a name
+   ╭─[no_anonymous_default_export.tsx:1:1]
+ 1 │ export default class {}
+   · ───────────────────────
+   ╰────
+
+  ⚠ eslint-plugin-unicorn(no-anonymous-default-export): This function default export is missing a name
+   ╭─[no_anonymous_default_export.tsx:1:1]
+ 1 │ export default function () {}
+   · ─────────────────────────────
+   ╰────
+
+  ⚠ eslint-plugin-unicorn(no-anonymous-default-export): This function default export is missing a name
+   ╭─[no_anonymous_default_export.tsx:1:1]
+ 1 │ export default () => {};
+   · ────────────────────────
+   ╰────
+
+  ⚠ eslint-plugin-unicorn(no-anonymous-default-export): This class default export is missing a name
+   ╭─[no_anonymous_default_export.tsx:1:1]
+ 1 │ module.exports = class {}
+   · ─────────────────────────
+   ╰────
+
+  ⚠ eslint-plugin-unicorn(no-anonymous-default-export): This function default export is missing a name
+   ╭─[no_anonymous_default_export.tsx:1:1]
+ 1 │ module.exports = function () {}
+   · ───────────────────────────────
+   ╰────
+
+  ⚠ eslint-plugin-unicorn(no-anonymous-default-export): This function default export is missing a name
+   ╭─[no_anonymous_default_export.tsx:1:1]
+ 1 │ module.exports = () => {}
+   · ─────────────────────────
+   ╰────
+
+  ⚠ eslint-plugin-unicorn(no-anonymous-default-export): This function default export is missing a name
+   ╭─[no_anonymous_default_export.tsx:1:17]
+ 1 │ export default (async function * () {})
+   ·                 ──────────────────────
+   ╰────
+
+  ⚠ eslint-plugin-unicorn(no-anonymous-default-export): This class default export is missing a name
+   ╭─[no_anonymous_default_export.tsx:1:17]
+ 1 │ export default (class extends class {} {})
+   ·                 ─────────────────────────
+   ╰────
