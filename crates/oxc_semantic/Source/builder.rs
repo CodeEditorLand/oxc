@@ -145,7 +145,7 @@ impl<'a> SemanticBuilder<'a> {
             module_record: Arc::new(ModuleRecord::default()),
             unused_labels: UnusedLabels::default(),
             build_jsdoc: false,
-            jsdoc: JSDocBuilder::new(source_text, trivias),
+            jsdoc: JSDocBuilder::new(source_text, &trivias),
             stats: None,
             excess_capacity: 0.0,
             check_syntax_error: false,
@@ -157,8 +157,7 @@ impl<'a> SemanticBuilder<'a> {
 
     #[must_use]
     pub fn with_trivias(mut self, trivias: Trivias) -> Self {
-        self.trivias = trivias.clone();
-        self.jsdoc = JSDocBuilder::new(self.source_text, trivias);
+        self.trivias = trivias;
         self
     }
 
@@ -176,8 +175,10 @@ impl<'a> SemanticBuilder<'a> {
     }
 
     /// Enable/disable JSDoc parsing.
+    /// `with_trivias` must be called prior to this call.
     #[must_use]
     pub fn with_build_jsdoc(mut self, yes: bool) -> Self {
+        self.jsdoc = JSDocBuilder::new(self.source_text, &self.trivias);
         self.build_jsdoc = yes;
         self
     }

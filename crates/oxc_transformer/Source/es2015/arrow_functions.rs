@@ -4,6 +4,17 @@
 //!
 //! > This plugin is included in `preset-env`, in ES2015
 //!
+//! ## Missing features
+//!
+//! Implementation is incomplete at present. Still TODO:
+//!
+//! * Handle `arguments` in arrow functions.
+//! * Handle `new.target` in arrow functions.
+//! * Error on arrow functions in class properties.
+//!   <https://babeljs.io/repl#?code_lz=MYGwhgzhAEDC0G8BQ1oDMD2HoF5oAoBKXAPmgBcALASwgG4kBfJIA&presets=&externalPlugins=%40babel%2Fplugin-transform-arrow-functions%407.24.7>
+//! * Error on `super` in arrow functions.
+//!   <https://babeljs.io/repl#?code_lz=MYGwhgzhAEBiD29oG8C-AoUkYCEwCdoBTADwBciA7AExgSWXWmgFsiyALeagCgEoUTZtHzsArvkrR-0ALwA-aBDEAHIvgB0AM0QBuIRgxA&presets=&externalPlugins=%40babel%2Fplugin-transform-arrow-functions%407.24.7>
+//!
 //! ## Example
 //!
 //! Input:
@@ -52,7 +63,7 @@
 //!
 //! ## Implementation
 //!
-//! Implementation based on [@babel/plugin-transform-exponentiation-operator](https://babel.dev/docs/babel-plugin-transform-arrow-functions).
+//! Implementation based on [@babel/plugin-transform-arrow-functions](https://babel.dev/docs/babel-plugin-transform-arrow-functions).
 //!
 //! ## References:
 //!
@@ -99,6 +110,9 @@ impl<'a> ArrowFunctions<'a> {
 }
 
 impl<'a> Traverse<'a> for ArrowFunctions<'a> {
+    // Note: No visitors for `TSModuleBlock` because `this` is not legal in TS module blocks.
+    // <https://www.typescriptlang.org/play/?#code/HYQwtgpgzgDiDGEAEAxA9mpBvAsAKCSXjWCgBckANJAXiQAoBKWgPiTIAsBLKAbnwC++fGDQATAK4AbZACEQAJ2z5CxUhWp0mrdtz6D8QA>
+
     /// Insert `var _this = this;` for the global scope.
     fn exit_program(&mut self, program: &mut Program<'a>, _ctx: &mut TraverseCtx<'a>) {
         debug_assert!(self.inside_arrow_function_stack.len() == 1);
@@ -168,6 +182,18 @@ impl<'a> Traverse<'a> for ArrowFunctions<'a> {
         self.inside_arrow_function_stack.pop().unwrap();
     }
 
+    fn enter_static_block(&mut self, _block: &mut StaticBlock<'a>, _ctx: &mut TraverseCtx<'a>) {
+        self.this_var_stack.push(None);
+        // No need to push to `inside_arrow_function_stack` because `enter_class` already pushed `false`
+    }
+
+    fn exit_static_block(&mut self, block: &mut StaticBlock<'a>, _ctx: &mut TraverseCtx<'a>) {
+        let this_var = self.this_var_stack.pop().unwrap();
+        if let Some(this_var) = this_var {
+            self.insert_this_var_statement_at_the_top_of_statements(&mut block.body, &this_var);
+        }
+    }
+
     fn enter_jsx_element_name(
         &mut self,
         element_name: &mut JSXElementName<'a>,
@@ -220,20 +246,6 @@ impl<'a> Traverse<'a> for ArrowFunctions<'a> {
             *expr = self.transform_arrow_function_expression(arrow_function_expr.unbox(), ctx);
         }
     }
-
-    fn enter_variable_declarator(
-        &mut self,
-        node: &mut VariableDeclarator<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) {
-        if !matches!(node.init, Some(Expression::ArrowFunctionExpression(_))) {
-            return;
-        }
-
-        let Some(id) = node.id.get_binding_identifier() else { return };
-        *ctx.symbols_mut().get_flags_mut(id.symbol_id.get().unwrap()) &=
-            !SymbolFlags::ArrowFunction;
-    }
 }
 
 impl<'a> ArrowFunctions<'a> {
@@ -255,13 +267,16 @@ impl<'a> ArrowFunctions<'a> {
             let target_scope_id = ctx
                 .scopes()
                 .ancestors(ctx.current_scope_id())
+                // We're inside arrow function, so parent scope can't be what we're looking for.
+                // It's either the arrow function, or a block nested within arrow function.
                 .skip(1)
                 .find(|&scope_id| {
                     let scope_flags = ctx.scopes().get_flags(scope_id);
-                    // Function but not arrow function
-                    scope_flags & (ScopeFlags::Function | ScopeFlags::Arrow) == ScopeFlags::Function
+                    scope_flags.intersects(
+                        ScopeFlags::Function | ScopeFlags::Top | ScopeFlags::ClassStaticBlock,
+                    ) && !scope_flags.contains(ScopeFlags::Arrow)
                 })
-                .unwrap_or(ctx.scopes().root_scope_id());
+                .unwrap();
 
             this_var.replace(BoundIdentifier::new_uid(
                 "this",
