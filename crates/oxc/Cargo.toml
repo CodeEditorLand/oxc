@@ -54,12 +54,7 @@ codegen = ["oxc_codegen"]
 mangler = ["oxc_mangler"]
 cfg = ["oxc_cfg"]
 
-serialize = [
-	"oxc_ast/serialize",
-	"oxc_semantic?/serialize",
-	"oxc_span/serialize",
-	"oxc_syntax/serialize",
-]
+serialize = ["oxc_ast/serialize", "oxc_semantic?/serialize", "oxc_span/serialize", "oxc_syntax/serialize"]
 
 sourcemap = ["oxc_sourcemap"]
 sourcemap_concurrent = ["oxc_sourcemap/concurrent", "sourcemap"]

@@ -14,11 +14,7 @@ test = false
 doctest = false
 
 [dependencies]
-bpaf = { workspace = true, features = [
-	"autocomplete",
-	"bright-color",
-	"derive",
-] }
+bpaf = { workspace = true, features = ["autocomplete", "bright-color", "derive"] }
 convert_case = { workspace = true }
 itertools = { workspace = true }
 lazy_static = { workspace = true }
@@ -28,12 +24,4 @@ quote = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-syn = { workspace = true, features = [
-	"clone-impls",
-	"derive",
-	"extra-traits",
-	"full",
-	"parsing",
-	"printing",
-	"proc-macro",
-] }
+syn = { workspace = true, features = ["clone-impls", "derive", "extra-traits", "full", "parsing", "printing", "proc-macro"] }
