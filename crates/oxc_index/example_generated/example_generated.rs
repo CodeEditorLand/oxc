@@ -218,10 +218,7 @@ impl core::fmt::Display for CoolIndex {
         f.write_fmt(::core::fmt::Arguments::new_v1(
             &["", " is a ~Cool Index~"],
             &match (&self.index(),) {
-                (arg0,) => [::core::fmt::ArgumentV1::new(
-                    arg0,
-                    ::core::fmt::Display::fmt,
-                )],
+                (arg0,) => [::core::fmt::ArgumentV1::new(arg0, ::core::fmt::Display::fmt)],
             },
         ))
     }

@@ -17,6 +17,7 @@ workspace = true
 
 [lib]
 doctest = false
+path = "Source/lib.rs"
 
 [dependencies]
 oxc_allocator = { workspace = true }
@@ -48,4 +49,10 @@ serde_json = { workspace = true }
 
 [features]
 default = []
-serialize = ["dep:serde", "dep:tsify", "dep:wasm-bindgen", "oxc_span/serialize", "oxc_syntax/serialize"]
+serialize = [
+	"dep:serde",
+	"dep:tsify",
+	"dep:wasm-bindgen",
+	"oxc_span/serialize",
+	"oxc_syntax/serialize",
+]

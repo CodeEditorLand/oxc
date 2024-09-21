@@ -15,6 +15,7 @@ doctest = false
 
 [lib]
 doctest = false
+path = "Source/lib.rs"
 
 [dependencies]
 bpaf = { workspace = true, features = ["docgen"] }

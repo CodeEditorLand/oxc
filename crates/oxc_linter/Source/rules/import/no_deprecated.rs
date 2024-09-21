@@ -2,7 +2,10 @@ use oxc_diagnostics::{LabeledSpan, OxcDiagnostic};
 use oxc_macros::declare_oxc_lint;
 // use oxc_span::{CompactStr, Span};
 
-use crate::{context::{LintContext, ContextHost}, rule::Rule};
+use crate::{
+    context::{ContextHost, LintContext},
+    rule::Rule,
+};
 
 // #[derive(Debug, Error, Diagnostic)]
 // #[error("")]

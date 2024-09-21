@@ -5,7 +5,7 @@ use oxc_allocator::CloneIn;
 use oxc_ast_macros::ast;
 use oxc_span::{cmp::ContentEq, hash::ContentHash};
 #[cfg(feature = "serialize")]
-use ::{serde::Serialize, tsify::Tsify};
+use {serde::Serialize, tsify::Tsify};
 
 use crate::precedence::{GetPrecedence, Precedence};
 

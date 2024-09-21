@@ -17,6 +17,7 @@ workspace = true
 
 [lib]
 doctest = false
+path = "Source/lib.rs"
 
 [[bin]]
 name = "oxc_cli"

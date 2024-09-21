@@ -1,11 +1,13 @@
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
-use crate::{context::{LintContext, ContextHost}, rule::Rule};
+use crate::{
+    context::{ContextHost, LintContext},
+    rule::Rule,
+};
 
 fn no_exports_found(span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("No exports found")
-        .with_label(span)
+    OxcDiagnostic::warn("No exports found").with_label(span)
 }
 
 /// <https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-unused-modules.md>

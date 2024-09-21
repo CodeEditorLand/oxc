@@ -3,7 +3,7 @@
 
 use oxc_ast_macros::ast;
 #[cfg(feature = "serialize")]
-use ::{serde::Serialize, tsify::Tsify};
+use {serde::Serialize, tsify::Tsify};
 
 /// Newtype for working with text ranges
 ///
