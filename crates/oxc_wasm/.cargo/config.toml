@@ -1,13 +1,2 @@
-[build]
-target-dir = "Target"
-
-[cargo-new]
-vcs = "git"
-
 [profile.release]
-opt-level = 3
-codegen-units = 1
-debug = false
-lto = true
-panic = "abort"
-strip = true
+opt-level = "s" # Tell `rustc` to optimize for small code size.

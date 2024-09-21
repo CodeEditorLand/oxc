@@ -17,7 +17,6 @@ workspace = true
 
 [lib]
 doctest = false
-path = "Source/lib.rs"
 
 [dependencies]
 base64-simd = { workspace = true }

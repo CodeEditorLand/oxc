@@ -18,7 +18,6 @@ workspace = true
 
 [lib]
 doctest = false
-path = "Source/lib.rs"
 
 [dependencies]
 cow-utils = { workspace = true }
