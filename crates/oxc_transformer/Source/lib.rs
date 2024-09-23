@@ -27,6 +27,7 @@ mod typescript;
 mod helpers {
     pub mod bindings;
     pub mod module_imports;
+    pub mod stack;
 }
 
 use std::{path::Path, rc::Rc};
@@ -131,6 +132,9 @@ impl<'a> Traverse<'a> for Transformer<'a> {
     fn exit_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x1_react.exit_program(program, ctx);
         self.x0_typescript.exit_program(program, ctx);
+        self.x2_es2021.exit_program(program, ctx);
+        self.x2_es2020.exit_program(program, ctx);
+        self.x2_es2016.exit_program(program, ctx);
         self.x3_es2015.exit_program(program, ctx);
     }
 
