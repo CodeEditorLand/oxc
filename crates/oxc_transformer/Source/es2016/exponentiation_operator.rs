@@ -37,7 +37,7 @@ use oxc_span::SPAN;
 use oxc_syntax::operator::{AssignmentOperator, BinaryOperator};
 use oxc_traverse::{Traverse, TraverseCtx};
 
-use crate::{context::Ctx, helpers::stack::SparseStack};
+use crate::helpers::stack::SparseStack;
 
 /// ES2016: Exponentiation Operator
 ///
@@ -46,7 +46,6 @@ use crate::{context::Ctx, helpers::stack::SparseStack};
 /// * <https://github.com/babel/babel/blob/main/packages/babel-plugin-transform-exponentiation-operator>
 /// * <https://github.com/babel/babel/blob/main/packages/babel-helper-builder-binary-assignment-operator-visitor>
 pub struct ExponentiationOperator<'a> {
-    _ctx: Ctx<'a>,
     var_declarations: SparseStack<Vec<'a, VariableDeclarator<'a>>>,
 }
 
@@ -57,8 +56,8 @@ struct Exploded<'a> {
 }
 
 impl<'a> ExponentiationOperator<'a> {
-    pub fn new(ctx: Ctx<'a>) -> Self {
-        Self { _ctx: ctx, var_declarations: SparseStack::new() }
+    pub fn new() -> Self {
+        Self { var_declarations: SparseStack::new() }
     }
 }
 
@@ -93,10 +92,14 @@ impl<'a> Traverse<'a> for ExponentiationOperator<'a> {
         }
     }
 
+    // NOTE: Bail bigint arguments to `Math.pow`, which are runtime errors.
     fn enter_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         // left ** right
         if let Expression::BinaryExpression(binary_expr) = expr {
             if binary_expr.operator == BinaryOperator::Exponential {
+                if binary_expr.left.is_big_int_literal() || binary_expr.right.is_big_int_literal() {
+                    return;
+                }
                 let left = ctx.ast.move_expression(&mut binary_expr.left);
                 let right = ctx.ast.move_expression(&mut binary_expr.right);
                 *expr = Self::math_pow(left, right, ctx);
@@ -106,6 +109,9 @@ impl<'a> Traverse<'a> for ExponentiationOperator<'a> {
         // left **= right
         if let Expression::AssignmentExpression(assign_expr) = expr {
             if assign_expr.operator == AssignmentOperator::Exponential {
+                if assign_expr.right.is_big_int_literal() {
+                    return;
+                }
                 let mut nodes = ctx.ast.vec();
                 let Some(Exploded { reference, uid }) =
                     self.explode(&mut assign_expr.left, &mut nodes, ctx)
