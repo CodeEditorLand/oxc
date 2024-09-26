@@ -1,22 +1,38 @@
 {
-  "private": true,
-  "name": "lint_rules",
-  "main": "./src/main.cjs",
-  "version": "0.0.0",
-  "dependencies": {
-    "@next/eslint-plugin-next": "latest",
-    "@typescript-eslint/eslint-plugin": "latest",
-    "eslint": "latest",
-    "eslint-plugin-import": "latest",
-    "eslint-plugin-jest": "latest",
-    "eslint-plugin-jsdoc": "latest",
-    "eslint-plugin-jsx-a11y": "latest",
-    "eslint-plugin-n": "latest",
-    "eslint-plugin-promise": "latest",
-    "eslint-plugin-react": "latest",
-    "eslint-plugin-react-hooks": "latest",
-    "eslint-plugin-react-perf": "latest",
-    "eslint-plugin-unicorn": "latest",
-    "eslint-plugin-vitest": "latest"
-  }
+	"author": {
+		"email": "Source/Open@Editor.Land",
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"url": "HTTPS://Editor.Land"
+	},
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
+	"dependencies": {
+		"eslint-plugin-vitest": "latest"
+	},
+	"devDependencies": {
+		"@playform/build": "0.1.6"
+	},
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"keywords": [
+		"codeeditorland",
+		"land",
+		"playform"
+	],
+	"license": "SEE LICENSE IN LICENSE",
+	"main": "./src/main.cjs",
+	"name": "lint_rules",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
+	"scripts": {
+		"prepublishOnly": "Build 'Source/**/*.ts'"
+	},
+	"type": "module",
+	"version": "0.0.1"
 }
