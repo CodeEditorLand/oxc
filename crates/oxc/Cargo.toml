@@ -46,14 +46,14 @@ oxc_transformer = { workspace = true, optional = true }
 
 [features]
 full = [
-	"codegen",
-	"mangler",
-	"minifier",
-	"semantic",
-	"transformer",
-	"isolated_declarations",
-	"sourcemap",
-	"cfg",
+  "codegen",
+  "mangler",
+  "minifier",
+  "semantic",
+  "transformer",
+  "isolated_declarations",
+  "sourcemap",
+  "cfg",
 ]
 
 semantic = ["oxc_semantic"]
@@ -64,10 +64,10 @@ mangler = ["oxc_mangler"]
 cfg = ["oxc_cfg"]
 
 serialize = [
-	"oxc_ast/serialize",
-	"oxc_semantic?/serialize",
-	"oxc_span/serialize",
-	"oxc_syntax/serialize",
+  "oxc_ast/serialize",
+  "oxc_semantic?/serialize",
+  "oxc_span/serialize",
+  "oxc_syntax/serialize",
 ]
 
 sourcemap = ["oxc_sourcemap"]

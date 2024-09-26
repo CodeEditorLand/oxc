@@ -1,24 +1,13 @@
 {
-	"compilerOptions": {
-		"baseUrl": "./",
-		"lib": [
-			"ES2020"
-		],
-		"module": "commonjs",
-		"outDir": "Target",
-		"rootDir": "src",
-		"sourceMap": true,
-		"strict": true,
-		"target": "es2020"
-	},
-	"exclude": [
-		"node_modules",
-		".vscode-test"
-	],
-	"extends": "@playform/build/tsconfig",
-	"include": [
-		"./client",
-		"src",
-		"src"
-	]
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "lib": ["ES2020"],
+    "outDir": "dist",
+    "rootDir": "client",
+    "sourceMap": true,
+    "strict": true
+  },
+  "include": ["./client"],
+  "exclude": ["node_modules", ".vscode-test"]
 }
