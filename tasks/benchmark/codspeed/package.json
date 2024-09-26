@@ -27,9 +27,9 @@
 		"start": "node capture.mjs"
 	},
 	"devDependencies": {
-		"@playform/build": "0.1.6",
-		"axios": "1.7.2",
-		"tar": "7.2.0"
+		"@playform/build": "0.1.7",
+		"axios": "1.7.7",
+		"tar": "7.4.3"
 	},
 	"publishConfig": {
 		"access": "public"

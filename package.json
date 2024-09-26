@@ -27,7 +27,7 @@
 	},
 	"devDependencies": {
 		"@napi-rs/cli": "catalog:",
-		"@playform/build": "0.1.6"
+		"@playform/build": "0.1.7"
 	},
 	"volta": {
 		"node": "22.7.0"

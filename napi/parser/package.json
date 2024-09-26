@@ -29,9 +29,9 @@
 	},
 	"devDependencies": {
 		"@napi-rs/cli": "catalog:",
-		"@playform/build": "0.1.6",
-		"es-module-lexer": "1.4.1",
-		"tinybench": "2.6.0"
+		"@playform/build": "0.1.7",
+		"es-module-lexer": "1.5.4",
+		"tinybench": "2.9.0"
 	},
 	"publishConfig": {
 		"access": "public"
