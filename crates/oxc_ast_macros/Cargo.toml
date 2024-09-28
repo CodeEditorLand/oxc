@@ -1,6 +1,6 @@
 [package]
 name = "oxc_ast_macros"
-version = "0.30.3"
+version = "0.30.4"
 authors.workspace = true
 categories.workspace = true
 edition.workspace = true
@@ -23,9 +23,4 @@ doctest = false
 [dependencies]
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
-syn = { workspace = true, features = [
-	"full",
-	"parsing",
-	"printing",
-	"proc-macro",
-] }
+syn = { workspace = true, features = ["full", "parsing", "printing", "proc-macro"] }
