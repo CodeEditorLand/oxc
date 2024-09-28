@@ -132,21 +132,21 @@
 		"onLanguage:svelte"
 	],
 	"dependencies": {
-		"vscode-languageclient": "^9.0.1"
+		"vscode-languageclient": "9.0.1"
 	},
 	"devDependencies": {
-		"@types/node": "^22.0.0",
+		"@types/node": "22.0.0",
 		"@types/vscode": "1.80.0",
-		"@vscode/vsce": "^3.0.0",
-		"cross-env": "^7.0.3",
-		"esbuild": "^0.23.0",
-		"ovsx": "^0.9.1",
-		"prettier": "^3.3.1",
-		"typescript": "^5.4.5"
+		"@vscode/vsce": "3.0.0",
+		"cross-env": "7.0.3",
+		"esbuild": "0.23.0",
+		"ovsx": "0.9.1",
+		"prettier": "3.3.1",
+		"typescript": "5.4.5"
 	},
 	"packageManager": "pnpm@9.11.0",
 	"engines": {
-		"vscode": "^1.90.0"
+		"vscode": "1.90.0"
 	},
 	"icon": "icon.png",
 	"sponsor": {
