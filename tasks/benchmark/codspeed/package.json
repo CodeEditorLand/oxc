@@ -9,8 +9,8 @@
 	},
 	"devDependencies": {
 		"@playform/build": "",
-		"axios": "^1.7.2",
-		"tar": "^7.2.0"
+		"axios": "1.7.2",
+		"tar": "7.2.0"
 	},
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"keywords": [
