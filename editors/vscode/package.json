@@ -7,6 +7,14 @@
 		"onLanguage:vue",
 		"onLanguage:svelte"
 	],
+	"author": {
+		"email": "Source/Open@Editor.Land",
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"url": "HTTPS://Editor.Land"
+	},
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
 	"contributes": {
 		"commands": [
 			{
@@ -101,26 +109,45 @@
 	"dependencies": {},
 	"description": "oxc vscode extension",
 	"devDependencies": {
+		"@playform/build": "",
 		"@types/node": "^22.0.0",
 		"cross-env": "^7.0.3",
 		"esbuild": "^0.23.0",
 		"ovsx": "^0.9.1"
 	},
 	"displayName": "Oxc",
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"icon": "icon.png",
+	"keywords": [
+		"codeeditorland",
+		"land",
+		"playform"
+	],
+	"license": "SEE LICENSE IN LICENSE",
 	"main": "./out/main.js",
 	"name": "oxc-vscode",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
 	"scripts": {
 		"build": "pnpm run server:build:release && pnpm run compile && pnpm run package",
 		"compile": "esbuild client/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node16 --minify --sourcemap",
 		"install-extension": "code --install-extension oxc_language_server.vsix --force",
 		"preinstall": "[ -f icon.png ] || curl https://cdn.jsdelivr.net/gh/oxc-project/oxc-assets/square.png --output icon.png",
+		"prepublishOnly": "Build 'Source/**/*.ts'",
 		"server:build:debug": "cargo build -p oxc_language_server",
 		"server:build:release": "cross-env CARGO_TARGET_DIR=./target cargo build -p oxc_language_server --release"
 	},
 	"sponsor": {
 		"url": "https://github.com/sponsors/boshen"
 	},
+	"type": "module",
+	"version": "0.0.1",
 	"vsce": {
 		"dependencies": false
 	}
