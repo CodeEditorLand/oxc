@@ -1,52 +1,31 @@
 {
-	"author": {
-		"email": "Source/Open@Editor.Land",
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"url": "HTTPS://Editor.Land"
-	},
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
-	},
-	"devDependencies": {
-		"@napi-rs/cli": "catalog:",
-		"@playform/build": "",
-		"es-module-lexer": "1.4.1",
-		"tinybench": "2.6.0"
-	},
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"license": "SEE LICENSE IN LICENSE",
-	"name": "@oxc-parser/binding",
-	"napi": {
-		"binaryName": "parser",
-		"targets": [
-			"x86_64-pc-windows-msvc",
-			"aarch64-pc-windows-msvc",
-			"x86_64-unknown-linux-gnu",
-			"aarch64-unknown-linux-gnu",
-			"x86_64-unknown-linux-musl",
-			"aarch64-unknown-linux-musl",
-			"x86_64-apple-darwin",
-			"aarch64-apple-darwin"
-		]
-	},
-	"private": false,
-	"publishConfig": {
-		"access": "public"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"scripts": {
-		"bench": "node parse.bench.mjs",
-		"build": "napi build --platform --release",
-		"prepublishOnly": "Build 'Source/**/*.ts'"
-	},
-	"type": "module",
-	"version": "0.0.1"
+  "name": "@oxc-parser/binding",
+  "packageManager": "pnpm@9.9.0",
+  "private": true,
+  "scripts": {
+    "build": "napi build --platform --release",
+    "test": "node test.mjs",
+    "bench": "node parse.bench.mjs"
+  },
+  "engines": {
+    "node": ">=14.*"
+  },
+  "napi": {
+    "binaryName": "parser",
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-musl",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin"
+    ]
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "catalog:",
+    "es-module-lexer": "^1.4.1",
+    "tinybench": "^2.6.0"
+  }
 }
