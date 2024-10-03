@@ -24,7 +24,7 @@
 		"lzma": "2.3.2"
 	},
 	"devDependencies": {
-		"@lezer/common": "1.2.1",
+		"@lezer/common": "1.2.2",
 		"@oxc/oxc_wasm": "link:../npm/oxc-wasm",
 		"@playform/build": "",
 		"@types/lodash.throttle": "4.1.9",
