@@ -1,10 +1,11 @@
 use std::cmp::Ordering;
+use std::ops::Neg;
 
 use num_bigint::BigInt;
 use oxc_ast::ast::*;
 use oxc_span::{GetSpan, Span, SPAN};
 use oxc_syntax::{
-    number::NumberBase,
+    number::{NumberBase, ToJsInt32},
     operator::{BinaryOperator, LogicalOperator, UnaryOperator},
 };
 use oxc_traverse::{Ancestor, Traverse, TraverseCtx};
@@ -139,6 +140,9 @@ impl<'a> PeepholeFoldConstants {
         expr: &mut UnaryExpression<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) -> Option<Expression<'a>> {
+        fn is_valid(x: f64) -> bool {
+            x.is_finite() && x.fract() == 0.0
+        }
         match expr.operator {
             UnaryOperator::Void => self.try_reduce_void(expr, ctx),
             UnaryOperator::Typeof => self.try_fold_type_of(expr, ctx),
@@ -156,11 +160,96 @@ impl<'a> PeepholeFoldConstants {
             UnaryOperator::UnaryNegation if expr.argument.is_nan() => {
                 Some(ctx.ast.move_expression(&mut expr.argument))
             }
+            // `--1` -> `1`
+            UnaryOperator::UnaryNegation => match &mut expr.argument {
+                Expression::UnaryExpression(unary)
+                    if matches!(unary.operator, UnaryOperator::UnaryNegation) =>
+                {
+                    Some(ctx.ast.move_expression(&mut unary.argument))
+                }
+                _ => None,
+            },
             // `+1` -> `1`
-            UnaryOperator::UnaryPlus if expr.argument.is_number() => {
-                Some(ctx.ast.move_expression(&mut expr.argument))
-            }
-            _ => None,
+            UnaryOperator::UnaryPlus => match &expr.argument {
+                Expression::UnaryExpression(unary) => {
+                    matches!(unary.operator, UnaryOperator::UnaryNegation)
+                        .then(|| ctx.ast.move_expression(&mut expr.argument))
+                }
+                Expression::Identifier(id) if id.name == "Infinity" => {
+                    Some(ctx.ast.move_expression(&mut expr.argument))
+                }
+                // `+NaN` -> `NaN`
+                _ if expr.argument.is_nan() => Some(ctx.ast.move_expression(&mut expr.argument)),
+                _ if expr.argument.is_number() => Some(ctx.ast.move_expression(&mut expr.argument)),
+                _ => None,
+            },
+            UnaryOperator::BitwiseNot => match &mut expr.argument {
+                Expression::BigIntLiteral(n) => {
+                    let value = ctx.get_string_bigint_value(n.raw.as_str().trim_end_matches('n'));
+                    value.map(|value| {
+                        let value = !value;
+                        ctx.ast.expression_big_int_literal(
+                            SPAN,
+                            value.to_string() + "n",
+                            BigintBase::Decimal,
+                        )
+                    })
+                }
+                Expression::NumericLiteral(n) => is_valid(n.value).then(|| {
+                    let value = !n.value.to_js_int_32();
+                    ctx.ast.expression_numeric_literal(
+                        SPAN,
+                        value.into(),
+                        value.to_string(),
+                        NumberBase::Decimal,
+                    )
+                }),
+                Expression::UnaryExpression(un) => {
+                    match un.operator {
+                        UnaryOperator::BitwiseNot => {
+                            // Return the un-bitten value
+                            Some(ctx.ast.move_expression(&mut un.argument))
+                        }
+                        UnaryOperator::UnaryNegation if un.argument.is_big_int_literal() => {
+                            // `~-1n` -> `0n`
+                            if let Expression::BigIntLiteral(n) = &mut un.argument {
+                                let value = ctx
+                                    .get_string_bigint_value(n.raw.as_str().trim_end_matches('n'));
+                                value.and_then(|value| value.checked_sub(&BigInt::from(1))).map(
+                                    |value| {
+                                        ctx.ast.expression_big_int_literal(
+                                            SPAN,
+                                            value.neg().to_string() + "n",
+                                            BigintBase::Decimal,
+                                        )
+                                    },
+                                )
+                            } else {
+                                None
+                            }
+                        }
+                        UnaryOperator::UnaryNegation if un.argument.is_number() => {
+                            // `-~1` -> `2`
+                            if let Expression::NumericLiteral(n) = &mut un.argument {
+                                is_valid(n.value).then(|| {
+                                    let value = !n.value.to_js_int_32().wrapping_neg();
+                                    ctx.ast.expression_numeric_literal(
+                                        SPAN,
+                                        value.into(),
+                                        value.to_string(),
+                                        NumberBase::Decimal,
+                                    )
+                                })
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    }
+                }
+                _ => None,
+            },
+            UnaryOperator::Delete => None,
         }
     }
 
@@ -1263,9 +1352,9 @@ mod test {
         test_same("a=-Infinity");
         test("a=-NaN", "a=NaN");
         test_same("a=-foo()");
-        // test("a=~~0", "a=0");
-        // test("a=~~10", "a=10");
-        // test("a=~-7", "a=6");
+        test("a=~~0", "a=0");
+        test("a=~~10", "a=10");
+        test("a=~-7", "a=6");
 
         // test("a=+true", "a=1");
         test("a=+10", "a=10");
@@ -1274,32 +1363,46 @@ mod test {
         test_same("a=+f");
         // test("a=+(f?true:false)", "a=+(f?1:0)");
         test("a=+0", "a=0");
-        // test("a=+Infinity", "a=Infinity");
-        // test("a=+NaN", "a=NaN");
-        // test("a=+-7", "a=-7");
+        test("a=+Infinity", "a=Infinity");
+        test("a=+NaN", "a=NaN");
+        test("a=+-7", "a=-7");
         // test("a=+.5", "a=.5");
 
-        // test("a=~0xffffffff", "a=0");
-        // test("a=~~0xffffffff", "a=-1");
+        test("a=~0xffffffff", "a=0");
+        test("a=~~0xffffffff", "a=-1");
         // test_same("a=~.5", PeepholeFoldConstants.FRACTIONAL_BITWISE_OPERAND);
     }
 
     #[test]
-    #[ignore]
     fn unary_with_big_int() {
         test("-(1n)", "-1n");
         test("- -1n", "1n");
         test("!1n", "false");
         test("~0n", "-1n");
+
+        test("~-1n", "0n");
+        test("~~1n", "1n");
+
+        test("~0x3n", "-4n");
+        test("~0b11n", "-4n");
     }
 
     #[test]
-    #[ignore]
     fn test_unary_ops_string_compare() {
         test_same("a = -1");
         test("a = ~0", "a = -1");
         test("a = ~1", "a = -2");
         test("a = ~101", "a = -102");
+
+        // More tests added by Ethan, which aligns with Google Closure Compiler's behavior
+        test_same("a = ~1.1"); // By default, we don't fold floating-point numbers.
+        test("a = ~0x3", "a = -4"); // Hexadecimal number
+        test("a = ~9", "a = -10"); // Despite `-10` is longer than `~9`, the compiler still folds it.
+        test_same("a = ~b");
+        test_same("a = ~NaN");
+        test_same("a = ~-Infinity");
+        test("x = ~2147483658.0", "x = 2147483637");
+        test("x = ~-2147483658", "x = -2147483639");
     }
 
     #[test]
