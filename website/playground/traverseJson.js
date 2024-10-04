@@ -1,4 +1,3 @@
-
 let typeFilter = ["JsonText", "Object", "Property", "Array"];
 /**
  * @param {import('@lezer/common').SyntaxNode} node
@@ -40,7 +39,10 @@ function getSpanOfNode(node, source) {
 	let span = {};
 	let child = node.firstChild;
 	while (child) {
-		if (child.name === "Property" && child.firstChild.name === "PropertyName") {
+		if (
+			child.name === "Property" &&
+			child.firstChild.name === "PropertyName"
+		) {
 			let { from, to } = child.firstChild;
 			let name = source.slice(from + 1, to - 1);
 			if (["start", "end"].includes(name)) {
