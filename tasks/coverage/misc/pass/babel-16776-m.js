@@ -1,5 +1,5 @@
 await /x.y/g;
 
-export { }
+export {};
 
 var x, g;

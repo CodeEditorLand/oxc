@@ -1,1 +1,1 @@
-(idCounter++).toString(32)
+(idCounter++).toString(32);

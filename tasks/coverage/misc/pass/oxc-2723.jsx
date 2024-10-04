@@ -1,13 +1,13 @@
 const A = (
-  <div>
-    {/* comment */}
-    AAAA
-  </div>
+	<div>
+		{/* comment */}
+		AAAA
+	</div>
 );
 
 const B = (
-  <div>
-    BBBB
-    {/* comment */}
-  </div>
+	<div>
+		BBBB
+		{/* comment */}
+	</div>
 );
