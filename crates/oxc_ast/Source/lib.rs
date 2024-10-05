@@ -37,32 +37,32 @@ pub mod syntax_directed_operations;
 mod trivia;
 
 mod generated {
-    #[cfg(debug_assertions)]
-    pub mod assert_layouts;
-    pub mod ast_builder;
-    pub mod ast_kind;
-    pub mod derive_clone_in;
-    pub mod derive_content_eq;
-    pub mod derive_content_hash;
-    pub mod derive_get_span;
-    pub mod derive_get_span_mut;
-    pub mod visit;
-    pub mod visit_mut;
+	#[cfg(debug_assertions)]
+	pub mod assert_layouts;
+	pub mod ast_builder;
+	pub mod ast_kind;
+	pub mod derive_clone_in;
+	pub mod derive_content_eq;
+	pub mod derive_content_hash;
+	pub mod derive_get_span;
+	pub mod derive_get_span_mut;
+	pub mod visit;
+	pub mod visit_mut;
 }
 
 pub mod visit {
-    pub use crate::generated::{visit::*, visit_mut::*};
+	pub use crate::generated::{visit::*, visit_mut::*};
 }
 
 pub use generated::{ast_builder, ast_kind};
 pub use num_bigint::BigUint;
 
 pub use crate::{
-    ast_builder::AstBuilder,
-    ast_builder_impl::NONE,
-    ast_kind::{AstKind, AstType},
-    trivia::{Comment, CommentKind, CommentPosition, SortedComments, Trivias},
-    visit::{Visit, VisitMut},
+	ast_builder::AstBuilder,
+	ast_builder_impl::NONE,
+	ast_kind::{AstKind, AstType},
+	trivia::{Comment, CommentKind, CommentPosition, SortedComments, Trivias},
+	visit::{Visit, VisitMut},
 };
 
 // After experimenting with two types of boxed enum variants:
@@ -90,29 +90,31 @@ pub use crate::{
 #[cfg(target_pointer_width = "64")]
 #[test]
 fn size_asserts() {
-    use std::mem::size_of;
+	use std::mem::size_of;
 
-    use crate::ast;
+	use crate::ast;
 
-    assert!(size_of::<ast::Statement>() == 16);
-    assert!(size_of::<ast::Expression>() == 16);
-    assert!(size_of::<ast::Declaration>() == 16);
-    assert!(size_of::<ast::BindingPatternKind>() == 16);
-    assert!(size_of::<ast::ModuleDeclaration>() == 16);
-    assert!(size_of::<ast::ClassElement>() == 16);
-    assert!(size_of::<ast::ExportDefaultDeclarationKind>() == 16);
-    assert!(size_of::<ast::AssignmentTargetPattern>() == 16);
-    assert!(size_of::<ast::AssignmentTargetMaybeDefault>() == 16);
-    assert!(size_of::<ast::AssignmentTargetProperty>() == 16);
-    assert!(size_of::<ast::TSLiteral>() == 16);
-    assert!(size_of::<ast::TSType>() == 16);
+	assert!(size_of::<ast::Statement>() == 16);
+	assert!(size_of::<ast::Expression>() == 16);
+	assert!(size_of::<ast::Declaration>() == 16);
+	assert!(size_of::<ast::BindingPatternKind>() == 16);
+	assert!(size_of::<ast::ModuleDeclaration>() == 16);
+	assert!(size_of::<ast::ClassElement>() == 16);
+	assert!(size_of::<ast::ExportDefaultDeclarationKind>() == 16);
+	assert!(size_of::<ast::AssignmentTargetPattern>() == 16);
+	assert!(size_of::<ast::AssignmentTargetMaybeDefault>() == 16);
+	assert!(size_of::<ast::AssignmentTargetProperty>() == 16);
+	assert!(size_of::<ast::TSLiteral>() == 16);
+	assert!(size_of::<ast::TSType>() == 16);
 }
 
 #[test]
 fn lifetime_variance() {
-    use crate::ast;
+	use crate::ast;
 
-    fn _assert_program_variant_lifetime<'a: 'b, 'b>(program: ast::Program<'a>) -> ast::Program<'b> {
-        program
-    }
+	fn _assert_program_variant_lifetime<'a: 'b, 'b>(
+		program: ast::Program<'a>,
+	) -> ast::Program<'b> {
+		program
+	}
 }

@@ -175,38 +175,38 @@ macro_rules! define_index_type {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! unknown_define_index_type_option {
-    () => {};
+	() => {};
 }
 
 #[cfg(feature = "serialize")]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __internal_maybe_index_impl_serde {
-    ($type:ident) => {
-        impl serde::ser::Serialize for $type {
-            fn serialize<S: serde::ser::Serializer>(
-                &self,
-                serializer: S,
-            ) -> Result<S::Ok, S::Error> {
-                self.index().serialize(serializer)
-            }
-        }
+	($type:ident) => {
+		impl serde::ser::Serialize for $type {
+			fn serialize<S: serde::ser::Serializer>(
+				&self,
+				serializer: S,
+			) -> Result<S::Ok, S::Error> {
+				self.index().serialize(serializer)
+			}
+		}
 
-        impl<'de> serde::de::Deserialize<'de> for $type {
-            fn deserialize<D: serde::de::Deserializer<'de>>(
-                deserializer: D,
-            ) -> Result<Self, D::Error> {
-                usize::deserialize(deserializer).map(Self::from_usize)
-            }
-        }
-    };
+		impl<'de> serde::de::Deserialize<'de> for $type {
+			fn deserialize<D: serde::de::Deserializer<'de>>(
+				deserializer: D,
+			) -> Result<Self, D::Error> {
+				usize::deserialize(deserializer).map(Self::from_usize)
+			}
+		}
+	};
 }
 
 #[cfg(not(feature = "serialize"))]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __internal_maybe_index_impl_serde {
-    ($type:ident) => {};
+	($type:ident) => {};
 }
 
 #[macro_export]

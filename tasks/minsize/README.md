@@ -1,3 +1,5 @@
 # Track Minification size
 
-See [minification-benchmarks](https://github.com/privatenumber/minification-benchmarks) for baseline.
+See
+[minification-benchmarks](https://github.com/privatenumber/minification-benchmarks)
+for baseline.

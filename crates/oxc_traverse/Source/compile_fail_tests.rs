@@ -14,17 +14,17 @@ use oxc_ast::ast::IdentifierReference;
 use oxc_traverse::{Ancestor, Traverse, TraverseCtx};
 
 struct Trans<'a, 'b> {
-    ancestor: Option<Ancestor<'a, 'b>>,
+	ancestor: Option<Ancestor<'a, 'b>>,
 }
 
 impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
-    fn enter_identifier_reference(
-        &mut self,
-        _node: &mut IdentifierReference<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) {
-        self.ancestor = Some(ctx.parent());
-    }
+	fn enter_identifier_reference(
+		&mut self,
+		_node: &mut IdentifierReference<'a>,
+		ctx: &mut TraverseCtx<'a>,
+	) {
+		self.ancestor = Some(ctx.parent());
+	}
 }
 ```
 */
@@ -36,19 +36,19 @@ use oxc_ast::ast::IdentifierReference;
 use oxc_traverse::{ancestor::ProgramWithoutDirectives, Ancestor, Traverse, TraverseCtx};
 
 struct Trans<'a, 'b> {
-    program: Option<ProgramWithoutDirectives<'a, 'b>>,
+	program: Option<ProgramWithoutDirectives<'a, 'b>>,
 }
 
 impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
-    fn enter_identifier_reference(
-        &mut self,
-        _node: &mut IdentifierReference<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) {
-        if let Ancestor::ProgramDirectives(program) = ctx.parent() {
-            self.program = Some(program);
-        }
-    }
+	fn enter_identifier_reference(
+		&mut self,
+		_node: &mut IdentifierReference<'a>,
+		ctx: &mut TraverseCtx<'a>,
+	) {
+		if let Ancestor::ProgramDirectives(program) = ctx.parent() {
+			self.program = Some(program);
+		}
+	}
 }
 ```
 */
@@ -60,21 +60,21 @@ use oxc_ast::ast::{IdentifierReference, Statement};
 use oxc_traverse::{Ancestor, Traverse, TraverseCtx};
 
 struct Trans<'a, 'b> {
-    stmt: Option<&'b Statement<'a>>,
+	stmt: Option<&'b Statement<'a>>,
 }
 
 impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
-    fn enter_identifier_reference(
-        &mut self,
-        _node: &mut IdentifierReference<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) {
-        if let Ancestor::ProgramDirectives(program) = ctx.parent() {
-            let body = program.body();
-            let stmt = &body[0];
-            self.stmt = Some(stmt);
-        }
-    }
+	fn enter_identifier_reference(
+		&mut self,
+		_node: &mut IdentifierReference<'a>,
+		ctx: &mut TraverseCtx<'a>,
+	) {
+		if let Ancestor::ProgramDirectives(program) = ctx.parent() {
+			let body = program.body();
+			let stmt = &body[0];
+			self.stmt = Some(stmt);
+		}
+	}
 }
 ```
 */
@@ -86,17 +86,17 @@ use oxc_ast::ast::IdentifierReference;
 use oxc_traverse::{Ancestor, Traverse, TraverseCtx};
 
 struct Trans<'a, 'b> {
-    ancestor: Option<Ancestor<'a, 'b>>,
+	ancestor: Option<Ancestor<'a, 'b>>,
 }
 
 impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
-    fn enter_identifier_reference(
-        &mut self,
-        _node: &mut IdentifierReference<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) {
-        self.ancestor = ctx.ancestors().next();
-    }
+	fn enter_identifier_reference(
+		&mut self,
+		_node: &mut IdentifierReference<'a>,
+		ctx: &mut TraverseCtx<'a>,
+	) {
+		self.ancestor = ctx.ancestors().next();
+	}
 }
 ```
 */
@@ -108,20 +108,20 @@ use oxc_ast::ast::IdentifierReference;
 use oxc_traverse::{ancestor::ProgramWithoutDirectives, Ancestor, Traverse, TraverseCtx};
 
 struct Trans<'a, 'b> {
-    program: Option<ProgramWithoutDirectives<'a, 'b>>,
+	program: Option<ProgramWithoutDirectives<'a, 'b>>,
 }
 
 impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
-    fn enter_identifier_reference(
-        &mut self,
-        _node: &mut IdentifierReference<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) {
-        let parent = ctx.ancestors().next().unwrap();
-        if let Ancestor::ProgramDirectives(program) = parent {
-            self.program = Some(program);
-        }
-    }
+	fn enter_identifier_reference(
+		&mut self,
+		_node: &mut IdentifierReference<'a>,
+		ctx: &mut TraverseCtx<'a>,
+	) {
+		let parent = ctx.ancestors().next().unwrap();
+		if let Ancestor::ProgramDirectives(program) = parent {
+			self.program = Some(program);
+		}
+	}
 }
 ```
 */
@@ -133,22 +133,22 @@ use oxc_ast::ast::{IdentifierReference, Statement};
 use oxc_traverse::{Ancestor, Traverse, TraverseCtx};
 
 struct Trans<'a, 'b> {
-    stmt: Option<&'b Statement<'a>>,
+	stmt: Option<&'b Statement<'a>>,
 }
 
 impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
-    fn enter_identifier_reference(
-        &mut self,
-        _node: &mut IdentifierReference<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) {
-        let parent = ctx.ancestors().next().unwrap();
-        if let Ancestor::ProgramDirectives(program) = parent {
-            let body = program.body();
-            let stmt = &body[0];
-            self.stmt = Some(stmt);
-        }
-    }
+	fn enter_identifier_reference(
+		&mut self,
+		_node: &mut IdentifierReference<'a>,
+		ctx: &mut TraverseCtx<'a>,
+	) {
+		let parent = ctx.ancestors().next().unwrap();
+		if let Ancestor::ProgramDirectives(program) = parent {
+			let body = program.body();
+			let stmt = &body[0];
+			self.stmt = Some(stmt);
+		}
+	}
 }
 ```
 */

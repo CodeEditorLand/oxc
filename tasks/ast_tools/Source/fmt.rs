@@ -11,17 +11,19 @@ static WHITE_SPACES: &str = " \t";
 
 /// Pretty print
 pub fn pretty_print(input: &TokenStream) -> String {
-    let result = prettyplease::unparse(&parse_file(input.to_string().as_str()).unwrap());
-    // `insert!` and `endl!` macros are not currently used
-    // let result = ENDL_REGEX.replace_all(&result, EndlReplacer);
-    // let result = INSERT_REGEX.replace_all(&result, InsertReplacer).to_string();
-    let result = COMMENT_REGEX.replace_all(&result, CommentReplacer).to_string();
-    result
+	let result =
+		prettyplease::unparse(&parse_file(input.to_string().as_str()).unwrap());
+	// `insert!` and `endl!` macros are not currently used
+	// let result = ENDL_REGEX.replace_all(&result, EndlReplacer);
+	// let result = INSERT_REGEX.replace_all(&result, InsertReplacer).to_string();
+	let result =
+		COMMENT_REGEX.replace_all(&result, CommentReplacer).to_string();
+	result
 }
 
 /// Run `cargo fmt`
 pub fn cargo_fmt() {
-    Command::new("cargo").arg("fmt").status().unwrap();
+	Command::new("cargo").arg("fmt").status().unwrap();
 }
 
 /// Replace doc comments which start with `@` with plain comments or line breaks.
@@ -48,19 +50,19 @@ pub fn cargo_fmt() {
 struct CommentReplacer;
 
 impl Replacer for CommentReplacer {
-    fn replace_append(&mut self, caps: &Captures, dst: &mut String) {
-        assert_eq!(caps.len(), 2);
-        let body = caps.get(1).unwrap().as_str();
-        if body != "@line_break" {
-            dst.push_str("//");
-            dst.push_str(body);
-        }
-    }
+	fn replace_append(&mut self, caps: &Captures, dst: &mut String) {
+		assert_eq!(caps.len(), 2);
+		let body = caps.get(1).unwrap().as_str();
+		if body != "@line_break" {
+			dst.push_str("//");
+			dst.push_str(body);
+		}
+	}
 }
 
 lazy_static! {
-    static ref COMMENT_REGEX: Regex =
-        Regex::new(format!(r"[{WHITE_SPACES}]*//[/!]@(.*)").as_str()).unwrap();
+	static ref COMMENT_REGEX: Regex =
+		Regex::new(format!(r"[{WHITE_SPACES}]*//[/!]@(.*)").as_str()).unwrap();
 }
 
 /// Replace `insert!` macro calls with the contents of the `insert!`.
@@ -73,23 +75,23 @@ lazy_static! {
 struct InsertReplacer;
 
 impl Replacer for InsertReplacer {
-    fn replace_append(&mut self, caps: &Captures, dst: &mut String) {
-        assert_eq!(caps.len(), 2);
-        let arg = caps.get(1);
-        if let Some(arg) = arg {
-            dst.push_str(arg.as_str());
-        }
-    }
+	fn replace_append(&mut self, caps: &Captures, dst: &mut String) {
+		assert_eq!(caps.len(), 2);
+		let arg = caps.get(1);
+		if let Some(arg) = arg {
+			dst.push_str(arg.as_str());
+		}
+	}
 }
 
 lazy_static! {
-    static ref INSERT_REGEX: Regex = Regex::new(
-        format!(
-            r#"(?m)^[{WHITE_SPACES}]*{INSERT_MACRO_IDENT}!\([\n\s\S]*?\"([\n\s\S]*?)\"[\n\s\S]*?\);$"#
-        )
-        .as_str()
-    )
-    .unwrap();
+	static ref INSERT_REGEX: Regex = Regex::new(
+		format!(
+			r#"(?m)^[{WHITE_SPACES}]*{INSERT_MACRO_IDENT}!\([\n\s\S]*?\"([\n\s\S]*?)\"[\n\s\S]*?\);$"#
+		)
+		.as_str()
+	)
+	.unwrap();
 }
 
 /// Remove `endl!();`, so it produces a line break.
@@ -113,10 +115,12 @@ lazy_static! {
 struct EndlReplacer;
 
 impl Replacer for EndlReplacer {
-    fn replace_append(&mut self, _: &Captures, _: &mut String) {}
+	fn replace_append(&mut self, _: &Captures, _: &mut String) {}
 }
 
 lazy_static! {
-    static ref ENDL_REGEX: Regex =
-        Regex::new(format!(r"[{WHITE_SPACES}]*{ENDL_MACRO_IDENT}!\(\);").as_str()).unwrap();
+	static ref ENDL_REGEX: Regex = Regex::new(
+		format!(r"[{WHITE_SPACES}]*{ENDL_MACRO_IDENT}!\(\);").as_str()
+	)
+	.unwrap();
 }

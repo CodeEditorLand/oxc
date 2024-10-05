@@ -8,4 +8,5 @@
 
 ## Third-Party
 
-> We look forward to your contributions, Feel free to open a PR if you are working on an IDE extension for oxlint(`oxc_language_server`).
+> We look forward to your contributions, Feel free to open a PR if you are
+> working on an IDE extension for oxlint(`oxc_language_server`).

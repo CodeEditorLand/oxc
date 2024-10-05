@@ -3,26 +3,26 @@ use std::{fmt, str::FromStr};
 use crate::{project_root, request::agent};
 
 pub struct TestFiles {
-    files: Vec<TestFile>,
+	files: Vec<TestFile>,
 }
 
 impl TestFiles {
-    pub fn files(&self) -> &Vec<TestFile> {
-        &self.files
-    }
+	pub fn files(&self) -> &Vec<TestFile> {
+		&self.files
+	}
 
-    pub fn react() -> Self {
-        Self {
+	pub fn react() -> Self {
+		Self {
             files: vec![TestFile::new(
                 "https://cdn.jsdelivr.net/npm/react@17.0.2/cjs/react.development.js",
             )],
         }
-    }
+	}
 
-    /// These are kept in sync with <https://github.com/privatenumber/minification-benchmarks/tree/master>
-    /// for checking against minification size in `tasks/minsize/minsize.snap`.
-    pub fn minifier() -> Self {
-        Self {
+	/// These are kept in sync with <https://github.com/privatenumber/minification-benchmarks/tree/master>
+	/// for checking against minification size in `tasks/minsize/minsize.snap`.
+	pub fn minifier() -> Self {
+		Self {
             files: vec![
                 TestFile::new("https://cdn.jsdelivr.net/npm/react@17.0.2/cjs/react.development.js"),
                 TestFile::new("https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.js"),
@@ -38,31 +38,32 @@ impl TestFiles {
                 TestFile::new("https://cdn.jsdelivr.net/npm/typescript@4.9.5/lib/typescript.js"),
             ],
         }
-    }
+	}
 
-    pub fn minimal() -> Self {
-        Self {
+	pub fn minimal() -> Self {
+		Self {
             files: vec![
                 TestFile::new("https://cdn.jsdelivr.net/npm/react@17.0.2/cjs/react.development.js"),
                 TestFile::new("https://cdn.jsdelivr.net/npm/antd@4.16.1/dist/antd.js"),
                 TestFile::new("https://cdn.jsdelivr.net/npm/typescript@4.9.5/lib/typescript.js"),
             ],
         }
-    }
+	}
 
-    pub fn complicated() -> Self {
-        let files = Self::complicated_urls().into_iter().map(TestFile::new).collect();
-        Self { files }
-    }
+	pub fn complicated() -> Self {
+		let files =
+			Self::complicated_urls().into_iter().map(TestFile::new).collect();
+		Self { files }
+	}
 
-    pub fn complicated_one(index: usize) -> Self {
-        let url = Self::complicated_urls()[index];
-        let file = TestFile::new(url);
-        Self { files: vec![file] }
-    }
+	pub fn complicated_one(index: usize) -> Self {
+		let url = Self::complicated_urls()[index];
+		let file = TestFile::new(url);
+		Self { files: vec![file] }
+	}
 
-    fn complicated_urls() -> [&'static str; 5] {
-        [
+	fn complicated_urls() -> [&'static str; 5] {
+		[
             // TypeScript syntax (2.81MB)
             "https://raw.githubusercontent.com/microsoft/TypeScript/v5.3.3/src/compiler/checker.ts",
             // Real world app tsx (1.0M)
@@ -74,56 +75,64 @@ impl TestFiles {
             // ES5 (3.9M)
             "https://cdn.jsdelivr.net/npm/antd@5.12.5/dist/antd.js",
         ]
-    }
+	}
 }
 
 pub struct TestFile {
-    pub url: String,
-    pub file_name: String,
-    pub source_text: String,
+	pub url: String,
+	pub file_name: String,
+	pub source_text: String,
 }
 
 impl TestFile {
-    /// # Errors
-    /// # Panics
-    pub fn new(url: &str) -> Self {
-        let (file_name, source_text) = Self::get_source_text(url).unwrap();
-        Self { url: url.to_string(), file_name, source_text }
-    }
+	/// # Errors
+	/// # Panics
+	pub fn new(url: &str) -> Self {
+		let (file_name, source_text) = Self::get_source_text(url).unwrap();
+		Self { url: url.to_string(), file_name, source_text }
+	}
 
-    /// # Errors
-    /// # Panics
-    pub fn get_source_text(lib: &str) -> Result<(String, String), String> {
-        let url = url::Url::from_str(lib).map_err(err_to_string)?;
+	/// # Errors
+	/// # Panics
+	pub fn get_source_text(lib: &str) -> Result<(String, String), String> {
+		let url = url::Url::from_str(lib).map_err(err_to_string)?;
 
-        let segments = url.path_segments().ok_or_else(|| "lib url has no segments".to_string())?;
+		let segments = url
+			.path_segments()
+			.ok_or_else(|| "lib url has no segments".to_string())?;
 
-        let filename = segments.last().ok_or_else(|| "lib url has no segments".to_string())?;
+		let filename = segments
+			.last()
+			.ok_or_else(|| "lib url has no segments".to_string())?;
 
-        let file = project_root().join("target").join(filename);
+		let file = project_root().join("target").join(filename);
 
-        if let Ok(code) = std::fs::read_to_string(&file) {
-            Ok((filename.to_string(), code))
-        } else {
-            println!("[{filename}] - Downloading [{lib}] to [{}]", file.display());
-            match agent().get(lib).call() {
-                Ok(response) => {
-                    let mut reader = response.into_reader();
+		if let Ok(code) = std::fs::read_to_string(&file) {
+			Ok((filename.to_string(), code))
+		} else {
+			println!(
+				"[{filename}] - Downloading [{lib}] to [{}]",
+				file.display()
+			);
+			match agent().get(lib).call() {
+				Ok(response) => {
+					let mut reader = response.into_reader();
 
-                    let _drop = std::fs::remove_file(&file);
-                    let mut writer = std::fs::File::create(&file).map_err(err_to_string)?;
-                    let _drop = std::io::copy(&mut reader, &mut writer);
+					let _drop = std::fs::remove_file(&file);
+					let mut writer =
+						std::fs::File::create(&file).map_err(err_to_string)?;
+					let _drop = std::io::copy(&mut reader, &mut writer);
 
-                    std::fs::read_to_string(&file)
-                        .map_err(err_to_string)
-                        .map(|code| (filename.to_string(), code))
-                }
-                Err(e) => Err(format!("{e:?}")),
-            }
-        }
-    }
+					std::fs::read_to_string(&file)
+						.map_err(err_to_string)
+						.map(|code| (filename.to_string(), code))
+				},
+				Err(e) => Err(format!("{e:?}")),
+			}
+		}
+	}
 }
 
 fn err_to_string<E: fmt::Debug>(e: E) -> String {
-    format!("{e:?}")
+	format!("{e:?}")
 }

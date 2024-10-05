@@ -1,4 +1,8 @@
-#![allow(clippy::wildcard_imports, clippy::new_without_default, clippy::unused_self)]
+#![allow(
+	clippy::wildcard_imports,
+	clippy::new_without_default,
+	clippy::unused_self
+)]
 
 //! ECMAScript Minifier
 
@@ -17,36 +21,44 @@ use oxc_allocator::Allocator;
 use oxc_ast::ast::Program;
 use oxc_mangler::Mangler;
 
-pub use crate::{ast_passes::CompressorPass, compressor::Compressor, options::CompressOptions};
+pub use crate::{
+	ast_passes::CompressorPass, compressor::Compressor,
+	options::CompressOptions,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct MinifierOptions {
-    pub mangle: bool,
-    pub compress: CompressOptions,
+	pub mangle: bool,
+	pub compress: CompressOptions,
 }
 
 impl Default for MinifierOptions {
-    fn default() -> Self {
-        Self { mangle: true, compress: CompressOptions::default() }
-    }
+	fn default() -> Self {
+		Self { mangle: true, compress: CompressOptions::default() }
+	}
 }
 
 pub struct MinifierReturn {
-    pub mangler: Option<Mangler>,
+	pub mangler: Option<Mangler>,
 }
 
 pub struct Minifier {
-    options: MinifierOptions,
+	options: MinifierOptions,
 }
 
 impl Minifier {
-    pub fn new(options: MinifierOptions) -> Self {
-        Self { options }
-    }
+	pub fn new(options: MinifierOptions) -> Self {
+		Self { options }
+	}
 
-    pub fn build<'a>(self, allocator: &'a Allocator, program: &mut Program<'a>) -> MinifierReturn {
-        Compressor::new(allocator, self.options.compress).build(program);
-        let mangler = self.options.mangle.then(|| Mangler::default().build(program));
-        MinifierReturn { mangler }
-    }
+	pub fn build<'a>(
+		self,
+		allocator: &'a Allocator,
+		program: &mut Program<'a>,
+	) -> MinifierReturn {
+		Compressor::new(allocator, self.options.compress).build(program);
+		let mangler =
+			self.options.mangle.then(|| Mangler::default().build(program));
+		MinifierReturn { mangler }
+	}
 }

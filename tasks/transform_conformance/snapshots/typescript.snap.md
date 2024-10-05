@@ -1,4 +1,5 @@
 # typescript/tests/cases/conformance/enums/awaitAndYield.ts
+
 ```error
 
   × `await` is only allowed within async functions and at the top levels of modules
@@ -13,6 +14,7 @@
 ```
 
 # typescript/tests/cases/conformance/enums/enumBasics.ts
+
 ```typescript
 var E1 = (E1 => {
 	const A = 0;
@@ -97,6 +99,7 @@ var doPropagate = [E9.A, E9.B, E6.B, E6.C, E6.A, E5.A, E5.B, E5.C];
 ```
 
 # typescript/tests/cases/conformance/enums/enumClassification.ts
+
 ```typescript
 var E01 = (E01 => {
 	const A = 0;
@@ -204,6 +207,7 @@ var E20 = (E20 => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumConstantMemberWithString.ts
+
 ```typescript
 var T1 = (T1 => {
 	const a = '1';
@@ -250,6 +254,7 @@ var T5 = (T5 => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumConstantMemberWithStringEmitDeclaration.ts
+
 ```typescript
 var T1 = (T1 => {
 	const a = '1';
@@ -288,6 +293,7 @@ var T5 = (T5 => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumConstantMemberWithTemplateLiterals.ts
+
 ```typescript
 var T1 = (T1 => {
 	const a = `1`;
@@ -351,6 +357,7 @@ var T6 = (T6 => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
+
 ```typescript
 var T1 = (T1 => {
 	const a = `1`;
@@ -406,6 +413,7 @@ var T6 = (T6 => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumConstantMembers.ts
+
 ```typescript
 var E1 = (E1 => {
 	const a = 1;
@@ -466,6 +474,7 @@ var E6 = (E6 => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumErrorOnConstantBindingWithInitializer.ts
+
 ```typescript
 const {value='123'} = thing;
 var E = (E => {
@@ -477,6 +486,7 @@ var E = (E => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumErrors.ts
+
 ```error
 
   × Expected `,` but found `;`
@@ -492,6 +502,7 @@ var E = (E => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumExportMergingES6.ts
+
 ```typescript
 export var Animals = (Animals => {
 	const Cat = 1;
@@ -512,6 +523,7 @@ export var Animals = (Animals => {
 ```
 
 # typescript/tests/cases/conformance/enums/enumMerging.ts
+
 ```typescript
 let M1;
 (function(_M1) {
@@ -657,6 +669,7 @@ let M6;
 ```
 
 # typescript/tests/cases/conformance/enums/enumMergingErrors.ts
+
 ```typescript
 let M;
 (function(_M) {
@@ -773,6 +786,7 @@ let M2;
 ```
 
 # typescript/tests/cases/conformance/enums/enumShadowedInfinityNaN.ts
+
 ```typescript
 {
 	let Infinity = {};
@@ -794,6 +808,7 @@ let M2;
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/boolean-value/input.ts
+
 ```typescript
 var E = (E => {
 	const A = true;
@@ -804,6 +819,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/const/input.ts
+
 ```typescript
 var E = (E => {
 	return E;
@@ -812,6 +828,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/constant-folding/input.ts
+
 ```typescript
 var E = (E => {
 	const a = 0;
@@ -856,6 +873,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/enum-merging-inner-references/input.ts
+
 ```typescript
 var Animals = (Animals => {
 	const Cat = 1;
@@ -873,6 +891,7 @@ var Animals = (Animals => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/enum-merging-inner-references-shadow/input.ts
+
 ```typescript
 const Cat = 10;
 const Dog = 20;
@@ -895,6 +914,7 @@ var Animals = (Animals => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/export/input.ts
+
 ```typescript
 export var E = (E => {
 	const A = 1;
@@ -910,6 +930,7 @@ export var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/inferred/input.ts
+
 ```typescript
 var E = (E => {
 	const x = 0;
@@ -922,6 +943,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/inner-references/input.ts
+
 ```typescript
 var E = (E => {
 	const a = 10;
@@ -934,6 +956,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/mix-references/input.ts
+
 ```typescript
 var x = 10;
 var Foo = (Foo => {
@@ -983,6 +1006,7 @@ var A = (A => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/non-foldable-constant/input.ts
+
 ```error
 
   × Enum member must have initializer.
@@ -997,6 +1021,7 @@ var A = (A => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/non-scoped/input.ts
+
 ```typescript
 var E = (E => {
 	const x = 1;
@@ -1014,6 +1039,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/outer-references/input.ts
+
 ```typescript
 var socketType = (socketType => {
 	const SOCKET = 0;
@@ -1041,6 +1067,7 @@ var constants = (constants => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/scoped/input.ts
+
 ```typescript
 {
 	var E = (E => {
@@ -1051,6 +1078,7 @@ var constants = (constants => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/string-value/input.ts
+
 ```typescript
 var E = (E => {
 	const A = 0;
@@ -1067,6 +1095,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/string-value-template/input.ts
+
 ```typescript
 var E = (E => {
 	const A = `Hey`;
@@ -1077,6 +1106,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/string-values-computed/input.ts
+
 ```typescript
 var E = (E => {
 	const A = 'HALLO' + 'WERLD';
@@ -1087,6 +1117,7 @@ var E = (E => {
 ```
 
 # babel/packages/babel-plugin-transform-typescript/test/fixtures/enum/ts5.0-const-foldable/input.ts
+
 ```typescript
 const BaseValue = 10;
 const Prefix = '/data';
@@ -1114,4 +1145,3 @@ var Routes = (Routes => {
 })(Routes || {});
 
 ```
-

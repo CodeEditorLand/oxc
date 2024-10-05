@@ -31,11 +31,11 @@ pub const FF: char = '\u{c}';
 pub const NBSP: char = '\u{a0}';
 
 pub fn is_irregular_whitespace(c: char) -> bool {
-    matches!(
-        c,
-        VT | FF | NBSP | ZWNBSP | '\u{85}' | '\u{1680}' | '\u{2000}'
-            ..='\u{200a}' | '\u{202f}' | '\u{205f}' | '\u{3000}'
-    )
+	matches!(
+		c,
+		VT | FF | NBSP | ZWNBSP | '\u{85}' | '\u{1680}' | '\u{2000}'
+			..='\u{200a}' | '\u{202f}' | '\u{205f}' | '\u{3000}'
+	)
 }
 
 // 11.3 Line Terminators
@@ -53,15 +53,15 @@ pub const LS: char = '\u{2028}';
 pub const PS: char = '\u{2029}';
 
 pub fn is_regular_line_terminator(c: char) -> bool {
-    matches!(c, LF | CR)
+	matches!(c, LF | CR)
 }
 
 pub fn is_irregular_line_terminator(c: char) -> bool {
-    matches!(c, LS | PS)
+	matches!(c, LS | PS)
 }
 
 pub fn is_line_terminator(c: char) -> bool {
-    is_regular_line_terminator(c) || is_irregular_line_terminator(c)
+	is_regular_line_terminator(c) || is_irregular_line_terminator(c)
 }
 
 const XX: bool = true;
@@ -101,197 +101,199 @@ pub static ASCII_CONTINUE: Align64<[bool; 128]> = Align64([
 /// Section 12.7 Detect `IdentifierStartChar`
 #[inline]
 pub fn is_identifier_start(c: char) -> bool {
-    if c.is_ascii() {
-        return is_identifier_start_ascii(c);
-    }
-    is_identifier_start_unicode(c)
+	if c.is_ascii() {
+		return is_identifier_start_ascii(c);
+	}
+	is_identifier_start_unicode(c)
 }
 
 #[inline]
 pub fn is_identifier_start_ascii(c: char) -> bool {
-    ASCII_START.0[c as usize]
+	ASCII_START.0[c as usize]
 }
 
 #[inline]
 pub fn is_identifier_start_unicode(c: char) -> bool {
-    is_id_start_unicode(c)
+	is_id_start_unicode(c)
 }
 
 /// Section 12.7 Detect `IdentifierPartChar`
 /// NOTE 2: The nonterminal `IdentifierPart` derives _ via `UnicodeIDContinue`.
 #[inline]
 pub fn is_identifier_part(c: char) -> bool {
-    if c.is_ascii() {
-        return is_identifier_part_ascii(c);
-    }
-    is_identifier_part_unicode(c)
+	if c.is_ascii() {
+		return is_identifier_part_ascii(c);
+	}
+	is_identifier_part_unicode(c)
 }
 
 #[inline]
 pub fn is_identifier_part_ascii(c: char) -> bool {
-    ASCII_CONTINUE.0[c as usize]
+	ASCII_CONTINUE.0[c as usize]
 }
 
 #[inline]
 pub fn is_identifier_part_unicode(c: char) -> bool {
-    is_id_continue_unicode(c) || c == ZWNJ || c == ZWJ
+	is_id_continue_unicode(c) || c == ZWNJ || c == ZWJ
 }
 
 /// Determine if a string is a valid JS identifier.
 #[allow(clippy::missing_panics_doc)]
 pub fn is_identifier_name(name: &str) -> bool {
-    // This function contains a fast path for ASCII (common case), iterating over bytes and using
-    // the cheap `is_identifier_start_ascii` and `is_identifier_part_ascii` to test bytes.
-    // Only if a Unicode char is found, fall back to iterating over `char`s, and using the more
-    // expensive `is_identifier_start_unicode` and `is_identifier_part`.
-    // As a further optimization, we test if bytes are ASCII in blocks of 8 or 4 bytes, rather than 1 by 1.
+	// This function contains a fast path for ASCII (common case), iterating over bytes and using
+	// the cheap `is_identifier_start_ascii` and `is_identifier_part_ascii` to test bytes.
+	// Only if a Unicode char is found, fall back to iterating over `char`s, and using the more
+	// expensive `is_identifier_start_unicode` and `is_identifier_part`.
+	// As a further optimization, we test if bytes are ASCII in blocks of 8 or 4 bytes, rather than 1 by 1.
 
-    // Get first byte. Exit if empty string.
-    let bytes = name.as_bytes();
-    let Some(&first_byte) = bytes.first() else { return false };
+	// Get first byte. Exit if empty string.
+	let bytes = name.as_bytes();
+	let Some(&first_byte) = bytes.first() else {
+		return false;
+	};
 
-    let mut chars = if first_byte.is_ascii() {
-        // First byte is ASCII
-        if !is_identifier_start_ascii(first_byte as char) {
-            return false;
-        }
+	let mut chars = if first_byte.is_ascii() {
+		// First byte is ASCII
+		if !is_identifier_start_ascii(first_byte as char) {
+			return false;
+		}
 
-        let mut index = 1;
-        'outer: loop {
-            // Check blocks of 8 bytes, then 4 bytes, then single bytes
-            let bytes_remaining = bytes.len() - index;
-            if bytes_remaining >= 8 {
-                // Process block of 8 bytes.
-                // Check that next 8 bytes are all ASCII.
-                // SAFETY: We checked above that there are at least 8 bytes to read starting at `index`
-                #[allow(clippy::cast_ptr_alignment)]
-                let next8_as_u64 = unsafe {
-                    let ptr = bytes.as_ptr().add(index).cast::<u64>();
-                    ptr.read_unaligned()
-                };
-                let high_bits = next8_as_u64 & 0x8080_8080_8080_8080;
-                if high_bits != 0 {
-                    // Some chars in this block are non-ASCII
-                    break;
-                }
+		let mut index = 1;
+		'outer: loop {
+			// Check blocks of 8 bytes, then 4 bytes, then single bytes
+			let bytes_remaining = bytes.len() - index;
+			if bytes_remaining >= 8 {
+				// Process block of 8 bytes.
+				// Check that next 8 bytes are all ASCII.
+				// SAFETY: We checked above that there are at least 8 bytes to read starting at `index`
+				#[allow(clippy::cast_ptr_alignment)]
+				let next8_as_u64 = unsafe {
+					let ptr = bytes.as_ptr().add(index).cast::<u64>();
+					ptr.read_unaligned()
+				};
+				let high_bits = next8_as_u64 & 0x8080_8080_8080_8080;
+				if high_bits != 0 {
+					// Some chars in this block are non-ASCII
+					break;
+				}
 
-                let next8 = next8_as_u64.to_ne_bytes();
-                for b in next8 {
-                    // SAFETY: We just checked all these bytes are ASCII
-                    unsafe { assert_unchecked!(b.is_ascii()) };
-                    if !is_identifier_part_ascii(b as char) {
-                        return false;
-                    }
-                }
+				let next8 = next8_as_u64.to_ne_bytes();
+				for b in next8 {
+					// SAFETY: We just checked all these bytes are ASCII
+					unsafe { assert_unchecked!(b.is_ascii()) };
+					if !is_identifier_part_ascii(b as char) {
+						return false;
+					}
+				}
 
-                index += 8;
-            } else if bytes_remaining >= 4 {
-                // Process block of 4 bytes.
-                // Check that next 4 bytes are all ASCII.
-                // SAFETY: We checked above that there are at least 4 bytes to read starting at `index`
-                #[allow(clippy::cast_ptr_alignment)]
-                let next4_as_u32 = unsafe {
-                    let ptr = bytes.as_ptr().add(index).cast::<u32>();
-                    ptr.read_unaligned()
-                };
-                let high_bits = next4_as_u32 & 0x8080_8080;
-                if high_bits != 0 {
-                    // Some chars in this block are non-ASCII
-                    break;
-                }
+				index += 8;
+			} else if bytes_remaining >= 4 {
+				// Process block of 4 bytes.
+				// Check that next 4 bytes are all ASCII.
+				// SAFETY: We checked above that there are at least 4 bytes to read starting at `index`
+				#[allow(clippy::cast_ptr_alignment)]
+				let next4_as_u32 = unsafe {
+					let ptr = bytes.as_ptr().add(index).cast::<u32>();
+					ptr.read_unaligned()
+				};
+				let high_bits = next4_as_u32 & 0x8080_8080;
+				if high_bits != 0 {
+					// Some chars in this block are non-ASCII
+					break;
+				}
 
-                let next4 = next4_as_u32.to_ne_bytes();
-                for b in next4 {
-                    // SAFETY: We just checked all these bytes are ASCII
-                    unsafe { assert_unchecked!(b.is_ascii()) };
-                    if !is_identifier_part_ascii(b as char) {
-                        return false;
-                    }
-                }
+				let next4 = next4_as_u32.to_ne_bytes();
+				for b in next4 {
+					// SAFETY: We just checked all these bytes are ASCII
+					unsafe { assert_unchecked!(b.is_ascii()) };
+					if !is_identifier_part_ascii(b as char) {
+						return false;
+					}
+				}
 
-                index += 4;
-            } else {
-                loop {
-                    let Some(&b) = bytes.get(index) else {
-                        // We got to the end with no non-identifier chars found
-                        return true;
-                    };
+				index += 4;
+			} else {
+				loop {
+					let Some(&b) = bytes.get(index) else {
+						// We got to the end with no non-identifier chars found
+						return true;
+					};
 
-                    if b.is_ascii() {
-                        if !is_identifier_part_ascii(b as char) {
-                            return false;
-                        }
-                    } else {
-                        // Unicode byte found
-                        break 'outer;
-                    }
+					if b.is_ascii() {
+						if !is_identifier_part_ascii(b as char) {
+							return false;
+						}
+					} else {
+						// Unicode byte found
+						break 'outer;
+					}
 
-                    index += 1;
-                }
-            }
-        }
+					index += 1;
+				}
+			}
+		}
 
-        // Unicode byte found - search rest of string (from this byte onwards) as Unicode
-        name[index..].chars()
-    } else {
-        // First char is Unicode.
-        // NB: `unwrap()` cannot fail because we already checked the string is not empty.
-        let mut chars = name.chars();
-        let first_char = chars.next().unwrap();
-        if !is_identifier_start_unicode(first_char) {
-            return false;
-        }
-        // Search rest of string as Unicode
-        chars
-    };
+		// Unicode byte found - search rest of string (from this byte onwards) as Unicode
+		name[index..].chars()
+	} else {
+		// First char is Unicode.
+		// NB: `unwrap()` cannot fail because we already checked the string is not empty.
+		let mut chars = name.chars();
+		let first_char = chars.next().unwrap();
+		if !is_identifier_start_unicode(first_char) {
+			return false;
+		}
+		// Search rest of string as Unicode
+		chars
+	};
 
-    // A Unicode char was found - search rest of string as Unicode
-    chars.all(is_identifier_part)
+	// A Unicode char was found - search rest of string as Unicode
+	chars.all(is_identifier_part)
 }
 
 #[test]
 fn is_identifier_name_true() {
-    let cases = [
-        // 1 char ASCII
-        "a",
-        "z",
-        "A",
-        "Z",
-        "_",
-        "$",
-        // 1 char Unicode
-        "µ", // 2 bytes
-        "ख", // 3 bytes
-        "𐀀", // 4 bytes
-        // Multiple chars ASCII
-        "az",
-        "AZ",
-        "_a",
-        "$Z",
-        "a0",
-        "A9",
-        "_0",
-        "$9",
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$",
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_$",
-        "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$",
-        "$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_",
-        // Multiple chars Unicode
-        "µख𐀀",
-        // ASCII + Unicode, starting with ASCII
-        "AµBखC𐀀D",
-        // ASCII + Unicode, starting with Unicode
-        "µAखB𐀀",
-    ];
+	let cases = [
+		// 1 char ASCII
+		"a",
+		"z",
+		"A",
+		"Z",
+		"_",
+		"$",
+		// 1 char Unicode
+		"µ", // 2 bytes
+		"ख", // 3 bytes
+		"𐀀", // 4 bytes
+		// Multiple chars ASCII
+		"az",
+		"AZ",
+		"_a",
+		"$Z",
+		"a0",
+		"A9",
+		"_0",
+		"$9",
+		"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$",
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_$",
+		"_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$",
+		"$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_",
+		// Multiple chars Unicode
+		"µख𐀀",
+		// ASCII + Unicode, starting with ASCII
+		"AµBखC𐀀D",
+		// ASCII + Unicode, starting with Unicode
+		"µAखB𐀀",
+	];
 
-    for str in cases {
-        assert!(is_identifier_name(str));
-    }
+	for str in cases {
+		assert!(is_identifier_name(str));
+	}
 }
 
 #[test]
 fn is_identifier_name_false() {
-    let cases = [
+	let cases = [
         // Empty string
         "",
         // 1 char ASCII
@@ -331,7 +333,7 @@ fn is_identifier_name_false() {
         "𐄬A",
     ];
 
-    for str in cases {
-        assert!(!is_identifier_name(str));
-    }
+	for str in cases {
+		assert!(!is_identifier_name(str));
+	}
 }

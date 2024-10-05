@@ -13,28 +13,33 @@ use oxc_span::SourceType;
 // or `just watch "run -p oxc_semantic --example simple"`
 
 fn main() -> std::io::Result<()> {
-    let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
-    let path = Path::new(&name);
-    let source_text = Arc::new(std::fs::read_to_string(path)?);
-    let source_type = SourceType::from_path(path).unwrap();
-    // Memory arena where Semantic and Parser allocate objects
-    let allocator = Allocator::default();
+	let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
+	let path = Path::new(&name);
+	let source_text = Arc::new(std::fs::read_to_string(path)?);
+	let source_type = SourceType::from_path(path).unwrap();
+	// Memory arena where Semantic and Parser allocate objects
+	let allocator = Allocator::default();
 
-    // Parse the source text into an AST
-    let parser_ret = Parser::new(&allocator, &source_text, source_type).parse();
-    if !parser_ret.errors.is_empty() {
-        let error_message: String = parser_ret
-            .errors
-            .into_iter()
-            .map(|error| format!("{:?}", error.with_source_code(Arc::clone(&source_text))))
-            .join("\n");
-        println!("Parsing failed:\n\n{error_message}",);
-        return Ok(());
-    }
+	// Parse the source text into an AST
+	let parser_ret = Parser::new(&allocator, &source_text, source_type).parse();
+	if !parser_ret.errors.is_empty() {
+		let error_message: String = parser_ret
+			.errors
+			.into_iter()
+			.map(|error| {
+				format!(
+					"{:?}",
+					error.with_source_code(Arc::clone(&source_text))
+				)
+			})
+			.join("\n");
+		println!("Parsing failed:\n\n{error_message}",);
+		return Ok(());
+	}
 
-    let program = allocator.alloc(parser_ret.program);
+	let program = allocator.alloc(parser_ret.program);
 
-    let semantic = SemanticBuilder::new(&source_text)
+	let semantic = SemanticBuilder::new(&source_text)
         .build_module_record(path, program)
         // Enable additional syntax checks not performed by the parser
         .with_check_syntax_error(true)
@@ -42,14 +47,19 @@ fn main() -> std::io::Result<()> {
         .with_trivias(parser_ret.trivias)
         .build(program);
 
-    if !semantic.errors.is_empty() {
-        let error_message: String = semantic
-            .errors
-            .into_iter()
-            .map(|error| format!("{:?}", error.with_source_code(Arc::clone(&source_text))))
-            .join("\n");
-        println!("Semantic analysis failed:\n\n{error_message}",);
-    }
+	if !semantic.errors.is_empty() {
+		let error_message: String = semantic
+			.errors
+			.into_iter()
+			.map(|error| {
+				format!(
+					"{:?}",
+					error.with_source_code(Arc::clone(&source_text))
+				)
+			})
+			.join("\n");
+		println!("Semantic analysis failed:\n\n{error_message}",);
+	}
 
-    Ok(())
+	Ok(())
 }
