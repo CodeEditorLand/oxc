@@ -1,3 +1,1 @@
-class Foo {
-	private _(__: (accessor: ServicesAccessor) => unknown): void {}
-}
+class Foo { private _(__: (accessor: ServicesAccessor) => unknown): void { } }

@@ -3,7 +3,7 @@ use oxc_parser::{Parser, ParserReturn};
 use oxc_span::SourceType;
 
 fn main() {
-	let source_text = r"
+    let source_text = r"
 import React from 'react';
 
 /**
@@ -21,20 +21,20 @@ export const Counter: React.FC = () => {
     )
 }";
 
-	// Memory arena where AST nodes get stored
-	let allocator = Allocator::default();
-	// Infers TypeScript + JSX + ESM modules
-	let source_type = SourceType::from_path("Counter.tsx").unwrap();
+    // Memory arena where AST nodes get stored
+    let allocator = Allocator::default();
+    // Infers TypeScript + JSX + ESM modules
+    let source_type = SourceType::from_path("Counter.tsx").unwrap();
 
-	let ParserReturn {
-		program,  // AST
-		errors,   // Syntax errors
-		panicked, // Parser encountered an error it couldn't recover from
-		trivias,  // Comments, whitespace, etc.
-	} = Parser::new(&allocator, source_text, source_type).parse();
+    let ParserReturn {
+        program,  // AST
+        errors,   // Syntax errors
+        panicked, // Parser encountered an error it couldn't recover from
+        trivias,  // Comments, whitespace, etc.
+    } = Parser::new(&allocator, source_text, source_type).parse();
 
-	assert!(!panicked);
-	assert!(errors.is_empty());
-	assert!(!program.body.is_empty());
-	assert_eq!(trivias.comments().count(), 1);
+    assert!(!panicked);
+    assert!(errors.is_empty());
+    assert!(!program.body.is_empty());
+    assert_eq!(trivias.comments().count(), 1);
 }
