@@ -7,32 +7,30 @@ mod template;
 
 #[derive(Serialize, Debug)]
 pub struct EnvVar<'a> {
-	pub name: &'a str,
-	pub writeable: bool,
+	pub name:&'a str,
+	pub writeable:bool,
 }
 
 #[derive(Serialize, Debug)]
 pub struct Env<'a> {
-	pub name: &'a str,
-	pub vars: Vec<EnvVar<'a>>,
+	pub name:&'a str,
+	pub vars:Vec<EnvVar<'a>>,
 }
 
 #[derive(Serialize)]
 pub struct Context<'a> {
-	envs: Vec<Env<'a>>,
+	envs:Vec<Env<'a>>,
 }
 
 impl<'a> Context<'a> {
-	fn new(envs: Vec<Env<'a>>) -> Self {
-		Self { envs }
-	}
+	fn new(envs:Vec<Env<'a>>) -> Self { Self { envs } }
 }
 
 fn get_diff(
-	current: &FxHashMap<String, bool>,
-	prev: &FxHashMap<String, bool>,
+	current:&FxHashMap<String, bool>,
+	prev:&FxHashMap<String, bool>,
 ) -> FxHashMap<String, bool> {
-	let mut retv: FxHashMap<String, bool> = FxHashMap::default();
+	let mut retv:FxHashMap<String, bool> = FxHashMap::default();
 
 	for (key, value) in current {
 		if !prev.contains_key(key) {
@@ -70,18 +68,18 @@ lazy_static! {
 fn main() {
 	// Each global is given a value of true or false.
 	// A value of true indicates that the variable may be overwritten.
-	// A value of false indicates that the variable should be considered read-only.
-	// open globals.json file relative to current file
+	// A value of false indicates that the variable should be considered
+	// read-only. open globals.json file relative to current file
 	// let globals: FxHashMap<String, FxHashMap<String, bool>>;
-	let globals: FxHashMap<String, FxHashMap<String, bool>> = match agent()
-        .get("https://raw.githubusercontent.com/sindresorhus/globals/main/globals.json")
-        .call()
-    {
-        Ok(response) => response.into_json().unwrap(),
-        Err(e) => {
-            panic!("Failed to fetch globals.json: {e}");
-        }
-    };
+	let globals:FxHashMap<String, FxHashMap<String, bool>> = match agent()
+		.get("https://raw.githubusercontent.com/sindresorhus/globals/main/globals.json")
+		.call()
+	{
+		Ok(response) => response.into_json().unwrap(),
+		Err(e) => {
+			panic!("Failed to fetch globals.json: {e}");
+		},
+	};
 
 	// 19 variables such as Promise, Map, ...
 	let new_globals_2015 = get_diff(&globals["es2015"], &globals["es5"]);
@@ -105,9 +103,10 @@ fn main() {
 		map
 	};
 
-	let envs_preset: Vec<Env> = [
+	let envs_preset:Vec<Env> = [
 		// Language
-		("builtin", &globals["builtin"]), // oxc uses builtin instead of es5 of ESLint
+		("builtin", &globals["builtin"]), /* oxc uses builtin instead of es5
+		                                   * of ESLint */
 		("es6", &new_globals_2015),
 		("es2015", &new_globals_2015),
 		("es2016", &new_globals_2015),
@@ -147,7 +146,7 @@ fn main() {
 		("greasemonkey", &globals["greasemonkey"]),
 	]
 	.iter()
-	.map(|(name, vars)| Env { name, vars: to_env_vars(vars) })
+	.map(|(name, vars)| Env { name, vars:to_env_vars(vars) })
 	.collect();
 
 	let context = Context::new(envs_preset);
@@ -157,10 +156,10 @@ fn main() {
 	}
 }
 
-fn to_env_vars(env_var_map: &FxHashMap<String, bool>) -> Vec<EnvVar> {
-	let mut result: Vec<EnvVar> = vec![];
+fn to_env_vars(env_var_map:&FxHashMap<String, bool>) -> Vec<EnvVar> {
+	let mut result:Vec<EnvVar> = vec![];
 	for (key, value) in env_var_map {
-		result.push(EnvVar { name: key, writeable: *value });
+		result.push(EnvVar { name:key, writeable:*value });
 	}
 
 	result.sort_by(|a, b| a.name.cmp(b.name));

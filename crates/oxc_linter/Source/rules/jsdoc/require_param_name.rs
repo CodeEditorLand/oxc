@@ -3,94 +3,94 @@ use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
 use crate::{
-    ast_util::is_function_node,
-    context::LintContext,
-    rule::Rule,
-    utils::{get_function_nearest_jsdoc_node, should_ignore_as_internal, should_ignore_as_private},
-    AstNode,
+	ast_util::is_function_node,
+	context::LintContext,
+	rule::Rule,
+	utils::{get_function_nearest_jsdoc_node, should_ignore_as_internal, should_ignore_as_private},
+	AstNode,
 };
 
-fn missing_name_diagnostic(span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Missing JSDoc `@param` name.")
-        .with_help("Add name to `@param` tag.")
-        .with_label(span)
+fn missing_name_diagnostic(span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::warn("Missing JSDoc `@param` name.")
+		.with_help("Add name to `@param` tag.")
+		.with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct RequireParamName;
 
 declare_oxc_lint!(
-    /// ### What it does
-    ///
-    /// Requires that all `@param` tags have names.
-    ///
-    /// ### Why is this bad?
-    ///
-    /// The name of a param should be documented.
-    ///
-    /// ### Examples
-    ///
-    /// Examples of **incorrect** code for this rule:
-    /// ```javascript
-    /// /** @param {SomeType} */
-    /// function quux (foo) {}
-    /// ```
-    ///
-    /// Examples of **correct** code for this rule:
-    /// ```javascript
-    /// /** @param {SomeType} foo */
-    /// function quux (foo) {}
-    /// ```
-    RequireParamName,
-    pedantic,
+	/// ### What it does
+	///
+	/// Requires that all `@param` tags have names.
+	///
+	/// ### Why is this bad?
+	///
+	/// The name of a param should be documented.
+	///
+	/// ### Examples
+	///
+	/// Examples of **incorrect** code for this rule:
+	/// ```javascript
+	/// /** @param {SomeType} */
+	/// function quux (foo) {}
+	/// ```
+	///
+	/// Examples of **correct** code for this rule:
+	/// ```javascript
+	/// /** @param {SomeType} foo */
+	/// function quux (foo) {}
+	/// ```
+	RequireParamName,
+	pedantic,
 );
 
 impl Rule for RequireParamName {
-    fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
-        if !is_function_node(node) {
-            return;
-        }
+	fn run<'a>(&self, node:&AstNode<'a>, ctx:&LintContext<'a>) {
+		if !is_function_node(node) {
+			return;
+		}
 
-        // If no JSDoc is found, skip
-        let Some(jsdocs) = get_function_nearest_jsdoc_node(node, ctx)
-            .and_then(|node| ctx.jsdoc().get_all_by_node(node))
-        else {
-            return;
-        };
+		// If no JSDoc is found, skip
+		let Some(jsdocs) = get_function_nearest_jsdoc_node(node, ctx)
+			.and_then(|node| ctx.jsdoc().get_all_by_node(node))
+		else {
+			return;
+		};
 
-        let settings = &ctx.settings().jsdoc;
-        let resolved_param_tag_name = settings.resolve_tag_name("param");
+		let settings = &ctx.settings().jsdoc;
+		let resolved_param_tag_name = settings.resolve_tag_name("param");
 
-        for jsdoc in jsdocs
-            .iter()
-            .filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
-            .filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
-        {
-            for tag in jsdoc.tags() {
-                if tag.kind.parsed() != resolved_param_tag_name {
-                    continue;
-                }
+		for jsdoc in jsdocs
+			.iter()
+			.filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
+			.filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
+		{
+			for tag in jsdoc.tags() {
+				if tag.kind.parsed() != resolved_param_tag_name {
+					continue;
+				}
 
-                let (_, name_part, _) = tag.type_name_comment();
+				let (_, name_part, _) = tag.type_name_comment();
 
-                // If name exists, skip
-                if name_part.is_some() {
-                    continue;
-                }
+				// If name exists, skip
+				if name_part.is_some() {
+					continue;
+				}
 
-                ctx.diagnostic(missing_name_diagnostic(tag.kind.span));
-            }
-        }
-    }
+				ctx.diagnostic(missing_name_diagnostic(tag.kind.span));
+			}
+		}
+	}
 }
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+	use crate::tester::Tester;
 
-    let pass = vec![
-        (
-            "
+	let pass = vec![
+		(
+			"
 			          /**
 			           * @param foo
 			           */
@@ -98,11 +98,11 @@ fn test() {
 			
 			          }
 			      ",
-            None,
-            None,
-        ),
-        (
-            "
+			None,
+			None,
+		),
+		(
+			"
 			          /**
 			           * @param {string} foo
 			           */
@@ -110,31 +110,31 @@ fn test() {
 			
 			          }
 			      ",
-            None,
-            None,
-        ),
-        (
-            "
+			None,
+			None,
+		),
+		(
+			"
 			          /**
 			           * @function
 			           * @param
 			           */
 			      ",
-            None,
-            None,
-        ),
-        (
-            "
+			None,
+			None,
+		),
+		(
+			"
 			          /**
 			           * @callback
 			           * @param
 			           */
 			      ",
-            None,
-            None,
-        ),
-        (
-            "
+			None,
+			None,
+		),
+		(
+			"
 			      /**
 			       * @param {Function} [processor=data => data] A function to run
 			       */
@@ -142,11 +142,11 @@ fn test() {
 			        return processor(data)
 			      }
 			      ",
-            None,
-            None,
-        ),
-        (
-            "
+			None,
+			None,
+		),
+		(
+			"
 			      /** Example with multi-line param type.
 			      *
 			      * @param {function(
@@ -157,14 +157,14 @@ fn test() {
 			        cb(42);
 			      }
 			      ",
-            None,
-            None,
-        ),
-    ];
+			None,
+			None,
+		),
+	];
 
-    let fail = vec![
-        (
-            "
+	let fail = vec![
+		(
+			"
 			          /**
 			           * @param
 			           */
@@ -172,11 +172,11 @@ fn test() {
 			
 			          }
 			      ",
-            None,
-            None,
-        ),
-        (
-            "
+			None,
+			None,
+		),
+		(
+			"
 			          /**
 			           * @param {string}
 			           */
@@ -184,10 +184,10 @@ fn test() {
 			
 			          }
 			      ",
-            None,
-            None,
-        ),
-    ];
+			None,
+			None,
+		),
+	];
 
-    Tester::new(RequireParamName::NAME, pass, fail).test_and_snapshot();
+	Tester::new(RequireParamName::NAME, pass, fail).test_and_snapshot();
 }

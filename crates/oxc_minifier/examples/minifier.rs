@@ -15,11 +15,7 @@ use pico_args::Arguments;
 fn main() -> std::io::Result<()> {
 	let mut args = Arguments::from_env();
 
-	let name = args
-		.subcommand()
-		.ok()
-		.flatten()
-		.unwrap_or_else(|| String::from("test.js"));
+	let name = args.subcommand().ok().flatten().unwrap_or_else(|| String::from("test.js"));
 	let mangle = args.contains("--mangle");
 	let twice = args.contains("--twice");
 
@@ -41,16 +37,10 @@ fn main() -> std::io::Result<()> {
 	Ok(())
 }
 
-fn minify(
-	allocator: &Allocator,
-	source_text: &str,
-	source_type: SourceType,
-	mangle: bool,
-) -> String {
+fn minify(allocator:&Allocator, source_text:&str, source_type:SourceType, mangle:bool) -> String {
 	let ret = Parser::new(allocator, source_text, source_type).parse();
 	let mut program = ret.program;
-	let options =
-		MinifierOptions { mangle, compress: CompressOptions::default() };
+	let options = MinifierOptions { mangle, compress:CompressOptions::default() };
 	let ret = Minifier::new(options).build(allocator, &mut program);
 	CodeGenerator::new().with_mangler(ret.mangler).build(&program).source_text
 }

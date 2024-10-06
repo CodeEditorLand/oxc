@@ -1,9 +1,10 @@
-use oxc_diagnostics::{
-    miette::{self, Diagnostic},
-    thiserror::Error,
-    Report,
-};
 use std::path::PathBuf;
+
+use oxc_diagnostics::{
+	miette::{self, Diagnostic},
+	thiserror::Error,
+	Report,
+};
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("Failed to parse config {0:?} with error {1:?}")]

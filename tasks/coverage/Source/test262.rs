@@ -2,35 +2,29 @@ use std::path::{Path, PathBuf};
 
 use oxc_span::SourceType;
 
+pub use crate::test262_meta::{MetaData, Phase, TestFlag};
 use crate::{
 	project_root,
 	suite::{Case, Suite, TestResult},
 };
 
-pub use crate::test262_meta::{MetaData, Phase, TestFlag};
+const FIXTURES_PATH:&str = "tasks/coverage/test262/test";
 
-const FIXTURES_PATH: &str = "tasks/coverage/test262/test";
-
-pub struct Test262Suite<T: Case> {
-	test_root: PathBuf,
-	test_cases: Vec<T>,
+pub struct Test262Suite<T:Case> {
+	test_root:PathBuf,
+	test_cases:Vec<T>,
 }
 
-impl<T: Case> Test262Suite<T> {
+impl<T:Case> Test262Suite<T> {
 	pub fn new() -> Self {
-		Self {
-			test_root: project_root().join(FIXTURES_PATH),
-			test_cases: vec![],
-		}
+		Self { test_root:project_root().join(FIXTURES_PATH), test_cases:vec![] }
 	}
 }
 
-impl<T: Case> Suite<T> for Test262Suite<T> {
-	fn get_test_root(&self) -> &Path {
-		&self.test_root
-	}
+impl<T:Case> Suite<T> for Test262Suite<T> {
+	fn get_test_root(&self) -> &Path { &self.test_root }
 
-	fn skip_test_path(&self, path: &Path) -> bool {
+	fn skip_test_path(&self, path:&Path) -> bool {
 		let path = path.to_string_lossy();
 		// ignore markdown files
 		path.ends_with(".md") ||
@@ -40,70 +34,52 @@ impl<T: Case> Suite<T> for Test262Suite<T> {
         (path.contains("literals") && path.contains("regexp"))
 	}
 
-	fn save_test_cases(&mut self, cases: Vec<T>) {
-		self.test_cases = cases;
-	}
+	fn save_test_cases(&mut self, cases:Vec<T>) { self.test_cases = cases; }
 
-	fn get_test_cases(&self) -> &Vec<T> {
-		&self.test_cases
-	}
-	fn get_test_cases_mut(&mut self) -> &mut Vec<T> {
-		&mut self.test_cases
-	}
+	fn get_test_cases(&self) -> &Vec<T> { &self.test_cases }
+
+	fn get_test_cases_mut(&mut self) -> &mut Vec<T> { &mut self.test_cases }
 }
 
 pub struct Test262Case {
-	path: PathBuf,
-	code: String,
-	meta: MetaData,
-	should_fail: bool,
-	result: TestResult,
+	path:PathBuf,
+	code:String,
+	meta:MetaData,
+	should_fail:bool,
+	result:TestResult,
 }
 
 impl Test262Case {
-	pub fn meta(&self) -> &MetaData {
-		&self.meta
-	}
+	pub fn meta(&self) -> &MetaData { &self.meta }
 
 	/// # Panics
-	pub fn read_metadata(code: &str) -> MetaData {
-		let (start, end) =
-			(code.find("/*---").unwrap(), code.find("---*/").unwrap());
+	pub fn read_metadata(code:&str) -> MetaData {
+		let (start, end) = (code.find("/*---").unwrap(), code.find("---*/").unwrap());
 		let s = &code[start + 5..end].replace('\r', "\n");
 		MetaData::from_str(s)
 	}
 
-	pub fn set_result(&mut self, result: TestResult) {
-		self.result = result;
-	}
+	pub fn set_result(&mut self, result:TestResult) { self.result = result; }
 
-	fn compute_should_fail(meta: &MetaData) -> bool {
+	fn compute_should_fail(meta:&MetaData) -> bool {
 		meta.negative.as_ref().filter(|n| n.phase == Phase::Parse).is_some()
 	}
 }
 
 impl Case for Test262Case {
-	fn new(path: PathBuf, code: String) -> Self {
+	fn new(path:PathBuf, code:String) -> Self {
 		let meta = Self::read_metadata(&code);
 		let should_fail = Self::compute_should_fail(&meta);
-		Self { path, code, meta, should_fail, result: TestResult::ToBeRun }
+		Self { path, code, meta, should_fail, result:TestResult::ToBeRun }
 	}
 
-	fn code(&self) -> &str {
-		&self.code
-	}
+	fn code(&self) -> &str { &self.code }
 
-	fn path(&self) -> &Path {
-		&self.path
-	}
+	fn path(&self) -> &Path { &self.path }
 
-	fn test_result(&self) -> &TestResult {
-		&self.result
-	}
+	fn test_result(&self) -> &TestResult { &self.result }
 
-	fn should_fail(&self) -> bool {
-		self.should_fail
-	}
+	fn should_fail(&self) -> bool { self.should_fail }
 
 	fn skip_test_case(&self) -> bool {
 		[
@@ -115,11 +91,12 @@ impl Case for Test262Case {
 		.any(|feature| self.meta.features.iter().any(|f| **f == **feature))
 	}
 
-	// Unless configured otherwise (via the noStrict, onlyStrict, module, or raw flags),
-	// each test must be executed twice: once in ECMAScript's non-strict mode, and again in ECMAScript's strict mode.
-	// To run in strict mode, the test contents must be modified prior to execution--
-	// a "use strict" directive must be inserted as the initial character sequence of the file
-	// https://github.com/tc39/test262/blob/main/INTERPRETING.md#strict-mode
+	// Unless configured otherwise (via the noStrict, onlyStrict, module, or raw
+	// flags), each test must be executed twice: once in ECMAScript's
+	// non-strict mode, and again in ECMAScript's strict mode. To run in strict
+	// mode, the test contents must be modified prior to execution--
+	// a "use strict" directive must be inserted as the initial character
+	// sequence of the file https://github.com/tc39/test262/blob/main/INTERPRETING.md#strict-mode
 	fn run(&mut self) {
 		let flags = &self.meta.flags;
 		let source_type = SourceType::default().with_script(true);
@@ -128,9 +105,7 @@ impl Case for Test262Case {
 			self.execute(source_type.with_always_strict(true))
 		} else if flags.contains(&TestFlag::Module) {
 			self.execute(source_type.with_module(true))
-		} else if flags.contains(&TestFlag::NoStrict)
-			|| flags.contains(&TestFlag::Raw)
-		{
+		} else if flags.contains(&TestFlag::NoStrict) || flags.contains(&TestFlag::Raw) {
 			self.execute(source_type)
 		} else {
 			let res = self.execute(source_type.with_always_strict(true));
@@ -142,22 +117,16 @@ impl Case for Test262Case {
 		};
 	}
 
-	fn check_semantic(
-		&self,
-		semantic: &oxc_semantic::Semantic<'_>,
-	) -> Option<TestResult> {
+	fn check_semantic(&self, semantic:&oxc_semantic::Semantic<'_>) -> Option<TestResult> {
 		if are_all_identifiers_resolved(semantic) {
 			None
 		} else {
-			Some(TestResult::ParseError(
-				"Unset symbol / reference".to_string(),
-				true,
-			))
+			Some(TestResult::ParseError("Unset symbol / reference".to_string(), true))
 		}
 	}
 }
 
-fn are_all_identifiers_resolved(semantic: &oxc_semantic::Semantic<'_>) -> bool {
+fn are_all_identifiers_resolved(semantic:&oxc_semantic::Semantic<'_>) -> bool {
 	use oxc_ast::AstKind;
 	use oxc_semantic::AstNode;
 
@@ -165,21 +134,16 @@ fn are_all_identifiers_resolved(semantic: &oxc_semantic::Semantic<'_>) -> bool {
 	let has_non_resolved = ast_nodes.iter().any(|node| {
 		match node.kind() {
 			AstKind::BindingIdentifier(id) => {
-				let mut parents =
-					ast_nodes.iter_parents(node.id()).map(AstNode::kind);
+				let mut parents = ast_nodes.iter_parents(node.id()).map(AstNode::kind);
 				parents.next(); // Exclude BindingIdentifier itself
-				if let (
-					Some(AstKind::Function(_)),
-					Some(AstKind::IfStatement(_)),
-				) = (parents.next(), parents.next())
+				if let (Some(AstKind::Function(_)), Some(AstKind::IfStatement(_))) =
+					(parents.next(), parents.next())
 				{
 					return false;
 				}
 				id.symbol_id.get().is_none()
 			},
-			AstKind::IdentifierReference(ref_id) => {
-				ref_id.reference_id.get().is_none()
-			},
+			AstKind::IdentifierReference(ref_id) => ref_id.reference_id.get().is_none(),
 			_ => false,
 		}
 	});

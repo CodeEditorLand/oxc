@@ -12,11 +12,11 @@ use wasm_bindgen::prelude::*;
 #[serde(rename_all = "camelCase")]
 pub struct ParserOptions {
 	#[tsify(optional, type = "\"script\" | \"module\"")]
-	pub source_type: Option<String>,
+	pub source_type:Option<String>,
 
 	/// "module" and "jsx" will be inferred from `sourceFilename`.
 	#[tsify(optional)]
-	pub source_filename: Option<String>,
+	pub source_filename:Option<String>,
 }
 
 #[derive(Default, Tsify)]
@@ -24,19 +24,19 @@ pub struct ParserOptions {
 pub struct ParseResult {
 	#[wasm_bindgen(readonly, skip_typescript)]
 	#[tsify(type = "Program")]
-	pub program: JsValue,
+	pub program:JsValue,
 
 	#[wasm_bindgen(readonly, skip_typescript)]
 	#[tsify(type = "Diagnostic[]")]
-	pub errors: Vec<JsValue>,
+	pub errors:Vec<JsValue>,
 }
 
 #[derive(Debug, Default, Serialize, Tsify)]
 pub struct Diagnostic {
-	pub start: usize,
-	pub end: usize,
-	pub severity: String,
-	pub message: String,
+	pub start:usize,
+	pub end:usize,
+	pub severity:String,
+	pub message:String,
 }
 
 /// # Errors
@@ -49,8 +49,8 @@ pub struct Diagnostic {
 /// * Serde JSON serialization
 #[wasm_bindgen(js_name = parseSync)]
 pub fn parse_sync(
-	source_text: String,
-	options: Option<ParserOptions>,
+	source_text:String,
+	options:Option<ParserOptions>,
 ) -> Result<ParseResult, serde_wasm_bindgen::Error> {
 	let options = options.unwrap_or_default();
 
@@ -87,10 +87,10 @@ pub fn parse_sync(
 					.iter()
 					.map(|label| {
 						Diagnostic {
-							start: label.offset(),
-							end: label.offset() + label.len(),
-							severity: "Error".to_string(),
-							message: format!("{error}"),
+							start:label.offset(),
+							end:label.offset() + label.len(),
+							severity:"Error".to_string(),
+							message:format!("{error}"),
 						}
 						.serialize(&serializer)
 						.unwrap()

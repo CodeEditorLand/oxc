@@ -6,17 +6,13 @@ use crate::IsolatedDeclarations;
 impl<'a> IsolatedDeclarations<'a> {
 	pub fn transform_template_to_string(
 		&self,
-		lit: &TemplateLiteral<'a>,
+		lit:&TemplateLiteral<'a>,
 	) -> Option<Box<'a, StringLiteral<'a>>> {
 		if lit.expressions.is_empty() {
 			lit.quasis.first().map(|item| {
 				self.ast.alloc(self.ast.string_literal(
 					lit.span,
-					if let Some(cooked) = &item.value.cooked {
-						cooked
-					} else {
-						&item.value.raw
-					},
+					if let Some(cooked) = &item.value.cooked { cooked } else { &item.value.raw },
 				))
 			})
 		} else {

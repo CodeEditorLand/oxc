@@ -4,20 +4,28 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
 	parse::{Parse, ParseStream},
-	Attribute, Error, Expr, Ident, Lit, LitStr, Meta, Result, Token,
+	Attribute,
+	Error,
+	Expr,
+	Ident,
+	Lit,
+	LitStr,
+	Meta,
+	Result,
+	Token,
 };
 
 pub struct LintRuleMeta {
-	name: Ident,
-	category: Ident,
+	name:Ident,
+	category:Ident,
 	/// Describes what auto-fixing capabilities the rule has
-	fix: Option<Ident>,
-	documentation: String,
-	pub used_in_test: bool,
+	fix:Option<Ident>,
+	documentation:String,
+	pub used_in_test:bool,
 }
 
 impl Parse for LintRuleMeta {
-	fn parse(input: ParseStream<'_>) -> Result<Self> {
+	fn parse(input:ParseStream<'_>) -> Result<Self> {
 		let mut documentation = String::new();
 		for attr in input.call(Attribute::parse_outer)? {
 			if let Some(lit) = parse_attr(["doc"], &attr) {
@@ -37,8 +45,9 @@ impl Parse for LintRuleMeta {
 
 		// Parse FixMeta if it's specified. It will otherwise be excluded from
 		// the RuleMeta impl, falling back on default set by RuleMeta itself.
-		// Do not provide a default value here so that it can be set there instead.
-		let fix: Option<Ident> = if input.peek(Token!(,)) {
+		// Do not provide a default value here so that it can be set there
+		// instead.
+		let fix:Option<Ident> = if input.peek(Token!(,)) {
 			input.parse::<Token!(,)>()?;
 			input.parse()?
 		} else {
@@ -48,13 +57,7 @@ impl Parse for LintRuleMeta {
 		// Ignore the rest
 		input.parse::<proc_macro2::TokenStream>()?;
 
-		Ok(Self {
-			name: struct_name,
-			category,
-			fix,
-			documentation,
-			used_in_test: false,
-		})
+		Ok(Self { name:struct_name, category, fix, documentation, used_in_test:false })
 	}
 }
 
@@ -62,9 +65,8 @@ pub(crate) fn rule_name_converter() -> Converter {
 	Converter::new().remove_boundary(Boundary::LowerDigit).to_case(Case::Kebab)
 }
 
-pub fn declare_oxc_lint(metadata: LintRuleMeta) -> TokenStream {
-	let LintRuleMeta { name, category, fix, documentation, used_in_test } =
-		metadata;
+pub fn declare_oxc_lint(metadata:LintRuleMeta) -> TokenStream {
+	let LintRuleMeta { name, category, fix, documentation, used_in_test } = metadata;
 
 	let canonical_name = rule_name_converter().convert(name.to_string());
 	let category = match category.to_string().as_str() {
@@ -87,9 +89,7 @@ pub fn declare_oxc_lint(metadata: LintRuleMeta) -> TokenStream {
 	let import_statement = if used_in_test {
 		None
 	} else {
-		Some(
-			quote! { use crate::{rule::{RuleCategory, RuleMeta, RuleFixMeta}, fixer::FixKind}; },
-		)
+		Some(quote! { use crate::{rule::{RuleCategory, RuleMeta, RuleFixMeta}, fixer::FixKind}; })
 	};
 
 	let output = quote! {
@@ -112,12 +112,11 @@ pub fn declare_oxc_lint(metadata: LintRuleMeta) -> TokenStream {
 }
 
 fn parse_attr<'a, const LEN: usize>(
-	path: [&'static str; LEN],
-	attr: &'a Attribute,
+	path:[&'static str; LEN],
+	attr:&'a Attribute,
 ) -> Option<&'a LitStr> {
 	if let Meta::NameValue(name_value) = &attr.meta {
-		let path_idents =
-			name_value.path.segments.iter().map(|segment| &segment.ident);
+		let path_idents = name_value.path.segments.iter().map(|segment| &segment.ident);
 		if itertools::equal(path_idents, path) {
 			if let Expr::Lit(expr_lit) = &name_value.value {
 				if let Lit::Str(s) = &expr_lit.lit {
@@ -129,48 +128,60 @@ fn parse_attr<'a, const LEN: usize>(
 	None
 }
 
-fn parse_fix(s: &str) -> proc_macro2::TokenStream {
-	const SEP: char = '_';
+fn parse_fix(s:&str) -> proc_macro2::TokenStream {
+	const SEP:char = '_';
 
 	match s {
-        "none" => {
-            return quote! { RuleFixMeta::None };
-        }
-        "pending" => {
-            return quote! { RuleFixMeta::FixPending };
-        }
-        "fix" => return quote! { RuleFixMeta::Fixable(FixKind::SafeFix) },
-        "suggestion" => return quote! { RuleFixMeta::Fixable(FixKind::Suggestion) },
-        // "fix-dangerous" => quote! { RuleFixMeta::Fixable(FixKind::Fix.union(FixKind::Dangerous)) },
-        // "suggestion" => quote! { RuleFixMeta::Fixable(FixKind::Suggestion) },
-        // "suggestion-dangerous" => quote! { RuleFixMeta::Fixable(FixKind::Suggestion.union(FixKind::Dangerous)) },
-        "conditional" => {
-            panic!("Invalid fix capabilities: missing a fix kind. Did you mean 'fix-conditional'?")
-        }
-        "None" => panic!("Invalid fix capabilities. Did you mean 'none'?"),
-        "Pending" => panic!("Invalid fix capabilities. Did you mean 'pending'?"),
-        "Fix" => panic!("Invalid fix capabilities. Did you mean 'fix'?"),
-        "Suggestion" => panic!("Invalid fix capabilities. Did you mean 'suggestion'?"),
-        invalid if !invalid.contains(SEP) => panic!(
-            "invalid fix capabilities: {invalid}. Valid capabilities are none, pending, fix, suggestion, or [fix|suggestion]_[conditional?]_[dangerous?]."
-        ),
-        _ => {}
-    }
+		"none" => {
+			return quote! { RuleFixMeta::None };
+		},
+		"pending" => {
+			return quote! { RuleFixMeta::FixPending };
+		},
+		"fix" => return quote! { RuleFixMeta::Fixable(FixKind::SafeFix) },
+		"suggestion" => {
+			return quote! { RuleFixMeta::Fixable(FixKind::Suggestion) };
+		},
+		// "fix-dangerous" => quote! {
+		// RuleFixMeta::Fixable(FixKind::Fix.union(FixKind::Dangerous)) },
+		// "suggestion" => quote! { RuleFixMeta::Fixable(FixKind::Suggestion) },
+		// "suggestion-dangerous" => quote! {
+		// RuleFixMeta::Fixable(FixKind::Suggestion.union(FixKind::Dangerous))
+		// },
+		"conditional" => {
+			panic!("Invalid fix capabilities: missing a fix kind. Did you mean 'fix-conditional'?")
+		},
+		"None" => panic!("Invalid fix capabilities. Did you mean 'none'?"),
+		"Pending" => {
+			panic!("Invalid fix capabilities. Did you mean 'pending'?")
+		},
+		"Fix" => panic!("Invalid fix capabilities. Did you mean 'fix'?"),
+		"Suggestion" => {
+			panic!("Invalid fix capabilities. Did you mean 'suggestion'?")
+		},
+		invalid if !invalid.contains(SEP) => {
+			panic!(
+				"invalid fix capabilities: {invalid}. Valid capabilities are none, pending, fix, \
+				 suggestion, or [fix|suggestion]_[conditional?]_[dangerous?]."
+			)
+		},
+		_ => {},
+	}
 
 	assert!(s.contains(SEP));
 
 	let mut is_conditional = false;
 	let fix_kinds = s
-        .split(SEP)
-        .filter(|seg| {
-            let conditional = *seg == "conditional";
-            is_conditional = is_conditional || conditional;
-            !conditional
-        })
-        .unique()
-        .map(parse_fix_kind)
-        .reduce(|acc, kind| quote! { #acc.union(#kind) })
-        .expect("No fix kinds were found during parsing, but at least one is required.");
+		.split(SEP)
+		.filter(|seg| {
+			let conditional = *seg == "conditional";
+			is_conditional = is_conditional || conditional;
+			!conditional
+		})
+		.unique()
+		.map(parse_fix_kind)
+		.reduce(|acc, kind| quote! { #acc.union(#kind) })
+		.expect("No fix kinds were found during parsing, but at least one is required.");
 
 	if is_conditional {
 		quote! { RuleFixMeta::Conditional(#fix_kinds) }
@@ -179,11 +190,13 @@ fn parse_fix(s: &str) -> proc_macro2::TokenStream {
 	}
 }
 
-fn parse_fix_kind(s: &str) -> proc_macro2::TokenStream {
+fn parse_fix_kind(s:&str) -> proc_macro2::TokenStream {
 	match s {
-        "fix" => quote! { FixKind::Fix },
-        "suggestion" => quote! { FixKind::Suggestion },
-        "dangerous" => quote! { FixKind::Dangerous },
-        _ => panic!("invalid fix kind: {s}. Valid fix kinds are fix, suggestion, or dangerous."),
-    }
+		"fix" => quote! { FixKind::Fix },
+		"suggestion" => quote! { FixKind::Suggestion },
+		"dangerous" => quote! { FixKind::Dangerous },
+		_ => {
+			panic!("invalid fix kind: {s}. Valid fix kinds are fix, suggestion, or dangerous.")
+		},
+	}
 }

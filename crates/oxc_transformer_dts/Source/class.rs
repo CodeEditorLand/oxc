@@ -1,18 +1,13 @@
+use oxc_allocator::Box;
 #[allow(clippy::wildcard_imports)]
 use oxc_ast::ast::*;
-
-use oxc_allocator::Box;
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::{GetSpan, SPAN};
 
 use crate::TransformerDts;
 
 impl<'a> TransformerDts<'a> {
-	pub fn report_property_key(
-		&self,
-		key: &PropertyKey<'a>,
-		computed: bool,
-	) -> bool {
+	pub fn report_property_key(&self, key:&PropertyKey<'a>, computed:bool) -> bool {
 		if computed
 			&& !matches!(
 				key,
@@ -21,9 +16,12 @@ impl<'a> TransformerDts<'a> {
 					| PropertyKey::BigintLiteral(_)
 			) {
 			self.ctx.error(
-            OxcDiagnostic::error("Computed property names on class or object literals cannot be inferred with --isolatedDeclarations.")
-            .with_label(key.span())
-        );
+				OxcDiagnostic::error(
+					"Computed property names on class or object literals cannot be inferred with \
+					 --isolatedDeclarations.",
+				)
+				.with_label(key.span()),
+			);
 			true
 		} else {
 			false
@@ -32,11 +30,9 @@ impl<'a> TransformerDts<'a> {
 
 	pub fn transform_accessibility(
 		&self,
-		accessibility: Option<TSAccessibility>,
+		accessibility:Option<TSAccessibility>,
 	) -> Option<TSAccessibility> {
-		if accessibility.is_none()
-			|| accessibility.is_some_and(|a| a == TSAccessibility::Public)
-		{
+		if accessibility.is_none() || accessibility.is_some_and(|a| a == TSAccessibility::Public) {
 			None
 		} else {
 			accessibility
@@ -45,12 +41,9 @@ impl<'a> TransformerDts<'a> {
 
 	pub fn transform_class_property_definition(
 		&self,
-		property: &PropertyDefinition<'a>,
+		property:&PropertyDefinition<'a>,
 	) -> ClassElement<'a> {
-		let type_annotations = if property
-			.accessibility
-			.is_some_and(|a| a.is_private())
-		{
+		let type_annotations = if property.accessibility.is_some_and(|a| a.is_private()) {
 			None
 		} else {
 			property
@@ -91,8 +84,8 @@ impl<'a> TransformerDts<'a> {
 
 	pub fn transform_class_method_definition(
 		&self,
-		definition: &MethodDefinition<'a>,
-		params: Box<'a, FormalParameters<'a>>,
+		definition:&MethodDefinition<'a>,
+		params:Box<'a, FormalParameters<'a>>,
 	) -> ClassElement<'a> {
 		let function = &definition.value;
 		if definition.accessibility.is_some_and(|a| a.is_private()) {
@@ -144,10 +137,10 @@ impl<'a> TransformerDts<'a> {
 
 	pub fn create_class_property(
 		&self,
-		r#type: PropertyDefinitionType,
-		key: PropertyKey<'a>,
-		r#override: bool,
-		accessibility: Option<TSAccessibility>,
+		r#type:PropertyDefinitionType,
+		key:PropertyKey<'a>,
+		r#override:bool,
+		accessibility:Option<TSAccessibility>,
 	) -> ClassElement<'a> {
 		self.ctx.ast.class_property(
 			r#type,
@@ -169,17 +162,18 @@ impl<'a> TransformerDts<'a> {
 
 	pub fn transform_formal_parameter_to_class_property(
 		&self,
-		param: &FormalParameter<'a>,
-		type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+		param:&FormalParameter<'a>,
+		type_annotation:Option<Box<'a, TSTypeAnnotation<'a>>>,
 	) -> Option<ClassElement<'a>> {
 		let Some(ident_name) = param.pattern.get_identifier() else {
-			// A parameter property may not be declared using a binding pattern.(1187)
+			// A parameter property may not be declared using a binding
+			// pattern.(1187)
 			return None;
 		};
-		let key = self.ctx.ast.property_key_identifier(IdentifierName::new(
-			SPAN,
-			ident_name.clone(),
-		));
+		let key = self
+			.ctx
+			.ast
+			.property_key_identifier(IdentifierName::new(SPAN, ident_name.clone()));
 		Some(self.ctx.ast.class_property(
 			PropertyDefinitionType::PropertyDefinition,
 			param.span,
@@ -198,10 +192,7 @@ impl<'a> TransformerDts<'a> {
 		))
 	}
 
-	pub fn transform_class(
-		&self,
-		decl: &Class<'a>,
-	) -> Option<Box<'a, Class<'a>>> {
+	pub fn transform_class(&self, decl:&Class<'a>) -> Option<Box<'a, Class<'a>>> {
 		if decl.is_declare() {
 			return None;
 		}
@@ -212,10 +203,7 @@ impl<'a> TransformerDts<'a> {
 			match element {
 				ClassElement::StaticBlock(_) => {},
 				ClassElement::MethodDefinition(definition) => {
-					if self.report_property_key(
-						&definition.key,
-						definition.computed,
-					) {
+					if self.report_property_key(&definition.key, definition.computed) {
 						continue;
 					}
 					if definition.key.is_private_identifier() {
@@ -224,20 +212,15 @@ impl<'a> TransformerDts<'a> {
 					}
 
 					let function = &definition.value;
-					let params =
-						self.transform_formal_parameters(&function.params);
+					let params = self.transform_formal_parameters(&function.params);
 
 					if definition.kind.is_constructor() {
-						for (index, param) in
-							function.params.items.iter().enumerate()
-						{
+						for (index, param) in function.params.items.iter().enumerate() {
 							if param.accessibility.is_some() {
-								// transformed params will definitely have type annotation
-								let type_annotation = self.ctx.ast.copy(
-									&params.items[index]
-										.pattern
-										.type_annotation,
-								);
+								// transformed params will definitely have type
+								// annotation
+								let type_annotation =
+									self.ctx.ast.copy(&params.items[index].pattern.type_annotation);
 								if let Some(new_element) = self
 									.transform_formal_parameter_to_class_property(
 										param,
@@ -249,29 +232,22 @@ impl<'a> TransformerDts<'a> {
 						}
 					}
 
-					let new_element = self
-						.transform_class_method_definition(definition, params);
+					let new_element = self.transform_class_method_definition(definition, params);
 					elements.push(new_element);
 				},
 				ClassElement::PropertyDefinition(property) => {
-					if self
-						.report_property_key(&property.key, property.computed)
-					{
+					if self.report_property_key(&property.key, property.computed) {
 						continue;
 					}
 
 					if property.key.is_private_identifier() {
 						has_private_key = true;
 					} else {
-						elements.push(
-							self.transform_class_property_definition(property),
-						);
+						elements.push(self.transform_class_property_definition(property));
 					}
 				},
 				ClassElement::AccessorProperty(property) => {
-					if self
-						.report_property_key(&property.key, property.computed)
-					{
+					if self.report_property_key(&property.key, property.computed) {
 						return None;
 					}
 
@@ -292,24 +268,25 @@ impl<'a> TransformerDts<'a> {
 					);
 					elements.push(new_element);
 				},
-				ClassElement::TSIndexSignature(_) => {
-					elements.push(self.ctx.ast.copy(element))
-				},
+				ClassElement::TSIndexSignature(_) => elements.push(self.ctx.ast.copy(element)),
 			}
 		}
 
 		if has_private_key {
 			// <https://github.com/microsoft/TypeScript/blob/64d2eeea7b9c7f1a79edf42cb99f302535136a2e/src/compiler/transformers/declarations.ts#L1699-L1709>
-			// When the class has at least one private identifier, create a unique constant identifier to retain the nominal typing behavior
-			// Prevents other classes with the same public members from being used in place of the current class
-			let ident = self.ctx.ast.property_key_private_identifier(
-				PrivateIdentifier::new(SPAN, "private".into()),
-			);
+			// When the class has at least one private identifier, create a
+			// unique constant identifier to retain the nominal typing behavior
+			// Prevents other classes with the same public members from being
+			// used in place of the current class
+			let ident = self
+				.ctx
+				.ast
+				.property_key_private_identifier(PrivateIdentifier::new(SPAN, "private".into()));
 			let r#type = PropertyDefinitionType::PropertyDefinition;
 			let decorators = self.ctx.ast.new_vec();
 			let new_element = self.ctx.ast.class_property(
-				r#type, SPAN, ident, None, false, false, false, false, false,
-				false, false, None, None, decorators,
+				r#type, SPAN, ident, None, false, false, false, false, false, false, false, None,
+				None, decorators,
 			);
 
 			elements.insert(0, new_element);
@@ -319,10 +296,7 @@ impl<'a> TransformerDts<'a> {
 
 		let mut modifiers = self.modifiers_declare();
 		if decl.modifiers.is_contains_abstract() {
-			modifiers.add_modifier(Modifier {
-				span: SPAN,
-				kind: ModifierKind::Abstract,
-			});
+			modifiers.add_modifier(Modifier { span:SPAN, kind:ModifierKind::Abstract });
 		};
 
 		Some(self.ctx.ast.class(

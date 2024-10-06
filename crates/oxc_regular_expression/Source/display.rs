@@ -5,18 +5,16 @@ use std::{
 
 #[allow(clippy::wildcard_imports)]
 use crate::ast::*;
-use crate::surrogate_pair::{
-	combine_surrogate_pair, is_lead_surrogate, is_trail_surrogate,
-};
+use crate::surrogate_pair::{combine_surrogate_pair, is_lead_surrogate, is_trail_surrogate};
 
 impl<'a> Display for RegularExpression<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "/{}/{}", self.pattern, self.flags)
 	}
 }
 
 impl Display for Flags {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		let mut flags = String::with_capacity(8);
 
 		// write flags in the order they are described in the `MDN`
@@ -41,25 +39,17 @@ impl Display for Flags {
 }
 
 impl<'a> Display for Pattern<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "{}", self.body)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.body) }
 }
 
 impl<'a> Display for Disjunction<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write_join(f, "|", &self.body)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result { write_join(f, "|", &self.body) }
 }
 
 impl<'a> Display for Alternative<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		fn as_character<'a>(term: &'a Term) -> Option<&'a Character> {
-			if let Term::Character(ch) = term {
-				Some(ch)
-			} else {
-				None
-			}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
+		fn as_character<'a>(term:&'a Term) -> Option<&'a Character> {
+			if let Term::Character(ch) = term { Some(ch) } else { None }
 		}
 
 		write_join_with(f, "", &self.body, |iter| {
@@ -80,7 +70,7 @@ impl<'a> Display for Alternative<'a> {
 }
 
 impl<'a> Display for Term<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::BoundaryAssertion(it) => write!(f, "{}", it.as_ref()),
 			Self::LookAroundAssertion(it) => write!(f, "{}", it.as_ref()),
@@ -99,13 +89,11 @@ impl<'a> Display for Term<'a> {
 }
 
 impl Display for BoundaryAssertion {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "{}", self.kind)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.kind) }
 }
 
 impl Display for BoundaryAssertionKind {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::Start => write!(f, "^"),
 			Self::End => write!(f, "$"),
@@ -116,13 +104,13 @@ impl Display for BoundaryAssertionKind {
 }
 
 impl<'a> Display for LookAroundAssertion<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "({}{})", self.kind, self.body)
 	}
 }
 
 impl Display for LookAroundAssertionKind {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::Lookahead => write!(f, "?="),
 			Self::NegativeLookahead => write!(f, "?!"),
@@ -133,7 +121,7 @@ impl Display for LookAroundAssertionKind {
 }
 
 impl<'a> Display for Quantifier<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{}", self.body)?;
 
 		match (self.min, self.max) {
@@ -156,26 +144,22 @@ impl<'a> Display for Quantifier<'a> {
 }
 
 impl Display for Character {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		let (string, _) = character_to_string(self, None);
 		write!(f, "{string}")
 	}
 }
 
 impl Display for Dot {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, ".")
-	}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result { write!(f, ".") }
 }
 
 impl Display for CharacterClassEscape {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "{}", self.kind)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.kind) }
 }
 
 impl Display for CharacterClassEscapeKind {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::D => write!(f, r"\d"),
 			Self::NegativeD => write!(f, r"\D"),
@@ -188,7 +172,7 @@ impl Display for CharacterClassEscapeKind {
 }
 
 impl<'a> Display for UnicodePropertyEscape<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		if self.negative {
 			write!(f, r"\P")?;
 		} else {
@@ -197,9 +181,7 @@ impl<'a> Display for UnicodePropertyEscape<'a> {
 
 		write!(f, r"{{")?;
 		match (&self.name, &self.value) {
-			(name, Some(value)) if name == "General_Category" => {
-				write!(f, r"{value}")?
-			},
+			(name, Some(value)) if name == "General_Category" => write!(f, r"{value}")?,
 			(name, Some(value)) => write!(f, r"{name}={value}")?,
 			_ => write!(f, r"{}", self.name)?,
 		}
@@ -208,10 +190,8 @@ impl<'a> Display for UnicodePropertyEscape<'a> {
 }
 
 impl<'a> Display for CharacterClass<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		fn as_character<'a>(
-			content: &'a CharacterClassContents,
-		) -> Option<&'a Character> {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
+		fn as_character<'a>(content:&'a CharacterClassContents) -> Option<&'a Character> {
 			if let CharacterClassContents::Character(ch) = content {
 				Some(ch)
 			} else {
@@ -253,7 +233,7 @@ impl<'a> Display for CharacterClass<'a> {
 }
 
 impl<'a> Display for CharacterClassContents<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::CharacterClassRange(it) => write!(f, "{}", it.as_ref()),
 			Self::CharacterClassEscape(it) => write!(f, "{}", it.as_ref()),
@@ -266,13 +246,13 @@ impl<'a> Display for CharacterClassContents<'a> {
 }
 
 impl Display for CharacterClassRange {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{}-{}", self.min, self.max)
 	}
 }
 
 impl<'a> Display for ClassStringDisjunction<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, r"\q{{")?;
 		write_join(f, "|", &self.body)?;
 		write!(f, "}}")
@@ -280,13 +260,11 @@ impl<'a> Display for ClassStringDisjunction<'a> {
 }
 
 impl<'a> Display for ClassString<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write_join(f, "", &self.body)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result { write_join(f, "", &self.body) }
 }
 
 impl<'a> Display for CapturingGroup<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "(")?;
 
 		if let Some(name) = &self.name {
@@ -299,11 +277,11 @@ impl<'a> Display for CapturingGroup<'a> {
 }
 
 impl<'a> Display for IgnoreGroup<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		fn write_flags(
-			f: &mut fmt::Formatter<'_>,
-			prefix: char,
-			flags: &ModifierFlags,
+			f:&mut fmt::Formatter<'_>,
+			prefix:char,
+			flags:&ModifierFlags,
 		) -> fmt::Result {
 			if flags.ignore_case {
 				write!(f, "{prefix}i")?;
@@ -331,40 +309,32 @@ impl<'a> Display for IgnoreGroup<'a> {
 }
 
 impl Display for IndexedReference {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, r"\{}", self.index)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result { write!(f, r"\{}", self.index) }
 }
 
 impl<'a> Display for NamedReference<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, r"\k<{}>", self.name)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result { write!(f, r"\k<{}>", self.name) }
 }
 
 // ---
 
 fn character_to_string(
-	this: &Character,
-	peek: Option<&Character>,
+	this:&Character,
+	peek:Option<&Character>,
 ) -> (/* result */ String, /* true of peek should be consumed */ bool) {
 	let cp = this.value;
 
-	if matches!(this.kind, CharacterKind::Symbol | CharacterKind::UnicodeEscape)
-	{
+	if matches!(this.kind, CharacterKind::Symbol | CharacterKind::UnicodeEscape) {
 		// Trail only
 		if is_trail_surrogate(cp) {
 			return (format!(r"\u{cp:X}"), false);
 		}
 
 		if is_lead_surrogate(cp) {
-			if let Some(peek) =
-				peek.filter(|peek| is_trail_surrogate(peek.value))
-			{
+			if let Some(peek) = peek.filter(|peek| is_trail_surrogate(peek.value)) {
 				// Lead+Trail
 				let cp = combine_surrogate_pair(cp, peek.value);
-				let ch = char::from_u32(cp)
-					.expect("Invalid surrogate pair `Character`!");
+				let ch = char::from_u32(cp).expect("Invalid surrogate pair `Character`!");
 				return (format!("{ch}"), true);
 			}
 
@@ -377,33 +347,33 @@ fn character_to_string(
 	let result = match this.kind {
 		// Not a surrogate, like BMP, or all units in unicode mode
 		CharacterKind::Symbol => format!("{ch}"),
-		CharacterKind::ControlLetter => match ch {
-			'\n' => r"\cJ".to_string(),
-			'\r' => r"\cM".to_string(),
-			'\t' => r"\cI".to_string(),
-			_ => format!(r"\c{ch}"),
+		CharacterKind::ControlLetter => {
+			match ch {
+				'\n' => r"\cJ".to_string(),
+				'\r' => r"\cM".to_string(),
+				'\t' => r"\cI".to_string(),
+				_ => format!(r"\c{ch}"),
+			}
 		},
 		CharacterKind::Identifier => {
 			format!(r"\{ch}")
 		},
-		CharacterKind::SingleEscape => match ch {
-			'\n' => String::from(r"\n"),
-			'\r' => String::from(r"\r"),
-			'\t' => String::from(r"\t"),
-			'\u{b}' => String::from(r"\v"),
-			'\u{c}' => String::from(r"\f"),
-			'\u{8}' => String::from(r"\b"),
-			'\u{2D}' => String::from(r"\-"),
-			_ => format!(r"\{ch}"),
+		CharacterKind::SingleEscape => {
+			match ch {
+				'\n' => String::from(r"\n"),
+				'\r' => String::from(r"\r"),
+				'\t' => String::from(r"\t"),
+				'\u{b}' => String::from(r"\v"),
+				'\u{c}' => String::from(r"\f"),
+				'\u{8}' => String::from(r"\b"),
+				'\u{2D}' => String::from(r"\-"),
+				_ => format!(r"\{ch}"),
+			}
 		},
 		CharacterKind::Null => String::from(r"\0"),
 		CharacterKind::UnicodeEscape => {
 			let hex = &format!("{cp:04X}");
-			if hex.len() <= 4 {
-				format!(r"\u{hex}")
-			} else {
-				format!(r"\u{{{hex}}}")
-			}
+			if hex.len() <= 4 { format!(r"\u{hex}") } else { format!(r"\u{{{hex}}}") }
 		},
 		CharacterKind::HexadecimalEscape => {
 			let hex = &format!("{cp:02X}");
@@ -428,31 +398,20 @@ fn character_to_string(
 
 // ---
 
-fn write_join<S, I, E>(
-	f: &mut fmt::Formatter<'_>,
-	sep: S,
-	items: I,
-) -> fmt::Result
+fn write_join<S, I, E>(f:&mut fmt::Formatter<'_>, sep:S, items:I) -> fmt::Result
 where
 	S: AsRef<str>,
 	E: Display,
-	I: IntoIterator<Item = E>,
-{
+	I: IntoIterator<Item = E>, {
 	write_join_with(f, sep, items, |iter| iter.next().map(|it| it.to_string()))
 }
 
-fn write_join_with<S, I, E, F>(
-	f: &mut fmt::Formatter<'_>,
-	sep: S,
-	items: I,
-	next: F,
-) -> fmt::Result
+fn write_join_with<S, I, E, F>(f:&mut fmt::Formatter<'_>, sep:S, items:I, next:F) -> fmt::Result
 where
 	S: AsRef<str>,
 	E: Display,
 	I: IntoIterator<Item = E>,
-	F: Fn(&mut Peekable<I::IntoIter>) -> Option<String>,
-{
+	F: Fn(&mut Peekable<I::IntoIter>) -> Option<String>, {
 	let sep = sep.as_ref();
 	let iter = &mut items.into_iter().peekable();
 
@@ -469,16 +428,17 @@ where
 
 #[cfg(test)]
 mod test {
-	use crate::{Parser, ParserOptions};
 	use oxc_allocator::Allocator;
+
+	use crate::{Parser, ParserOptions};
 
 	type Case<'a> = (
 		&'a str,
-		/* expected display, None means expect the same as original */
+		// expected display, None means expect the same as original
 		Option<&'a str>,
 	);
 
-	static CASES: &[Case] = &[
+	static CASES:&[Case] = &[
 		("/ab/", None),
 		("/ab/u", None),
 		("/abc/i", None),
@@ -601,11 +561,9 @@ mod test {
 		(r"/([\-a-z]{0,31})/iu", None),
 	];
 
-	fn test_display(allocator: &Allocator, (source, expect): &Case) {
+	fn test_display(allocator:&Allocator, (source, expect):&Case) {
 		let expect = expect.unwrap_or(source);
-		let actual = Parser::new(allocator, source, ParserOptions::default())
-			.parse()
-			.unwrap();
+		let actual = Parser::new(allocator, source, ParserOptions::default()).parse().unwrap();
 		assert_eq!(expect, actual.to_string());
 	}
 

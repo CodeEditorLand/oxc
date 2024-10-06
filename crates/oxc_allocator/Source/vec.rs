@@ -32,13 +32,11 @@ impl<'alloc, T> Vec<'alloc, T> {
 	///
 	/// let arena = Allocator::default();
 	///
-	/// let mut vec: Vec<i32> = Vec::new_in(&arena);
+	/// let mut vec:Vec<i32> = Vec::new_in(&arena);
 	/// assert!(vec.is_empty());
 	/// ```
 	#[inline]
-	pub fn new_in(allocator: &'alloc Allocator) -> Self {
-		Self(vec::Vec::new_in(allocator))
-	}
+	pub fn new_in(allocator:&'alloc Allocator) -> Self { Self(vec::Vec::new_in(allocator)) }
 
 	/// Constructs a new, empty `Vec<T>` with at least the specified capacity
 	/// with the provided allocator.
@@ -72,7 +70,7 @@ impl<'alloc, T> Vec<'alloc, T> {
 	///
 	/// // These are all done without reallocating...
 	/// for i in 0..10 {
-	///     vec.push(i);
+	/// 	vec.push(i);
 	/// }
 	/// assert_eq!(vec.len(), 10);
 	/// assert_eq!(vec.capacity(), 10);
@@ -88,18 +86,12 @@ impl<'alloc, T> Vec<'alloc, T> {
 	/// assert_eq!(vec_units.capacity(), usize::MAX);
 	/// ```
 	#[inline]
-	pub fn with_capacity_in(
-		capacity: usize,
-		allocator: &'alloc Allocator,
-	) -> Self {
+	pub fn with_capacity_in(capacity:usize, allocator:&'alloc Allocator) -> Self {
 		Self(vec::Vec::with_capacity_in(capacity, allocator))
 	}
 
 	#[inline]
-	pub fn from_iter_in<I: IntoIterator<Item = T>>(
-		iter: I,
-		allocator: &'alloc Allocator,
-	) -> Self {
+	pub fn from_iter_in<I:IntoIterator<Item = T>>(iter:I, allocator:&'alloc Allocator) -> Self {
 		let iter = iter.into_iter();
 		let hint = iter.size_hint();
 		let capacity = hint.1.unwrap_or(hint.0);
@@ -112,41 +104,31 @@ impl<'alloc, T> Vec<'alloc, T> {
 impl<'alloc, T> ops::Deref for Vec<'alloc, T> {
 	type Target = vec::Vec<T, &'alloc Bump>;
 
-	fn deref(&self) -> &Self::Target {
-		&self.0
-	}
+	fn deref(&self) -> &Self::Target { &self.0 }
 }
 
 impl<'alloc, T> ops::DerefMut for Vec<'alloc, T> {
-	fn deref_mut(&mut self) -> &mut vec::Vec<T, &'alloc Bump> {
-		&mut self.0
-	}
+	fn deref_mut(&mut self) -> &mut vec::Vec<T, &'alloc Bump> { &mut self.0 }
 }
 
 impl<'alloc, T> IntoIterator for Vec<'alloc, T> {
 	type IntoIter = <vec::Vec<T, &'alloc Bump> as IntoIterator>::IntoIter;
 	type Item = T;
 
-	fn into_iter(self) -> Self::IntoIter {
-		self.0.into_iter()
-	}
+	fn into_iter(self) -> Self::IntoIter { self.0.into_iter() }
 }
 
 impl<'alloc, T> IntoIterator for &'alloc Vec<'alloc, T> {
 	type IntoIter = std::slice::Iter<'alloc, T>;
 	type Item = &'alloc T;
 
-	fn into_iter(self) -> Self::IntoIter {
-		self.0.iter()
-	}
+	fn into_iter(self) -> Self::IntoIter { self.0.iter() }
 }
 
 impl<'alloc, T> ops::Index<usize> for Vec<'alloc, T> {
 	type Output = T;
 
-	fn index(&self, index: usize) -> &Self::Output {
-		self.0.index(index)
-	}
+	fn index(&self, index:usize) -> &Self::Output { self.0.index(index) }
 }
 
 // Unused right now.
@@ -161,10 +143,9 @@ impl<'alloc, T> Serialize for Vec<'alloc, T>
 where
 	T: Serialize,
 {
-	fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+	fn serialize<S>(&self, s:S) -> Result<S::Ok, S::Error>
 	where
-		S: Serializer,
-	{
+		S: Serializer, {
 		let mut seq = s.serialize_seq(Some(self.0.len()))?;
 		for e in &self.0 {
 			seq.serialize_element(e)?;
@@ -173,8 +154,8 @@ where
 	}
 }
 
-impl<'alloc, T: Hash> Hash for Vec<'alloc, T> {
-	fn hash<H: Hasher>(&self, state: &mut H) {
+impl<'alloc, T:Hash> Hash for Vec<'alloc, T> {
+	fn hash<H:Hasher>(&self, state:&mut H) {
 		for e in &self.0 {
 			e.hash(state);
 		}
@@ -189,7 +170,7 @@ mod test {
 	#[test]
 	fn vec_with_capacity() {
 		let allocator = Allocator::default();
-		let v: Vec<i32> = Vec::with_capacity_in(10, &allocator);
+		let v:Vec<i32> = Vec::with_capacity_in(10, &allocator);
 		assert!(v.is_empty());
 	}
 
@@ -213,10 +194,6 @@ mod test {
 
 	#[test]
 	fn lifetime_variance() {
-		fn _assert_vec_variant_lifetime<'a: 'b, 'b, T>(
-			program: Vec<'a, T>,
-		) -> Vec<'b, T> {
-			program
-		}
+		fn _assert_vec_variant_lifetime<'a:'b, 'b, T>(program:Vec<'a, T>) -> Vec<'b, T> { program }
 	}
 }

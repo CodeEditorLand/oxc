@@ -21,9 +21,7 @@ use oxc_ast::{ast::Program, AstKind, Trivias};
 use oxc_span::Span;
 use oxc_syntax::identifier::is_line_terminator;
 
-pub use crate::options::{
-	ArrowParens, EndOfLine, PrettierOptions, QuoteProps, TrailingComma,
-};
+pub use crate::options::{ArrowParens, EndOfLine, PrettierOptions, QuoteProps, TrailingComma};
 use crate::{
 	doc::{Doc, DocBuilder},
 	format::Format,
@@ -33,7 +31,7 @@ use crate::{
 type GroupId = u32;
 #[derive(Default)]
 struct GroupIdBuilder {
-	id: GroupId,
+	id:GroupId,
 }
 
 impl GroupIdBuilder {
@@ -45,78 +43,65 @@ impl GroupIdBuilder {
 
 #[derive(Debug, Default)]
 pub struct PrettierArgs {
-	expand_first_arg: bool,
-	expand_last_arg: bool,
+	expand_first_arg:bool,
+	expand_last_arg:bool,
 }
 
 pub struct Prettier<'a> {
-	allocator: &'a Allocator,
+	allocator:&'a Allocator,
 
-	source_text: &'a str,
+	source_text:&'a str,
 
-	options: PrettierOptions,
+	options:PrettierOptions,
 
-	trivias: Trivias,
+	trivias:Trivias,
 
 	/// The stack of AST Nodes
 	/// See <https://github.com/prettier/prettier/blob/main/src/common/ast-path.js>
-	stack: Vec<AstKind<'a>>,
+	stack:Vec<AstKind<'a>>,
 
-	group_id_builder: GroupIdBuilder,
-	args: PrettierArgs,
+	group_id_builder:GroupIdBuilder,
+	args:PrettierArgs,
 }
 
 impl<'a> DocBuilder<'a> for Prettier<'a> {
 	#[inline]
-	fn allocator(&self) -> &'a Allocator {
-		self.allocator
-	}
+	fn allocator(&self) -> &'a Allocator { self.allocator }
 }
 
 impl<'a> Prettier<'a> {
 	#[allow(clippy::needless_pass_by_value)]
 	pub fn new(
-		allocator: &'a Allocator,
-		source_text: &'a str,
-		trivias: Trivias,
-		options: PrettierOptions,
+		allocator:&'a Allocator,
+		source_text:&'a str,
+		trivias:Trivias,
+		options:PrettierOptions,
 	) -> Self {
 		Self {
 			allocator,
 			source_text,
 			options,
 			trivias,
-			stack: vec![],
-			group_id_builder: GroupIdBuilder::default(),
-			args: PrettierArgs::default(),
+			stack:vec![],
+			group_id_builder:GroupIdBuilder::default(),
+			args:PrettierArgs::default(),
 		}
 	}
 
-	pub fn build(&mut self, program: &Program<'a>) -> String {
+	pub fn build(&mut self, program:&Program<'a>) -> String {
 		let doc = program.format(self);
-		Printer::new(doc, self.source_text, self.options, self.allocator)
-			.build()
+		Printer::new(doc, self.source_text, self.options, self.allocator).build()
 	}
 
-	pub fn doc(mut self, program: &Program<'a>) -> Doc<'a> {
-		program.format(&mut self)
-	}
+	pub fn doc(mut self, program:&Program<'a>) -> Doc<'a> { program.format(&mut self) }
 
-	fn enter_node(&mut self, kind: AstKind<'a>) {
-		self.stack.push(kind);
-	}
+	fn enter_node(&mut self, kind:AstKind<'a>) { self.stack.push(kind); }
 
-	fn leave_node(&mut self) {
-		self.stack.pop();
-	}
+	fn leave_node(&mut self) { self.stack.pop(); }
 
-	fn current_kind(&self) -> AstKind<'a> {
-		self.stack[self.stack.len() - 1]
-	}
+	fn current_kind(&self) -> AstKind<'a> { self.stack[self.stack.len() - 1] }
 
-	fn parent_kind(&self) -> AstKind<'a> {
-		self.stack[self.stack.len() - 2]
-	}
+	fn parent_kind(&self) -> AstKind<'a> { self.stack[self.stack.len() - 2] }
 
 	fn parent_parent_kind(&self) -> Option<AstKind<'a>> {
 		let len = self.stack.len();
@@ -124,43 +109,37 @@ impl<'a> Prettier<'a> {
 	}
 
 	#[allow(unused)]
-	fn nth_parent_kind(&self, n: usize) -> Option<AstKind<'a>> {
+	fn nth_parent_kind(&self, n:usize) -> Option<AstKind<'a>> {
 		let len = self.stack.len();
 		(len > n).then(|| self.stack[len - n - 1])
 	}
 
 	/// A hack for erasing the lifetime requirement.
 	#[allow(clippy::unused_self)]
-	fn alloc<T>(&self, t: &T) -> &'a T {
+	fn alloc<T>(&self, t:&T) -> &'a T {
 		// SAFETY:
-		// This should be safe as long as `src` is an reference from the allocator.
-		// But honestly, I'm not really sure if this is safe.
+		// This should be safe as long as `src` is an reference from the
+		// allocator. But honestly, I'm not really sure if this is safe.
 
 		unsafe { std::mem::transmute(t) }
 	}
 
-	pub fn semi(&self) -> Option<Doc<'a>> {
-		self.options.semi.then(|| Doc::Str(";"))
-	}
+	pub fn semi(&self) -> Option<Doc<'a>> { self.options.semi.then(|| Doc::Str(";")) }
 
-	pub fn should_print_es5_comma(&self) -> bool {
-		self.should_print_comma_impl(false)
-	}
+	pub fn should_print_es5_comma(&self) -> bool { self.should_print_comma_impl(false) }
 
-	fn should_print_all_comma(&self) -> bool {
-		self.should_print_comma_impl(true)
-	}
+	fn should_print_all_comma(&self) -> bool { self.should_print_comma_impl(true) }
 
-	fn should_print_comma_impl(&self, level_all: bool) -> bool {
+	fn should_print_comma_impl(&self, level_all:bool) -> bool {
 		let trailing_comma = self.options.trailing_comma;
 		trailing_comma.is_all() || (trailing_comma.is_es5() && !level_all)
 	}
 
-	fn is_next_line_empty(&self, span: Span) -> bool {
+	fn is_next_line_empty(&self, span:Span) -> bool {
 		self.is_next_line_empty_after_index(span.end)
 	}
 
-	fn is_next_line_empty_after_index(&self, start_index: u32) -> bool {
+	fn is_next_line_empty_after_index(&self, start_index:u32) -> bool {
 		let mut old_idx = None;
 		let mut idx = Some(start_index);
 		while idx != old_idx {
@@ -174,7 +153,7 @@ impl<'a> Prettier<'a> {
 		idx.is_some_and(|idx| self.has_newline(idx, /* backwards */ false))
 	}
 
-	fn skip_trailing_comment(&self, start_index: Option<u32>) -> Option<u32> {
+	fn skip_trailing_comment(&self, start_index:Option<u32>) -> Option<u32> {
 		let start_index = start_index?;
 		let mut chars = self.source_text[start_index as usize..].chars();
 		let c = chars.next()?;
@@ -187,45 +166,32 @@ impl<'a> Prettier<'a> {
 		}
 		self.skip_everything_but_new_line(
 			Some(start_index),
-			/* backwards */ false,
+			// backwards
+			false,
 		)
 	}
 
 	#[allow(clippy::unused_self)]
-	fn skip_inline_comment(&self, start_index: Option<u32>) -> Option<u32> {
+	fn skip_inline_comment(&self, start_index:Option<u32>) -> Option<u32> {
 		let start_index = start_index?;
 		Some(start_index)
 	}
 
-	fn skip_to_line_end(&self, start_index: Option<u32>) -> Option<u32> {
+	fn skip_to_line_end(&self, start_index:Option<u32>) -> Option<u32> {
 		self.skip(start_index, false, |c| matches!(c, ' ' | '\t' | ',' | ';'))
 	}
 
-	fn skip_spaces(
-		&self,
-		start_index: Option<u32>,
-		backwards: bool,
-	) -> Option<u32> {
+	fn skip_spaces(&self, start_index:Option<u32>, backwards:bool) -> Option<u32> {
 		self.skip(start_index, backwards, |c| matches!(c, ' ' | '\t'))
 	}
 
-	fn skip_everything_but_new_line(
-		&self,
-		start_index: Option<u32>,
-		backwards: bool,
-	) -> Option<u32> {
+	fn skip_everything_but_new_line(&self, start_index:Option<u32>, backwards:bool) -> Option<u32> {
 		self.skip(start_index, backwards, |c| !is_line_terminator(c))
 	}
 
-	fn skip<F>(
-		&self,
-		start_index: Option<u32>,
-		backwards: bool,
-		f: F,
-	) -> Option<u32>
+	fn skip<F>(&self, start_index:Option<u32>, backwards:bool, f:F) -> Option<u32>
 	where
-		F: Fn(char) -> bool,
-	{
+		F: Fn(char) -> bool, {
 		let start_index = start_index?;
 		let mut index = start_index;
 		if backwards {
@@ -247,11 +213,7 @@ impl<'a> Prettier<'a> {
 	}
 
 	#[allow(clippy::cast_possible_truncation)]
-	fn skip_newline(
-		&self,
-		start_index: Option<u32>,
-		backwards: bool,
-	) -> Option<u32> {
+	fn skip_newline(&self, start_index:Option<u32>, backwards:bool) -> Option<u32> {
 		let start_index = start_index?;
 		let c = if backwards {
 			self.source_text[..=start_index as usize].chars().next_back()
@@ -260,16 +222,12 @@ impl<'a> Prettier<'a> {
 		}?;
 		if is_line_terminator(c) {
 			let len = c.len_utf8() as u32;
-			return Some(if backwards {
-				start_index - len
-			} else {
-				start_index + len
-			});
+			return Some(if backwards { start_index - len } else { start_index + len });
 		}
 		Some(start_index)
 	}
 
-	fn has_newline(&self, start_index: u32, backwards: bool) -> bool {
+	fn has_newline(&self, start_index:u32, backwards:bool) -> bool {
 		if (backwards && start_index == 0)
 			|| (!backwards && start_index as usize == self.source_text.len())
 		{
@@ -281,7 +239,7 @@ impl<'a> Prettier<'a> {
 		idx != idx2
 	}
 
-	fn is_previous_line_empty(&self, start_index: u32) -> bool {
+	fn is_previous_line_empty(&self, start_index:u32) -> bool {
 		let idx = start_index - 1;
 		let idx = self.skip_spaces(Some(idx), true);
 		let idx = self.skip_newline(idx, true);
@@ -290,7 +248,5 @@ impl<'a> Prettier<'a> {
 		idx != idx2
 	}
 
-	fn next_id(&mut self) -> GroupId {
-		self.group_id_builder.next_id()
-	}
+	fn next_id(&mut self) -> GroupId { self.group_id_builder.next_id() }
 }

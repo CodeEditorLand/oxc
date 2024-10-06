@@ -5,39 +5,35 @@ use rayon::prelude::*;
 
 use crate::JSONSourceMap;
 /// Port from https://github.com/getsentry/rust-sourcemap/blob/master/src/encoder.rs
-/// It is a helper for encode `SourceMap` to vlq sourcemap string, but here some different.
+/// It is a helper for encode `SourceMap` to vlq sourcemap string, but here
+/// some different.
 /// - Quote `source_content` at parallel.
-/// - If you using `ConcatSourceMapBuilder`, serialize `tokens` to vlq `mappings` at parallel.
+/// - If you using `ConcatSourceMapBuilder`, serialize `tokens` to vlq
+///   `mappings` at parallel.
 use crate::{token::TokenChunk, SourceMap, Token};
 
-pub fn encode(sourcemap: &SourceMap) -> JSONSourceMap {
+pub fn encode(sourcemap:&SourceMap) -> JSONSourceMap {
 	JSONSourceMap {
-		file: sourcemap.get_file().map(ToString::to_string),
-		mappings: serialize_sourcemap_mappings(sourcemap),
-		source_root: sourcemap.get_source_root().map(ToString::to_string),
-		sources: sourcemap.sources.iter().map(ToString::to_string).collect(),
-		sources_content: sourcemap
+		file:sourcemap.get_file().map(ToString::to_string),
+		mappings:serialize_sourcemap_mappings(sourcemap),
+		source_root:sourcemap.get_source_root().map(ToString::to_string),
+		sources:sourcemap.sources.iter().map(ToString::to_string).collect(),
+		sources_content:sourcemap
 			.source_contents
 			.as_ref()
 			.map(|x| x.iter().map(ToString::to_string).map(Some).collect()),
-		names: sourcemap.names.iter().map(ToString::to_string).collect(),
+		names:sourcemap.names.iter().map(ToString::to_string).collect(),
 	}
 }
 
 // Here using `serde_json` to serialize `names` / `source_contents` / `sources`.
 // It will escape the string to avoid invalid JSON string.
-pub fn encode_to_string(sourcemap: &SourceMap) -> String {
+pub fn encode_to_string(sourcemap:&SourceMap) -> String {
 	let max_segments = 12
 		+ sourcemap.names.len() * 2
 		+ sourcemap.sources.len() * 2
-		+ sourcemap
-			.source_contents
-			.as_ref()
-			.map_or(0, |sources| sources.len() * 2 + 1)
-		+ sourcemap
-			.x_google_ignore_list
-			.as_ref()
-			.map_or(0, |x| x.len() * 2 + 1);
+		+ sourcemap.source_contents.as_ref().map_or(0, |sources| sources.len() * 2 + 1)
+		+ sourcemap.x_google_ignore_list.as_ref().map_or(0, |x| x.len() * 2 + 1);
 	let mut contents = PreAllocatedString::new(max_segments);
 
 	contents.push("{\"version\":3,".into());
@@ -77,8 +73,7 @@ pub fn encode_to_string(sourcemap: &SourceMap) -> String {
 
 	if let Some(x_google_ignore_list) = &sourcemap.x_google_ignore_list {
 		contents.push("],\"x_google_ignoreList\":[".into());
-		contents
-			.push_list(x_google_ignore_list.iter().map(ToString::to_string));
+		contents.push_list(x_google_ignore_list.iter().map(ToString::to_string));
 	}
 
 	contents.push("],\"mappings\":\"".into());
@@ -92,7 +87,7 @@ pub fn encode_to_string(sourcemap: &SourceMap) -> String {
 }
 
 #[allow(clippy::cast_possible_truncation)]
-fn serialize_sourcemap_mappings(sm: &SourceMap) -> String {
+fn serialize_sourcemap_mappings(sm:&SourceMap) -> String {
 	sm.token_chunks.as_ref().map_or_else(
 		|| {
 			serialize_mappings(
@@ -120,9 +115,9 @@ fn serialize_sourcemap_mappings(sm: &SourceMap) -> String {
 }
 
 // Max length of a single VLQ encoding
-const MAX_VLQ_BYTES: usize = 7;
+const MAX_VLQ_BYTES:usize = 7;
 
-fn serialize_mappings(tokens: &[Token], token_chunk: &TokenChunk) -> String {
+fn serialize_mappings(tokens:&[Token], token_chunk:&TokenChunk) -> String {
 	let TokenChunk {
 		start,
 		end,
@@ -138,22 +133,23 @@ fn serialize_mappings(tokens: &[Token], token_chunk: &TokenChunk) -> String {
 
 	let mut rv = String::with_capacity(capacity);
 
-	let mut prev_token =
-		if start == 0 { None } else { Some(&tokens[start as usize - 1]) };
+	let mut prev_token = if start == 0 { None } else { Some(&tokens[start as usize - 1]) };
 
 	for token in &tokens[start as usize..end as usize] {
-		// Max length of a single VLQ encoding is 7 bytes. Max number of calls to `encode_vlq_diff` is 5.
-		// Also need 1 byte for each line number difference, or 1 byte if no line num difference.
-		// Reserve this amount of capacity in `rv` early, so can skip bounds checks in code below.
-		// As well as skipping the bounds checks, this also removes a function call to
-		// `alloc::raw_vec::RawVec::grow_one` for every byte that's pushed.
-		// https://godbolt.org/z/44G8jjss3
-		const MAX_TOTAL_VLQ_BYTES: usize = 5 * MAX_VLQ_BYTES;
+		// Max length of a single VLQ encoding is 7 bytes. Max number of calls
+		// to `encode_vlq_diff` is 5. Also need 1 byte for each line number
+		// difference, or 1 byte if no line num difference. Reserve this
+		// amount of capacity in `rv` early, so can skip bounds checks in code
+		// below. As well as skipping the bounds checks, this also removes a
+		// function call to `alloc::raw_vec::RawVec::grow_one` for every byte
+		// that's pushed. https://godbolt.org/z/44G8jjss3
+		const MAX_TOTAL_VLQ_BYTES:usize = 5 * MAX_VLQ_BYTES;
 
 		let num_line_breaks = token.get_dst_line() - prev_dst_line;
 		if num_line_breaks != 0 {
 			rv.reserve(MAX_TOTAL_VLQ_BYTES + num_line_breaks as usize);
-			// SAFETY: We have reserved sufficient capacity for `num_line_breaks` bytes
+			// SAFETY: We have reserved sufficient capacity for
+			// `num_line_breaks` bytes
 			unsafe { push_bytes_unchecked(&mut rv, b';', num_line_breaks) };
 			prev_dst_col = 0;
 			prev_dst_line += num_line_breaks;
@@ -166,8 +162,8 @@ fn serialize_mappings(tokens: &[Token], token_chunk: &TokenChunk) -> String {
 			unsafe { push_byte_unchecked(&mut rv, b',') };
 		}
 
-		// SAFETY: We have reserved enough capacity above to satisfy safety contract
-		// of `encode_vlq_diff` for all calls below
+		// SAFETY: We have reserved enough capacity above to satisfy safety
+		// contract of `encode_vlq_diff` for all calls below
 		unsafe {
 			encode_vlq_diff(&mut rv, token.get_dst_col(), prev_dst_col);
 			prev_dst_col = token.get_dst_col();
@@ -199,7 +195,7 @@ fn serialize_mappings(tokens: &[Token], token_chunk: &TokenChunk) -> String {
 /// Caller must ensure at least 7 bytes spare capacity in `out`,
 /// as this function does not perform any bounds checks.
 #[inline]
-unsafe fn encode_vlq_diff(out: &mut String, a: u32, b: u32) {
+unsafe fn encode_vlq_diff(out:&mut String, a:u32, b:u32) {
 	encode_vlq(out, i64::from(a) - i64::from(b));
 }
 
@@ -207,13 +203,11 @@ unsafe fn encode_vlq_diff(out: &mut String, a: u32, b: u32) {
 #[repr(align(64))]
 struct Aligned64([u8; 64]);
 
-static B64_CHARS: Aligned64 = Aligned64([
-	b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L',
-	b'M', b'N', b'O', b'P', b'Q', b'R', b'S', b'T', b'U', b'V', b'W', b'X',
-	b'Y', b'Z', b'a', b'b', b'c', b'd', b'e', b'f', b'g', b'h', b'i', b'j',
-	b'k', b'l', b'm', b'n', b'o', b'p', b'q', b'r', b's', b't', b'u', b'v',
-	b'w', b'x', b'y', b'z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7',
-	b'8', b'9', b'+', b'/',
+static B64_CHARS:Aligned64 = Aligned64([
+	b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P',
+	b'Q', b'R', b'S', b'T', b'U', b'V', b'W', b'X', b'Y', b'Z', b'a', b'b', b'c', b'd', b'e', b'f',
+	b'g', b'h', b'i', b'j', b'k', b'l', b'm', b'n', b'o', b'p', b'q', b'r', b's', b't', b'u', b'v',
+	b'w', b'x', b'y', b'z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'+', b'/',
 ]);
 
 /// Encode number as VLQ and push encoding into `out`.
@@ -227,12 +221,12 @@ static B64_CHARS: Aligned64 = Aligned64([
 	clippy::cast_sign_loss,
 	clippy::unnecessary_safety_comment
 )]
-unsafe fn encode_vlq(out: &mut String, num: i64) {
+unsafe fn encode_vlq(out:&mut String, num:i64) {
 	let mut num = if num < 0 { ((-num) << 1) + 1 } else { num << 1 };
 
-	// Breaking out of loop early when have reached last char (rather than conditionally adding
-	// 32 for last char within the loop) removes 3 instructions from the loop.
-	// https://godbolt.org/z/Es4Pavh9j
+	// Breaking out of loop early when have reached last char (rather than
+	// conditionally adding 32 for last char within the loop) removes 3
+	// instructions from the loop. https://godbolt.org/z/Es4Pavh9j
 	// This translates to a 16% speed-up for VLQ encoding.
 	let mut digit;
 	loop {
@@ -244,17 +238,19 @@ unsafe fn encode_vlq(out: &mut String, num: i64) {
 
 		let b = B64_CHARS.0[digit as usize + 32];
 		// SAFETY:
-		// * This loop can execute a maximum of 7 times, and on last turn will exit before getting here.
-		//   Caller promises there are at least 7 bytes spare capacity in `out` at start. We only
-		//   push 1 byte on each turn, so guaranteed there is at least 1 byte capacity in `out` here.
+		// * This loop can execute a maximum of 7 times, and on last turn will exit
+		//   before getting here. Caller promises there are at least 7 bytes spare
+		//   capacity in `out` at start. We only push 1 byte on each turn, so guaranteed
+		//   there is at least 1 byte capacity in `out` here.
 		// * All values in `B64_CHARS` lookup table are ASCII bytes.
 		push_byte_unchecked(out, b);
 	}
 
 	let b = B64_CHARS.0[digit as usize];
 	// SAFETY:
-	// * The loop above pushes max 6 bytes. Caller promises there are at least 7 bytes spare capacity
-	//   in `out` at start. So guaranteed there is at least 1 byte capacity in `out` here.
+	// * The loop above pushes max 6 bytes. Caller promises there are at least 7
+	//   bytes spare capacity in `out` at start. So guaranteed there is at least 1
+	//   byte capacity in `out` here.
 	// * All values in `B64_CHARS` lookup table are ASCII bytes.
 	push_byte_unchecked(out, b);
 }
@@ -264,11 +260,11 @@ unsafe fn encode_vlq(out: &mut String, num: i64) {
 /// # SAFETY
 /// * `out` must have at least 1 byte spare capacity.
 /// * `b` must be an ASCII byte (i.e. not `>= 128`).
-//
-// `#[inline(always)]` to ensure that `len` is stored in a register during `encode_vlq`'s loop.
+// `#[inline(always)]` to ensure that `len` is stored in a register during
+// `encode_vlq`'s loop.
 #[allow(clippy::inline_always)]
 #[inline(always)]
-unsafe fn push_byte_unchecked(out: &mut String, b: u8) {
+unsafe fn push_byte_unchecked(out:&mut String, b:u8) {
 	debug_assert!(out.len() < out.capacity());
 	debug_assert!(b.is_ascii());
 
@@ -285,7 +281,7 @@ unsafe fn push_byte_unchecked(out: &mut String, b: u8) {
 /// * `out` must have at least `repeats` bytes spare capacity.
 /// * `b` must be an ASCII byte (i.e. not `>= 128`).
 #[inline]
-unsafe fn push_bytes_unchecked(out: &mut String, b: u8, repeats: u32) {
+unsafe fn push_bytes_unchecked(out:&mut String, b:u8, repeats:u32) {
 	debug_assert!(out.capacity() - out.len() >= repeats as usize);
 	debug_assert!(b.is_ascii());
 
@@ -304,26 +300,23 @@ unsafe fn push_bytes_unchecked(out: &mut String, b: u8, repeats: u32) {
 /// Pre-allocate a Cow<'a, str> buffer, and push the segment into it.
 /// Finally, convert it to a pre-allocated length String.
 struct PreAllocatedString<'a> {
-	buf: Vec<Cow<'a, str>>,
-	len: usize,
+	buf:Vec<Cow<'a, str>>,
+	len:usize,
 }
 
 impl<'a> PreAllocatedString<'a> {
-	fn new(max_segments: usize) -> Self {
-		Self { buf: Vec::with_capacity(max_segments), len: 0 }
-	}
+	fn new(max_segments:usize) -> Self { Self { buf:Vec::with_capacity(max_segments), len:0 } }
 
 	#[inline]
-	fn push(&mut self, s: Cow<'a, str>) {
+	fn push(&mut self, s:Cow<'a, str>) {
 		self.len += s.len();
 		self.buf.push(s);
 	}
 
 	#[inline]
-	fn push_list<I>(&mut self, mut iter: I)
+	fn push_list<I>(&mut self, mut iter:I)
 	where
-		I: Iterator<Item = String>,
-	{
+		I: Iterator<Item = String>, {
 		let Some(first) = iter.next() else {
 			return;
 		};
@@ -342,28 +335,23 @@ impl<'a> PreAllocatedString<'a> {
 		buf
 	}
 
-	fn num_segments(&self) -> usize {
-		self.buf.len()
-	}
+	fn num_segments(&self) -> usize { self.buf.len() }
 }
 
-fn escape_json_string<S: AsRef<str>>(s: S) -> String {
+fn escape_json_string<S:AsRef<str>>(s:S) -> String {
 	let s = s.as_ref();
 	let mut escaped_buf = Vec::with_capacity(s.len() * 2 + 2);
-	// This call is infallible as only error it can return is if the writer errors.
-	// Writing to a `Vec<u8>` is infallible, so that's not possible here.
-	serde::Serialize::serialize(
-		s,
-		&mut serde_json::Serializer::new(&mut escaped_buf),
-	)
-	.unwrap();
+	// This call is infallible as only error it can return is if the writer
+	// errors. Writing to a `Vec<u8>` is infallible, so that's not possible
+	// here.
+	serde::Serialize::serialize(s, &mut serde_json::Serializer::new(&mut escaped_buf)).unwrap();
 	// Safety: `escaped_buf` is valid utf8.
 	unsafe { String::from_utf8_unchecked(escaped_buf) }
 }
 
 #[test]
 fn test_escape_json_string() {
-	const FIXTURES: &[(char, &str)] = &[
+	const FIXTURES:&[(char, &str)] = &[
 		('n', "\"n\""),
 		('"', "\"\\\"\""),
 		('\\', "\"\\\\\""),
@@ -423,8 +411,9 @@ fn test_encode_escape_string() {
 
 #[test]
 fn test_vlq_encode_diff() {
-	// Most import tests here are that with maximum values, `encode_vlq_diff` pushes maximum of 7 bytes.
-	// This invariant is essential to safety of `encode_vlq_diff`.
+	// Most import tests here are that with maximum values, `encode_vlq_diff`
+	// pushes maximum of 7 bytes. This invariant is essential to safety of
+	// `encode_vlq_diff`.
 	#[rustfmt::skip]
     const FIXTURES: &[(u32, u32, &str)] = &[
         (0,           0, "A"),

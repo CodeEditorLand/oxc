@@ -1,29 +1,24 @@
 use std::borrow::Cow;
 
+use cow_utils::CowUtils;
 use rustc_hash::FxHashMap;
 
 use crate::SourceMap;
-use cow_utils::CowUtils;
 
 /// The `SourcemapVisualizer` is a helper for sourcemap testing.
 /// It print the mapping of original content and final content tokens.
 pub struct SourcemapVisualizer<'a> {
-	output: &'a str,
-	sourcemap: &'a SourceMap,
+	output:&'a str,
+	sourcemap:&'a SourceMap,
 }
 
 impl<'a> SourcemapVisualizer<'a> {
-	pub fn new(output: &'a str, sourcemap: &'a SourceMap) -> Self {
-		Self { output, sourcemap }
-	}
+	pub fn new(output:&'a str, sourcemap:&'a SourceMap) -> Self { Self { output, sourcemap } }
 
 	#[allow(clippy::cast_possible_truncation)]
 	pub fn into_visualizer_text(self) -> String {
 		let mut source_log_map = FxHashMap::default();
-		let source_contents_lines_map: FxHashMap<
-			String,
-			Option<Vec<Vec<u16>>>,
-		> = self
+		let source_contents_lines_map:FxHashMap<String, Option<Vec<Vec<u16>>>> = self
 			.sourcemap
 			.get_sources()
 			.enumerate()
@@ -41,13 +36,10 @@ impl<'a> SourcemapVisualizer<'a> {
 		let mut s = String::new();
 
 		self.sourcemap.get_tokens().reduce(|pre_token, token| {
-			if let Some(source) = pre_token
-				.get_source_id()
-				.and_then(|id| self.sourcemap.get_source(id))
+			if let Some(source) =
+				pre_token.get_source_id().and_then(|id| self.sourcemap.get_source(id))
 			{
-				if let Some(Some(source_contents_lines)) =
-					source_contents_lines_map.get(source)
-				{
+				if let Some(Some(source_contents_lines)) = source_contents_lines_map.get(source) {
 					// Print source
 					source_log_map.entry(source).or_insert_with(|| {
 						s.push('-');
@@ -67,10 +59,7 @@ impl<'a> SourcemapVisualizer<'a> {
 							token.get_src_col(),
 							Self::str_slice_by_token(
 								source_contents_lines,
-								(
-									pre_token.get_src_line(),
-									pre_token.get_src_col()
-								),
+								(pre_token.get_src_line(), pre_token.get_src_col()),
 								(token.get_src_line(), token.get_src_col())
 							)
 						));
@@ -103,9 +92,8 @@ impl<'a> SourcemapVisualizer<'a> {
 			token
 		});
 
-		if let Some(last_token) = self
-			.sourcemap
-			.get_token(self.sourcemap.get_tokens().count() as u32 - 1)
+		if let Some(last_token) =
+			self.sourcemap.get_token(self.sourcemap.get_tokens().count() as u32 - 1)
 		{
 			if let Some(Some(source_contents_lines)) = last_token
 				.get_source_id()
@@ -131,11 +119,7 @@ impl<'a> SourcemapVisualizer<'a> {
 	}
 
 	#[allow(clippy::cast_possible_truncation)]
-	fn print_source_last_mapping(
-		s: &mut String,
-		buff: &[Vec<u16>],
-		start: (u32, u32),
-	) {
+	fn print_source_last_mapping(s:&mut String, buff:&[Vec<u16>], start:(u32, u32)) {
 		let line = if buff.is_empty() { 0 } else { buff.len() as u32 - 1 };
 		let column = buff.last().map(|v| v.len() as u32).unwrap_or_default();
 		s.push_str(&format!(
@@ -148,7 +132,7 @@ impl<'a> SourcemapVisualizer<'a> {
 		));
 	}
 
-	fn generate_line_utf16_tables(content: &str) -> Vec<Vec<u16>> {
+	fn generate_line_utf16_tables(content:&str) -> Vec<Vec<u16>> {
 		let mut tables = vec![];
 		let mut line_byte_offset = 0;
 		for (i, ch) in content.char_indices() {
@@ -158,42 +142,27 @@ impl<'a> SourcemapVisualizer<'a> {
 					if ch == '\r' && content.chars().nth(i + 1) == Some('\n') {
 						continue;
 					}
-					tables.push(
-						content[line_byte_offset..i]
-							.encode_utf16()
-							.collect::<Vec<_>>(),
-					);
+					tables.push(content[line_byte_offset..i].encode_utf16().collect::<Vec<_>>());
 					line_byte_offset = i;
 				},
 				_ => {},
 			}
 		}
-		tables.push(
-			content[line_byte_offset..].encode_utf16().collect::<Vec<_>>(),
-		);
+		tables.push(content[line_byte_offset..].encode_utf16().collect::<Vec<_>>());
 		tables
 	}
 
-	fn str_slice_by_token(
-		buff: &[Vec<u16>],
-		start: (u32, u32),
-		end: (u32, u32),
-	) -> Cow<'_, str> {
+	fn str_slice_by_token(buff:&[Vec<u16>], start:(u32, u32), end:(u32, u32)) -> Cow<'_, str> {
 		if start.0 == end.0 {
 			if start.1 <= end.1 {
 				return Cow::Owned(
-					String::from_utf16(
-						&buff[start.0 as usize]
-							[start.1 as usize..end.1 as usize],
-					)
-					.unwrap(),
+					String::from_utf16(&buff[start.0 as usize][start.1 as usize..end.1 as usize])
+						.unwrap(),
 				);
 			}
 			return Cow::Owned(
-				String::from_utf16(
-					&buff[start.0 as usize][end.1 as usize..start.1 as usize],
-				)
-				.unwrap(),
+				String::from_utf16(&buff[start.0 as usize][end.1 as usize..start.1 as usize])
+					.unwrap(),
 			);
 		}
 
@@ -201,19 +170,15 @@ impl<'a> SourcemapVisualizer<'a> {
 		for i in start.0..=end.0 {
 			let slice = &buff[i as usize];
 			if i == start.0 {
-				s.push_str(
-					&String::from_utf16(&slice[start.1 as usize..]).unwrap(),
-				);
+				s.push_str(&String::from_utf16(&slice[start.1 as usize..]).unwrap());
 			} else if i == end.0 {
-				s.push_str(
-					&String::from_utf16(&slice[..end.1 as usize]).unwrap(),
-				);
+				s.push_str(&String::from_utf16(&slice[..end.1 as usize]).unwrap());
 			} else {
 				s.push_str(&String::from_utf16(slice).unwrap());
 			}
 		}
 
-		let replaced: Cow<str> = s.cow_replace("\r", "");
+		let replaced:Cow<str> = s.cow_replace("\r", "");
 
 		// Windows: Replace "\r\n" and replace with "\n"
 		Cow::Owned(replaced.into_owned())
@@ -233,7 +198,8 @@ mod test {
             "names":["a","a$1"],
             "mappings":";;AAAA,MAAMA,IAAI;;;ACCV,MAAMC,MAAI;AACV,QAAQ,IAAIA,KAAGD,EAAG"
         }"#).unwrap();
-		let output = "\n// shared.js\nconst a = 'shared.js';\n\n// index.js\nconst a$1 = 'index.js';\nconsole.log(a$1, a);\n";
+		let output = "\n// shared.js\nconst a = 'shared.js';\n\n// index.js\nconst a$1 = \
+		              'index.js';\nconsole.log(a$1, a);\n";
 		let visualizer = SourcemapVisualizer::new(output, &sourcemap);
 		let visualizer_text = visualizer.into_visualizer_text();
 		assert_eq!(

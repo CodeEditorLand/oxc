@@ -231,7 +231,7 @@ impl<'a> AstKind<'a> {
                     | Self::IfStatement(_) | Self::VariableDeclaration(_))
     }
 
-    #[rustfmt::skip]
+	#[rustfmt::skip]
 	pub fn is_declaration(self) -> bool {
         matches!(self, Self::Function(func) if func.is_declaration())
         || matches!(self, Self::Class(class) if class.is_declaration())
@@ -241,20 +241,20 @@ impl<'a> AstKind<'a> {
         )
     }
 
-    #[rustfmt::skip]
+	#[rustfmt::skip]
 	pub fn is_iteration_statement(self) -> bool {
         matches!(self, Self::DoWhileStatement(_) | Self::WhileStatement(_) | Self::ForInStatement(_)
                 | Self::ForOfStatement(_) | Self::ForStatement(_))
     }
 
-    #[rustfmt::skip]
+	#[rustfmt::skip]
 	pub fn is_identifier(self) -> bool {
         matches!(self, Self::BindingIdentifier(_)
                 | Self::IdentifierReference(_)
                 | Self::LabelIdentifier(_))
     }
 
-    #[rustfmt::skip]
+	#[rustfmt::skip]
 	pub fn is_type(self) -> bool {
         matches!(self, Self::TSAnyKeyword(_) | Self::TSBigIntKeyword(_) | Self::TSBooleanKeyword(_) | Self::TSIntrinsicKeyword(_)
                 | Self::TSNeverKeyword(_) | Self::TSNullKeyword(_) | Self::TSNumberKeyword(_) | Self::TSObjectKeyword(_)
@@ -304,14 +304,14 @@ impl<'a> AstKind<'a> {
 		)
 	}
 
-	pub fn is_specific_id_reference(&self, name: &str) -> bool {
+	pub fn is_specific_id_reference(&self, name:&str) -> bool {
 		match self {
 			Self::IdentifierReference(ident) => ident.name == name,
 			_ => false,
 		}
 	}
 
-	pub fn from_expression(e: &'a Expression<'a>) -> Self {
+	pub fn from_expression(e:&'a Expression<'a>) -> Self {
 		match e {
 			Expression::BooleanLiteral(e) => Self::BooleanLiteral(e),
 			Expression::NullLiteral(e) => Self::NullLiteral(e),
@@ -324,20 +324,14 @@ impl<'a> AstKind<'a> {
 			Expression::MetaProperty(e) => Self::MetaProperty(e),
 			Expression::Super(e) => Self::Super(e),
 			Expression::ArrayExpression(e) => Self::ArrayExpression(e),
-			Expression::ArrowFunctionExpression(e) => {
-				Self::ArrowFunctionExpression(e)
-			},
-			Expression::AssignmentExpression(e) => {
-				Self::AssignmentExpression(e)
-			},
+			Expression::ArrowFunctionExpression(e) => Self::ArrowFunctionExpression(e),
+			Expression::AssignmentExpression(e) => Self::AssignmentExpression(e),
 			Expression::AwaitExpression(e) => Self::AwaitExpression(e),
 			Expression::BinaryExpression(e) => Self::BinaryExpression(e),
 			Expression::CallExpression(e) => Self::CallExpression(e),
 			Expression::ChainExpression(e) => Self::ChainExpression(e),
 			Expression::ClassExpression(e) => Self::Class(e),
-			Expression::ConditionalExpression(e) => {
-				Self::ConditionalExpression(e)
-			},
+			Expression::ConditionalExpression(e) => Self::ConditionalExpression(e),
 			Expression::FunctionExpression(e) => Self::Function(e),
 			Expression::ImportExpression(e) => Self::ImportExpression(e),
 			Expression::LogicalExpression(e) => Self::LogicalExpression(e),
@@ -346,13 +340,9 @@ impl<'a> AstKind<'a> {
 			},
 			Expression::NewExpression(e) => Self::NewExpression(e),
 			Expression::ObjectExpression(e) => Self::ObjectExpression(e),
-			Expression::ParenthesizedExpression(e) => {
-				Self::ParenthesizedExpression(e)
-			},
+			Expression::ParenthesizedExpression(e) => Self::ParenthesizedExpression(e),
 			Expression::SequenceExpression(e) => Self::SequenceExpression(e),
-			Expression::TaggedTemplateExpression(e) => {
-				Self::TaggedTemplateExpression(e)
-			},
+			Expression::TaggedTemplateExpression(e) => Self::TaggedTemplateExpression(e),
 			Expression::ThisExpression(e) => Self::ThisExpression(e),
 			Expression::UnaryExpression(e) => Self::UnaryExpression(e),
 			Expression::UpdateExpression(e) => Self::UpdateExpression(e),
@@ -361,14 +351,10 @@ impl<'a> AstKind<'a> {
 			Expression::JSXElement(e) => Self::JSXElement(e),
 			Expression::JSXFragment(e) => Self::JSXFragment(e),
 			Expression::TSAsExpression(e) => Self::TSAsExpression(e),
-			Expression::TSSatisfiesExpression(e) => {
-				Self::TSSatisfiesExpression(e)
-			},
+			Expression::TSSatisfiesExpression(e) => Self::TSSatisfiesExpression(e),
 			Expression::TSTypeAssertion(e) => Self::TSTypeAssertion(e),
 			Expression::TSNonNullExpression(e) => Self::TSNonNullExpression(e),
-			Expression::TSInstantiationExpression(e) => {
-				Self::TSInstantiationExpression(e)
-			},
+			Expression::TSInstantiationExpression(e) => Self::TSInstantiationExpression(e),
 		}
 	}
 }
@@ -605,57 +591,34 @@ impl<'a> AstKind<'a> {
 
 			Self::UsingDeclaration(_) => "UsingDeclaration".into(),
 
-			Self::IdentifierName(x) => {
-				format!("IdentifierName({})", x.name).into()
-			},
-			Self::IdentifierReference(x) => {
-				format!("IdentifierReference({})", x.name).into()
-			},
-			Self::BindingIdentifier(x) => {
-				format!("BindingIdentifier({})", x.name).into()
-			},
-			Self::LabelIdentifier(x) => {
-				format!("LabelIdentifier({})", x.name).into()
-			},
-			Self::PrivateIdentifier(x) => {
-				format!("PrivateIdentifier({})", x.name).into()
-			},
+			Self::IdentifierName(x) => format!("IdentifierName({})", x.name).into(),
+			Self::IdentifierReference(x) => format!("IdentifierReference({})", x.name).into(),
+			Self::BindingIdentifier(x) => format!("BindingIdentifier({})", x.name).into(),
+			Self::LabelIdentifier(x) => format!("LabelIdentifier({})", x.name).into(),
+			Self::PrivateIdentifier(x) => format!("PrivateIdentifier({})", x.name).into(),
 
-			Self::NumericLiteral(n) => {
-				format!("NumericLiteral({})", n.value).into()
-			},
-			Self::StringLiteral(s) => {
-				format!("StringLiteral({})", s.value).into()
-			},
-			Self::BooleanLiteral(b) => {
-				format!("BooleanLiteral({})", b.value).into()
-			},
+			Self::NumericLiteral(n) => format!("NumericLiteral({})", n.value).into(),
+			Self::StringLiteral(s) => format!("StringLiteral({})", s.value).into(),
+			Self::BooleanLiteral(b) => format!("BooleanLiteral({})", b.value).into(),
 			Self::NullLiteral(_) => "NullLiteral".into(),
-			Self::BigintLiteral(b) => {
-				format!("BigintLiteral({})", b.raw).into()
+			Self::BigintLiteral(b) => format!("BigintLiteral({})", b.raw).into(),
+			Self::RegExpLiteral(r) => format!("RegExpLiteral({})", r.regex).into(),
+			Self::TemplateLiteral(t) => {
+				format!(
+					"TemplateLiteral({})",
+					t.quasi().map_or_else(|| "None".into(), |q| format!("Some({q})"))
+				)
+				.into()
 			},
-			Self::RegExpLiteral(r) => {
-				format!("RegExpLiteral({})", r.regex).into()
-			},
-			Self::TemplateLiteral(t) => format!(
-				"TemplateLiteral({})",
-				t.quasi()
-					.map_or_else(|| "None".into(), |q| format!("Some({q})"))
-			)
-			.into(),
 
 			Self::MetaProperty(_) => "MetaProperty".into(),
 			Self::Super(_) => "Super".into(),
 
 			Self::ArrayExpression(_) => "ArrayExpression".into(),
-			Self::ArrowFunctionExpression(_) => {
-				"ArrowFunctionExpression".into()
-			},
+			Self::ArrowFunctionExpression(_) => "ArrowFunctionExpression".into(),
 			Self::AssignmentExpression(_) => "AssignmentExpression".into(),
 			Self::AwaitExpression(_) => "AwaitExpression".into(),
-			Self::BinaryExpression(b) => {
-				format!("BinaryExpression{}", b.operator.as_str()).into()
-			},
+			Self::BinaryExpression(b) => format!("BinaryExpression{}", b.operator.as_str()).into(),
 			Self::CallExpression(_) => "CallExpression".into(),
 			Self::ChainExpression(_) => "ChainExpression".into(),
 			Self::ConditionalExpression(_) => "ConditionalExpression".into(),
@@ -663,17 +626,11 @@ impl<'a> AstKind<'a> {
 			Self::MemberExpression(_) => "MemberExpression".into(),
 			Self::NewExpression(_) => "NewExpression".into(),
 			Self::ObjectExpression(_) => "ObjectExpression".into(),
-			Self::ParenthesizedExpression(_) => {
-				"ParenthesizedExpression".into()
-			},
+			Self::ParenthesizedExpression(_) => "ParenthesizedExpression".into(),
 			Self::SequenceExpression(_) => "SequenceExpression".into(),
-			Self::TaggedTemplateExpression(_) => {
-				"TaggedTemplateExpression".into()
-			},
+			Self::TaggedTemplateExpression(_) => "TaggedTemplateExpression".into(),
 			Self::ThisExpression(_) => "ThisExpression".into(),
-			Self::UnaryExpression(expr) => {
-				format!("UnaryExpression({:?})", expr.operator).into()
-			},
+			Self::UnaryExpression(expr) => format!("UnaryExpression({:?})", expr.operator).into(),
 			Self::UpdateExpression(_) => "UpdateExpression".into(),
 			Self::YieldExpression(_) => "YieldExpression".into(),
 			Self::ImportExpression(_) => "ImportExpression".into(),
@@ -685,31 +642,31 @@ impl<'a> AstKind<'a> {
 			Self::ArrayExpressionElement(_) => "ArrayExpressionElement".into(),
 			Self::AssignmentTarget(_) => "AssignmentTarget".into(),
 			Self::SimpleAssignmentTarget(_) => "SimpleAssignmentTarget".into(),
-			Self::AssignmentTargetWithDefault(_) => {
-				"AssignmentTargetWithDefault".into()
-			},
+			Self::AssignmentTargetWithDefault(_) => "AssignmentTargetWithDefault".into(),
 			Self::SpreadElement(_) => "SpreadElement".into(),
 			Self::Elision(_) => "Elision".into(),
 			Self::ExpressionArrayElement(_) => "ExpressionArrayElement".into(),
 			Self::BindingRestElement(_) => "BindingRestElement".into(),
 
-			Self::Function(x) => format!(
-				"Function({})",
-				x.id.as_ref()
-					.map_or_else(|| "<anonymous>", |id| id.name.as_str())
-			)
-			.into(),
+			Self::Function(x) => {
+				format!(
+					"Function({})",
+					x.id.as_ref().map_or_else(|| "<anonymous>", |id| id.name.as_str())
+				)
+				.into()
+			},
 			Self::FunctionBody(_) => "FunctionBody".into(),
 			Self::FormalParameters(_) => "FormalParameters".into(),
 			Self::FormalParameter(_) => "FormalParameter".into(),
 			Self::CatchParameter(_) => "CatchParameter".into(),
 
-			Self::Class(c) => format!(
-				"Class({})",
-				c.id.as_ref()
-					.map_or_else(|| "<anonymous>", |id| id.name.as_str())
-			)
-			.into(),
+			Self::Class(c) => {
+				format!(
+					"Class({})",
+					c.id.as_ref().map_or_else(|| "<anonymous>", |id| id.name.as_str())
+				)
+				.into()
+			},
 			Self::TSClassImplements(_) => "TSClassImplements".into(),
 			Self::ClassBody(_) => "ClassBody".into(),
 			Self::ClassHeritage(_) => "ClassHeritage".into(),
@@ -728,12 +685,8 @@ impl<'a> AstKind<'a> {
 			Self::ImportSpecifier(_) => "ImportSpecifier".into(),
 			Self::ExportSpecifier(_) => "ExportSpecifier".into(),
 			Self::ImportDefaultSpecifier(_) => "ImportDefaultSpecifier".into(),
-			Self::ImportNamespaceSpecifier(_) => {
-				"ImportNamespaceSpecifier".into()
-			},
-			Self::ExportDefaultDeclaration(_) => {
-				"ExportDefaultDeclaration".into()
-			},
+			Self::ImportNamespaceSpecifier(_) => "ImportNamespaceSpecifier".into(),
+			Self::ExportDefaultDeclaration(_) => "ExportDefaultDeclaration".into(),
 			Self::ExportNamedDeclaration(_) => "ExportNamedDeclaration".into(),
 			Self::ExportAllDeclaration(_) => "ExportAllDeclaration".into(),
 			Self::JSXOpeningElement(_) => "JSXOpeningElement".into(),
@@ -747,9 +700,7 @@ impl<'a> AstKind<'a> {
 			Self::JSXExpressionContainer(_) => "JSXExpressionContainer".into(),
 			Self::JSXIdentifier(_) => "JSXIdentifier".into(),
 			Self::JSXMemberExpression(_) => "JSXMemberExpression".into(),
-			Self::JSXMemberExpressionObject(_) => {
-				"JSXMemberExpressionObject".into()
-			},
+			Self::JSXMemberExpressionObject(_) => "JSXMemberExpressionObject".into(),
 			Self::JSXNamespacedName(_) => "JSXNamespacedName".into(),
 
 			Self::TSModuleBlock(_) => "TSModuleBlock".into(),
@@ -782,23 +733,15 @@ impl<'a> AstKind<'a> {
 			Self::TSAsExpression(_) => "TSAsExpression".into(),
 			Self::TSSatisfiesExpression(_) => "TSSatisfiesExpression".into(),
 			Self::TSNonNullExpression(_) => "TSNonNullExpression".into(),
-			Self::TSInstantiationExpression(_) => {
-				"TSInstantiationExpression".into()
-			},
+			Self::TSInstantiationExpression(_) => "TSInstantiationExpression".into(),
 
-			Self::TSEnumDeclaration(decl) => {
-				format!("TSEnumDeclaration({})", &decl.id.name).into()
-			},
+			Self::TSEnumDeclaration(decl) => format!("TSEnumDeclaration({})", &decl.id.name).into(),
 
 			Self::TSEnumMember(_) => "TSEnumMember".into(),
 
-			Self::TSImportEqualsDeclaration(_) => {
-				"TSImportEqualsDeclaration".into()
-			},
+			Self::TSImportEqualsDeclaration(_) => "TSImportEqualsDeclaration".into(),
 			Self::TSTypeName(_) => "TSTypeName".into(),
-			Self::TSExternalModuleReference(_) => {
-				"TSExternalModuleReference".into()
-			},
+			Self::TSExternalModuleReference(_) => "TSExternalModuleReference".into(),
 			Self::TSQualifiedName(_) => "TSQualifiedName".into(),
 			Self::TSInterfaceDeclaration(_) => "TSInterfaceDeclaration".into(),
 			Self::TSInterfaceHeritage(_) => "TSInterfaceHeritage".into(),
@@ -809,12 +752,8 @@ impl<'a> AstKind<'a> {
 			Self::TSTypeAssertion(_) => "TSTypeAssertion".into(),
 			Self::TSThisParameter(_) => "TSThisParameter".into(),
 			Self::TSTypeParameter(_) => "TSTypeParameter".into(),
-			Self::TSTypeParameterDeclaration(_) => {
-				"TSTypeParameterDeclaration".into()
-			},
-			Self::TSTypeParameterInstantiation(_) => {
-				"TSTypeParameterInstantiation".into()
-			},
+			Self::TSTypeParameterDeclaration(_) => "TSTypeParameterDeclaration".into(),
+			Self::TSTypeParameterInstantiation(_) => "TSTypeParameterInstantiation".into(),
 			Self::TSImportType(_) => "TSImportType".into(),
 			Self::TSNamedTupleMember(_) => "TSNamedTupleMember".into(),
 

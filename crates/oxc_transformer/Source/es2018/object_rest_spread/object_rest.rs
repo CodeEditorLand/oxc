@@ -27,11 +27,9 @@
 use super::ObjectRestSpreadOptions;
 
 pub struct ObjectRest {
-    _options: ObjectRestSpreadOptions,
+	_options:ObjectRestSpreadOptions,
 }
 
 impl ObjectRest {
-    pub fn new(options: ObjectRestSpreadOptions) -> Self {
-        Self { _options: options }
-    }
+	pub fn new(options:ObjectRestSpreadOptions) -> Self { Self { _options:options } }
 }

@@ -14,38 +14,34 @@ use crate::{
 /// <https://babel.dev/docs/options>
 #[derive(Debug, Default, Clone)]
 pub struct TransformOptions {
-	//
 	// Primary Options
-	//
-	/// The working directory that all paths in the programmatic options will be resolved relative to.
-	pub cwd: PathBuf,
+	/// The working directory that all paths in the programmatic options will
+	/// be resolved relative to.
+	pub cwd:PathBuf,
 
 	// Core
 	/// Set assumptions in order to produce smaller output.
 	/// For more information, check the [assumptions](https://babel.dev/docs/assumptions) documentation page.
-	pub assumptions: CompilerAssumptions,
+	pub assumptions:CompilerAssumptions,
 
 	// Plugins
 	/// [preset-typescript](https://babeljs.io/docs/babel-preset-typescript)
-	pub typescript: TypeScriptOptions,
+	pub typescript:TypeScriptOptions,
 
 	/// [preset-react](https://babeljs.io/docs/babel-preset-react)
-	pub react: ReactOptions,
+	pub react:ReactOptions,
 
-	pub es2015: ES2015Options,
+	pub es2015:ES2015Options,
 }
 
 impl TransformOptions {
 	/// # Errors
-	///
-	pub fn from_babel_options(
-		options: &BabelOptions,
-	) -> Result<Self, Vec<Error>> {
-		fn get_options<T: Default + DeserializeOwned>(
-			name: &str,
-			babel_options: &BabelOptions,
-			errors: &mut Vec<Error>,
-			is_preset: bool,
+	pub fn from_babel_options(options:&BabelOptions) -> Result<Self, Vec<Error>> {
+		fn get_options<T:Default + DeserializeOwned>(
+			name:&str,
+			babel_options:&BabelOptions,
+			errors:&mut Vec<Error>,
+			is_preset:bool,
 		) -> T {
 			let target = if is_preset {
 				babel_options.get_preset(name)
@@ -64,10 +60,7 @@ impl TransformOptions {
 									name.to_string()
 								};
 								errors.push(
-									OxcDiagnostic::error(format!(
-										"{kind_msg}: {err}"
-									))
-									.into(),
+									OxcDiagnostic::error(format!("{kind_msg}: {err}")).into(),
 								);
 								None
 							},
@@ -83,15 +76,9 @@ impl TransformOptions {
 			get_options::<ReactOptions>("react", options, &mut errors, true)
 		} else {
 			let has_jsx_plugin = options.has_plugin("transform-react-jsx");
-			let has_jsx_development_plugin =
-				options.has_plugin("transform-react-jsx-development");
+			let has_jsx_development_plugin = options.has_plugin("transform-react-jsx-development");
 			let mut react_options = if has_jsx_plugin {
-				get_options::<ReactOptions>(
-					"transform-react-jsx",
-					options,
-					&mut errors,
-					false,
-				)
+				get_options::<ReactOptions>("transform-react-jsx", options, &mut errors, false)
 			} else {
 				get_options::<ReactOptions>(
 					"transform-react-jsx-development",
@@ -100,45 +87,32 @@ impl TransformOptions {
 					false,
 				)
 			};
-			react_options.development =
-				options.has_plugin("transform-react-jsx-development");
-			react_options.jsx_plugin =
-				has_jsx_plugin || has_jsx_development_plugin;
-			react_options.display_name_plugin =
-				options.has_plugin("transform-react-display-name");
-			react_options.jsx_self_plugin =
-				options.has_plugin("transform-react-jsx-self");
-			react_options.jsx_source_plugin =
-				options.has_plugin("transform-react-jsx-source");
+			react_options.development = options.has_plugin("transform-react-jsx-development");
+			react_options.jsx_plugin = has_jsx_plugin || has_jsx_development_plugin;
+			react_options.display_name_plugin = options.has_plugin("transform-react-display-name");
+			react_options.jsx_self_plugin = options.has_plugin("transform-react-jsx-self");
+			react_options.jsx_source_plugin = options.has_plugin("transform-react-jsx-source");
 			react_options
 		};
 
 		let es2015 = ES2015Options {
-			arrow_function: options
-				.has_plugin("transform-arrow-functions")
-				.then(|| {
-					get_options::<ArrowFunctionsOptions>(
-						"transform-arrow-functions",
-						options,
-						&mut errors,
-						false,
-					)
-				}),
+			arrow_function:options.has_plugin("transform-arrow-functions").then(|| {
+				get_options::<ArrowFunctionsOptions>(
+					"transform-arrow-functions",
+					options,
+					&mut errors,
+					false,
+				)
+			}),
 		};
 
-		let typescript = get_options::<TypeScriptOptions>(
-			"transform-typescript",
-			options,
-			&mut errors,
-			false,
-		);
+		let typescript =
+			get_options::<TypeScriptOptions>("transform-typescript", options, &mut errors, false);
 
 		let assumptions = if options.assumptions.is_null() {
 			CompilerAssumptions::default()
 		} else {
-			match serde_json::from_value::<CompilerAssumptions>(
-				options.assumptions.clone(),
-			) {
+			match serde_json::from_value::<CompilerAssumptions>(options.assumptions.clone()) {
 				Ok(value) => value,
 				Err(err) => {
 					errors.push(OxcDiagnostic::error(err.to_string()).into());
@@ -152,7 +126,7 @@ impl TransformOptions {
 		}
 
 		Ok(Self {
-			cwd: options.cwd.clone().unwrap_or_default(),
+			cwd:options.cwd.clone().unwrap_or_default(),
 			assumptions,
 			typescript,
 			react,
@@ -165,27 +139,27 @@ impl TransformOptions {
 #[derive(Debug, Default, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BabelOptions {
-	pub cwd: Option<PathBuf>,
-	pub source_type: Option<String>,
+	pub cwd:Option<PathBuf>,
+	pub source_type:Option<String>,
 	#[serde(default)]
-	pub plugins: Vec<Value>, // Can be a string or an array
+	pub plugins:Vec<Value>, // Can be a string or an array
 	#[serde(default)]
-	pub presets: Vec<Value>, // Can be a string or an array
+	pub presets:Vec<Value>, // Can be a string or an array
 	#[serde(default)]
-	pub assumptions: Value,
+	pub assumptions:Value,
 	// Test options
-	pub throws: Option<String>,
+	pub throws:Option<String>,
 	#[serde(rename = "BABEL_8_BREAKING")]
-	pub babel_8_breaking: Option<bool>,
+	pub babel_8_breaking:Option<bool>,
 	/// Babel test helper for running tests on specific operating systems
-	pub os: Option<Vec<TestOs>>,
+	pub os:Option<Vec<TestOs>>,
 	// Parser options for babel-parser
 	#[serde(default)]
-	pub allow_return_outside_function: bool,
+	pub allow_return_outside_function:bool,
 	#[serde(default)]
-	pub allow_await_outside_function: bool,
+	pub allow_await_outside_function:bool,
 	#[serde(default)]
-	pub allow_undeclared_exports: bool,
+	pub allow_undeclared_exports:bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -198,23 +172,21 @@ pub enum TestOs {
 }
 
 impl TestOs {
-	pub fn is_windows(&self) -> bool {
-		matches!(self, Self::Win32 | Self::Windows)
-	}
+	pub fn is_windows(&self) -> bool { matches!(self, Self::Win32 | Self::Windows) }
 }
 
 impl BabelOptions {
-	/// Read options.json and merge them with options.json from ancestors directories.
-	/// # Panics
-	pub fn from_test_path(path: &Path) -> Self {
-		let mut options_json: Option<Self> = None;
+	/// Read options.json and merge them with options.json from ancestors
+	/// directories. # Panics
+	pub fn from_test_path(path:&Path) -> Self {
+		let mut options_json:Option<Self> = None;
 		for path in path.ancestors().take(3) {
 			let file = path.join("options.json");
 			if !file.exists() {
 				continue;
 			}
 			let file = std::fs::read_to_string(&file).unwrap();
-			let new_json: Self = serde_json::from_str(&file).unwrap();
+			let new_json:Self = serde_json::from_str(&file).unwrap();
 			if let Some(existing_json) = options_json.as_mut() {
 				if existing_json.source_type.is_none() {
 					if let Some(source_type) = new_json.source_type {
@@ -241,20 +213,14 @@ impl BabelOptions {
 	pub fn is_typescript(&self) -> bool {
 		self.plugins.iter().any(|v| {
 			let string_value = v.as_str().is_some_and(|v| v == "typescript");
-			let array_value = v
-				.get(0)
-				.and_then(Value::as_str)
-				.is_some_and(|s| s == "typescript");
+			let array_value = v.get(0).and_then(Value::as_str).is_some_and(|s| s == "typescript");
 			string_value || array_value
 		})
 	}
 
 	pub fn is_typescript_definition(&self) -> bool {
 		self.plugins.iter().filter_map(Value::as_array).any(|p| {
-			let typescript = p
-				.first()
-				.and_then(Value::as_str)
-				.is_some_and(|s| s == "typescript");
+			let typescript = p.first().and_then(Value::as_str).is_some_and(|s| s == "typescript");
 			let dts = p
 				.get(1)
 				.and_then(Value::as_object)
@@ -275,31 +241,23 @@ impl BabelOptions {
 	/// * `Some<None>` if the plugin exists without a config
 	/// * `Some<Some<Value>>` if the plugin exists with a config
 	/// * `None` if the plugin does not exist
-	pub fn get_plugin(&self, name: &str) -> Option<Option<Value>> {
+	pub fn get_plugin(&self, name:&str) -> Option<Option<Value>> {
 		self.plugins.iter().find_map(|v| Self::get_value(v, name))
 	}
 
-	pub fn get_preset(&self, name: &str) -> Option<Option<Value>> {
+	pub fn get_preset(&self, name:&str) -> Option<Option<Value>> {
 		self.presets.iter().find_map(|v| Self::get_value(v, name))
 	}
 
-	pub fn has_plugin(&self, name: &str) -> bool {
-		self.get_plugin(name).is_some()
-	}
+	pub fn has_plugin(&self, name:&str) -> bool { self.get_plugin(name).is_some() }
 
-	pub fn has_preset(&self, name: &str) -> bool {
-		self.get_preset(name).is_some()
-	}
+	pub fn has_preset(&self, name:&str) -> bool { self.get_preset(name).is_some() }
 
 	#[allow(clippy::option_option)]
-	fn get_value(value: &Value, name: &str) -> Option<Option<Value>> {
+	fn get_value(value:&Value, name:&str) -> Option<Option<Value>> {
 		match value {
 			Value::String(s) if s == name => Some(None),
-			Value::Array(a)
-				if a.first()
-					.and_then(Value::as_str)
-					.is_some_and(|s| s == name) =>
-			{
+			Value::Array(a) if a.first().and_then(Value::as_str).is_some_and(|s| s == name) => {
 				Some(a.get(1).cloned())
 			},
 			_ => None,
@@ -313,8 +271,7 @@ fn test_deny_unknown_fields() {
 	  "plugins": [["transform-react-jsx", { "runtime": "automatic", "filter": 1 }]],
 	  "sourceType": "module"
 	});
-	let babel_options =
-		serde_json::from_value::<BabelOptions>(options).unwrap();
+	let babel_options = serde_json::from_value::<BabelOptions>(options).unwrap();
 	let result = TransformOptions::from_babel_options(&babel_options);
 	assert!(result.is_err());
 	let err_message = result

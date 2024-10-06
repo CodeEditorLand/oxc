@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 // <https://github.com/jsx-eslint/eslint-plugin-jsx-a11y#configurations>
 #[derive(Debug, Deserialize, Default, Serialize, JsonSchema)]
 pub struct JSXA11yPluginSettings {
-    #[serde(rename = "polymorphicPropName")]
-    pub polymorphic_prop_name: Option<CompactStr>,
-    #[serde(default)]
-    pub components: FxHashMap<CompactStr, CompactStr>,
+	#[serde(rename = "polymorphicPropName")]
+	pub polymorphic_prop_name:Option<CompactStr>,
+	#[serde(default)]
+	pub components:FxHashMap<CompactStr, CompactStr>,
 }

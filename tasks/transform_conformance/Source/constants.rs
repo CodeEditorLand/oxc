@@ -1,4 +1,4 @@
-pub(crate) const PLUGINS: &[&str] = &[
+pub(crate) const PLUGINS:&[&str] = &[
 	"babel-preset-env",
 	// // ES2024
 	// "babel-plugin-transform-unicode-sets-regex",
@@ -61,7 +61,7 @@ pub(crate) const PLUGINS: &[&str] = &[
 	"regexp",
 ];
 
-pub(crate) const PLUGINS_NOT_SUPPORTED_YET: &[&str] = &[
+pub(crate) const PLUGINS_NOT_SUPPORTED_YET:&[&str] = &[
 	"proposal-decorators",
 	"transform-class-properties",
 	"transform-classes",
@@ -74,25 +74,25 @@ pub(crate) const PLUGINS_NOT_SUPPORTED_YET: &[&str] = &[
 	"transform-react-constant-elements",
 ];
 
-pub(crate) const SKIP_TESTS: &[&str] = &[
-    // Shouldn't report in transformer
-    "typescript/test/fixtures/node-extensions/type-assertion-in-cts/input.cts",
-    "typescript/test/fixtures/node-extensions/type-assertion-in-mts/input.mts",
-    "typescript/test/fixtures/node-extensions/type-param-arrow-in-cts/input.mts",
-    "typescript/test/fixtures/node-extensions/type-param-arrow-in-mts/input.mts",
-    "typescript/test/fixtures/node-extensions/with-in-mts/input.mts",
-    // Report error for deprecate option or oxc doesn’t follow error message
-    "typescript/test/fixtures/opts/allowDeclareFields/input.ts",
-    "react-jsx/test/fixtures/react-automatic/should-throw-when-filter-is-specified/input.js",
-    // Not standard JavaScript or TypeScript syntax
-    "typescript/test/fixtures/exports/export-type-star-from/input.ts",
-    // The output is valid and semantically correct
-    // but does not match Babel's expected output
-    "typescript/test/fixtures/namespace/canonical/input.ts",
-    "typescript/test/fixtures/namespace/nested-shorthand-export/input.ts",
-    "react-jsx-development/test/fixtures/cross-platform/self-inside-arrow/input.mjs",
-    // Babel outputs is not correct
-    "typescript/test/fixtures/namespace/clobber-import/input.ts",
-    "typescript/test/fixtures/namespace/namespace-nested-module/input.ts",
-    "typescript/test/fixtures/namespace/nested-destructuring/input.ts",
+pub(crate) const SKIP_TESTS:&[&str] = &[
+	// Shouldn't report in transformer
+	"typescript/test/fixtures/node-extensions/type-assertion-in-cts/input.cts",
+	"typescript/test/fixtures/node-extensions/type-assertion-in-mts/input.mts",
+	"typescript/test/fixtures/node-extensions/type-param-arrow-in-cts/input.mts",
+	"typescript/test/fixtures/node-extensions/type-param-arrow-in-mts/input.mts",
+	"typescript/test/fixtures/node-extensions/with-in-mts/input.mts",
+	// Report error for deprecate option or oxc doesn’t follow error message
+	"typescript/test/fixtures/opts/allowDeclareFields/input.ts",
+	"react-jsx/test/fixtures/react-automatic/should-throw-when-filter-is-specified/input.js",
+	// Not standard JavaScript or TypeScript syntax
+	"typescript/test/fixtures/exports/export-type-star-from/input.ts",
+	// The output is valid and semantically correct
+	// but does not match Babel's expected output
+	"typescript/test/fixtures/namespace/canonical/input.ts",
+	"typescript/test/fixtures/namespace/nested-shorthand-export/input.ts",
+	"react-jsx-development/test/fixtures/cross-platform/self-inside-arrow/input.mjs",
+	// Babel outputs is not correct
+	"typescript/test/fixtures/namespace/clobber-import/input.ts",
+	"typescript/test/fixtures/namespace/namespace-nested-module/input.ts",
+	"typescript/test/fixtures/namespace/nested-destructuring/input.ts",
 ];

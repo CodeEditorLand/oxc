@@ -5,7 +5,7 @@ use oxc_prettier::{Prettier, PrettierOptions};
 use oxc_span::SourceType;
 use oxc_tasks_common::TestFiles;
 
-fn bench_prettier(criterion: &mut Criterion) {
+fn bench_prettier(criterion:&mut Criterion) {
 	let mut group = criterion.benchmark_group("prettier");
 	for file in TestFiles::minimal().files() {
 		let source_type = SourceType::from_path(&file.file_name).unwrap();
@@ -16,9 +16,7 @@ fn bench_prettier(criterion: &mut Criterion) {
 				b.iter(|| {
 					let allocator1 = Allocator::default();
 					let allocator2 = Allocator::default();
-					let ret =
-						Parser::new(&allocator1, source_text, source_type)
-							.parse();
+					let ret = Parser::new(&allocator1, source_text, source_type).parse();
 					let _ = Prettier::new(
 						&allocator2,
 						source_text,

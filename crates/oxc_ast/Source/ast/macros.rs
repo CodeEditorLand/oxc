@@ -20,15 +20,15 @@
 ///
 /// ```
 /// inherit_variants! {
-///     #[ast]
-///     enum Statement<'a> {
-///         pub enum Statement<'a> {
-///             BlockStatement(Box<'a, BlockStatement<'a>>) = 0,
-///             BreakStatement(Box<'a, BreakStatement<'a>>) = 1,
-///             @inherit Declaration
-///             @inherit ModuleDeclaration
-///         }
-///     }
+/// 	#[ast]
+/// 	enum Statement<'a> {
+/// 		pub enum Statement<'a> {
+/// 			BlockStatement(Box<'a, BlockStatement<'a>>) = 0,
+/// 			BreakStatement(Box<'a, BreakStatement<'a>>) = 1,
+/// 			@inherit Declaration
+/// 			@inherit ModuleDeclaration
+/// 		}
+/// 	}
 /// }
 /// ```
 ///
@@ -730,14 +730,14 @@ macro_rules! inherit_variants {
 }
 pub(crate) use inherit_variants;
 
-/// Macro to allow conversion between 2 enum types where they share some of the same variants.
-/// "Parent" enum contains all the "child"'s variants, plus parent contains further other variants.
-/// e.g. `Statement` and `Declaration`.
+/// Macro to allow conversion between 2 enum types where they share some of the
+/// same variants. "Parent" enum contains all the "child"'s variants, plus
+/// parent contains further other variants. e.g. `Statement` and `Declaration`.
 ///
-/// The discriminants and types of the shared variants must be identical between the 2 enums.
-/// All variants must have a `Box<_>` payload.
-/// Equality of types is guaranteed by `From` and `TryFrom` impls this macro creates.
-/// These will fail to compile if the types differ for any variant.
+/// The discriminants and types of the shared variants must be identical between
+/// the 2 enums. All variants must have a `Box<_>` payload.
+/// Equality of types is guaranteed by `From` and `TryFrom` impls this macro
+/// creates. These will fail to compile if the types differ for any variant.
 /// Equality of discriminants is checked with a compile-time assertion.
 ///
 /// # SAFETY
@@ -745,105 +745,111 @@ pub(crate) use inherit_variants;
 ///
 /// # Expansion
 ///
-/// NB: For illustration only - `Statement` and `Declaration` in reality share 9 variants, not 2.
+/// NB: For illustration only - `Statement` and `Declaration` in reality share 9
+/// variants, not 2.
 ///
 /// ```
 /// shared_enum_variants!(
-///     Statement, Declaration,
-///     is_declaration,
-///     into_declaration,
-///     as_declaration, as_declaration_mut,
-///     to_declaration, to_declaration_mut,
-///     [VariableDeclaration, FunctionDeclaration]
+/// 	Statement,
+/// 	Declaration,
+/// 	is_declaration,
+/// 	into_declaration,
+/// 	as_declaration,
+/// 	as_declaration_mut,
+/// 	to_declaration,
+/// 	to_declaration_mut,
+/// 	[VariableDeclaration, FunctionDeclaration]
 /// )
 /// ```
 ///
 /// expands to:
 ///
 /// ```
-/// const _: () = {
-///     assert!(discriminant!(Statement::VariableDeclaration) == discriminant!(Declaration::VariableDeclaration));
-///     assert!(discriminant!(Statement::FunctionDeclaration) == discriminant!(Declaration::FunctionDeclaration));
+/// const _:() = {
+/// 	assert!(
+/// 		discriminant!(Statement::VariableDeclaration)
+/// 			== discriminant!(Declaration::VariableDeclaration)
+/// 	);
+/// 	assert!(
+/// 		discriminant!(Statement::FunctionDeclaration)
+/// 			== discriminant!(Declaration::FunctionDeclaration)
+/// 	);
 /// };
 ///
 /// impl<'a> Statement<'a> {
-///     /// Return if a `Statement` is a `Declaration`.
-///     #[inline]
-///     pub fn is_declaration(&self) -> bool {
-///         match self {
-///             Self::VariableDeclaration(_) | Self::FunctionDeclaration(_) => true,
-///             _ => false,
-///         }
-///     }
+/// 	/// Return if a `Statement` is a `Declaration`.
+/// 	#[inline]
+/// 	pub fn is_declaration(&self) -> bool {
+/// 		match self {
+/// 			Self::VariableDeclaration(_) | Self::FunctionDeclaration(_) => true,
+/// 			_ => false,
+/// 		}
+/// 	}
 ///
-///     /// Convert `Statement` to `Declaration`.
-///     /// # Panic
-///     /// Panics if not convertible.
-///     #[inline]
-///     pub fn into_declaration(self) -> Declaration<'a> {
-///         Declaration::try_from(self).unwrap()
-///     }
+/// 	/// Convert `Statement` to `Declaration`.
+/// 	/// # Panic
+/// 	/// Panics if not convertible.
+/// 	#[inline]
+/// 	pub fn into_declaration(self) -> Declaration<'a> { Declaration::try_from(self).unwrap() }
 ///
-///     /// Convert `&Statement` to `&Declaration`.
-///     #[inline]
-///     pub fn as_declaration(&self) -> Option<&Declaration<'a>> {
-///         if self.is_declaration() {
-///             Some(unsafe { &*(self as *const _ as *const Declaration) })
-///         } else {
-///             None
-///         }
-///     }
+/// 	/// Convert `&Statement` to `&Declaration`.
+/// 	#[inline]
+/// 	pub fn as_declaration(&self) -> Option<&Declaration<'a>> {
+/// 		if self.is_declaration() {
+/// 			Some(unsafe { &*(self as *const _ as *const Declaration) })
+/// 		} else {
+/// 			None
+/// 		}
+/// 	}
 ///
-///     /// Convert `&mut Statement` to `&mut Declaration`.
-///     #[inline]
-///     pub fn as_declaration_mut(&mut self) -> Option<&mut Declaration<'a>> {
-///         if self.is_declaration() {
-///             Some(unsafe { &mut *(self as *mut _ as *mut Declaration) })
-///         } else {
-///             None
-///         }
-///     }
+/// 	/// Convert `&mut Statement` to `&mut Declaration`.
+/// 	#[inline]
+/// 	pub fn as_declaration_mut(&mut self) -> Option<&mut Declaration<'a>> {
+/// 		if self.is_declaration() {
+/// 			Some(unsafe { &mut *(self as *mut _ as *mut Declaration) })
+/// 		} else {
+/// 			None
+/// 		}
+/// 	}
 ///
-///     /// Convert `&Statement` to `&Declaration`.
-///     /// # Panic
-///     /// Panics if not convertible.
-///     #[inline]
-///     pub fn to_declaration(&self) -> &Declaration<'a> {
-///         self.as_declaration().unwrap()
-///     }
+/// 	/// Convert `&Statement` to `&Declaration`.
+/// 	/// # Panic
+/// 	/// Panics if not convertible.
+/// 	#[inline]
+/// 	pub fn to_declaration(&self) -> &Declaration<'a> { self.as_declaration().unwrap() }
 ///
-///     /// Convert `&mut Statement` to `&mut Declaration`.
-///     /// # Panic
-///     /// Panics if not convertible.
-///     #[inline]
-///     pub fn to_declaration_mut(&mut self) -> &mut Declaration<'a> {
-///         self.as_declaration_mut().unwrap()
-///     }
+/// 	/// Convert `&mut Statement` to `&mut Declaration`.
+/// 	/// # Panic
+/// 	/// Panics if not convertible.
+/// 	#[inline]
+/// 	pub fn to_declaration_mut(&mut self) -> &mut Declaration<'a> {
+/// 		self.as_declaration_mut().unwrap()
+/// 	}
 /// }
 ///
 /// impl<'a> TryFrom<Statement<'a>> for Declaration<'a> {
-///     type Error = ();
+/// 	type Error = ();
 ///
-///     /// "Convert `Statement` to `Declaration`.
-///     #[inline]
-///     fn try_from(value: Statement<'a>) -> Result<Self, Self::Error> {
-///         match value {
-///             Statement::VariableDeclaration(o) => Ok(Declaration::VariableDeclaration(o)),
-///             Statement::FunctionDeclaration(o) => Ok(Declaration::FunctionDeclaration(o)),
-///             _ => Err(()),
-///         }
-///     }
+/// 	/// "Convert `Statement` to `Declaration`.
+/// 	#[inline]
+/// 	fn try_from(value:Statement<'a>) -> Result<Self, Self::Error> {
+/// 		match value {
+/// 			Statement::VariableDeclaration(o) => Ok(Declaration::VariableDeclaration(o)),
+/// 			Statement::FunctionDeclaration(o) => Ok(Declaration::FunctionDeclaration(o)),
+/// 			_ => Err(()),
+/// 		}
+/// 	}
 /// }
 ///
 /// impl<'a> From<Declaration<'a>> for Statement<'a> {
-///     /// Convert `Declaration` to `Statement`.
-///     #[inline]
-///     fn from(value: Declaration<'a>) -> Self {
-///         match value {
-///             Declaration::VariableDeclaration(o) => Statement::VariableDeclaration(o),
-///             Declaration::FunctionDeclaration(o) => Statement::FunctionDeclaration(o),
-///         }
-///     }
+/// 	/// Convert `Declaration` to `Statement`.
+/// 	#[inline]
+/// 	fn from(value:Declaration<'a>) -> Self {
+/// 		match value {
+/// 			Declaration::VariableDeclaration(o) => Statement::VariableDeclaration(o),
+/// 			Declaration::FunctionDeclaration(o) => Statement::FunctionDeclaration(o),
+/// 		}
+/// 	}
 /// }
 /// ```
 macro_rules! shared_enum_variants {
@@ -965,12 +971,12 @@ pub(crate) use shared_enum_variants;
 /// Enum must be `#[repr(C, u8)]` or using this macro is unsound.
 /// <https://doc.rust-lang.org/std/mem/fn.discriminant.html>
 macro_rules! discriminant {
-    ($ty:ident :: $variant:ident) => {{
-        #[allow(unsafe_code, clippy::undocumented_unsafe_blocks)]
-        unsafe {
-            let t = std::mem::ManuallyDrop::new($ty::$variant(oxc_allocator::Box::dangling()));
-            *(std::ptr::addr_of!(t).cast::<u8>())
-        }
-    }};
+	($ty:ident:: $variant:ident) => {{
+		#[allow(unsafe_code, clippy::undocumented_unsafe_blocks)]
+		unsafe {
+			let t = std::mem::ManuallyDrop::new($ty::$variant(oxc_allocator::Box::dangling()));
+			*(std::ptr::addr_of!(t).cast::<u8>())
+		}
+	}};
 }
 pub(crate) use discriminant;

@@ -41,41 +41,33 @@ bitflags! {
 
 impl Default for FrameworkFlags {
 	#[inline]
-	fn default() -> Self {
-		Self::empty()
-	}
+	fn default() -> Self { Self::empty() }
 }
 impl hash::Hash for FrameworkFlags {
 	#[inline]
-	fn hash<H: hash::Hasher>(&self, state: &mut H) {
-		state.write_u32(self.bits());
-	}
+	fn hash<H:hash::Hasher>(&self, state:&mut H) { state.write_u32(self.bits()); }
 }
 
 impl FrameworkFlags {
 	#[inline]
-	pub const fn is_test(self) -> bool {
-		self.intersects(Self::Test)
-	}
+	pub const fn is_test(self) -> bool { self.intersects(Self::Test) }
 
 	#[inline]
-	pub const fn is_vitest(self) -> bool {
-		self.contains(Self::Vitest)
-	}
+	pub const fn is_vitest(self) -> bool { self.contains(Self::Vitest) }
 
 	#[inline]
-	pub const fn is_jest(self) -> bool {
-		self.contains(Self::Jest)
-	}
+	pub const fn is_jest(self) -> bool { self.contains(Self::Jest) }
 }
 
 /// <https://jestjs.io/docs/configuration#testmatch-arraystring>
-pub(crate) fn is_jestlike_file(path: &Path) -> bool {
+pub(crate) fn is_jestlike_file(path:&Path) -> bool {
 	use std::ffi::OsStr;
 
-	if path.components().any(|c| match c {
-		std::path::Component::Normal(p) => p == OsStr::new("__tests__"),
-		_ => false,
+	if path.components().any(|c| {
+		match c {
+			std::path::Component::Normal(p) => p == OsStr::new("__tests__"),
+			_ => false,
+		}
 	}) {
 		return true;
 	}
@@ -86,14 +78,14 @@ pub(crate) fn is_jestlike_file(path: &Path) -> bool {
         .is_some_and(|name_or_first_ext| name_or_first_ext == "test" || name_or_first_ext == "spec")
 }
 
-pub(crate) fn has_vitest_imports(module_record: &ModuleRecord) -> bool {
+pub(crate) fn has_vitest_imports(module_record:&ModuleRecord) -> bool {
 	module_record
 		.import_entries
 		.iter()
 		.any(|entry| entry.module_request.name() == "vitest")
 }
 
-pub(crate) fn has_jest_imports(module_record: &ModuleRecord) -> bool {
+pub(crate) fn has_jest_imports(module_record:&ModuleRecord) -> bool {
 	module_record
 		.import_entries
 		.iter()

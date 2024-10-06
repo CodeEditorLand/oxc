@@ -8,15 +8,15 @@ use handlebars::Handlebars;
 
 use crate::Context;
 
-const ENV_TEMPLATE: &str = include_str!("../template.hbs");
+const ENV_TEMPLATE:&str = include_str!("../template.hbs");
 
 pub struct Template<'a> {
-	context: &'a Context<'a>,
-	registry: Handlebars<'a>,
+	context:&'a Context<'a>,
+	registry:Handlebars<'a>,
 }
 
 impl<'a> Template<'a> {
-	pub fn with_context(context: &'a Context) -> Self {
+	pub fn with_context(context:&'a Context) -> Self {
 		let mut registry = handlebars::Handlebars::new();
 		registry.register_escape_fn(handlebars::no_escape);
 		Self { context, registry }

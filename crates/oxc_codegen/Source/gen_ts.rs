@@ -1,11 +1,11 @@
-use crate::context::Context;
-use crate::{Codegen, Gen, GenExpr};
 #[allow(clippy::wildcard_imports)]
 use oxc_ast::ast::*;
 use oxc_syntax::precedence::Precedence;
 
+use crate::{context::Context, Codegen, Gen, GenExpr};
+
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeParameterDeclaration<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		p.print_str(b"<");
 		p.print_list(&self.params, ctx);
 		p.print_str(b">");
@@ -13,13 +13,11 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeParameterDeclaration<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeAnnotation<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
-		self.type_annotation.gen(p, ctx);
-	}
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) { self.type_annotation.gen(p, ctx); }
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSType<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		match self {
 			Self::TSFunctionType(decl) => decl.gen(p, ctx),
 			Self::TSConstructorType(decl) => {
@@ -255,7 +253,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSType<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTemplateLiteralType<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		p.print_str(b"`");
 		for (index, item) in self.quasis.iter().enumerate() {
 			if index != 0 {
@@ -271,7 +269,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTemplateLiteralType<'a> {
 	}
 }
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeName<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		match self {
 			Self::IdentifierReference(decl) => {
 				p.print_str(decl.name.as_bytes());
@@ -286,7 +284,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeName<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSLiteral<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		match self {
 			Self::BooleanLiteral(decl) => decl.gen(p, ctx),
 			Self::NullLiteral(decl) => decl.gen(p, ctx),
@@ -295,15 +293,13 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSLiteral<'a> {
 			Self::RegExpLiteral(decl) => decl.gen(p, ctx),
 			Self::StringLiteral(decl) => decl.gen(p, ctx),
 			Self::TemplateLiteral(decl) => decl.gen(p, ctx),
-			Self::UnaryExpression(decl) => {
-				decl.gen_expr(p, Precedence::Assign, ctx)
-			},
+			Self::UnaryExpression(decl) => decl.gen_expr(p, Precedence::Assign, ctx),
 		}
 	}
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeParameter<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		self.name.gen(p, ctx);
 		if let Some(constraint) = &self.constraint {
 			p.print_str(b" extends ");
@@ -317,7 +313,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeParameter<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSFunctionType<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		if let Some(type_parameters) = &self.type_parameters {
 			type_parameters.gen(p, ctx);
 		}
@@ -345,7 +341,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSFunctionType<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSSignature<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		p.print_soft_space();
 		match self {
 			Self::TSIndexSignature(signature) => signature.gen(p, ctx),
@@ -367,11 +363,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSSignature<'a> {
 							p.print_str(key.name.as_bytes());
 						},
 						key @ match_expression!(PropertyKey) => {
-							key.to_expression().gen_expr(
-								p,
-								Precedence::Assign,
-								ctx,
-							);
+							key.to_expression().gen_expr(p, Precedence::Assign, ctx);
 						},
 					}
 				}
@@ -424,11 +416,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSSignature<'a> {
 							p.print_str(key.name.as_bytes());
 						},
 						key @ match_expression!(PropertyKey) => {
-							key.to_expression().gen_expr(
-								p,
-								Precedence::Assign,
-								ctx,
-							);
+							key.to_expression().gen_expr(p, Precedence::Assign, ctx);
 						},
 					}
 				}
@@ -449,7 +437,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSSignature<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeQuery<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		p.print_str(b"typeof ");
 		self.expr_name.gen(p, ctx);
 		if let Some(type_params) = &self.type_parameters {
@@ -459,7 +447,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeQuery<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeQueryExprName<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		match self {
 			match_ts_type_name!(Self) => self.to_ts_type_name().gen(p, ctx),
 			Self::TSImportType(decl) => decl.gen(p, ctx),
@@ -468,7 +456,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeQueryExprName<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSImportType<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		p.print_str(b"import(");
 		self.argument.gen(p, ctx);
 		p.print_str(b")");
@@ -476,7 +464,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSImportType<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeParameterInstantiation<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		p.print_str(b"<");
 		p.print_list(&self.params, ctx);
 		p.print_str(b">");
@@ -484,7 +472,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTypeParameterInstantiation<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSIndexSignature<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		if !p.options.enable_typescript {
 			return;
 		}
@@ -506,7 +494,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSIndexSignature<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTupleElement<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		match self {
 			match_ts_type!(TSTupleElement) => self.to_ts_type().gen(p, ctx),
 			TSTupleElement::TSOptionalType(ts_type) => {
@@ -522,7 +510,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSTupleElement<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSNamedTupleMember<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		self.label.gen(p, ctx);
 		p.print_str(b":");
 		p.print_soft_space();
@@ -531,7 +519,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSNamedTupleMember<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSModuleDeclaration<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		if self.modifiers.contains(ModifierKind::Export) {
 			p.print_str(b"export ");
 		}
@@ -569,7 +557,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSModuleDeclaration<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSInterfaceDeclaration<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		if !p.options.enable_typescript {
 			return;
 		}
@@ -604,7 +592,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSInterfaceDeclaration<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSInterfaceHeritage<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		self.expression.gen_expr(p, Precedence::Call, ctx);
 		if let Some(type_parameters) = &self.type_parameters {
 			type_parameters.gen(p, ctx);
@@ -613,7 +601,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSInterfaceHeritage<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSEnumDeclaration<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		if !p.options.enable_typescript {
 			return;
 		}
@@ -622,9 +610,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSEnumDeclaration<'a> {
 		if self.modifiers.contains(ModifierKind::Export) {
 			p.print_str(b"export ");
 		}
-		if p.options.enable_typescript
-			&& self.modifiers.contains(ModifierKind::Declare)
-		{
+		if p.options.enable_typescript && self.modifiers.contains(ModifierKind::Declare) {
 			p.print_str(b"declare ");
 		}
 		if self.modifiers.contains(ModifierKind::Const) {
@@ -642,7 +628,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSEnumDeclaration<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSEnumMember<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		match &self.id {
 			TSEnumMemberName::StaticIdentifier(decl) => decl.gen(p, ctx),
 			TSEnumMemberName::StaticStringLiteral(decl) => decl.gen(p, ctx),
@@ -657,7 +643,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSEnumMember<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSConstructorType<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		if self.r#abstract {
 			p.print_str(b"abstract ");
 		}
@@ -676,7 +662,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSConstructorType<'a> {
 }
 
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSImportEqualsDeclaration<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		if !p.options.enable_typescript {
 			return;
 		}
@@ -688,7 +674,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSImportEqualsDeclaration<'a> {
 	}
 }
 impl<'a, const MINIFY: bool> Gen<MINIFY> for TSModuleReference<'a> {
-	fn gen(&self, p: &mut Codegen<{ MINIFY }>, ctx: Context) {
+	fn gen(&self, p:&mut Codegen<{ MINIFY }>, ctx:Context) {
 		match self {
 			Self::ExternalModuleReference(decl) => {
 				p.print_str(b"require(");
@@ -701,12 +687,7 @@ impl<'a, const MINIFY: bool> Gen<MINIFY> for TSModuleReference<'a> {
 }
 
 impl<'a, const MINIFY: bool> GenExpr<MINIFY> for TSTypeAssertion<'a> {
-	fn gen_expr(
-		&self,
-		p: &mut Codegen<{ MINIFY }>,
-		precedence: Precedence,
-		ctx: Context,
-	) {
+	fn gen_expr(&self, p:&mut Codegen<{ MINIFY }>, precedence:Precedence, ctx:Context) {
 		if p.options.enable_typescript {
 			p.print_str(b"<");
 			self.type_annotation.gen(p, ctx);

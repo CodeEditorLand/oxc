@@ -7,10 +7,10 @@ fn main() {
 	let command = args.subcommand().expect("subcommands");
 
 	let args = AppArgs {
-		debug: args.contains("--debug"),
-		filter: args.opt_value_from_str("--filter").unwrap(),
-		detail: args.contains("--detail"),
-		diff: args.contains("--diff"),
+		debug:args.contains("--debug"),
+		filter:args.opt_value_from_str("--filter").unwrap(),
+		detail:args.contains("--detail"),
+		diff:args.contains("--diff"),
 	};
 
 	if args.debug {

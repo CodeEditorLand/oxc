@@ -5,97 +5,97 @@ use oxc_span::Span;
 
 use crate::{context::LintContext, rule::Rule, utils::is_empty_stmt, AstNode};
 
-fn no_useless_switch_case_diagnostic(span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Useless case in switch statement.")
-        .with_help("Consider removing this case or removing the `default` case.")
-        .with_label(span)
+fn no_useless_switch_case_diagnostic(span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::warn("Useless case in switch statement.")
+		.with_help("Consider removing this case or removing the `default` case.")
+		.with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct NoUselessSwitchCase;
 
 declare_oxc_lint!(
-    /// ### What it does
-    ///
-    /// Disallows useless default cases in switch statements.
-    ///
-    /// ### Why is this bad?
-    ///
-    /// An empty case before the last default case is useless.
-    ///
-    /// ### Examples
-    ///
-    /// Examples of **incorrect** code for this rule:
-    /// ```javascript
-    /// switch (foo) {
-    /// 	case 1:
-    /// 	default:
-    /// 		handleDefaultCase();
-    /// 		break;
-    /// }
-    /// ```
-    ///
-    /// Examples of **correct** code for this rule:
-    /// ```javascript
-    /// switch (foo) {
-    ///	case 1:
-    ///	case 2:
-    ///		handleCase1And2();
-    ///		break;
-    /// }
-    /// ```
-    NoUselessSwitchCase,
-    pedantic,
-    pending
+	/// ### What it does
+	///
+	/// Disallows useless default cases in switch statements.
+	///
+	/// ### Why is this bad?
+	///
+	/// An empty case before the last default case is useless.
+	///
+	/// ### Examples
+	///
+	/// Examples of **incorrect** code for this rule:
+	/// ```javascript
+	/// switch (foo) {
+	/// 	case 1:
+	/// 	default:
+	/// 		handleDefaultCase();
+	/// 		break;
+	/// }
+	/// ```
+	///
+	/// Examples of **correct** code for this rule:
+	/// ```javascript
+	/// switch (foo) {
+	///	case 1:
+	///	case 2:
+	///		handleCase1And2();
+	///		break;
+	/// }
+	/// ```
+	NoUselessSwitchCase,
+	pedantic,
+	pending
 );
 
 impl Rule for NoUselessSwitchCase {
-    fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
-        let AstKind::SwitchStatement(switch_statement) = node.kind() else {
-            return;
-        };
+	fn run<'a>(&self, node:&AstNode<'a>, ctx:&LintContext<'a>) {
+		let AstKind::SwitchStatement(switch_statement) = node.kind() else {
+			return;
+		};
 
-        let cases = &switch_statement.cases;
+		let cases = &switch_statement.cases;
 
-        let default_cases = cases.iter().filter(|v| v.test.is_none()).collect::<Vec<_>>();
+		let default_cases = cases.iter().filter(|v| v.test.is_none()).collect::<Vec<_>>();
 
-        if default_cases.len() != 1 {
-            return;
-        }
+		if default_cases.len() != 1 {
+			return;
+		}
 
-        let default_case = default_cases[0];
+		let default_case = default_cases[0];
 
-        // Check if the `default` case is the last case
-        if !std::ptr::eq(default_case, cases.last().unwrap()) {
-            return;
-        }
+		// Check if the `default` case is the last case
+		if !std::ptr::eq(default_case, cases.last().unwrap()) {
+			return;
+		}
 
-        let mut useless_cases = vec![];
+		let mut useless_cases = vec![];
 
-        for case in cases.iter().rev().skip(1) {
-            if case.consequent.iter().all(|v| is_empty_stmt(v)) {
-                useless_cases.push(case);
-            } else {
-                break;
-            }
-        }
+		for case in cases.iter().rev().skip(1) {
+			if case.consequent.iter().all(|v| is_empty_stmt(v)) {
+				useless_cases.push(case);
+			} else {
+				break;
+			}
+		}
 
-        if useless_cases.is_empty() {
-            return;
-        }
+		if useless_cases.is_empty() {
+			return;
+		}
 
-        for case in useless_cases {
-            ctx.diagnostic(no_useless_switch_case_diagnostic(case.span));
-        }
-    }
+		for case in useless_cases {
+			ctx.diagnostic(no_useless_switch_case_diagnostic(case.span));
+		}
+	}
 }
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+	use crate::tester::Tester;
 
-    let pass = vec![
-        r"
+	let pass = vec![
+		r"
         switch (foo) {
             case a:
             case b:
@@ -103,7 +103,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
                 handleCaseA();
@@ -113,7 +113,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
                 handleCaseA();
@@ -122,7 +122,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
                 break;
@@ -131,7 +131,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
                 handleCaseA();
@@ -141,7 +141,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
             default:
@@ -152,7 +152,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (1) {
                 // This is not useless
                 case 1:
@@ -162,7 +162,7 @@ fn test() {
                         console.log('2')
         }
         ",
-        r"
+		r"
         switch (1) {
             default:
                 handleDefaultCase1();
@@ -173,10 +173,10 @@ fn test() {
                 break;
         }
         ",
-    ];
+	];
 
-    let fail = vec![
-        r"
+	let fail = vec![
+		r"
         switch (foo) {
             case a:
             default:
@@ -184,7 +184,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a: {
             }
@@ -193,7 +193,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a: {
                 ;;
@@ -209,7 +209,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
             case (( b ))         :
@@ -218,7 +218,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
             case b:
@@ -231,7 +231,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
             case b:
@@ -240,7 +240,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             // eslint-disable-next-line
             case a:
@@ -250,7 +250,7 @@ fn test() {
                 break;
         }
         ",
-        r"
+		r"
         switch (foo) {
             case a:
             // eslint-disable-next-line
@@ -260,7 +260,7 @@ fn test() {
                 break;
         }
         ",
-    ];
+	];
 
-    Tester::new(NoUselessSwitchCase::NAME, pass, fail).test_and_snapshot();
+	Tester::new(NoUselessSwitchCase::NAME, pass, fail).test_and_snapshot();
 }

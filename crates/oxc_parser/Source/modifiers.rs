@@ -35,10 +35,10 @@ bitflags! {
 }
 
 /// It is the caller's safety to always check by `Kind::is_modifier_kind`
-/// before converting [`Kind`] to [`ModifierFlags`] so that we can assume here that
-/// the conversion always succeeds.
+/// before converting [`Kind`] to [`ModifierFlags`] so that we can assume here
+/// that the conversion always succeeds.
 impl From<Kind> for ModifierFlags {
-	fn from(value: Kind) -> Self {
+	fn from(value:Kind) -> Self {
 		match value {
 			Kind::Abstract => Self::ABSTRACT,
 			Kind::Declare => Self::DECLARE,
@@ -61,7 +61,7 @@ impl From<Kind> for ModifierFlags {
 }
 
 impl From<ModifierKind> for ModifierFlags {
-	fn from(kind: ModifierKind) -> Self {
+	fn from(kind:ModifierKind) -> Self {
 		match kind {
 			ModifierKind::Abstract => Self::ABSTRACT,
 			ModifierKind::Declare => Self::DECLARE,
@@ -100,21 +100,18 @@ impl ModifierFlags {
 
 #[derive(Debug, Hash)]
 pub struct Modifier {
-	pub span: Span,
-	pub kind: ModifierKind,
+	pub span:Span,
+	pub kind:ModifierKind,
 }
 impl Modifier {
 	#[inline]
-	pub fn is_static(&self) -> bool {
-		matches!(self.kind, ModifierKind::Static)
-	}
+	pub fn is_static(&self) -> bool { matches!(self.kind, ModifierKind::Static) }
 }
 impl TryFrom<Token> for Modifier {
 	type Error = <ModifierKind as TryFrom<Kind>>::Error;
 
-	fn try_from(tok: Token) -> std::result::Result<Self, Self::Error> {
-		ModifierKind::try_from(tok.kind)
-			.map(|kind| Self { span: tok.span(), kind })
+	fn try_from(tok:Token) -> std::result::Result<Self, Self::Error> {
+		ModifierKind::try_from(tok.kind).map(|kind| Self { span:tok.span(), kind })
 	}
 }
 
@@ -134,17 +131,15 @@ impl TryFrom<Token> for Modifier {
 #[derive(Debug, Hash)]
 pub struct Modifiers<'a> {
 	/// May contain duplicates.
-	modifiers: Option<Vec<'a, Modifier>>,
+	modifiers:Option<Vec<'a, Modifier>>,
 	/// Bitflag representation of modifier kinds stored in [`Self::modifiers`].
 	/// Pre-computed to save CPU cycles on [`Self::contains`] checks (`O(1)`
 	/// bitflag intersection vs `O(n)` linear search).
-	flags: ModifierFlags,
+	flags:ModifierFlags,
 }
 
 impl<'a> Default for Modifiers<'a> {
-	fn default() -> Self {
-		Self::empty()
-	}
+	fn default() -> Self { Self::empty() }
 }
 
 impl<'a> Modifiers<'a> {
@@ -154,66 +149,42 @@ impl<'a> Modifiers<'a> {
 	/// `flags` must correctly reflect the [`ModifierKind`]s within
 	///  `modifiers`. E.g., if `modifiers` is empty, then so is `flags``.
 	#[must_use]
-	pub(crate) fn new(
-		modifiers: Vec<'a, Modifier>,
-		flags: ModifierFlags,
-	) -> Self {
+	pub(crate) fn new(modifiers:Vec<'a, Modifier>, flags:ModifierFlags) -> Self {
 		if modifiers.is_empty() {
 			debug_assert!(flags.is_empty());
 			Self::empty()
 		} else {
-			Self { modifiers: Some(modifiers), flags }
+			Self { modifiers:Some(modifiers), flags }
 		}
 	}
 
-	pub fn empty() -> Self {
-		Self { modifiers: None, flags: ModifierFlags::empty() }
-	}
+	pub fn empty() -> Self { Self { modifiers:None, flags:ModifierFlags::empty() } }
 
-	pub fn contains(&self, target: ModifierKind) -> bool {
-		self.flags.contains(target.into())
-	}
+	pub fn contains(&self, target:ModifierKind) -> bool { self.flags.contains(target.into()) }
 
 	pub fn iter(&self) -> impl Iterator<Item = &Modifier> + '_ {
-		self.modifiers
-			.as_ref()
-			.into_iter()
-			.flat_map(|modifiers| modifiers.iter())
+		self.modifiers.as_ref().into_iter().flat_map(|modifiers| modifiers.iter())
 	}
 
-	pub fn accessibility(&self) -> Option<TSAccessibility> {
-		self.flags.accessibility()
-	}
+	pub fn accessibility(&self) -> Option<TSAccessibility> { self.flags.accessibility() }
 
 	#[inline]
-	pub fn contains_async(&self) -> bool {
-		self.flags.contains(ModifierFlags::ASYNC)
-	}
+	pub fn contains_async(&self) -> bool { self.flags.contains(ModifierFlags::ASYNC) }
 
 	#[inline]
-	pub fn contains_const(&self) -> bool {
-		self.flags.contains(ModifierFlags::CONST)
-	}
+	pub fn contains_const(&self) -> bool { self.flags.contains(ModifierFlags::CONST) }
 
 	#[inline]
-	pub fn contains_declare(&self) -> bool {
-		self.flags.contains(ModifierFlags::DECLARE)
-	}
+	pub fn contains_declare(&self) -> bool { self.flags.contains(ModifierFlags::DECLARE) }
 
 	#[inline]
-	pub fn contains_abstract(&self) -> bool {
-		self.flags.contains(ModifierFlags::ABSTRACT)
-	}
+	pub fn contains_abstract(&self) -> bool { self.flags.contains(ModifierFlags::ABSTRACT) }
 
 	#[inline]
-	pub fn contains_readonly(&self) -> bool {
-		self.flags.contains(ModifierFlags::READONLY)
-	}
+	pub fn contains_readonly(&self) -> bool { self.flags.contains(ModifierFlags::READONLY) }
 
 	#[inline]
-	pub fn contains_override(&self) -> bool {
-		self.flags.contains(ModifierFlags::OVERRIDE)
-	}
+	pub fn contains_override(&self) -> bool { self.flags.contains(ModifierFlags::OVERRIDE) }
 }
 
 impl GetSpan for Modifiers<'_> {
@@ -225,13 +196,7 @@ impl GetSpan for Modifiers<'_> {
 		// SAFETY: One of Modifier's invariants is that Some(modifiers) always
 		// contains a non-empty Vec; otherwise it must be `None`.
 
-		unsafe {
-			modifiers
-				.iter()
-				.map(|m| m.span)
-				.reduce(|a, b| a.merge(&b))
-				.unwrap_unchecked()
-		}
+		unsafe { modifiers.iter().map(|m| m.span).reduce(|a, b| a.merge(&b)).unwrap_unchecked() }
 	}
 }
 
@@ -278,7 +243,7 @@ impl ModifierKind {
 impl TryFrom<Kind> for ModifierKind {
 	type Error = ();
 
-	fn try_from(kind: Kind) -> std::result::Result<Self, Self::Error> {
+	fn try_from(kind:Kind) -> std::result::Result<Self, Self::Error> {
 		match kind {
 			Kind::Abstract => Ok(Self::Abstract),
 			Kind::Declare => Ok(Self::Declare),
@@ -301,15 +266,11 @@ impl TryFrom<Kind> for ModifierKind {
 }
 
 impl std::fmt::Display for ModifierKind {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		f.write_str(self.as_str())
-	}
+	fn fmt(&self, f:&mut std::fmt::Formatter<'_>) -> std::fmt::Result { f.write_str(self.as_str()) }
 }
 
 impl<'a> ParserImpl<'a> {
-	pub(crate) fn eat_modifiers_before_declaration(
-		&mut self,
-	) -> Result<Modifiers<'a>> {
+	pub(crate) fn eat_modifiers_before_declaration(&mut self) -> Result<Modifiers<'a>> {
 		let mut flags = ModifierFlags::empty();
 		let mut modifiers = self.ast.vec();
 		while self.at_modifier() {
@@ -325,9 +286,7 @@ impl<'a> ParserImpl<'a> {
 		Ok(Modifiers::new(modifiers, flags))
 	}
 
-	fn at_modifier(&mut self) -> bool {
-		self.lookahead(Self::at_modifier_worker)
-	}
+	fn at_modifier(&mut self) -> bool { self.lookahead(Self::at_modifier_worker) }
 
 	fn at_modifier_worker(&mut self) -> bool {
 		if !self.cur_kind().is_modifier_kind() {
@@ -335,16 +294,11 @@ impl<'a> ParserImpl<'a> {
 		}
 
 		match self.cur_kind() {
-			Kind::Const => {
-				!self.peek_token().is_on_new_line
-					&& self.peek_kind() == Kind::Enum
-			},
+			Kind::Const => !self.peek_token().is_on_new_line && self.peek_kind() == Kind::Enum,
 			Kind::Export => {
 				self.bump_any();
 				match self.cur_kind() {
-					Kind::Default => {
-						self.next_token_can_follow_default_keyword()
-					},
+					Kind::Default => self.next_token_can_follow_default_keyword(),
 					Kind::Type => {
 						self.bump_any();
 						self.can_follow_export_modifier()
@@ -366,18 +320,15 @@ impl<'a> ParserImpl<'a> {
 		}
 	}
 
-	fn modifier(&mut self, kind: Kind, span: Span) -> Result<Modifier> {
-		Ok(Modifier {
-			span,
-			kind: kind.try_into().map_err(|()| self.unexpected())?,
-		})
+	fn modifier(&mut self, kind:Kind, span:Span) -> Result<Modifier> {
+		Ok(Modifier { span, kind:kind.try_into().map_err(|()| self.unexpected())? })
 	}
 
 	pub(crate) fn parse_modifiers(
 		&mut self,
-		allow_decorators: bool,
-		permit_const_as_modifier: bool,
-		stop_on_start_of_class_static_block: bool,
+		allow_decorators:bool,
+		permit_const_as_modifier:bool,
+		stop_on_start_of_class_static_block:bool,
 	) -> Modifiers<'a> {
 		let mut has_seen_static_modifier = false;
 		let mut has_leading_modifier = false;
@@ -406,16 +357,14 @@ impl<'a> ParserImpl<'a> {
 			has_leading_modifier = true;
 		}
 
-		// parse trailing decorators, but only if we parsed any leading modifiers
-		if allow_decorators
-			&& has_leading_modifier
-			&& matches!(self.cur_kind(), Kind::At)
-		{
-			has_trailing_decorator =
-				self.try_parse(Self::eat_decorators).is_some();
+		// parse trailing decorators, but only if we parsed any leading
+		// modifiers
+		if allow_decorators && has_leading_modifier && matches!(self.cur_kind(), Kind::At) {
+			has_trailing_decorator = self.try_parse(Self::eat_decorators).is_some();
 		}
 
-		// parse trailing modifiers, but only if we parsed any trailing decorators
+		// parse trailing modifiers, but only if we parsed any trailing
+		// decorators
 		if has_trailing_decorator {
 			while let Some(modifier) = self.try_parse_modifier(
 				has_seen_static_modifier,
@@ -436,9 +385,9 @@ impl<'a> ParserImpl<'a> {
 
 	fn try_parse_modifier(
 		&mut self,
-		has_seen_static_modifier: bool,
-		permit_const_as_modifier: bool,
-		stop_on_start_of_class_static_block: bool,
+		has_seen_static_modifier:bool,
+		permit_const_as_modifier:bool,
+		stop_on_start_of_class_static_block:bool,
 	) -> Option<Modifier> {
 		let span = self.start_span();
 		let kind = self.cur_kind();
@@ -448,12 +397,10 @@ impl<'a> ParserImpl<'a> {
 				return None;
 			}
 
-			// We need to ensure that any subsequent modifiers appear on the same line
-			// so that when 'const' is a standalone declaration, we don't issue
-			// an error.
-			self.try_parse(
-				Self::try_next_token_is_on_same_line_and_can_follow_modifier,
-			)?;
+			// We need to ensure that any subsequent modifiers appear on the
+			// same line so that when 'const' is a standalone declaration, we
+			// don't issue an error.
+			self.try_parse(Self::try_next_token_is_on_same_line_and_can_follow_modifier)?;
 		} else if
 		// we're at the start of a static block
 		(stop_on_start_of_class_static_block
@@ -485,10 +432,8 @@ impl<'a> ParserImpl<'a> {
 			Kind::Export => {
 				self.bump_any();
 				match self.cur_kind() {
-					Kind::Default => self
-						.lookahead(Self::next_token_can_follow_default_keyword),
-					Kind::Type => self
-						.lookahead(Self::next_token_can_follow_export_modifier),
+					Kind::Default => self.lookahead(Self::next_token_can_follow_default_keyword),
+					Kind::Type => self.lookahead(Self::next_token_can_follow_export_modifier),
 					_ => self.can_follow_export_modifier(),
 				}
 			},
@@ -499,16 +444,10 @@ impl<'a> ParserImpl<'a> {
 			},
 			_ => self.next_token_is_on_same_line_and_can_follow_modifier(),
 		};
-		if b {
-			Ok(())
-		} else {
-			Err(self.unexpected())
-		}
+		if b { Ok(()) } else { Err(self.unexpected()) }
 	}
 
-	fn try_next_token_is_on_same_line_and_can_follow_modifier(
-		&mut self,
-	) -> Result<()> {
+	fn try_next_token_is_on_same_line_and_can_follow_modifier(&mut self) -> Result<()> {
 		if self.next_token_is_on_same_line_and_can_follow_modifier() {
 			Ok(())
 		} else {
@@ -528,18 +467,10 @@ impl<'a> ParserImpl<'a> {
 		self.bump_any();
 		match self.cur_kind() {
 			Kind::Class | Kind::Function | Kind::Interface | Kind::At => true,
-			Kind::Abstract
-				if self.lookahead(
-					Self::next_token_is_class_keyword_on_same_line,
-				) =>
-			{
+			Kind::Abstract if self.lookahead(Self::next_token_is_class_keyword_on_same_line) => {
 				true
 			},
-			Kind::Async
-				if self.lookahead(
-					Self::next_token_is_function_keyword_on_same_line,
-				) =>
-			{
+			Kind::Async if self.lookahead(Self::next_token_is_function_keyword_on_same_line) => {
 				true
 			},
 			_ => false,
@@ -562,11 +493,7 @@ impl<'a> ParserImpl<'a> {
 
 	fn can_follow_modifier(&mut self) -> bool {
 		match self.cur_kind() {
-			Kind::PrivateIdentifier
-			| Kind::LBrack
-			| Kind::LCurly
-			| Kind::Star
-			| Kind::Dot3 => true,
+			Kind::PrivateIdentifier | Kind::LBrack | Kind::LCurly | Kind::Star | Kind::Dot3 => true,
 			kind => kind.is_identifier_or_keyword(),
 		}
 	}
@@ -581,11 +508,7 @@ impl<'a> ParserImpl<'a> {
 		self.cur_kind() == Kind::Function && !self.cur_token().is_on_new_line
 	}
 
-	fn check_for_duplicate_modifiers(
-		&mut self,
-		seen_flags: ModifierFlags,
-		modifier: &Modifier,
-	) {
+	fn check_for_duplicate_modifiers(&mut self, seen_flags:ModifierFlags, modifier:&Modifier) {
 		if seen_flags.contains(modifier.kind.into()) {
 			self.error(diagnostics::modifier_already_seen(modifier));
 		}
@@ -593,12 +516,11 @@ impl<'a> ParserImpl<'a> {
 
 	pub(crate) fn verify_modifiers<F>(
 		&mut self,
-		modifiers: &Modifiers<'a>,
-		allowed: ModifierFlags,
-		diagnose: F,
+		modifiers:&Modifiers<'a>,
+		allowed:ModifierFlags,
+		diagnose:F,
 	) where
-		F: Fn(&Modifier) -> OxcDiagnostic,
-	{
+		F: Fn(&Modifier) -> OxcDiagnostic, {
 		for modifier in modifiers.iter() {
 			if !allowed.contains(modifier.kind.into()) {
 				self.error(diagnose(modifier));

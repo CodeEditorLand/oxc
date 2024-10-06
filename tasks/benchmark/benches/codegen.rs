@@ -5,7 +5,7 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 use oxc_tasks_common::TestFiles;
 
-fn bench_codegen(criterion: &mut Criterion) {
+fn bench_codegen(criterion:&mut Criterion) {
 	for file in TestFiles::complicated_one(0).files() {
 		let id = BenchmarkId::from_parameter(&file.file_name);
 		let source_type = SourceType::from_path(&file.file_name).unwrap();
@@ -15,9 +15,7 @@ fn bench_codegen(criterion: &mut Criterion) {
 
 		let mut group = criterion.benchmark_group("codegen");
 		group.bench_with_input(id.clone(), &ret.program, |b, program| {
-			b.iter_with_large_drop(|| {
-				CodeGenerator::new().build(program).source_map
-			});
+			b.iter_with_large_drop(|| CodeGenerator::new().build(program).source_map);
 		});
 		group.finish();
 

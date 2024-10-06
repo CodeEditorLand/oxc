@@ -10,20 +10,20 @@ use crate::{
 /// The `SourceMapBuilder` is a helper to generate sourcemap.
 #[derive(Debug, Default)]
 pub struct SourceMapBuilder {
-	pub(crate) file: Option<Arc<str>>,
-	pub(crate) names_map: FxHashMap<Arc<str>, u32>,
-	pub(crate) names: Vec<Arc<str>>,
-	pub(crate) sources: Vec<Arc<str>>,
-	pub(crate) sources_map: FxHashMap<Arc<str>, u32>,
-	pub(crate) source_contents: Vec<Arc<str>>,
-	pub(crate) tokens: Vec<Token>,
-	pub(crate) token_chunks: Option<Vec<TokenChunk>>,
+	pub(crate) file:Option<Arc<str>>,
+	pub(crate) names_map:FxHashMap<Arc<str>, u32>,
+	pub(crate) names:Vec<Arc<str>>,
+	pub(crate) sources:Vec<Arc<str>>,
+	pub(crate) sources_map:FxHashMap<Arc<str>, u32>,
+	pub(crate) source_contents:Vec<Arc<str>>,
+	pub(crate) tokens:Vec<Token>,
+	pub(crate) token_chunks:Option<Vec<TokenChunk>>,
 }
 
 #[allow(clippy::cast_possible_truncation)]
 impl SourceMapBuilder {
 	/// Add item to `SourceMap::name`.
-	pub fn add_name(&mut self, name: &str) -> u32 {
+	pub fn add_name(&mut self, name:&str) -> u32 {
 		let count = self.names.len() as u32;
 		let id = *self.names_map.entry(name.into()).or_insert(count);
 		if id == count {
@@ -34,11 +34,7 @@ impl SourceMapBuilder {
 
 	/// Add item to `SourceMap::sources` and `SourceMap::source_contents`.
 	/// If `source` maybe duplicate, please use it.
-	pub fn add_source_and_content(
-		&mut self,
-		source: &str,
-		source_content: &str,
-	) -> u32 {
+	pub fn add_source_and_content(&mut self, source:&str, source_content:&str) -> u32 {
 		let count = self.sources.len() as u32;
 		let id = *self.sources_map.entry(source.into()).or_insert(count);
 		if id == count {
@@ -50,11 +46,7 @@ impl SourceMapBuilder {
 
 	/// Add item to `SourceMap::sources` and `SourceMap::source_contents`.
 	/// If `source` hasn't duplicate，it will avoid extra hash calculation.
-	pub fn set_source_and_content(
-		&mut self,
-		source: &str,
-		source_content: &str,
-	) -> u32 {
+	pub fn set_source_and_content(&mut self, source:&str, source_content:&str) -> u32 {
 		let count = self.sources.len() as u32;
 		self.sources.push(source.into());
 		self.source_contents.push(source_content.into());
@@ -64,24 +56,22 @@ impl SourceMapBuilder {
 	/// Add item to `SourceMap::tokens`.
 	pub fn add_token(
 		&mut self,
-		dst_line: u32,
-		dst_col: u32,
-		src_line: u32,
-		src_col: u32,
-		src_id: Option<u32>,
-		name_id: Option<u32>,
+		dst_line:u32,
+		dst_col:u32,
+		src_line:u32,
+		src_col:u32,
+		src_id:Option<u32>,
+		name_id:Option<u32>,
 	) {
-		self.tokens.push(Token::new(
-			dst_line, dst_col, src_line, src_col, src_id, name_id,
-		));
+		self.tokens
+			.push(Token::new(dst_line, dst_col, src_line, src_col, src_id, name_id));
 	}
 
-	pub fn set_file(&mut self, file: &str) {
-		self.file = Some(file.into());
-	}
+	pub fn set_file(&mut self, file:&str) { self.file = Some(file.into()); }
 
-	/// Set the `SourceMap::token_chunks` to make the sourcemap to vlq mapping at parallel.
-	pub fn set_token_chunks(&mut self, token_chunks: Vec<TokenChunk>) {
+	/// Set the `SourceMap::token_chunks` to make the sourcemap to vlq mapping
+	/// at parallel.
+	pub fn set_token_chunks(&mut self, token_chunks:Vec<TokenChunk>) {
 		self.token_chunks = Some(token_chunks);
 	}
 

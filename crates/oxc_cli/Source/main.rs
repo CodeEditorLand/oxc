@@ -3,12 +3,12 @@
 #[cfg(not(debug_assertions))]
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]
-static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+static GLOBAL:jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 #[cfg(not(debug_assertions))]
 #[cfg(target_os = "windows")]
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL:mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use oxc_cli::{CliCommand, CliRunResult, FormatRunner, LintRunner, Runner};
 

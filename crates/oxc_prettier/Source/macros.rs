@@ -2,31 +2,23 @@
 
 #[macro_export]
 macro_rules! format {
-	($p:ident, $s:expr) => {{
-		$s.format($p)
-	}};
+	($p:ident, $s:expr) => {{ $s.format($p) }};
 }
 
 /// Wrap a static string (ss)
 #[macro_export]
 macro_rules! ss {
-	($s:expr) => {{
-		Doc::Str($s)
-	}};
+	($s:expr) => {{ Doc::Str($s) }};
 }
 
 #[macro_export]
 macro_rules! space {
-	() => {{
-		Doc::Str(" ")
-	}};
+	() => {{ Doc::Str(" ") }};
 }
 
 #[macro_export]
 macro_rules! string {
-	($p:ident, $s:expr) => {{
-		$p.str($s)
-	}};
+	($p:ident, $s:expr) => {{ $p.str($s) }};
 }
 
 #[macro_export]
@@ -134,17 +126,13 @@ macro_rules! if_break {
 	($p:ident, $s:expr, $flat:expr, $group_id:expr) => {{
 		use $crate::doc::IfBreak;
 		Doc::IfBreak(IfBreak {
-			break_contents: $p.boxed(Doc::Str($s)),
-			flat_content: $p.boxed(Doc::Str($flat)),
-			group_id: $group_id,
+			break_contents:$p.boxed(Doc::Str($s)),
+			flat_content:$p.boxed(Doc::Str($flat)),
+			group_id:$group_id,
 		})
 	}};
-	($p:ident, $s:expr, $flat:expr) => {{
-		if_break!($p, $s, $flat, None)
-	}};
-	($p:ident, $s:expr) => {{
-		if_break!($p, $s, "", None)
-	}};
+	($p:ident, $s:expr, $flat:expr) => {{ if_break!($p, $s, $flat, None) }};
+	($p:ident, $s:expr) => {{ if_break!($p, $s, "", None) }};
 }
 
 #[macro_export]

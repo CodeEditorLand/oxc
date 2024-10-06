@@ -12,36 +12,34 @@ use crate::IgnoreOptions;
 pub struct Extensions(pub Vec<&'static str>);
 
 impl Default for Extensions {
-	fn default() -> Self {
-		Self(VALID_EXTENSIONS.to_vec())
-	}
+	fn default() -> Self { Self(VALID_EXTENSIONS.to_vec()) }
 }
 
 pub struct Walk {
-	inner: ignore::WalkParallel,
+	inner:ignore::WalkParallel,
 	/// The file extensions to include during the traversal.
-	extensions: Extensions,
+	extensions:Extensions,
 }
 
 struct WalkBuilder {
-	sender: mpsc::Sender<Vec<Box<Path>>>,
-	extensions: Extensions,
+	sender:mpsc::Sender<Vec<Box<Path>>>,
+	extensions:Extensions,
 }
 
 impl<'s> ignore::ParallelVisitorBuilder<'s> for WalkBuilder {
 	fn build(&mut self) -> Box<dyn ignore::ParallelVisitor + 's> {
 		Box::new(WalkCollector {
-			paths: vec![],
-			sender: self.sender.clone(),
-			extensions: self.extensions.clone(),
+			paths:vec![],
+			sender:self.sender.clone(),
+			extensions:self.extensions.clone(),
 		})
 	}
 }
 
 struct WalkCollector {
-	paths: Vec<Box<Path>>,
-	sender: mpsc::Sender<Vec<Box<Path>>>,
-	extensions: Extensions,
+	paths:Vec<Box<Path>>,
+	sender:mpsc::Sender<Vec<Box<Path>>>,
+	extensions:Extensions,
 }
 
 impl Drop for WalkCollector {
@@ -52,17 +50,13 @@ impl Drop for WalkCollector {
 }
 
 impl ignore::ParallelVisitor for WalkCollector {
-	fn visit(
-		&mut self,
-		entry: Result<ignore::DirEntry, ignore::Error>,
-	) -> ignore::WalkState {
+	fn visit(&mut self, entry:Result<ignore::DirEntry, ignore::Error>) -> ignore::WalkState {
 		match entry {
 			Ok(entry) => {
 				if entry.file_type().is_some_and(|ft| !ft.is_dir())
 					&& Walk::is_wanted_entry(&entry, &self.extensions)
 				{
-					self.paths
-						.push(entry.path().to_path_buf().into_boxed_path());
+					self.paths.push(entry.path().to_path_buf().into_boxed_path());
 				}
 				ignore::WalkState::Continue
 			},
@@ -74,18 +68,15 @@ impl ignore::ParallelVisitor for WalkCollector {
 impl Walk {
 	/// Will not canonicalize paths.
 	/// # Panics
-	pub fn new(paths: &[PathBuf], options: &IgnoreOptions) -> Self {
-		assert!(
-			!paths.is_empty(),
-			"At least one path must be provided to Walk::new"
-		);
+	pub fn new(paths:&[PathBuf], options:&IgnoreOptions) -> Self {
+		assert!(!paths.is_empty(), "At least one path must be provided to Walk::new");
 
 		let mut inner = ignore::WalkBuilder::new(
-            paths
-                .iter()
-                .next()
-                .expect("Expected paths parameter to Walk::new() to contain at least one path."),
-        );
+			paths
+				.iter()
+				.next()
+				.expect("Expected paths parameter to Walk::new() to contain at least one path."),
+		);
 
 		if let Some(paths) = paths.get(1..) {
 			for path in paths {
@@ -116,23 +107,23 @@ impl Walk {
 			.git_global(false)
 			.follow_links(options.symlinks)
 			.build_parallel();
-		Self { inner, extensions: Extensions::default() }
+		Self { inner, extensions:Extensions::default() }
 	}
 
 	pub fn paths(self) -> Vec<Box<Path>> {
 		let (sender, receiver) = mpsc::channel::<Vec<Box<Path>>>();
-		let mut builder = WalkBuilder { sender, extensions: self.extensions };
+		let mut builder = WalkBuilder { sender, extensions:self.extensions };
 		self.inner.visit(&mut builder);
 		drop(builder);
 		receiver.into_iter().flatten().collect()
 	}
 
-	pub fn with_extensions(mut self, extensions: Extensions) -> Self {
+	pub fn with_extensions(mut self, extensions:Extensions) -> Self {
 		self.extensions = extensions;
 		self
 	}
 
-	fn is_wanted_entry(dir_entry: &DirEntry, extensions: &Extensions) -> bool {
+	fn is_wanted_entry(dir_entry:&DirEntry, extensions:&Extensions) -> bool {
 		let Some(file_type) = dir_entry.file_type() else {
 			return false;
 		};
@@ -160,31 +151,25 @@ impl Walk {
 mod test {
 	use std::{env, ffi::OsString};
 
-	use crate::IgnoreOptions;
-
 	use super::{Extensions, Walk};
+	use crate::IgnoreOptions;
 
 	#[test]
 	fn test_walk_with_extensions() {
 		let fixture = env::current_dir().unwrap().join("fixtures/walk_dir");
 		let fixtures = vec![fixture.clone()];
 		let ignore_options = IgnoreOptions {
-			no_ignore: false,
-			ignore_path: OsString::from(".gitignore"),
-			ignore_pattern: vec![],
-			symlinks: false,
+			no_ignore:false,
+			ignore_path:OsString::from(".gitignore"),
+			ignore_pattern:vec![],
+			symlinks:false,
 		};
 
 		let mut paths = Walk::new(&fixtures, &ignore_options)
 			.with_extensions(Extensions(["js", "vue"].to_vec()))
 			.paths()
 			.into_iter()
-			.map(|path| {
-				path.strip_prefix(&fixture)
-					.unwrap()
-					.to_string_lossy()
-					.to_string()
-			})
+			.map(|path| path.strip_prefix(&fixture).unwrap().to_string_lossy().to_string())
 			.collect::<Vec<_>>();
 		paths.sort();
 

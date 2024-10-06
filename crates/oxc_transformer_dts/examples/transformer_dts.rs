@@ -31,8 +31,7 @@ fn main() {
 	println!("{source_text}\n");
 
 	let program = ret.program;
-	let ret = TransformerDts::new(&allocator, path, &source_text, ret.trivias)
-		.build(&program);
+	let ret = TransformerDts::new(&allocator, path, &source_text, ret.trivias).build(&program);
 
 	println!("Transformed dts:\n");
 	println!("{}\n", ret.source_text);

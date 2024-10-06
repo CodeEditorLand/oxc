@@ -8,15 +8,15 @@ use std::{
 };
 
 pub struct Snapshot {
-	git_repo_path: PathBuf,
-	sha: Option<String>,
+	git_repo_path:PathBuf,
+	sha:Option<String>,
 }
 
 impl Snapshot {
 	/// # Panics
 	///
 	/// * Git operation fails
-	pub fn new(git_repo_path: &Path, show_commit: bool) -> Self {
+	pub fn new(git_repo_path:&Path, show_commit:bool) -> Self {
 		let sha = show_commit.then(|| {
 			let path = git_repo_path.to_str().unwrap();
 			let output = Command::new("git")
@@ -26,28 +26,26 @@ impl Snapshot {
 				.stdout;
 			String::from_utf8(output).unwrap().trim().to_string()
 		});
-		Self { git_repo_path: git_repo_path.to_path_buf(), sha }
+		Self { git_repo_path:git_repo_path.to_path_buf(), sha }
 	}
 
 	/// # Panics
 	///
 	/// * File operation fails
-	pub fn save(&self, path: &Path, content: &str) {
+	pub fn save(&self, path:&Path, content:&str) {
 		let content = if let Some(new_sha) = &self.sha {
 			if path.exists() {
 				let file = fs::read_to_string(path).unwrap();
-				let line = file
-					.lines()
-					.next()
-					.unwrap_or_else(|| panic!("{path:?} content is empty."));
+				let line =
+					file.lines().next().unwrap_or_else(|| panic!("{path:?} content is empty."));
 				if let Some(old_sha) = line.strip_prefix("commit: ") {
-					let outdated = new_sha != old_sha
-						&& env::var("UPDATE_SNAPSHOT").is_err();
+					let outdated = new_sha != old_sha && env::var("UPDATE_SNAPSHOT").is_err();
 					assert!(
-                        !outdated,
-                        "\nRepository {:?} is outdated for {path:?}.\nsha from file = {old_sha}, sha from repo = {new_sha}\nPlease run `just submodules` to update it.\n",
-                        self.git_repo_path
-                    );
+						!outdated,
+						"\nRepository {:?} is outdated for {path:?}.\nsha from file = {old_sha}, \
+						 sha from repo = {new_sha}\nPlease run `just submodules` to update it.\n",
+						self.git_repo_path
+					);
 				}
 			}
 			Cow::Owned(format!("commit: {new_sha}\n\n{content}"))

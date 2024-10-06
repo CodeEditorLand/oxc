@@ -21,8 +21,9 @@ pub enum CommentPosition {
 	/// e.g.
 	///
 	/// ```
-	/// /* leading */ token;
-	/// /* leading */
+	/// // leading
+	/// token;
+	/// // leading
 	/// // leading
 	/// token;
 	/// ```
@@ -37,61 +38,51 @@ pub enum CommentPosition {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Comment {
 	/// The span of the comment text (without leading/trailing delimiters).
-	pub span: Span,
+	pub span:Span,
 
 	/// Line or block comment
-	pub kind: CommentKind,
+	pub kind:CommentKind,
 
 	/// Leading or trailing comment
-	pub position: CommentPosition,
+	pub position:CommentPosition,
 
 	/// Start of token this leading comment is attached to.
 	/// `/* Leading */ token`
 	///                ^ This start
 	/// NOTE: Trailing comment attachment is not computed yet.
-	pub attached_to: u32,
+	pub attached_to:u32,
 
 	/// Whether this comment has a preceding newline.
 	/// Used to avoid becoming a trailing comment in codegen.
-	pub preceded_by_newline: bool,
+	pub preceded_by_newline:bool,
 
 	/// Whether this comment has a tailing newline.
-	pub followed_by_newline: bool,
+	pub followed_by_newline:bool,
 }
 
 impl Comment {
 	#[inline]
-	pub fn new(start: u32, end: u32, kind: CommentKind) -> Self {
+	pub fn new(start:u32, end:u32, kind:CommentKind) -> Self {
 		let span = Span::new(start, end);
 		Self {
 			span,
 			kind,
-			position: CommentPosition::Trailing,
-			attached_to: 0,
-			preceded_by_newline: false,
-			followed_by_newline: false,
+			position:CommentPosition::Trailing,
+			attached_to:0,
+			preceded_by_newline:false,
+			followed_by_newline:false,
 		}
 	}
 
-	pub fn is_line(self) -> bool {
-		self.kind == CommentKind::Line
-	}
+	pub fn is_line(self) -> bool { self.kind == CommentKind::Line }
 
-	pub fn is_block(self) -> bool {
-		self.kind == CommentKind::Block
-	}
+	pub fn is_block(self) -> bool { self.kind == CommentKind::Block }
 
-	pub fn is_leading(self) -> bool {
-		self.position == CommentPosition::Leading
-	}
+	pub fn is_leading(self) -> bool { self.position == CommentPosition::Leading }
 
-	pub fn is_trailing(self) -> bool {
-		self.position == CommentPosition::Trailing
-	}
+	pub fn is_trailing(self) -> bool { self.position == CommentPosition::Trailing }
 
-	pub fn real_span(&self) -> Span {
-		Span::new(self.real_span_start(), self.real_span_end())
-	}
+	pub fn real_span(&self) -> Span { Span::new(self.real_span_start(), self.real_span_end()) }
 
 	pub fn real_span_end(&self) -> u32 {
 		match self.kind {
@@ -101,18 +92,15 @@ impl Comment {
 		}
 	}
 
-	pub fn real_span_start(&self) -> u32 {
-		self.span.start - 2
-	}
+	pub fn real_span_start(&self) -> u32 { self.span.start - 2 }
 
-	pub fn is_jsdoc(&self, source_text: &str) -> bool {
-		self.is_leading()
-			&& self.is_block()
-			&& self.span.source_text(source_text).starts_with('*')
+	pub fn is_jsdoc(&self, source_text:&str) -> bool {
+		self.is_leading() && self.is_block() && self.span.source_text(source_text).starts_with('*')
 	}
 }
 
-/// Sorted set of unique trivia comments, in ascending order by starting position.
+/// Sorted set of unique trivia comments, in ascending order by starting
+/// position.
 pub type SortedComments = Box<[Comment]>;
 
 #[derive(Debug, Clone, Default)]
@@ -121,69 +109,51 @@ pub struct Trivias(Arc<TriviasImpl>);
 #[derive(Debug, Default)]
 pub struct TriviasImpl {
 	/// Unique comments, ordered by increasing span-start.
-	comments: SortedComments,
+	comments:SortedComments,
 
-	irregular_whitespaces: Box<[Span]>,
+	irregular_whitespaces:Box<[Span]>,
 }
 
 impl Deref for Trivias {
 	type Target = TriviasImpl;
 
 	#[inline]
-	fn deref(&self) -> &Self::Target {
-		self.0.as_ref()
-	}
+	fn deref(&self) -> &Self::Target { self.0.as_ref() }
 }
 
 impl Trivias {
-	pub fn new(
-		comments: SortedComments,
-		irregular_whitespaces: Vec<Span>,
-	) -> Trivias {
+	pub fn new(comments:SortedComments, irregular_whitespaces:Vec<Span>) -> Trivias {
 		Self(Arc::new(TriviasImpl {
 			comments,
-			irregular_whitespaces: irregular_whitespaces.into_boxed_slice(),
+			irregular_whitespaces:irregular_whitespaces.into_boxed_slice(),
 		}))
 	}
 
-	pub fn comments(&self) -> impl Iterator<Item = &Comment> {
-		self.comments.iter()
-	}
+	pub fn comments(&self) -> impl Iterator<Item = &Comment> { self.comments.iter() }
 
-	pub fn comments_range<R>(&self, range: R) -> CommentsRange<'_>
+	pub fn comments_range<R>(&self, range:R) -> CommentsRange<'_>
 	where
-		R: RangeBounds<u32>,
-	{
-		CommentsRange::new(
-			&self.comments,
-			range.start_bound().cloned(),
-			range.end_bound().cloned(),
-		)
+		R: RangeBounds<u32>, {
+		CommentsRange::new(&self.comments, range.start_bound().cloned(), range.end_bound().cloned())
 	}
 
-	pub fn has_comments_between(&self, span: Span) -> bool {
+	pub fn has_comments_between(&self, span:Span) -> bool {
 		self.comments_range(span.start..span.end).count() > 0
 	}
 
-	pub fn irregular_whitespaces(&self) -> &[Span] {
-		&self.irregular_whitespaces
-	}
+	pub fn irregular_whitespaces(&self) -> &[Span] { &self.irregular_whitespaces }
 }
 
 /// Double-ended iterator over a range of comments, by starting position.
 pub struct CommentsRange<'a> {
-	comments: &'a [Comment],
-	range: (Bound<u32>, Bound<u32>),
-	current_start: usize,
-	current_end: usize,
+	comments:&'a [Comment],
+	range:(Bound<u32>, Bound<u32>),
+	current_start:usize,
+	current_end:usize,
 }
 
 impl<'a> CommentsRange<'a> {
-	fn new(
-		comments: &'a [Comment],
-		start: Bound<u32>,
-		end: Bound<u32>,
-	) -> Self {
+	fn new(comments:&'a [Comment], start:Bound<u32>, end:Bound<u32>) -> Self {
 		// Directly skip all comments that are already known to start
 		// outside the requested range.
 		let partition_start = {
@@ -204,9 +174,9 @@ impl<'a> CommentsRange<'a> {
 		};
 		Self {
 			comments,
-			range: (start, end),
-			current_start: partition_start,
-			current_end: partition_end,
+			range:(start, end),
+			current_start:partition_start,
+			current_end:partition_end,
 		}
 	}
 }
@@ -216,8 +186,7 @@ impl<'c> Iterator for CommentsRange<'c> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		if self.current_start < self.current_end {
-			for comment in &self.comments[self.current_start..self.current_end]
-			{
+			for comment in &self.comments[self.current_start..self.current_end] {
 				self.current_start = self.current_start.saturating_add(1);
 				if self.range.contains(&comment.span.start) {
 					return Some(comment);
@@ -236,9 +205,7 @@ impl<'c> Iterator for CommentsRange<'c> {
 impl<'c> DoubleEndedIterator for CommentsRange<'c> {
 	fn next_back(&mut self) -> Option<Self::Item> {
 		if self.current_start < self.current_end {
-			for comment in
-				self.comments[self.current_start..self.current_end].iter().rev()
-			{
+			for comment in self.comments[self.current_start..self.current_end].iter().rev() {
 				self.current_end = self.current_end.saturating_sub(1);
 				if self.range.contains(&comment.span.start) {
 					return Some(comment);
@@ -257,7 +224,7 @@ mod test {
 
 	#[test]
 	fn test_comments_range() {
-		let comments: SortedComments = vec![
+		let comments:SortedComments = vec![
 			Comment::new(0, 4, CommentKind::Line),
 			Comment::new(5, 9, CommentKind::Line),
 			Comment::new(10, 13, CommentKind::Line),
@@ -268,14 +235,8 @@ mod test {
 		let full_len = comments.len();
 		let trivias = Trivias::new(comments, vec![]);
 		assert_eq!(trivias.comments_range(..).count(), full_len);
-		assert_eq!(
-			trivias.comments_range(1..).count(),
-			full_len.saturating_sub(1)
-		);
-		assert_eq!(
-			trivias.comments_range(..18).count(),
-			full_len.saturating_sub(1)
-		);
+		assert_eq!(trivias.comments_range(1..).count(), full_len.saturating_sub(1));
+		assert_eq!(trivias.comments_range(..18).count(), full_len.saturating_sub(1));
 		assert_eq!(trivias.comments_range(..=18).count(), full_len);
 	}
 }

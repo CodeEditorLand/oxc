@@ -8,15 +8,16 @@ use oxc_span::{GetSpan, Span};
 use crate::{
 	diagnostics,
 	lexer::{Kind, LexerCheckpoint, LexerContext, Token},
-	Context, ParserImpl,
+	Context,
+	ParserImpl,
 };
 
 #[derive(Clone, Copy)]
 pub struct ParserCheckpoint<'a> {
-	lexer: LexerCheckpoint<'a>,
-	cur_token: Token,
-	prev_span_end: u32,
-	errors_pos: usize,
+	lexer:LexerCheckpoint<'a>,
+	cur_token:Token,
+	prev_span_end:u32,
+	errors_pos:usize,
 }
 
 impl<'a> ParserImpl<'a> {
@@ -27,7 +28,7 @@ impl<'a> ParserImpl<'a> {
 	}
 
 	#[inline]
-	pub(crate) fn end_span(&self, mut span: Span) -> Span {
+	pub(crate) fn end_span(&self, mut span:Span) -> Span {
 		span.end = self.prev_token_end;
 		debug_assert!(span.end >= span.start);
 		span
@@ -35,32 +36,24 @@ impl<'a> ParserImpl<'a> {
 
 	/// Get current token
 	#[inline]
-	pub(crate) fn cur_token(&self) -> Token {
-		self.token
-	}
+	pub(crate) fn cur_token(&self) -> Token { self.token }
 
 	/// Get current Kind
 	#[inline]
-	pub(crate) fn cur_kind(&self) -> Kind {
-		self.token.kind
-	}
+	pub(crate) fn cur_kind(&self) -> Kind { self.token.kind }
 
 	/// Get current source text
 	pub(crate) fn cur_src(&self) -> &'a str {
 		let range = self.cur_token().span();
 		// SAFETY:
-		// range comes from the parser, which are ensured to meeting the criteria of `get_unchecked`.
+		// range comes from the parser, which are ensured to meeting the
+		// criteria of `get_unchecked`.
 
-		unsafe {
-			self.source_text
-				.get_unchecked(range.start as usize..range.end as usize)
-		}
+		unsafe { self.source_text.get_unchecked(range.start as usize..range.end as usize) }
 	}
 
 	/// Get current string
-	pub(crate) fn cur_string(&self) -> &'a str {
-		self.lexer.get_string(self.token)
-	}
+	pub(crate) fn cur_string(&self) -> &'a str { self.lexer.get_string(self.token) }
 
 	/// Get current template string
 	pub(crate) fn cur_template_string(&self) -> Option<&'a str> {
@@ -69,25 +62,19 @@ impl<'a> ParserImpl<'a> {
 
 	/// Peek next token, returns EOF for final peek
 	#[inline]
-	pub(crate) fn peek_token(&mut self) -> Token {
-		self.lexer.lookahead(1)
-	}
+	pub(crate) fn peek_token(&mut self) -> Token { self.lexer.lookahead(1) }
 
 	/// Peek next kind, returns EOF for final peek
 	#[inline]
-	pub(crate) fn peek_kind(&mut self) -> Kind {
-		self.peek_token().kind
-	}
+	pub(crate) fn peek_kind(&mut self) -> Kind { self.peek_token().kind }
 
 	/// Peek at kind
 	#[inline]
-	pub(crate) fn peek_at(&mut self, kind: Kind) -> bool {
-		self.peek_token().kind == kind
-	}
+	pub(crate) fn peek_at(&mut self, kind:Kind) -> bool { self.peek_token().kind == kind }
 
 	/// Peek nth token
 	#[inline]
-	pub(crate) fn nth(&mut self, n: u8) -> Token {
+	pub(crate) fn nth(&mut self, n:u8) -> Token {
 		if n == 0 {
 			return self.cur_token();
 		}
@@ -96,27 +83,22 @@ impl<'a> ParserImpl<'a> {
 
 	/// Peek at nth kind
 	#[inline]
-	pub(crate) fn nth_at(&mut self, n: u8, kind: Kind) -> bool {
-		self.nth(n).kind == kind
-	}
+	pub(crate) fn nth_at(&mut self, n:u8, kind:Kind) -> bool { self.nth(n).kind == kind }
 
 	/// Peek nth kind
 	#[inline]
-	pub(crate) fn nth_kind(&mut self, n: u8) -> Kind {
-		self.nth(n).kind
-	}
+	pub(crate) fn nth_kind(&mut self, n:u8) -> Kind { self.nth(n).kind }
 
 	/// Checks if the current index has token `Kind`
 	#[inline]
-	pub(crate) fn at(&self, kind: Kind) -> bool {
-		self.cur_kind() == kind
-	}
+	pub(crate) fn at(&self, kind:Kind) -> bool { self.cur_kind() == kind }
 
-	/// `StringValue` of `IdentifierName` normalizes any Unicode escape sequences
-	/// in `IdentifierName` hence such escapes cannot be used to write an Identifier
-	/// whose code point sequence is the same as a `ReservedWord`.
+	/// `StringValue` of `IdentifierName` normalizes any Unicode escape
+	/// sequences in `IdentifierName` hence such escapes cannot be used to
+	/// write an Identifier whose code point sequence is the same as a
+	/// `ReservedWord`.
 	#[inline]
-	fn test_escaped_keyword(&mut self, kind: Kind) {
+	fn test_escaped_keyword(&mut self, kind:Kind) {
 		if self.cur_token().escaped() && kind.is_all_keyword() {
 			let span = self.cur_token().span();
 			self.error(diagnostics::escaped_keyword(span));
@@ -125,7 +107,7 @@ impl<'a> ParserImpl<'a> {
 
 	/// Move to the next token
 	/// Checks if the current token is escaped if it is a keyword
-	fn advance(&mut self, kind: Kind) {
+	fn advance(&mut self, kind:Kind) {
 		self.test_escaped_keyword(kind);
 		self.prev_token_end = self.token.end;
 		self.token = self.lexer.next_token();
@@ -133,7 +115,7 @@ impl<'a> ParserImpl<'a> {
 
 	/// Move to the next `JSXChild`
 	/// Checks if the current token is escaped if it is a keyword
-	fn advance_for_jsx_child(&mut self, kind: Kind) {
+	fn advance_for_jsx_child(&mut self, kind:Kind) {
 		self.test_escaped_keyword(kind);
 		self.prev_token_end = self.token.end;
 		self.token = self.lexer.next_jsx_child();
@@ -141,7 +123,7 @@ impl<'a> ParserImpl<'a> {
 
 	/// Advance and return true if we are at `Kind`, return false otherwise
 	#[inline]
-	pub(crate) fn eat(&mut self, kind: Kind) -> bool {
+	pub(crate) fn eat(&mut self, kind:Kind) -> bool {
 		if self.at(kind) {
 			self.advance(kind);
 			return true;
@@ -151,7 +133,7 @@ impl<'a> ParserImpl<'a> {
 
 	/// Advance and return true if we are at `Kind`
 	#[inline]
-	pub(crate) fn bump(&mut self, kind: Kind) {
+	pub(crate) fn bump(&mut self, kind:Kind) {
 		if self.at(kind) {
 			self.advance(kind);
 		}
@@ -159,15 +141,11 @@ impl<'a> ParserImpl<'a> {
 
 	/// Advance any token
 	#[inline]
-	pub(crate) fn bump_any(&mut self) {
-		self.advance(self.cur_kind());
-	}
+	pub(crate) fn bump_any(&mut self) { self.advance(self.cur_kind()); }
 
 	/// Advance and change token type, useful for changing keyword to ident
 	#[inline]
-	pub(crate) fn bump_remap(&mut self, kind: Kind) {
-		self.advance(kind);
-	}
+	pub(crate) fn bump_remap(&mut self, kind:Kind) { self.advance(kind); }
 
 	/// [Automatic Semicolon Insertion](https://tc39.es/ecma262/#sec-automatic-semicolon-insertion)
 	/// # Errors
@@ -191,14 +169,10 @@ impl<'a> ParserImpl<'a> {
 	}
 
 	/// # Errors
-	pub(crate) fn expect_without_advance(&mut self, kind: Kind) -> Result<()> {
+	pub(crate) fn expect_without_advance(&mut self, kind:Kind) -> Result<()> {
 		if !self.at(kind) {
 			let range = self.cur_token().span();
-			return Err(diagnostics::expect_token(
-				kind.to_str(),
-				self.cur_kind().to_str(),
-				range,
-			));
+			return Err(diagnostics::expect_token(kind.to_str(), self.cur_kind().to_str(), range));
 		}
 		Ok(())
 	}
@@ -206,15 +180,15 @@ impl<'a> ParserImpl<'a> {
 	/// Expect a `Kind` or return error
 	/// # Errors
 	#[inline]
-	pub(crate) fn expect(&mut self, kind: Kind) -> Result<()> {
+	pub(crate) fn expect(&mut self, kind:Kind) -> Result<()> {
 		self.expect_without_advance(kind)?;
 		self.advance(kind);
 		Ok(())
 	}
 
-	/// Expect the next next token to be a `JsxChild`, i.e. `<` or `{` or `JSXText`
-	/// # Errors
-	pub(crate) fn expect_jsx_child(&mut self, kind: Kind) -> Result<()> {
+	/// Expect the next next token to be a `JsxChild`, i.e. `<` or `{` or
+	/// `JSXText` # Errors
+	pub(crate) fn expect_jsx_child(&mut self, kind:Kind) -> Result<()> {
 		self.expect_without_advance(kind)?;
 		self.advance_for_jsx_child(kind);
 		Ok(())
@@ -222,10 +196,7 @@ impl<'a> ParserImpl<'a> {
 
 	/// Expect the next next token to be a `JsxString` or any other token
 	/// # Errors
-	pub(crate) fn expect_jsx_attribute_value(
-		&mut self,
-		kind: Kind,
-	) -> Result<()> {
+	pub(crate) fn expect_jsx_attribute_value(&mut self, kind:Kind) -> Result<()> {
 		self.lexer.set_context(LexerContext::JsxAttributeValue);
 		self.expect(kind)?;
 		self.lexer.set_context(LexerContext::Regular);
@@ -234,8 +205,7 @@ impl<'a> ParserImpl<'a> {
 
 	/// Tell lexer to read a regex
 	pub(crate) fn read_regex(&mut self) -> Result<(u32, RegExpFlags)> {
-		let (token, pattern_end, flags) =
-			self.lexer.next_regex(self.cur_kind())?;
+		let (token, pattern_end, flags) = self.lexer.next_regex(self.cur_kind())?;
 		self.token = token;
 		Ok((pattern_end, flags))
 	}
@@ -247,7 +217,8 @@ impl<'a> ParserImpl<'a> {
 		}
 	}
 
-	/// Tell lexer to continue reading jsx identifier if the lexer character position is at `-` for `<component-name>`
+	/// Tell lexer to continue reading jsx identifier if the lexer character
+	/// position is at `-` for `<component-name>`
 	pub(crate) fn continue_lex_jsx_identifier(&mut self) {
 		if let Some(token) = self.lexer.continue_lex_jsx_identifier() {
 			self.token = token;
@@ -286,20 +257,16 @@ impl<'a> ParserImpl<'a> {
 
 	pub(crate) fn checkpoint(&self) -> ParserCheckpoint<'a> {
 		ParserCheckpoint {
-			lexer: self.lexer.checkpoint(),
-			cur_token: self.token,
-			prev_span_end: self.prev_token_end,
-			errors_pos: self.errors.len(),
+			lexer:self.lexer.checkpoint(),
+			cur_token:self.token,
+			prev_span_end:self.prev_token_end,
+			errors_pos:self.errors.len(),
 		}
 	}
 
-	pub(crate) fn rewind(&mut self, checkpoint: ParserCheckpoint<'a>) {
-		let ParserCheckpoint {
-			lexer,
-			cur_token,
-			prev_span_end,
-			errors_pos: errors_lens,
-		} = checkpoint;
+	pub(crate) fn rewind(&mut self, checkpoint:ParserCheckpoint<'a>) {
+		let ParserCheckpoint { lexer, cur_token, prev_span_end, errors_pos: errors_lens } =
+			checkpoint;
 
 		self.lexer.rewind(lexer);
 		self.token = cur_token;
@@ -310,7 +277,7 @@ impl<'a> ParserImpl<'a> {
 	/// # Errors
 	pub(crate) fn try_parse<T>(
 		&mut self,
-		func: impl FnOnce(&mut ParserImpl<'a>) -> Result<T>,
+		func:impl FnOnce(&mut ParserImpl<'a>) -> Result<T>,
 	) -> Option<T> {
 		let checkpoint = self.checkpoint();
 		let ctx = self.ctx;
@@ -324,10 +291,7 @@ impl<'a> ParserImpl<'a> {
 		}
 	}
 
-	pub(crate) fn lookahead<U>(
-		&mut self,
-		predicate: impl Fn(&mut ParserImpl<'a>) -> U,
-	) -> U {
+	pub(crate) fn lookahead<U>(&mut self, predicate:impl Fn(&mut ParserImpl<'a>) -> U) -> U {
 		let checkpoint = self.checkpoint();
 		let answer = predicate(self);
 		self.rewind(checkpoint);
@@ -336,15 +300,9 @@ impl<'a> ParserImpl<'a> {
 
 	#[allow(clippy::inline_always)]
 	#[inline(always)] // inline because this is always on a hot path
-	pub(crate) fn context<F, T>(
-		&mut self,
-		add_flags: Context,
-		remove_flags: Context,
-		cb: F,
-	) -> T
+	pub(crate) fn context<F, T>(&mut self, add_flags:Context, remove_flags:Context, cb:F) -> T
 	where
-		F: FnOnce(&mut Self) -> T,
-	{
+		F: FnOnce(&mut Self) -> T, {
 		let ctx = self.ctx;
 		self.ctx = ctx.difference(remove_flags).union(add_flags);
 		let result = cb(self);
@@ -359,13 +317,12 @@ impl<'a> ParserImpl<'a> {
 
 	pub(crate) fn parse_normal_list<F, T>(
 		&mut self,
-		open: Kind,
-		close: Kind,
-		f: F,
+		open:Kind,
+		close:Kind,
+		f:F,
 	) -> Result<Vec<'a, T>>
 	where
-		F: Fn(&mut Self) -> Result<Option<T>>,
-	{
+		F: Fn(&mut Self) -> Result<Option<T>>, {
 		self.expect(open)?;
 		let mut list = self.ast.vec();
 		loop {
@@ -385,14 +342,13 @@ impl<'a> ParserImpl<'a> {
 
 	pub(crate) fn parse_delimited_list<F, T>(
 		&mut self,
-		close: Kind,
-		separator: Kind,
-		trailing_separator: bool,
-		f: F,
+		close:Kind,
+		separator:Kind,
+		trailing_separator:bool,
+		f:F,
 	) -> Result<Vec<'a, T>>
 	where
-		F: Fn(&mut Self) -> Result<T>,
-	{
+		F: Fn(&mut Self) -> Result<T>, {
 		let mut list = self.ast.vec();
 		let mut first = true;
 		loop {
@@ -403,10 +359,7 @@ impl<'a> ParserImpl<'a> {
 			if first {
 				first = false;
 			} else {
-				if !trailing_separator
-					&& self.at(separator)
-					&& self.peek_at(close)
-				{
+				if !trailing_separator && self.at(separator) && self.peek_at(close) {
 					break;
 				}
 				self.expect(separator)?;
@@ -421,15 +374,14 @@ impl<'a> ParserImpl<'a> {
 
 	pub(crate) fn parse_delimited_list_with_rest<E, R, A, B>(
 		&mut self,
-		close: Kind,
-		parse_element: E,
-		parse_rest: R,
+		close:Kind,
+		parse_element:E,
+		parse_rest:R,
 	) -> Result<(Vec<'a, A>, Option<B>)>
 	where
 		E: Fn(&mut Self) -> Result<A>,
 		R: Fn(&mut Self) -> Result<B>,
-		B: GetSpan,
-	{
+		B: GetSpan, {
 		let mut list = self.ast.vec();
 		let mut rest = None;
 		let mut first = true;
@@ -449,9 +401,7 @@ impl<'a> ParserImpl<'a> {
 
 			if self.at(Kind::Dot3) {
 				if let Some(r) = rest.replace(parse_rest(self)?) {
-					self.error(diagnostics::binding_rest_element_last(
-						r.span(),
-					));
+					self.error(diagnostics::binding_rest_element_last(r.span()));
 				}
 			} else {
 				list.push(parse_element(self)?);

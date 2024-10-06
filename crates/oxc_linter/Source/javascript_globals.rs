@@ -1,6 +1,6 @@
 use phf::{phf_map, Map};
 
-pub static GLOBALS: Map<&'static str, Map<&'static str, bool>> = phf_map! {
+pub static GLOBALS:Map<&'static str, Map<&'static str, bool>> = phf_map! {
 	"builtin" => phf_map! {
 		"AggregateError" => false,
 		"Array" => false,

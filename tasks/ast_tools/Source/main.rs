@@ -17,19 +17,21 @@ mod rust_ast;
 mod schema;
 mod util;
 
-use derives::{
-	DeriveCloneIn, DeriveContentEq, DeriveContentHash, DeriveGetSpan,
-	DeriveGetSpanMut,
-};
+use derives::{DeriveCloneIn, DeriveContentEq, DeriveContentHash, DeriveGetSpan, DeriveGetSpanMut};
 use fmt::cargo_fmt;
 use generators::{
-	AssertLayouts, AstBuilderGenerator, AstKindGenerator, Generator,
-	GeneratorOutput, VisitGenerator, VisitMutGenerator,
+	AssertLayouts,
+	AstBuilderGenerator,
+	AstKindGenerator,
+	Generator,
+	GeneratorOutput,
+	VisitGenerator,
+	VisitMutGenerator,
 };
 use passes::{CalcLayout, Linker};
 use util::{write_all_to, NormalizeError};
 
-static SOURCE_PATHS: &[&str] = &[
+static SOURCE_PATHS:&[&str] = &[
 	"crates/oxc_ast/src/ast/literal.rs",
 	"crates/oxc_ast/src/ast/js.rs",
 	"crates/oxc_ast/src/ast/ts.rs",
@@ -41,7 +43,7 @@ static SOURCE_PATHS: &[&str] = &[
 	"crates/oxc_regular_expression/src/ast.rs",
 ];
 
-const AST_CRATE: &str = "crates/oxc_ast";
+const AST_CRATE:&str = "crates/oxc_ast";
 
 type Result<R> = std::result::Result<R, String>;
 type TypeId = usize;
@@ -50,22 +52,21 @@ type TypeId = usize;
 pub struct CliOptions {
 	/// Runs all generators but won't write anything down.
 	#[bpaf(switch)]
-	dry_run: bool,
+	dry_run:bool,
 	/// Don't run cargo fmt at the end
 	#[bpaf(switch)]
-	no_fmt: bool,
+	no_fmt:bool,
 	/// Prints no logs.
-	quiet: bool,
+	quiet:bool,
 	/// Path of output `schema.json`.
-	schema: Option<std::path::PathBuf>,
+	schema:Option<std::path::PathBuf>,
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 	let cli_options = cli_options().run();
 
 	if cli_options.quiet {
-		logger::quiet()
-			.normalize_with("Failed to set logger to `quiet` mode.")?;
+		logger::quiet().normalize_with("Failed to set logger to `quiet` mode.")?;
 	}
 
 	let AstCodegenResult { outputs, schema } = SOURCE_PATHS
@@ -96,22 +97,15 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 				path
 			})
 			.collect();
-		write_ci_filter(
-			SOURCE_PATHS,
-			side_effects,
-			".github/.generated_ast_watch_list.yml",
-		)?;
+		write_ci_filter(SOURCE_PATHS, side_effects, ".github/.generated_ast_watch_list.yml")?;
 	}
 
 	if !cli_options.no_fmt {
 		cargo_fmt();
 	}
 
-	if let CliOptions { schema: Some(schema_path), dry_run: false, .. } =
-		cli_options
-	{
-		let path =
-			schema_path.to_str().expect("invalid path for schema output.");
+	if let CliOptions { schema: Some(schema_path), dry_run: false, .. } = cli_options {
+		let path = schema_path.to_str().expect("invalid path for schema output.");
 		let schema = serde_json::to_string_pretty(&schema.defs).normalize()?;
 		write_all_to(schema.as_bytes(), path)?;
 	}
@@ -119,24 +113,22 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 	Ok(())
 }
 
-fn output(krate: &str, path: &str) -> PathBuf {
+fn output(krate:&str, path:&str) -> PathBuf {
 	std::path::PathBuf::from_iter(vec![krate, "src", "generated", path])
 }
 
 fn write_ci_filter(
-	inputs: &[&str],
-	side_effects: Vec<String>,
-	output_path: &str,
+	inputs:&[&str],
+	side_effects:Vec<String>,
+	output_path:&str,
 ) -> std::io::Result<()> {
 	let file = file!().replace('\\', "/");
 	let mut output = format!(
 		"\
-        # To edit this generated file you have to edit `{file}`\n\
-        # Auto-generated code, DO NOT EDIT DIRECTLY!\n\n\
-        src:\n"
+        # To edit this generated file you have to edit `{file}`\n# Auto-generated code, DO NOT \
+		 EDIT DIRECTLY!\n\nsrc:\n"
 	);
-	let mut push_item =
-		|path: &str| output.push_str(format!("  - '{path}'\n").as_str());
+	let mut push_item = |path:&str| output.push_str(format!("  - '{path}'\n").as_str());
 
 	for input in inputs {
 		push_item(input);
@@ -159,15 +151,11 @@ fn write_ci_filter(
 mod logger {
 	use std::sync::OnceLock;
 
-	static LOG: OnceLock<bool> = OnceLock::new();
+	static LOG:OnceLock<bool> = OnceLock::new();
 
-	pub(super) fn quiet() -> Result<(), bool> {
-		LOG.set(false)
-	}
+	pub(super) fn quiet() -> Result<(), bool> { LOG.set(false) }
 
-	pub(super) fn __internal_log_enable() -> bool {
-		*LOG.get_or_init(|| true)
-	}
+	pub(super) fn __internal_log_enable() -> bool { *LOG.get_or_init(|| true) }
 
 	macro_rules! log {
         ($fmt:literal $(, $args:expr)*) => {
@@ -183,7 +171,8 @@ mod logger {
         }
     }
 
-	pub(super) use {log, logln};
+	pub(super) use log;
+	pub(super) use logln;
 }
 
 pub(crate) use logger::{log, logln};

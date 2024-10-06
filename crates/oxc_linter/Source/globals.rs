@@ -1,6 +1,6 @@
 use phf::{phf_map, phf_set, Map};
 
-pub const PRE_DEFINE_VAR: Map<&'static str, bool> = phf_map! {
+pub const PRE_DEFINE_VAR:Map<&'static str, bool> = phf_map! {
 	"undefined" => false,
 	"Infinity" => false,
 	"NaN" => false,
@@ -8,7 +8,7 @@ pub const PRE_DEFINE_VAR: Map<&'static str, bool> = phf_map! {
 	"arguments" => false,
 };
 
-pub const GLOBAL_OBJECT_NAMES: phf::Set<&'static str> = phf_set! {
+pub const GLOBAL_OBJECT_NAMES:phf::Set<&'static str> = phf_set! {
 	"global",
 	"globalThis",
 	"self",
@@ -17,7 +17,7 @@ pub const GLOBAL_OBJECT_NAMES: phf::Set<&'static str> = phf_set! {
 
 /// set of valid ARIA properties from the WAI-ARIA 1.1 specifications.
 /// Reference: <https://www.w3.org/TR/wai-aria/#state_prop_def>
-pub const VALID_ARIA_PROPS: phf::Set<&'static str> = phf_set! {
+pub const VALID_ARIA_PROPS:phf::Set<&'static str> = phf_set! {
 	"aria-activedescendant",
 	"aria-atomic",
 	"aria-autocomplete",
@@ -71,7 +71,7 @@ pub const VALID_ARIA_PROPS: phf::Set<&'static str> = phf_set! {
 /// set of valid ARIA role definitions
 /// Reference: <https://www.w3.org/TR/wai-aria/#role_definitions>
 /// Reference: <https://github.com/A11yance/aria-query/blob/main/src/rolesMap.js>
-pub const VALID_ARIA_ROLES: phf::Set<&'static str> = phf_set! {
+pub const VALID_ARIA_ROLES:phf::Set<&'static str> = phf_set! {
   "alert",
   "alertdialog",
   "application",
@@ -199,7 +199,7 @@ pub const VALID_ARIA_ROLES: phf::Set<&'static str> = phf_set! {
   "treeitem"
 };
 
-pub const HTML_TAG: phf::Set<&'static str> = phf_set! {
+pub const HTML_TAG:phf::Set<&'static str> = phf_set! {
 	"a",
 	"abbr",
 	"acronym",
@@ -356,7 +356,7 @@ pub const HTML_TAG: phf::Set<&'static str> = phf_set! {
 /// Reference: <https://github.com/GoogleChrome/accessibility-developer-tools/wiki/Audit-Rules#ax_aria_12>
 /// Reference: <https://www.w3.org/TR/html-aria/#rules-wd>
 /// Reference: <https://github.com/A11yance/aria-query/blob/main/src/domMap.js>
-pub const RESERVED_HTML_TAG: phf::Set<&'static str> = phf_set! {
+pub const RESERVED_HTML_TAG:phf::Set<&'static str> = phf_set! {
 	"base",
 	"col",
 	"colgroup",

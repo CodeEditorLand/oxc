@@ -5,75 +5,71 @@
 use std::cell::Cell;
 
 use more_asserts::assert_le;
-
 use oxc_ast::{
 	ast::{
-		BindingIdentifier, IdentifierReference, Program, TSEnumMemberName,
+		BindingIdentifier,
+		IdentifierReference,
+		Program,
+		TSEnumMemberName,
 		TSModuleDeclarationName,
 	},
 	visit::walk::{walk_ts_enum_member_name, walk_ts_module_declaration_name},
-	AstKind, Visit,
+	AstKind,
+	Visit,
 };
 use oxc_syntax::scope::{ScopeFlags, ScopeId};
 
 #[derive(Default, Debug)]
 pub(crate) struct Counts {
-	pub nodes: usize,
-	pub scopes: usize,
-	pub symbols: usize,
-	pub references: usize,
+	pub nodes:usize,
+	pub scopes:usize,
+	pub symbols:usize,
+	pub references:usize,
 }
 
 impl Counts {
-	pub fn count(program: &Program) -> Self {
+	pub fn count(program:&Program) -> Self {
 		let mut counts = Counts::default();
 		counts.visit_program(program);
 		counts
 	}
 
 	#[cfg(debug_assertions)]
-	pub fn assert_accurate(actual: &Self, estimated: &Self) {
+	pub fn assert_accurate(actual:&Self, estimated:&Self) {
 		assert_eq!(actual.nodes, estimated.nodes, "nodes count mismatch");
 		assert_eq!(actual.scopes, estimated.scopes, "scopes count mismatch");
-		assert_eq!(
-			actual.references, estimated.references,
-			"references count mismatch"
-		);
-		// `Counts` may overestimate number of symbols, because multiple `BindingIdentifier`s
-		// can result in only a single symbol.
+		assert_eq!(actual.references, estimated.references, "references count mismatch");
+		// `Counts` may overestimate number of symbols, because multiple
+		// `BindingIdentifier`s can result in only a single symbol.
 		// e.g. `var x; var x;` = 2 x `BindingIdentifier` but 1 x symbol.
-		// This is not a big problem - allocating a `Vec` with excess capacity is cheap.
-		// It's allocating with *not enough* capacity which is costly, as then the `Vec`
-		// will grow and reallocate.
+		// This is not a big problem - allocating a `Vec` with excess capacity
+		// is cheap. It's allocating with *not enough* capacity which is
+		// costly, as then the `Vec` will grow and reallocate.
 		assert_le!(actual.symbols, estimated.symbols, "symbols count mismatch");
 	}
 }
 
 impl<'a> Visit<'a> for Counts {
 	#[inline]
-	fn enter_node(&mut self, _: AstKind<'a>) {
-		self.nodes += 1;
-	}
+	fn enter_node(&mut self, _:AstKind<'a>) { self.nodes += 1; }
 
 	#[inline]
-	fn enter_scope(&mut self, _: ScopeFlags, _: &Cell<Option<ScopeId>>) {
-		self.scopes += 1;
-	}
+	fn enter_scope(&mut self, _:ScopeFlags, _:&Cell<Option<ScopeId>>) { self.scopes += 1; }
 
 	#[inline]
-	fn visit_binding_identifier(&mut self, _: &BindingIdentifier<'a>) {
+	fn visit_binding_identifier(&mut self, _:&BindingIdentifier<'a>) {
 		self.nodes += 1;
 		self.symbols += 1;
 	}
 
 	#[inline]
-	fn visit_identifier_reference(&mut self, _: &IdentifierReference<'a>) {
+	fn visit_identifier_reference(&mut self, _:&IdentifierReference<'a>) {
 		self.nodes += 1;
 		self.references += 1;
 	}
 
 	#[inline]
-	fn visit_ts_enum_member_name(&mut self, it: &TSEnumMemberName<'a>) {
+	fn visit_ts_enum_member_name(&mut self, it:&TSEnumMemberName<'a>) {
 		if !it.is_expression() {
 			self.symbols += 1;
 		}
@@ -81,10 +77,7 @@ impl<'a> Visit<'a> for Counts {
 	}
 
 	#[inline]
-	fn visit_ts_module_declaration_name(
-		&mut self,
-		it: &TSModuleDeclarationName<'a>,
-	) {
+	fn visit_ts_module_declaration_name(&mut self, it:&TSModuleDeclarationName<'a>) {
 		self.symbols += 1;
 		walk_ts_module_declaration_name(self, it);
 	}

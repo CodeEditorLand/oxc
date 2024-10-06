@@ -6,11 +6,11 @@
 	not(target_os = "windows")
 ))]
 #[global_allocator]
-static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+static GLOBAL:jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 #[cfg(all(feature = "allocator", not(miri), target_os = "windows"))]
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL:mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use oxlint::cli::{CliRunResult, LintRunner, Runner};
 
@@ -23,12 +23,10 @@ fn main() -> CliRunResult {
 	LintRunner::new(command).run()
 }
 
-// Initialize the data which relies on `is_atty` system calls so they don't block subsequent threads.
+// Initialize the data which relies on `is_atty` system calls so they don't
+// block subsequent threads.
 fn init_miette() {
-	miette::set_hook(Box::new(|_| {
-		Box::new(miette::MietteHandlerOpts::new().build())
-	}))
-	.unwrap();
+	miette::set_hook(Box::new(|_| Box::new(miette::MietteHandlerOpts::new().build()))).unwrap();
 }
 
 /// To debug `oxc_resolver`:

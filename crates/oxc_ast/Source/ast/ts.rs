@@ -3,9 +3,10 @@
 //! - [AST Spec](https://github.com/typescript-eslint/typescript-eslint/tree/main/packages/ast-spec)
 //! - [Archived TypeScript spec](https://github.com/microsoft/TypeScript/blob/3c99d50da5a579d9fa92d02664b1b66d4ff55944/doc/spec-ARCHIVED.md)
 
-// NB: `#[span]`, `#[scope(...)]`,`#[visit(...)]` and `#[generate_derive(...)]` do NOT do anything to the code.
-// They are purely markers for codegen used in `tasks/ast_tools` and `crates/oxc_traverse/scripts`. See docs in those crates.
-// Read [`macro@oxc_ast_macros::ast`] for more information.
+// NB: `#[span]`, `#[scope(...)]`,`#[visit(...)]` and `#[generate_derive(...)]`
+// do NOT do anything to the code. They are purely markers for codegen used in
+// `tasks/ast_tools` and `crates/oxc_traverse/scripts`. See docs in those
+// crates. Read [`macro@oxc_ast_macros::ast`] for more information.
 
 // Silence erroneous warnings from Rust Analyser for `#[derive(Tsify)]`
 #![allow(non_snake_case)]
@@ -25,7 +26,7 @@ use super::{inherit_variants, js::*, jsx::*, literal::*};
 
 #[cfg(feature = "serialize")]
 #[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
-const TS_APPEND_CONTENT: &'static str = r#"
+const TS_APPEND_CONTENT:&'static str = r#"
 export interface TSIndexSignatureName extends Span {
     type: "Identifier",
     name: Atom,
@@ -49,11 +50,11 @@ export interface TSIndexSignatureName extends Span {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSThisParameter<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub this_span: Span,
-    /// Type type the `this` keyword will have in the function
-    pub type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub this_span:Span,
+	/// Type type the `this` keyword will have in the function
+	pub type_annotation:Option<Box<'a, TSTypeAnnotation<'a>>>,
 }
 
 /// Enum Declaration
@@ -83,17 +84,17 @@ pub struct TSThisParameter<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSEnumDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub id: BindingIdentifier<'a>,
-    #[scope(enter_before)]
-    pub members: Vec<'a, TSEnumMember<'a>>,
-    /// `true` for const enums
-    pub r#const: bool,
-    pub declare: bool,
-    #[serde(skip)]
-    #[clone_in(default)]
-    pub scope_id: Cell<Option<ScopeId>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub id:BindingIdentifier<'a>,
+	#[scope(enter_before)]
+	pub members:Vec<'a, TSEnumMember<'a>>,
+	/// `true` for const enums
+	pub r#const:bool,
+	pub declare:bool,
+	#[serde(skip)]
+	#[clone_in(default)]
+	pub scope_id:Cell<Option<ScopeId>>,
 }
 
 /// Enum Member
@@ -119,10 +120,10 @@ pub struct TSEnumDeclaration<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSEnumMember<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub id: TSEnumMemberName<'a>,
-    pub initializer: Option<Expression<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub id:TSEnumMemberName<'a>,
+	pub initializer:Option<Expression<'a>>,
 }
 
 inherit_variants! {
@@ -138,14 +139,14 @@ inherit_variants! {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum TSEnumMemberName<'a> {
-    StaticIdentifier(Box<'a, IdentifierName<'a>>) = 64,
-    StaticStringLiteral(Box<'a, StringLiteral<'a>>) = 65,
-    StaticTemplateLiteral(Box<'a, TemplateLiteral<'a>>) = 66,
-    // Invalid Grammar `enum E { 1 }`
-    StaticNumericLiteral(Box<'a, NumericLiteral<'a>>) = 67,
-    // Invalid Grammar `enum E { [computed] }`
-    // `Expression` variants added here by `inherit_variants!` macro
-    @inherit Expression
+	StaticIdentifier(Box<'a, IdentifierName<'a>>) = 64,
+	StaticStringLiteral(Box<'a, StringLiteral<'a>>) = 65,
+	StaticTemplateLiteral(Box<'a, TemplateLiteral<'a>>) = 66,
+	// Invalid Grammar `enum E { 1 }`
+	StaticNumericLiteral(Box<'a, NumericLiteral<'a>>) = 67,
+	// Invalid Grammar `enum E { [computed] }`
+	// `Expression` variants added here by `inherit_variants!` macro
+	@inherit Expression
 }
 }
 
@@ -167,11 +168,11 @@ pub enum TSEnumMemberName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeAnnotation<'a> {
-    #[serde(flatten)]
-    /// starts at the `:` token and ends at the end of the type annotation
-    pub span: Span,
-    /// The actual type in the annotation
-    pub type_annotation: TSType<'a>,
+	#[serde(flatten)]
+	/// starts at the `:` token and ends at the end of the type annotation
+	pub span:Span,
+	/// The actual type in the annotation
+	pub type_annotation:TSType<'a>,
 }
 
 /// TypeScript Literal Type
@@ -194,9 +195,9 @@ pub struct TSTypeAnnotation<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSLiteralType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub literal: TSLiteral<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub literal:TSLiteral<'a>,
 }
 
 /// A literal in a [`TSLiteralType`].
@@ -206,20 +207,20 @@ pub struct TSLiteralType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum TSLiteral<'a> {
-    BooleanLiteral(Box<'a, BooleanLiteral>) = 0,
-    NullLiteral(Box<'a, NullLiteral>) = 1,
-    NumericLiteral(Box<'a, NumericLiteral<'a>>) = 2,
-    BigIntLiteral(Box<'a, BigIntLiteral<'a>>) = 3,
-    RegExpLiteral(Box<'a, RegExpLiteral<'a>>) = 4,
-    StringLiteral(Box<'a, StringLiteral<'a>>) = 5,
-    TemplateLiteral(Box<'a, TemplateLiteral<'a>>) = 6,
-    UnaryExpression(Box<'a, UnaryExpression<'a>>) = 7,
+	BooleanLiteral(Box<'a, BooleanLiteral>) = 0,
+	NullLiteral(Box<'a, NullLiteral>) = 1,
+	NumericLiteral(Box<'a, NumericLiteral<'a>>) = 2,
+	BigIntLiteral(Box<'a, BigIntLiteral<'a>>) = 3,
+	RegExpLiteral(Box<'a, RegExpLiteral<'a>>) = 4,
+	StringLiteral(Box<'a, StringLiteral<'a>>) = 5,
+	TemplateLiteral(Box<'a, TemplateLiteral<'a>>) = 6,
+	UnaryExpression(Box<'a, UnaryExpression<'a>>) = 7,
 }
 
 /// TypeScript Type
 ///
-/// This is the root-level type for TypeScript types, kind of like [`Expression`] is for
-/// expressions.
+/// This is the root-level type for TypeScript types, kind of like
+/// [`Expression`] is for expressions.
 ///
 /// ## Examples
 /// ```ts
@@ -233,92 +234,92 @@ pub enum TSLiteral<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum TSType<'a> {
-    // Keyword
-    TSAnyKeyword(Box<'a, TSAnyKeyword>) = 0,
-    TSBigIntKeyword(Box<'a, TSBigIntKeyword>) = 1,
-    TSBooleanKeyword(Box<'a, TSBooleanKeyword>) = 2,
-    TSIntrinsicKeyword(Box<'a, TSIntrinsicKeyword>) = 3,
-    TSNeverKeyword(Box<'a, TSNeverKeyword>) = 4,
-    TSNullKeyword(Box<'a, TSNullKeyword>) = 5,
-    TSNumberKeyword(Box<'a, TSNumberKeyword>) = 6,
-    TSObjectKeyword(Box<'a, TSObjectKeyword>) = 7,
-    TSStringKeyword(Box<'a, TSStringKeyword>) = 8,
-    TSSymbolKeyword(Box<'a, TSSymbolKeyword>) = 9,
-    TSUndefinedKeyword(Box<'a, TSUndefinedKeyword>) = 11,
-    TSUnknownKeyword(Box<'a, TSUnknownKeyword>) = 12,
-    TSVoidKeyword(Box<'a, TSVoidKeyword>) = 13,
-    // Compound
-    TSArrayType(Box<'a, TSArrayType<'a>>) = 14,
-    TSConditionalType(Box<'a, TSConditionalType<'a>>) = 15,
-    TSConstructorType(Box<'a, TSConstructorType<'a>>) = 16,
-    TSFunctionType(Box<'a, TSFunctionType<'a>>) = 17,
-    TSImportType(Box<'a, TSImportType<'a>>) = 18,
-    TSIndexedAccessType(Box<'a, TSIndexedAccessType<'a>>) = 19,
-    TSInferType(Box<'a, TSInferType<'a>>) = 20,
-    TSIntersectionType(Box<'a, TSIntersectionType<'a>>) = 21,
-    TSLiteralType(Box<'a, TSLiteralType<'a>>) = 22,
-    TSMappedType(Box<'a, TSMappedType<'a>>) = 23,
-    TSNamedTupleMember(Box<'a, TSNamedTupleMember<'a>>) = 24,
-    TSQualifiedName(Box<'a, TSQualifiedName<'a>>) = 25,
-    TSTemplateLiteralType(Box<'a, TSTemplateLiteralType<'a>>) = 26,
-    TSThisType(Box<'a, TSThisType>) = 10,
-    TSTupleType(Box<'a, TSTupleType<'a>>) = 27,
-    TSTypeLiteral(Box<'a, TSTypeLiteral<'a>>) = 28,
-    TSTypeOperatorType(Box<'a, TSTypeOperator<'a>>) = 29,
-    TSTypePredicate(Box<'a, TSTypePredicate<'a>>) = 30,
-    TSTypeQuery(Box<'a, TSTypeQuery<'a>>) = 31,
-    TSTypeReference(Box<'a, TSTypeReference<'a>>) = 32,
-    TSUnionType(Box<'a, TSUnionType<'a>>) = 33,
-    TSParenthesizedType(Box<'a, TSParenthesizedType<'a>>) = 34,
-    // JSDoc
-    JSDocNullableType(Box<'a, JSDocNullableType<'a>>) = 35,
-    JSDocNonNullableType(Box<'a, JSDocNonNullableType<'a>>) = 36,
-    JSDocUnknownType(Box<'a, JSDocUnknownType>) = 37,
+	// Keyword
+	TSAnyKeyword(Box<'a, TSAnyKeyword>) = 0,
+	TSBigIntKeyword(Box<'a, TSBigIntKeyword>) = 1,
+	TSBooleanKeyword(Box<'a, TSBooleanKeyword>) = 2,
+	TSIntrinsicKeyword(Box<'a, TSIntrinsicKeyword>) = 3,
+	TSNeverKeyword(Box<'a, TSNeverKeyword>) = 4,
+	TSNullKeyword(Box<'a, TSNullKeyword>) = 5,
+	TSNumberKeyword(Box<'a, TSNumberKeyword>) = 6,
+	TSObjectKeyword(Box<'a, TSObjectKeyword>) = 7,
+	TSStringKeyword(Box<'a, TSStringKeyword>) = 8,
+	TSSymbolKeyword(Box<'a, TSSymbolKeyword>) = 9,
+	TSUndefinedKeyword(Box<'a, TSUndefinedKeyword>) = 11,
+	TSUnknownKeyword(Box<'a, TSUnknownKeyword>) = 12,
+	TSVoidKeyword(Box<'a, TSVoidKeyword>) = 13,
+	// Compound
+	TSArrayType(Box<'a, TSArrayType<'a>>) = 14,
+	TSConditionalType(Box<'a, TSConditionalType<'a>>) = 15,
+	TSConstructorType(Box<'a, TSConstructorType<'a>>) = 16,
+	TSFunctionType(Box<'a, TSFunctionType<'a>>) = 17,
+	TSImportType(Box<'a, TSImportType<'a>>) = 18,
+	TSIndexedAccessType(Box<'a, TSIndexedAccessType<'a>>) = 19,
+	TSInferType(Box<'a, TSInferType<'a>>) = 20,
+	TSIntersectionType(Box<'a, TSIntersectionType<'a>>) = 21,
+	TSLiteralType(Box<'a, TSLiteralType<'a>>) = 22,
+	TSMappedType(Box<'a, TSMappedType<'a>>) = 23,
+	TSNamedTupleMember(Box<'a, TSNamedTupleMember<'a>>) = 24,
+	TSQualifiedName(Box<'a, TSQualifiedName<'a>>) = 25,
+	TSTemplateLiteralType(Box<'a, TSTemplateLiteralType<'a>>) = 26,
+	TSThisType(Box<'a, TSThisType>) = 10,
+	TSTupleType(Box<'a, TSTupleType<'a>>) = 27,
+	TSTypeLiteral(Box<'a, TSTypeLiteral<'a>>) = 28,
+	TSTypeOperatorType(Box<'a, TSTypeOperator<'a>>) = 29,
+	TSTypePredicate(Box<'a, TSTypePredicate<'a>>) = 30,
+	TSTypeQuery(Box<'a, TSTypeQuery<'a>>) = 31,
+	TSTypeReference(Box<'a, TSTypeReference<'a>>) = 32,
+	TSUnionType(Box<'a, TSUnionType<'a>>) = 33,
+	TSParenthesizedType(Box<'a, TSParenthesizedType<'a>>) = 34,
+	// JSDoc
+	JSDocNullableType(Box<'a, JSDocNullableType<'a>>) = 35,
+	JSDocNonNullableType(Box<'a, JSDocNonNullableType<'a>>) = 36,
+	JSDocUnknownType(Box<'a, JSDocUnknownType>) = 37,
 }
 
 /// Macro for matching `TSType`'s variants.
 #[macro_export]
 macro_rules! match_ts_type {
-    ($ty:ident) => {
-        $ty::TSAnyKeyword(_)
-            | $ty::TSBigIntKeyword(_)
-            | $ty::TSBooleanKeyword(_)
-            | $ty::TSIntrinsicKeyword(_)
-            | $ty::TSNeverKeyword(_)
-            | $ty::TSNullKeyword(_)
-            | $ty::TSNumberKeyword(_)
-            | $ty::TSObjectKeyword(_)
-            | $ty::TSStringKeyword(_)
-            | $ty::TSSymbolKeyword(_)
-            | $ty::TSThisType(_)
-            | $ty::TSUndefinedKeyword(_)
-            | $ty::TSUnknownKeyword(_)
-            | $ty::TSVoidKeyword(_)
-            | $ty::TSArrayType(_)
-            | $ty::TSConditionalType(_)
-            | $ty::TSConstructorType(_)
-            | $ty::TSFunctionType(_)
-            | $ty::TSImportType(_)
-            | $ty::TSIndexedAccessType(_)
-            | $ty::TSInferType(_)
-            | $ty::TSIntersectionType(_)
-            | $ty::TSLiteralType(_)
-            | $ty::TSMappedType(_)
-            | $ty::TSNamedTupleMember(_)
-            | $ty::TSQualifiedName(_)
-            | $ty::TSTemplateLiteralType(_)
-            | $ty::TSTupleType(_)
-            | $ty::TSTypeLiteral(_)
-            | $ty::TSTypeOperatorType(_)
-            | $ty::TSTypePredicate(_)
-            | $ty::TSTypeQuery(_)
-            | $ty::TSTypeReference(_)
-            | $ty::TSUnionType(_)
-            | $ty::TSParenthesizedType(_)
-            | $ty::JSDocNullableType(_)
-            | $ty::JSDocNonNullableType(_)
-            | $ty::JSDocUnknownType(_)
-    };
+	($ty:ident) => {
+		$ty::TSAnyKeyword(_)
+			| $ty::TSBigIntKeyword(_)
+			| $ty::TSBooleanKeyword(_)
+			| $ty::TSIntrinsicKeyword(_)
+			| $ty::TSNeverKeyword(_)
+			| $ty::TSNullKeyword(_)
+			| $ty::TSNumberKeyword(_)
+			| $ty::TSObjectKeyword(_)
+			| $ty::TSStringKeyword(_)
+			| $ty::TSSymbolKeyword(_)
+			| $ty::TSThisType(_)
+			| $ty::TSUndefinedKeyword(_)
+			| $ty::TSUnknownKeyword(_)
+			| $ty::TSVoidKeyword(_)
+			| $ty::TSArrayType(_)
+			| $ty::TSConditionalType(_)
+			| $ty::TSConstructorType(_)
+			| $ty::TSFunctionType(_)
+			| $ty::TSImportType(_)
+			| $ty::TSIndexedAccessType(_)
+			| $ty::TSInferType(_)
+			| $ty::TSIntersectionType(_)
+			| $ty::TSLiteralType(_)
+			| $ty::TSMappedType(_)
+			| $ty::TSNamedTupleMember(_)
+			| $ty::TSQualifiedName(_)
+			| $ty::TSTemplateLiteralType(_)
+			| $ty::TSTupleType(_)
+			| $ty::TSTypeLiteral(_)
+			| $ty::TSTypeOperatorType(_)
+			| $ty::TSTypePredicate(_)
+			| $ty::TSTypeQuery(_)
+			| $ty::TSTypeReference(_)
+			| $ty::TSUnionType(_)
+			| $ty::TSParenthesizedType(_)
+			| $ty::JSDocNullableType(_)
+			| $ty::JSDocNonNullableType(_)
+			| $ty::JSDocUnknownType(_)
+	};
 }
 pub use match_ts_type;
 
@@ -342,19 +343,19 @@ pub use match_ts_type;
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSConditionalType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The type before `extends` in the test expression.
-    pub check_type: TSType<'a>,
-    /// The type `check_type` is being tested against.
-    pub extends_type: TSType<'a>,
-    /// The type evaluated to if the test is true.
-    pub true_type: TSType<'a>,
-    /// The type evaluated to if the test is false.
-    pub false_type: TSType<'a>,
-    #[serde(skip)]
-    #[clone_in(default)]
-    pub scope_id: Cell<Option<ScopeId>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The type before `extends` in the test expression.
+	pub check_type:TSType<'a>,
+	/// The type `check_type` is being tested against.
+	pub extends_type:TSType<'a>,
+	/// The type evaluated to if the test is true.
+	pub true_type:TSType<'a>,
+	/// The type evaluated to if the test is false.
+	pub false_type:TSType<'a>,
+	#[serde(skip)]
+	#[clone_in(default)]
+	pub scope_id:Cell<Option<ScopeId>>,
 }
 
 /// TypeScript Union Type
@@ -372,10 +373,10 @@ pub struct TSConditionalType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSUnionType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The types in the union.
-    pub types: Vec<'a, TSType<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The types in the union.
+	pub types:Vec<'a, TSType<'a>>,
 }
 
 /// TypeScript Intersection Type
@@ -397,9 +398,9 @@ pub struct TSUnionType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSIntersectionType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub types: Vec<'a, TSType<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub types:Vec<'a, TSType<'a>>,
 }
 
 /// Parenthesized Type
@@ -417,9 +418,9 @@ pub struct TSIntersectionType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSParenthesizedType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub type_annotation: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub type_annotation:TSType<'a>,
 }
 
 /// TypeScript Type Operators
@@ -437,11 +438,11 @@ pub struct TSParenthesizedType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeOperator<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub operator: TSTypeOperatorOperator,
-    /// The type being operated on
-    pub type_annotation: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub operator:TSTypeOperatorOperator,
+	/// The type being operated on
+	pub type_annotation:TSType<'a>,
 }
 
 /// Operator in a [`TSTypeOperator`].
@@ -451,9 +452,9 @@ pub struct TSTypeOperator<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub enum TSTypeOperatorOperator {
-    Keyof = 0,
-    Unique = 1,
-    Readonly = 2,
+	Keyof = 0,
+	Unique = 1,
+	Readonly = 2,
 }
 
 /// TypeScript Array Type
@@ -473,9 +474,9 @@ pub enum TSTypeOperatorOperator {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSArrayType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub element_type: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub element_type:TSType<'a>,
 }
 
 /// TypeScript Index Access Type
@@ -495,10 +496,10 @@ pub struct TSArrayType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSIndexedAccessType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub object_type: TSType<'a>,
-    pub index_type: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub object_type:TSType<'a>,
+	pub index_type:TSType<'a>,
 }
 
 /// TypeScript Tuple Type
@@ -516,9 +517,9 @@ pub struct TSIndexedAccessType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTupleType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub element_types: Vec<'a, TSTupleElement<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub element_types:Vec<'a, TSTupleElement<'a>>,
 }
 
 /// TypeScript Named Tuple Member
@@ -537,11 +538,11 @@ pub struct TSTupleType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSNamedTupleMember<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub element_type: TSTupleElement<'a>,
-    pub label: IdentifierName<'a>,
-    pub optional: bool,
+	#[serde(flatten)]
+	pub span:Span,
+	pub element_type:TSTupleElement<'a>,
+	pub label:IdentifierName<'a>,
+	pub optional:bool,
 }
 
 /// TypeScript Optional Type
@@ -559,9 +560,9 @@ pub struct TSNamedTupleMember<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSOptionalType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub type_annotation: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub type_annotation:TSType<'a>,
 }
 
 /// TypeScript Rest Type
@@ -578,9 +579,9 @@ pub struct TSOptionalType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSRestType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub type_annotation: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub type_annotation:TSType<'a>,
 }
 
 inherit_variants! {
@@ -597,12 +598,12 @@ inherit_variants! {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum TSTupleElement<'a> {
-    // Discriminants start at 64, so that `TSTupleElement::is_ts_type` is a single
-    // bitwise AND operation on the discriminant (`discriminant & 63 != 0`).
-    TSOptionalType(Box<'a, TSOptionalType<'a>>) = 64,
-    TSRestType(Box<'a, TSRestType<'a>>) = 65,
-    // `TSType` variants added here by `inherit_variants!` macro
-    @inherit TSType
+	// Discriminants start at 64, so that `TSTupleElement::is_ts_type` is a single
+	// bitwise AND operation on the discriminant (`discriminant & 63 != 0`).
+	TSOptionalType(Box<'a, TSOptionalType<'a>>) = 64,
+	TSRestType(Box<'a, TSRestType<'a>>) = 65,
+	// `TSType` variants added here by `inherit_variants!` macro
+	@inherit TSType
 }
 }
 
@@ -621,8 +622,8 @@ pub enum TSTupleElement<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSAnyKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript `string` keyword
@@ -640,8 +641,8 @@ pub struct TSAnyKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSStringKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript `boolean` keyword
@@ -659,8 +660,8 @@ pub struct TSStringKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSBooleanKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript `number` keyword
@@ -678,8 +679,8 @@ pub struct TSBooleanKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSNumberKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript `never` Keyword
@@ -698,8 +699,8 @@ pub struct TSNumberKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSNeverKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript `intrinsic` Keyword
@@ -718,13 +719,14 @@ pub struct TSNeverKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSIntrinsicKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript `unknown` Keyword
 ///
-/// This is like `any`, but is not assignable to anything except `any` and `unknown`.
+/// This is like `any`, but is not assignable to anything except `any` and
+/// `unknown`.
 ///
 /// ## Example
 /// ```ts
@@ -739,8 +741,8 @@ pub struct TSIntrinsicKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSUnknownKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript `null` Keyword
@@ -759,8 +761,8 @@ pub struct TSUnknownKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSNullKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript `null` Keyword
@@ -781,8 +783,8 @@ pub struct TSNullKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSUndefinedKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 #[ast(visit)]
@@ -791,8 +793,8 @@ pub struct TSUndefinedKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSVoidKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 #[ast(visit)]
@@ -801,8 +803,8 @@ pub struct TSVoidKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSSymbolKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 #[ast(visit)]
@@ -811,8 +813,8 @@ pub struct TSSymbolKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSThisType {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 #[ast(visit)]
@@ -821,8 +823,8 @@ pub struct TSThisType {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSObjectKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 #[ast(visit)]
@@ -831,8 +833,8 @@ pub struct TSObjectKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct TSBigIntKeyword {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }
 
 /// TypeScript Type Reference
@@ -849,10 +851,10 @@ pub struct TSBigIntKeyword {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeReference<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub type_name: TSTypeName<'a>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub type_name:TSTypeName<'a>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
 /// TypeName:
@@ -864,16 +866,16 @@ pub struct TSTypeReference<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum TSTypeName<'a> {
-    IdentifierReference(Box<'a, IdentifierReference<'a>>) = 0,
-    QualifiedName(Box<'a, TSQualifiedName<'a>>) = 1,
+	IdentifierReference(Box<'a, IdentifierReference<'a>>) = 0,
+	QualifiedName(Box<'a, TSQualifiedName<'a>>) = 1,
 }
 
 /// Macro for matching `TSTypeName`'s variants.
 #[macro_export]
 macro_rules! match_ts_type_name {
-    ($ty:ident) => {
-        $ty::IdentifierReference(_) | $ty::QualifiedName(_)
-    };
+	($ty:ident) => {
+		$ty::IdentifierReference(_) | $ty::QualifiedName(_)
+	};
 }
 pub use match_ts_type_name;
 
@@ -891,10 +893,10 @@ pub use match_ts_type_name;
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSQualifiedName<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub left: TSTypeName<'a>,
-    pub right: IdentifierName<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub left:TSTypeName<'a>,
+	pub right:IdentifierName<'a>,
 }
 
 #[ast(visit)]
@@ -903,9 +905,9 @@ pub struct TSQualifiedName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeParameterInstantiation<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub params: Vec<'a, TSType<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub params:Vec<'a, TSType<'a>>,
 }
 
 /// TypeScript Type Parameter
@@ -931,20 +933,21 @@ pub struct TSTypeParameterInstantiation<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeParameter<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The name of the parameter, e.g. `T` in `type Foo<T> = ...`.
-    pub name: BindingIdentifier<'a>,
-    /// Constrains what types can be passed to the type parameter.
-    pub constraint: Option<TSType<'a>>,
-    /// Default value of the type parameter if no type is provided when using the type.
-    pub default: Option<TSType<'a>>,
-    /// Was an `in` modifier keyword present?
-    pub r#in: bool,
-    /// Was an `out` modifier keyword present?
-    pub out: bool,
-    /// Was a `const` modifier keyword present?
-    pub r#const: bool,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The name of the parameter, e.g. `T` in `type Foo<T> = ...`.
+	pub name:BindingIdentifier<'a>,
+	/// Constrains what types can be passed to the type parameter.
+	pub constraint:Option<TSType<'a>>,
+	/// Default value of the type parameter if no type is provided when using
+	/// the type.
+	pub default:Option<TSType<'a>>,
+	/// Was an `in` modifier keyword present?
+	pub r#in:bool,
+	/// Was an `out` modifier keyword present?
+	pub out:bool,
+	/// Was a `const` modifier keyword present?
+	pub r#const:bool,
 }
 
 #[ast(visit)]
@@ -953,9 +956,9 @@ pub struct TSTypeParameter<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeParameterDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub params: Vec<'a, TSTypeParameter<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub params:Vec<'a, TSTypeParameter<'a>>,
 }
 
 /// TypeScript Type Alias Declaration Statement
@@ -973,17 +976,17 @@ pub struct TSTypeParameterDeclaration<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeAliasDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// Type alias's identifier, e.g. `Foo` in `type Foo = number`.
-    pub id: BindingIdentifier<'a>,
-    #[scope(enter_before)]
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
-    pub type_annotation: TSType<'a>,
-    pub declare: bool,
-    #[serde(skip)]
-    #[clone_in(default)]
-    pub scope_id: Cell<Option<ScopeId>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// Type alias's identifier, e.g. `Foo` in `type Foo = number`.
+	pub id:BindingIdentifier<'a>,
+	#[scope(enter_before)]
+	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+	pub type_annotation:TSType<'a>,
+	pub declare:bool,
+	#[serde(skip)]
+	#[clone_in(default)]
+	pub scope_id:Cell<Option<ScopeId>>,
 }
 
 #[ast]
@@ -992,9 +995,9 @@ pub struct TSTypeAliasDeclaration<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub enum TSAccessibility {
-    Private = 0,
-    Protected = 1,
-    Public = 2,
+	Private = 0,
+	Protected = 1,
+	Public = 2,
 }
 
 /// TypeScript Class Interface Heritage
@@ -1013,15 +1016,16 @@ pub enum TSAccessibility {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSClassImplements<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: TSTypeName<'a>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:TSTypeName<'a>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
 /// TypeScriptInterface Declaration
 ///
-///   interface `BindingIdentifier` `TypeParameters_opt` `InterfaceExtendsClause_opt` `ObjectType`
+///   interface `BindingIdentifier` `TypeParameters_opt`
+/// `InterfaceExtendsClause_opt` `ObjectType`
 ///
 /// ## Example
 /// ```ts
@@ -1041,21 +1045,21 @@ pub struct TSClassImplements<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSInterfaceDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The identifier (name) of the interface.
-    pub id: BindingIdentifier<'a>,
-    /// Other interfaces/types this interface extends.
-    #[scope(enter_before)]
-    pub extends: Option<Vec<'a, TSInterfaceHeritage<'a>>>,
-    /// Type parameters that get bound to the interface.
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
-    pub body: Box<'a, TSInterfaceBody<'a>>,
-    /// `true` for `declare interface Foo {}`
-    pub declare: bool,
-    #[serde(skip)]
-    #[clone_in(default)]
-    pub scope_id: Cell<Option<ScopeId>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The identifier (name) of the interface.
+	pub id:BindingIdentifier<'a>,
+	/// Other interfaces/types this interface extends.
+	#[scope(enter_before)]
+	pub extends:Option<Vec<'a, TSInterfaceHeritage<'a>>>,
+	/// Type parameters that get bound to the interface.
+	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+	pub body:Box<'a, TSInterfaceBody<'a>>,
+	/// `true` for `declare interface Foo {}`
+	pub declare:bool,
+	#[serde(skip)]
+	#[clone_in(default)]
+	pub scope_id:Cell<Option<ScopeId>>,
 }
 
 /// Body of a [`TSInterfaceDeclaration`].
@@ -1065,15 +1069,15 @@ pub struct TSInterfaceDeclaration<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSInterfaceBody<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub body: Vec<'a, TSSignature<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub body:Vec<'a, TSSignature<'a>>,
 }
 
 /// TypeScript Property Signature
 ///
-/// Used in [classes](Class), [interfaces](TSInterfaceDeclaration), [mapped types](TSMappedType),
-/// etc. Part of a [`TSSignature`].
+/// Used in [classes](Class), [interfaces](TSInterfaceDeclaration), [mapped
+/// types](TSMappedType), etc. Part of a [`TSSignature`].
 ///
 /// ## Example
 /// ```ts
@@ -1091,13 +1095,13 @@ pub struct TSInterfaceBody<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSPropertySignature<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub computed: bool,
-    pub optional: bool,
-    pub readonly: bool,
-    pub key: PropertyKey<'a>,
-    pub type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub computed:bool,
+	pub optional:bool,
+	pub readonly:bool,
+	pub key:PropertyKey<'a>,
+	pub type_annotation:Option<Box<'a, TSTypeAnnotation<'a>>>,
 }
 
 #[ast(visit)]
@@ -1106,11 +1110,11 @@ pub struct TSPropertySignature<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum TSSignature<'a> {
-    TSIndexSignature(Box<'a, TSIndexSignature<'a>>) = 0,
-    TSPropertySignature(Box<'a, TSPropertySignature<'a>>) = 1,
-    TSCallSignatureDeclaration(Box<'a, TSCallSignatureDeclaration<'a>>) = 2,
-    TSConstructSignatureDeclaration(Box<'a, TSConstructSignatureDeclaration<'a>>) = 3,
-    TSMethodSignature(Box<'a, TSMethodSignature<'a>>) = 4,
+	TSIndexSignature(Box<'a, TSIndexSignature<'a>>) = 0,
+	TSPropertySignature(Box<'a, TSPropertySignature<'a>>) = 1,
+	TSCallSignatureDeclaration(Box<'a, TSCallSignatureDeclaration<'a>>) = 2,
+	TSConstructSignatureDeclaration(Box<'a, TSConstructSignatureDeclaration<'a>>) = 3,
+	TSMethodSignature(Box<'a, TSMethodSignature<'a>>) = 4,
 }
 
 /// An index signature within a class, type alias, etc.
@@ -1130,11 +1134,11 @@ pub enum TSSignature<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSIndexSignature<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub parameters: Vec<'a, TSIndexSignatureName<'a>>,
-    pub type_annotation: Box<'a, TSTypeAnnotation<'a>>,
-    pub readonly: bool,
+	#[serde(flatten)]
+	pub span:Span,
+	pub parameters:Vec<'a, TSIndexSignatureName<'a>>,
+	pub type_annotation:Box<'a, TSTypeAnnotation<'a>>,
+	pub readonly:bool,
 }
 
 #[ast(visit)]
@@ -1143,12 +1147,12 @@ pub struct TSIndexSignature<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSCallSignatureDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub this_param: Option<TSThisParameter<'a>>,
-    pub params: Box<'a, FormalParameters<'a>>,
-    pub return_type: Option<Box<'a, TSTypeAnnotation<'a>>>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub this_param:Option<TSThisParameter<'a>>,
+	pub params:Box<'a, FormalParameters<'a>>,
+	pub return_type:Option<Box<'a, TSTypeAnnotation<'a>>>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
 }
 
 #[ast]
@@ -1157,9 +1161,9 @@ pub struct TSCallSignatureDeclaration<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub enum TSMethodSignatureKind {
-    Method = 0,
-    Get = 1,
-    Set = 2,
+	Method = 0,
+	Get = 1,
+	Set = 2,
 }
 
 /// TypeScript Method Signature
@@ -1180,19 +1184,19 @@ pub enum TSMethodSignatureKind {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSMethodSignature<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub key: PropertyKey<'a>,
-    pub computed: bool,
-    pub optional: bool,
-    pub kind: TSMethodSignatureKind,
-    pub this_param: Option<Box<'a, TSThisParameter<'a>>>,
-    pub params: Box<'a, FormalParameters<'a>>,
-    pub return_type: Option<Box<'a, TSTypeAnnotation<'a>>>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
-    #[serde(skip)]
-    #[clone_in(default)]
-    pub scope_id: Cell<Option<ScopeId>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub key:PropertyKey<'a>,
+	pub computed:bool,
+	pub optional:bool,
+	pub kind:TSMethodSignatureKind,
+	pub this_param:Option<Box<'a, TSThisParameter<'a>>>,
+	pub params:Box<'a, FormalParameters<'a>>,
+	pub return_type:Option<Box<'a, TSTypeAnnotation<'a>>>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+	#[serde(skip)]
+	#[clone_in(default)]
+	pub scope_id:Cell<Option<ScopeId>>,
 }
 
 /// TypeScript Constructor Signature Declaration
@@ -1203,14 +1207,14 @@ pub struct TSMethodSignature<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSConstructSignatureDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub params: Box<'a, FormalParameters<'a>>,
-    pub return_type: Option<Box<'a, TSTypeAnnotation<'a>>>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
-    #[serde(skip)]
-    #[clone_in(default)]
-    pub scope_id: Cell<Option<ScopeId>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub params:Box<'a, FormalParameters<'a>>,
+	pub return_type:Option<Box<'a, TSTypeAnnotation<'a>>>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+	#[serde(skip)]
+	#[clone_in(default)]
+	pub scope_id:Cell<Option<ScopeId>>,
 }
 
 #[ast(visit)]
@@ -1219,10 +1223,10 @@ pub struct TSConstructSignatureDeclaration<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[serde(tag = "type", rename = "Identifier", rename_all = "camelCase")]
 pub struct TSIndexSignatureName<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub name: Atom<'a>,
-    pub type_annotation: Box<'a, TSTypeAnnotation<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub name:Atom<'a>,
+	pub type_annotation:Box<'a, TSTypeAnnotation<'a>>,
 }
 
 #[ast(visit)]
@@ -1231,10 +1235,10 @@ pub struct TSIndexSignatureName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSInterfaceHeritage<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: Expression<'a>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:Expression<'a>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
 /// TypeScript Type Predicate
@@ -1263,18 +1267,18 @@ pub struct TSInterfaceHeritage<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypePredicate<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The identifier the predicate operates on
-    pub parameter_name: TSTypePredicateName<'a>,
-    /// Does this predicate include an `asserts` modifier?
-    ///
-    /// ## Example
-    /// ```ts
-    /// declare function isString(x: any): asserts x is string; // true
-    /// ```
-    pub asserts: bool,
-    pub type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The identifier the predicate operates on
+	pub parameter_name:TSTypePredicateName<'a>,
+	/// Does this predicate include an `asserts` modifier?
+	///
+	/// ## Example
+	/// ```ts
+	/// declare function isString(x: any): asserts x is string; // true
+	/// ```
+	pub asserts:bool,
+	pub type_annotation:Option<Box<'a, TSTypeAnnotation<'a>>>,
 }
 
 #[ast(visit)]
@@ -1283,8 +1287,8 @@ pub struct TSTypePredicate<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum TSTypePredicateName<'a> {
-    Identifier(Box<'a, IdentifierName<'a>>) = 0,
-    This(TSThisType) = 1,
+	Identifier(Box<'a, IdentifierName<'a>>) = 0,
+	This(TSThisType) = 1,
 }
 
 /// TypeScript Module and Namespace Declarations
@@ -1323,32 +1327,33 @@ pub enum TSTypePredicateName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSModuleDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The name of the module/namespace being declared.
-    ///
-    /// Note that for `declare global {}`, no symbol will be created for the module name.
-    pub id: TSModuleDeclarationName<'a>,
-    #[scope(enter_before)]
-    pub body: Option<TSModuleDeclarationBody<'a>>,
-    /// The keyword used to define this module declaration.
-    ///
-    /// Helps discriminate between global overrides vs module declarations vs namespace
-    /// declarations.
-    ///
-    /// ```ts
-    /// namespace Foo {}
-    /// ^^^^^^^^^
-    /// module 'foo' {}
-    /// ^^^^^^
-    /// declare global {}
-    ///         ^^^^^^
-    /// ```
-    pub kind: TSModuleDeclarationKind,
-    pub declare: bool,
-    #[serde(skip)]
-    #[clone_in(default)]
-    pub scope_id: Cell<Option<ScopeId>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The name of the module/namespace being declared.
+	///
+	/// Note that for `declare global {}`, no symbol will be created for the
+	/// module name.
+	pub id:TSModuleDeclarationName<'a>,
+	#[scope(enter_before)]
+	pub body:Option<TSModuleDeclarationBody<'a>>,
+	/// The keyword used to define this module declaration.
+	///
+	/// Helps discriminate between global overrides vs module declarations vs
+	/// namespace declarations.
+	///
+	/// ```ts
+	/// namespace Foo {}
+	/// ^^^^^^^^^
+	/// module 'foo' {}
+	/// ^^^^^^
+	/// declare global {}
+	///         ^^^^^^
+	/// ```
+	pub kind:TSModuleDeclarationKind,
+	pub declare:bool,
+	#[serde(skip)]
+	#[clone_in(default)]
+	pub scope_id:Cell<Option<ScopeId>>,
 }
 
 #[ast]
@@ -1357,18 +1362,19 @@ pub struct TSModuleDeclaration<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub enum TSModuleDeclarationKind {
-    /// `declare global {}`
-    Global = 0,
-    /// `declare module 'foo' {}`
-    Module = 1,
-    /// `namespace Foo {}`
-    Namespace = 2,
+	/// `declare global {}`
+	Global = 0,
+	/// `declare module 'foo' {}`
+	Module = 1,
+	/// `namespace Foo {}`
+	Namespace = 2,
 }
 
-/// The name of a TypeScript [namespace or module declaration](TSModuleDeclaration).
+/// The name of a TypeScript [namespace or module
+/// declaration](TSModuleDeclaration).
 ///
-/// Note that it is a syntax error for namespace declarations to have a string literal name.
-/// Modules may have either kind.
+/// Note that it is a syntax error for namespace declarations to have a string
+/// literal name. Modules may have either kind.
 ///
 /// ## Examples
 /// ```ts
@@ -1391,8 +1397,8 @@ pub enum TSModuleDeclarationKind {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum TSModuleDeclarationName<'a> {
-    Identifier(IdentifierName<'a>) = 0,
-    StringLiteral(StringLiteral<'a>) = 1,
+	Identifier(IdentifierName<'a>) = 0,
+	StringLiteral(StringLiteral<'a>) = 1,
 }
 
 #[ast(visit)]
@@ -1401,8 +1407,8 @@ pub enum TSModuleDeclarationName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum TSModuleDeclarationBody<'a> {
-    TSModuleDeclaration(Box<'a, TSModuleDeclaration<'a>>) = 0,
-    TSModuleBlock(Box<'a, TSModuleBlock<'a>>) = 1,
+	TSModuleDeclaration(Box<'a, TSModuleDeclaration<'a>>) = 0,
+	TSModuleBlock(Box<'a, TSModuleBlock<'a>>) = 1,
 }
 
 // See serializer in serialize.rs
@@ -1412,11 +1418,11 @@ pub enum TSModuleDeclarationBody<'a> {
 #[cfg_attr(feature = "serialize", derive(Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSModuleBlock<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    #[serde(skip)]
-    pub directives: Vec<'a, Directive<'a>>,
-    pub body: Vec<'a, Statement<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	#[serde(skip)]
+	pub directives:Vec<'a, Directive<'a>>,
+	pub body:Vec<'a, Statement<'a>>,
 }
 
 #[ast(visit)]
@@ -1425,15 +1431,15 @@ pub struct TSModuleBlock<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeLiteral<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub members: Vec<'a, TSSignature<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub members:Vec<'a, TSSignature<'a>>,
 }
 
 /// TypeScript `infer` type
 ///
-/// Used in a [`TSConditionalType`] to bind a type parameter when some tested type extends a
-/// desired type.
+/// Used in a [`TSConditionalType`] to bind a type parameter when some tested
+/// type extends a desired type.
 ///
 /// ## Example
 /// ```ts
@@ -1449,10 +1455,10 @@ pub struct TSTypeLiteral<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSInferType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The type bound when the
-    pub type_parameter: Box<'a, TSTypeParameter<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The type bound when the
+	pub type_parameter:Box<'a, TSTypeParameter<'a>>,
 }
 
 /// Type Query
@@ -1470,10 +1476,10 @@ pub struct TSInferType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeQuery<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expr_name: TSTypeQueryExprName<'a>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expr_name:TSTypeQueryExprName<'a>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
 inherit_variants! {
@@ -1488,9 +1494,9 @@ inherit_variants! {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum TSTypeQueryExprName<'a> {
-    TSImportType(Box<'a, TSImportType<'a>>) = 2,
-    // `TSTypeName` variants added here by `inherit_variants!` macro
-    @inherit TSTypeName
+	TSImportType(Box<'a, TSImportType<'a>>) = 2,
+	// `TSTypeName` variants added here by `inherit_variants!` macro
+	@inherit TSTypeName
 }
 }
 
@@ -1500,14 +1506,14 @@ pub enum TSTypeQueryExprName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSImportType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// `true` for `typeof import("foo")`
-    pub is_type_of: bool,
-    pub parameter: TSType<'a>,
-    pub qualifier: Option<TSTypeName<'a>>,
-    pub attributes: Option<Box<'a, TSImportAttributes<'a>>>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// `true` for `typeof import("foo")`
+	pub is_type_of:bool,
+	pub parameter:TSType<'a>,
+	pub qualifier:Option<TSTypeName<'a>>,
+	pub attributes:Option<Box<'a, TSImportAttributes<'a>>>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
 #[ast(visit)]
@@ -1516,10 +1522,10 @@ pub struct TSImportType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSImportAttributes<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub attributes_keyword: IdentifierName<'a>, // `with` or `assert`
-    pub elements: Vec<'a, TSImportAttribute<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub attributes_keyword:IdentifierName<'a>, // `with` or `assert`
+	pub elements:Vec<'a, TSImportAttribute<'a>>,
 }
 
 #[ast(visit)]
@@ -1528,10 +1534,10 @@ pub struct TSImportAttributes<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSImportAttribute<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub name: TSImportAttributeName<'a>,
-    pub value: Expression<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub name:TSImportAttributeName<'a>,
+	pub value:Expression<'a>,
 }
 
 #[ast(visit)]
@@ -1540,8 +1546,8 @@ pub struct TSImportAttribute<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum TSImportAttributeName<'a> {
-    Identifier(IdentifierName<'a>) = 0,
-    StringLiteral(StringLiteral<'a>) = 1,
+	Identifier(IdentifierName<'a>) = 0,
+	StringLiteral(StringLiteral<'a>) = 1,
 }
 
 /// TypeScript Function Type
@@ -1558,30 +1564,30 @@ pub enum TSImportAttributeName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSFunctionType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// `this` parameter
-    ///
-    /// ```ts
-    /// type T = (this: string, a: number) => void
-    /// //        ^^^^^^^^^^^^
-    /// ```
-    pub this_param: Option<Box<'a, TSThisParameter<'a>>>,
-    /// Function parameters. Akin to [`Function::params`].
-    pub params: Box<'a, FormalParameters<'a>>,
-    /// Return type of the function.
-    /// ```ts
-    /// type T = () => void
-    /// //             ^^^^
-    /// ```
-    pub return_type: Box<'a, TSTypeAnnotation<'a>>,
-    /// Generic type parameters
-    ///
-    /// ```ts
-    /// type T = <T>(x: T) => T
-    /// //        ^
-    /// ```
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// `this` parameter
+	///
+	/// ```ts
+	/// type T = (this: string, a: number) => void
+	/// //        ^^^^^^^^^^^^
+	/// ```
+	pub this_param:Option<Box<'a, TSThisParameter<'a>>>,
+	/// Function parameters. Akin to [`Function::params`].
+	pub params:Box<'a, FormalParameters<'a>>,
+	/// Return type of the function.
+	/// ```ts
+	/// type T = () => void
+	/// //             ^^^^
+	/// ```
+	pub return_type:Box<'a, TSTypeAnnotation<'a>>,
+	/// Generic type parameters
+	///
+	/// ```ts
+	/// type T = <T>(x: T) => T
+	/// //        ^
+	/// ```
+	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
 }
 
 #[ast(visit)]
@@ -1590,12 +1596,12 @@ pub struct TSFunctionType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSConstructorType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub r#abstract: bool,
-    pub params: Box<'a, FormalParameters<'a>>,
-    pub return_type: Box<'a, TSTypeAnnotation<'a>>,
-    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub r#abstract:bool,
+	pub params:Box<'a, FormalParameters<'a>>,
+	pub return_type:Box<'a, TSTypeAnnotation<'a>>,
+	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
 }
 
 /// TypeScript Mapped Type
@@ -1626,39 +1632,39 @@ pub struct TSConstructorType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSMappedType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// Key type parameter, e.g. `P` in `[P in keyof T]`.
-    pub type_parameter: Box<'a, TSTypeParameter<'a>>,
-    pub name_type: Option<TSType<'a>>,
-    pub type_annotation: Option<TSType<'a>>,
-    /// Optional modifier on type annotation
-    ///
-    /// ## Examples
-    /// ```ts
-    /// type Foo = { [P in keyof T]?: T[P] }
-    /// //                         ^^ True
-    /// type Bar = { [P in keyof T]+?: T[P] }
-    /// //                         ^^ Plus
-    /// type Baz = { [P in keyof T]-?: T[P] }
-    /// //                         ^^ Minus
-    /// type Qux = { [P in keyof T]: T[P] }
-    /// //                         ^ None
-    /// ```
-    pub optional: TSMappedTypeModifierOperator,
-    /// Readonly modifier before keyed index signature
-    ///
-    /// ## Examples
-    /// ```ts
-    /// type Foo = { readonly [P in keyof T]: T[P] }  // True
-    /// type Bar = { +readonly [P in keyof T]: T[P] } // Plus
-    /// type Baz = { -readonly [P in keyof T]: T[P] } // Minus
-    /// type Qux = { [P in keyof T]: T[P] }           // None
-    /// ```
-    pub readonly: TSMappedTypeModifierOperator,
-    #[serde(skip)]
-    #[clone_in(default)]
-    pub scope_id: Cell<Option<ScopeId>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// Key type parameter, e.g. `P` in `[P in keyof T]`.
+	pub type_parameter:Box<'a, TSTypeParameter<'a>>,
+	pub name_type:Option<TSType<'a>>,
+	pub type_annotation:Option<TSType<'a>>,
+	/// Optional modifier on type annotation
+	///
+	/// ## Examples
+	/// ```ts
+	/// type Foo = { [P in keyof T]?: T[P] }
+	/// //                         ^^ True
+	/// type Bar = { [P in keyof T]+?: T[P] }
+	/// //                         ^^ Plus
+	/// type Baz = { [P in keyof T]-?: T[P] }
+	/// //                         ^^ Minus
+	/// type Qux = { [P in keyof T]: T[P] }
+	/// //                         ^ None
+	/// ```
+	pub optional:TSMappedTypeModifierOperator,
+	/// Readonly modifier before keyed index signature
+	///
+	/// ## Examples
+	/// ```ts
+	/// type Foo = { readonly [P in keyof T]: T[P] }  // True
+	/// type Bar = { +readonly [P in keyof T]: T[P] } // Plus
+	/// type Baz = { -readonly [P in keyof T]: T[P] } // Minus
+	/// type Qux = { [P in keyof T]: T[P] }           // None
+	/// ```
+	pub readonly:TSMappedTypeModifierOperator,
+	#[serde(skip)]
+	#[clone_in(default)]
+	pub scope_id:Cell<Option<ScopeId>>,
 }
 
 #[ast]
@@ -1667,16 +1673,16 @@ pub struct TSMappedType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub enum TSMappedTypeModifierOperator {
-    /// e.g. `?` in `{ [P in K]?: T }`
-    True = 0,
-    /// e.g. `+?` in `{ [P in K]+?: T }`
-    #[serde(rename = "+")]
-    Plus = 1,
-    /// e.g. `-?` in `{ [P in K]-?: T }`
-    #[serde(rename = "-")]
-    Minus = 2,
-    /// No modifier present
-    None = 3,
+	/// e.g. `?` in `{ [P in K]?: T }`
+	True = 0,
+	/// e.g. `+?` in `{ [P in K]+?: T }`
+	#[serde(rename = "+")]
+	Plus = 1,
+	/// e.g. `-?` in `{ [P in K]-?: T }`
+	#[serde(rename = "-")]
+	Minus = 2,
+	/// No modifier present
+	None = 3,
 }
 
 /// TypeScript Template Literal Type
@@ -1696,12 +1702,12 @@ pub enum TSMappedTypeModifierOperator {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTemplateLiteralType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The string parts of the template literal.
-    pub quasis: Vec<'a, TemplateElement<'a>>,
-    /// The interpolated expressions in the template literal.
-    pub types: Vec<'a, TSType<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The string parts of the template literal.
+	pub quasis:Vec<'a, TemplateElement<'a>>,
+	/// The interpolated expressions in the template literal.
+	pub types:Vec<'a, TSType<'a>>,
 }
 
 #[ast(visit)]
@@ -1710,10 +1716,10 @@ pub struct TSTemplateLiteralType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSAsExpression<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: Expression<'a>,
-    pub type_annotation: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:Expression<'a>,
+	pub type_annotation:TSType<'a>,
 }
 
 /// TypeScript `satisfies` Expression
@@ -1734,12 +1740,12 @@ pub struct TSAsExpression<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSSatisfiesExpression<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    /// The value expression being constrained.
-    pub expression: Expression<'a>,
-    /// The type `expression` must satisfy.
-    pub type_annotation: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	/// The value expression being constrained.
+	pub expression:Expression<'a>,
+	/// The type `expression` must satisfy.
+	pub type_annotation:TSType<'a>,
 }
 
 #[ast(visit)]
@@ -1748,10 +1754,10 @@ pub struct TSSatisfiesExpression<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSTypeAssertion<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: Expression<'a>,
-    pub type_annotation: TSType<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:Expression<'a>,
+	pub type_annotation:TSType<'a>,
 }
 
 #[ast(visit)]
@@ -1760,11 +1766,11 @@ pub struct TSTypeAssertion<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSImportEqualsDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub id: BindingIdentifier<'a>,
-    pub module_reference: TSModuleReference<'a>,
-    pub import_kind: ImportOrExportKind,
+	#[serde(flatten)]
+	pub span:Span,
+	pub id:BindingIdentifier<'a>,
+	pub module_reference:TSModuleReference<'a>,
+	pub import_kind:ImportOrExportKind,
 }
 
 inherit_variants! {
@@ -1779,9 +1785,9 @@ inherit_variants! {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum TSModuleReference<'a> {
-    ExternalModuleReference(Box<'a, TSExternalModuleReference<'a>>) = 2,
-    // `TSTypeName` variants added here by `inherit_variants!` macro
-    @inherit TSTypeName
+	ExternalModuleReference(Box<'a, TSExternalModuleReference<'a>>) = 2,
+	// `TSTypeName` variants added here by `inherit_variants!` macro
+	@inherit TSTypeName
 }
 }
 
@@ -1791,9 +1797,9 @@ pub enum TSModuleReference<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSExternalModuleReference<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: StringLiteral<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:StringLiteral<'a>,
 }
 
 #[ast(visit)]
@@ -1802,9 +1808,9 @@ pub struct TSExternalModuleReference<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSNonNullExpression<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: Expression<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:Expression<'a>,
 }
 
 /// Decorator
@@ -1837,9 +1843,9 @@ pub struct TSNonNullExpression<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct Decorator<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: Expression<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:Expression<'a>,
 }
 
 /// Export Assignment in non-module files
@@ -1851,9 +1857,9 @@ pub struct Decorator<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSExportAssignment<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: Expression<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:Expression<'a>,
 }
 
 /// Namespace Export Declaration in declaration files
@@ -1865,9 +1871,9 @@ pub struct TSExportAssignment<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSNamespaceExportDeclaration<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub id: IdentifierName<'a>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub id:IdentifierName<'a>,
 }
 
 #[ast(visit)]
@@ -1876,10 +1882,10 @@ pub struct TSNamespaceExportDeclaration<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct TSInstantiationExpression<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub expression: Expression<'a>,
-    pub type_parameters: Box<'a, TSTypeParameterInstantiation<'a>>,
+	#[serde(flatten)]
+	pub span:Span,
+	pub expression:Expression<'a>,
+	pub type_parameters:Box<'a, TSTypeParameterInstantiation<'a>>,
 }
 
 /// See [TypeScript - Type-Only Imports and Exports](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html)
@@ -1889,10 +1895,10 @@ pub struct TSInstantiationExpression<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub enum ImportOrExportKind {
-    /// `import { foo } from './foo'`;
-    Value = 0,
-    /// `import type { foo } from './foo'`;
-    Type = 1,
+	/// `import { foo } from './foo'`;
+	Value = 0,
+	/// `import type { foo } from './foo'`;
+	Type = 1,
 }
 
 // [`JSDoc`](https://github.com/microsoft/TypeScript/blob/54a554d8af2657630307cbfa8a3e4f3946e36507/src/compiler/types.ts#L393)
@@ -1904,11 +1910,11 @@ pub enum ImportOrExportKind {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct JSDocNullableType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub type_annotation: TSType<'a>,
-    /// Was `?` after the type annotation?
-    pub postfix: bool,
+	#[serde(flatten)]
+	pub span:Span,
+	pub type_annotation:TSType<'a>,
+	/// Was `?` after the type annotation?
+	pub postfix:bool,
 }
 
 /// `type foo = ty!` or `type foo = !ty`
@@ -1918,10 +1924,10 @@ pub struct JSDocNullableType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct JSDocNonNullableType<'a> {
-    #[serde(flatten)]
-    pub span: Span,
-    pub type_annotation: TSType<'a>,
-    pub postfix: bool,
+	#[serde(flatten)]
+	pub span:Span,
+	pub type_annotation:TSType<'a>,
+	pub postfix:bool,
 }
 
 #[ast(visit)]
@@ -1930,6 +1936,6 @@ pub struct JSDocNonNullableType<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct JSDocUnknownType {
-    #[serde(flatten)]
-    pub span: Span,
+	#[serde(flatten)]
+	pub span:Span,
 }

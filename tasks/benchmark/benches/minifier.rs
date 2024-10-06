@@ -6,7 +6,7 @@ use oxc_semantic::SemanticBuilder;
 use oxc_span::SourceType;
 use oxc_tasks_common::TestFiles;
 
-fn bench_minifier(criterion: &mut Criterion) {
+fn bench_minifier(criterion:&mut Criterion) {
 	let mut group = criterion.benchmark_group("minifier");
 
 	for file in TestFiles::minimal().files() {
@@ -14,8 +14,8 @@ fn bench_minifier(criterion: &mut Criterion) {
 		let source_type = SourceType::from_path(&file.file_name).unwrap();
 		let source_text = file.source_text.as_str();
 
-		// Create `Allocator` outside of `bench_function`, so same allocator is used for
-		// both the warmup and measurement phases
+		// Create `Allocator` outside of `bench_function`, so same allocator is
+		// used for both the warmup and measurement phases
 		let mut allocator = Allocator::default();
 
 		group.bench_function(id, |b| {
@@ -24,9 +24,7 @@ fn bench_minifier(criterion: &mut Criterion) {
 				allocator.reset();
 
 				// Create fresh AST + semantic data for each iteration
-				let program = Parser::new(&allocator, source_text, source_type)
-					.parse()
-					.program;
+				let program = Parser::new(&allocator, source_text, source_type).parse().program;
 				let program = allocator.alloc(program);
 				let (symbols, scopes) = SemanticBuilder::new(source_text)
 					.build(program)
@@ -37,9 +35,7 @@ fn bench_minifier(criterion: &mut Criterion) {
 
 				runner.run(|| {
 					Compressor::new(&allocator, options)
-						.build_with_symbols_and_scopes(
-							symbols, scopes, program,
-						);
+						.build_with_symbols_and_scopes(symbols, scopes, program);
 				});
 			});
 		});

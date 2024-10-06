@@ -1,8 +1,17 @@
 use oxc_ast::{
 	ast::{
-		ArrayExpression, ArrayExpressionElement, ArrowFunctionExpression,
-		Expression, Function, ObjectExpression, ObjectPropertyKind, TSLiteral,
-		TSMethodSignatureKind, TSTupleElement, TSType, TSTypeOperatorOperator,
+		ArrayExpression,
+		ArrayExpressionElement,
+		ArrowFunctionExpression,
+		Expression,
+		Function,
+		ObjectExpression,
+		ObjectPropertyKind,
+		TSLiteral,
+		TSMethodSignatureKind,
+		TSTupleElement,
+		TSType,
+		TSTypeOperatorOperator,
 	},
 	NONE,
 };
@@ -10,8 +19,10 @@ use oxc_span::{GetSpan, Span, SPAN};
 
 use crate::{
 	diagnostics::{
-		arrays_with_spread_elements, function_must_have_explicit_return_type,
-		inferred_type_of_expression, object_with_spread_assignments,
+		arrays_with_spread_elements,
+		function_must_have_explicit_return_type,
+		inferred_type_of_expression,
+		object_with_spread_assignments,
 		shorthand_property,
 	},
 	function::get_function_span,
@@ -19,15 +30,10 @@ use crate::{
 };
 
 impl<'a> IsolatedDeclarations<'a> {
-	pub fn transform_function_to_ts_type(
-		&self,
-		func: &Function<'a>,
-	) -> Option<TSType<'a>> {
+	pub fn transform_function_to_ts_type(&self, func:&Function<'a>) -> Option<TSType<'a>> {
 		let return_type = self.infer_function_return_type(func);
 		if return_type.is_none() {
-			self.error(function_must_have_explicit_return_type(
-				get_function_span(func),
-			));
+			self.error(function_must_have_explicit_return_type(get_function_span(func)));
 		}
 
 		let params = self.transform_formal_parameters(&func.params);
@@ -47,7 +53,7 @@ impl<'a> IsolatedDeclarations<'a> {
 
 	pub fn transform_arrow_function_to_ts_type(
 		&self,
-		func: &ArrowFunctionExpression<'a>,
+		func:&ArrowFunctionExpression<'a>,
 	) -> Option<TSType<'a>> {
 		let return_type = self.infer_arrow_function_return_type(func);
 
@@ -86,11 +92,11 @@ impl<'a> IsolatedDeclarations<'a> {
 	/// ```
 	pub fn transform_object_expression_to_ts_type(
 		&self,
-		expr: &ObjectExpression<'a>,
-		is_const: bool,
+		expr:&ObjectExpression<'a>,
+		is_const:bool,
 	) -> TSType<'a> {
-		let members = self.ast.vec_from_iter(
-			expr.properties.iter().filter_map(|property| match property {
+		let members = self.ast.vec_from_iter(expr.properties.iter().filter_map(|property| {
+			match property {
 				ObjectPropertyKind::ObjectProperty(object) => {
 					if self.report_property_key(&object.key, object.computed) {
 						return None;
@@ -101,34 +107,27 @@ impl<'a> IsolatedDeclarations<'a> {
 						return None;
 					}
 
-					if let Expression::FunctionExpression(function) =
-						&object.value
-					{
+					if let Expression::FunctionExpression(function) = &object.value {
 						if !is_const && object.method {
-							let return_type =
-								self.infer_function_return_type(function);
-							let params = self
-								.transform_formal_parameters(&function.params);
-							return Some(
-								self.ast.ts_signature_method_signature(
-									object.span,
-									// SAFETY: `ast.copy` is unsound! We need to fix.
-									unsafe { self.ast.copy(&object.key) },
-									object.computed,
-									false,
-									TSMethodSignatureKind::Method,
-									// SAFETY: `ast.copy` is unsound! We need to fix.
-									unsafe {
-										self.ast.copy(&function.this_param)
-									},
-									params,
-									return_type,
-									// SAFETY: `ast.copy` is unsound! We need to fix.
-									unsafe {
-										self.ast.copy(&function.type_parameters)
-									},
-								),
-							);
+							let return_type = self.infer_function_return_type(function);
+							let params = self.transform_formal_parameters(&function.params);
+							return Some(self.ast.ts_signature_method_signature(
+								object.span,
+								// SAFETY: `ast.copy` is unsound! We
+								// need to fix.
+								unsafe { self.ast.copy(&object.key) },
+								object.computed,
+								false,
+								TSMethodSignatureKind::Method,
+								// SAFETY: `ast.copy` is unsound! We
+								// need to fix.
+								unsafe { self.ast.copy(&function.this_param) },
+								params,
+								return_type,
+								// SAFETY: `ast.copy` is unsound! We
+								// need to fix.
+								unsafe { self.ast.copy(&function.type_parameters) },
+							));
 						}
 					}
 
@@ -139,79 +138,68 @@ impl<'a> IsolatedDeclarations<'a> {
 					};
 
 					if type_annotation.is_none() {
-						self.error(inferred_type_of_expression(
-							object.value.span(),
-						));
+						self.error(inferred_type_of_expression(object.value.span()));
 						return None;
 					}
 
-					let property_signature =
-						self.ast.ts_signature_property_signature(
-							object.span,
-							false,
-							false,
-							is_const,
-							// SAFETY: `ast.copy` is unsound! We need to fix.
-							unsafe { self.ast.copy(&object.key) },
-							type_annotation.map(|type_annotation| {
-								self.ast
-									.ts_type_annotation(SPAN, type_annotation)
-							}),
-						);
+					let property_signature = self.ast.ts_signature_property_signature(
+						object.span,
+						false,
+						false,
+						is_const,
+						// SAFETY: `ast.copy` is unsound! We need to
+						// fix.
+						unsafe { self.ast.copy(&object.key) },
+						type_annotation.map(|type_annotation| {
+							self.ast.ts_type_annotation(SPAN, type_annotation)
+						}),
+					);
 					Some(property_signature)
 				},
 				ObjectPropertyKind::SpreadProperty(spread) => {
 					self.error(object_with_spread_assignments(spread.span));
 					None
 				},
-			}),
-		);
+			}
+		}));
 		self.ast.ts_type_type_literal(SPAN, members)
 	}
 
 	pub fn transform_array_expression_to_ts_type(
 		&self,
-		expr: &ArrayExpression<'a>,
-		is_const: bool,
+		expr:&ArrayExpression<'a>,
+		is_const:bool,
 	) -> TSType<'a> {
-		let element_types = self.ast.vec_from_iter(
-			expr.elements.iter().filter_map(|element| match element {
+		let element_types = self.ast.vec_from_iter(expr.elements.iter().filter_map(|element| {
+			match element {
 				ArrayExpressionElement::SpreadElement(spread) => {
 					self.error(arrays_with_spread_elements(spread.span));
 					None
 				},
 				ArrayExpressionElement::Elision(elision) => {
-					Some(TSTupleElement::from(
-						self.ast.ts_type_undefined_keyword(elision.span),
-					))
+					Some(TSTupleElement::from(self.ast.ts_type_undefined_keyword(elision.span)))
 				},
-				_ => self
-					.transform_expression_to_ts_type(element.to_expression())
-					.map(TSTupleElement::from)
-					.or_else(|| {
-						self.error(inferred_type_of_expression(element.span()));
-						None
-					}),
-			}),
-		);
+				_ => {
+					self.transform_expression_to_ts_type(element.to_expression())
+						.map(TSTupleElement::from)
+						.or_else(|| {
+							self.error(inferred_type_of_expression(element.span()));
+							None
+						})
+				},
+			}
+		}));
 
 		let ts_type = self.ast.ts_type_tuple_type(SPAN, element_types);
 		if is_const {
-			self.ast.ts_type_type_operator(
-				SPAN,
-				TSTypeOperatorOperator::Readonly,
-				ts_type,
-			)
+			self.ast.ts_type_type_operator(SPAN, TSTypeOperatorOperator::Readonly, ts_type)
 		} else {
 			ts_type
 		}
 	}
 
 	// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#const-assertions
-	pub fn transform_expression_to_ts_type(
-		&self,
-		expr: &Expression<'a>,
-	) -> Option<TSType<'a>> {
+	pub fn transform_expression_to_ts_type(&self, expr:&Expression<'a>) -> Option<TSType<'a>> {
 		match expr {
 			Expression::BooleanLiteral(lit) => {
 				Some(self.ast.ts_type_literal_type(
@@ -249,21 +237,16 @@ impl<'a> IsolatedDeclarations<'a> {
 					}),
 				))
 			},
-			Expression::NullLiteral(lit) => {
-				Some(self.ast.ts_type_null_keyword(lit.span))
-			},
-			Expression::Identifier(ident) => match ident.name.as_str() {
-				"undefined" => {
-					Some(self.ast.ts_type_undefined_keyword(ident.span))
-				},
-				_ => None,
+			Expression::NullLiteral(lit) => Some(self.ast.ts_type_null_keyword(lit.span)),
+			Expression::Identifier(ident) => {
+				match ident.name.as_str() {
+					"undefined" => Some(self.ast.ts_type_undefined_keyword(ident.span)),
+					_ => None,
+				}
 			},
 			Expression::TemplateLiteral(lit) => {
 				self.transform_template_to_string(lit).map(|string| {
-					self.ast.ts_type_literal_type(
-						lit.span,
-						TSLiteral::StringLiteral(string),
-					)
+					self.ast.ts_type_literal_type(lit.span, TSLiteral::StringLiteral(string))
 				})
 			},
 			Expression::UnaryExpression(expr) => {
@@ -271,9 +254,7 @@ impl<'a> IsolatedDeclarations<'a> {
 					Some(self.ast.ts_type_literal_type(
 						SPAN,
 						// SAFETY: `ast.copy` is unsound! We need to fix.
-						TSLiteral::UnaryExpression(unsafe {
-							self.ast.copy(expr)
-						}),
+						TSLiteral::UnaryExpression(unsafe { self.ast.copy(expr) }),
 					))
 				} else {
 					None
@@ -285,9 +266,7 @@ impl<'a> IsolatedDeclarations<'a> {
 			Expression::ObjectExpression(expr) => {
 				Some(self.transform_object_expression_to_ts_type(expr, true))
 			},
-			Expression::FunctionExpression(func) => {
-				self.transform_function_to_ts_type(func)
-			},
+			Expression::FunctionExpression(func) => self.transform_function_to_ts_type(func),
 			Expression::ArrowFunctionExpression(func) => {
 				self.transform_arrow_function_to_ts_type(func)
 			},

@@ -9,9 +9,7 @@ use std::{
 
 use dashmap::DashMap;
 use oxc_allocator::Allocator;
-use oxc_diagnostics::{
-	DiagnosticSender, DiagnosticService, Error, OxcDiagnostic,
-};
+use oxc_diagnostics::{DiagnosticSender, DiagnosticService, Error, OxcDiagnostic};
 use oxc_parser::{ParseOptions, Parser};
 use oxc_resolver::Resolver;
 use oxc_semantic::{ModuleRecord, SemanticBuilder};
@@ -22,44 +20,41 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::{
 	loader::{JavaScriptSource, PartialLoader, LINT_PARTIAL_LOADER_EXT},
 	utils::read_to_string,
-	Fixer, Linter, Message,
+	Fixer,
+	Linter,
+	Message,
 };
 
 pub struct LintServiceOptions {
 	/// Current working directory
-	cwd: Box<Path>,
+	cwd:Box<Path>,
 
 	/// All paths to lint
-	paths: Vec<Box<Path>>,
+	paths:Vec<Box<Path>>,
 
-	/// TypeScript `tsconfig.json` path for reading path alias and project references
-	tsconfig: Option<PathBuf>,
+	/// TypeScript `tsconfig.json` path for reading path alias and project
+	/// references
+	tsconfig:Option<PathBuf>,
 
-	cross_module: bool,
+	cross_module:bool,
 }
 
 impl LintServiceOptions {
 	#[must_use]
-	pub fn new<T>(cwd: T, paths: Vec<Box<Path>>) -> Self
+	pub fn new<T>(cwd:T, paths:Vec<Box<Path>>) -> Self
 	where
-		T: Into<Box<Path>>,
-	{
-		Self { cwd: cwd.into(), paths, tsconfig: None, cross_module: false }
+		T: Into<Box<Path>>, {
+		Self { cwd:cwd.into(), paths, tsconfig:None, cross_module:false }
 	}
 
 	#[inline]
 	#[must_use]
-	pub fn with_tsconfig<T>(mut self, tsconfig: T) -> Self
+	pub fn with_tsconfig<T>(mut self, tsconfig:T) -> Self
 	where
-		T: Into<PathBuf>,
-	{
+		T: Into<PathBuf>, {
 		let tsconfig = tsconfig.into();
 		// Should this be canonicalized?
-		let tsconfig = if tsconfig.is_relative() {
-			self.cwd.join(tsconfig)
-		} else {
-			tsconfig
-		};
+		let tsconfig = if tsconfig.is_relative() { self.cwd.join(tsconfig) } else { tsconfig };
 		debug_assert!(tsconfig.is_file());
 
 		self.tsconfig = Some(tsconfig);
@@ -68,54 +63,45 @@ impl LintServiceOptions {
 
 	#[inline]
 	#[must_use]
-	pub fn with_cross_module(mut self, cross_module: bool) -> Self {
+	pub fn with_cross_module(mut self, cross_module:bool) -> Self {
 		self.cross_module = cross_module;
 		self
 	}
 
 	#[inline]
-	pub fn cwd(&self) -> &Path {
-		&self.cwd
-	}
+	pub fn cwd(&self) -> &Path { &self.cwd }
 }
 
 #[derive(Clone)]
 pub struct LintService {
-	runtime: Arc<Runtime>,
+	runtime:Arc<Runtime>,
 }
 
 impl LintService {
-	pub fn new(linter: Linter, options: LintServiceOptions) -> Self {
+	pub fn new(linter:Linter, options:LintServiceOptions) -> Self {
 		let runtime = Arc::new(Runtime::new(linter, options));
 		Self { runtime }
 	}
 
 	#[cfg(test)]
-	pub(crate) fn from_linter(
-		linter: Linter,
-		options: LintServiceOptions,
-	) -> Self {
+	pub(crate) fn from_linter(linter:Linter, options:LintServiceOptions) -> Self {
 		let runtime = Arc::new(Runtime::new(linter, options));
 		Self { runtime }
 	}
 
-	pub fn linter(&self) -> &Linter {
-		&self.runtime.linter
-	}
+	pub fn linter(&self) -> &Linter { &self.runtime.linter }
 
 	pub fn number_of_dependencies(&self) -> usize {
 		self.runtime.module_map.len() - self.runtime.paths.len()
 	}
 
 	/// # Panics
-	pub fn run(&self, tx_error: &DiagnosticSender) {
+	pub fn run(&self, tx_error:&DiagnosticSender) {
 		self.runtime
 			.paths
 			.iter()
 			.par_bridge()
-			.for_each_with(&self.runtime, |runtime, path| {
-				runtime.process_path(path, tx_error)
-			});
+			.for_each_with(&self.runtime, |runtime, path| runtime.process_path(path, tx_error));
 		tx_error.send(None).unwrap();
 	}
 
@@ -123,10 +109,10 @@ impl LintService {
 	#[cfg(test)]
 	pub(crate) fn run_source<'a>(
 		&self,
-		allocator: &'a Allocator,
-		source_text: &'a str,
-		check_syntax_errors: bool,
-		tx_error: &DiagnosticSender,
+		allocator:&'a Allocator,
+		source_text:&'a str,
+		check_syntax_errors:bool,
+		tx_error:&DiagnosticSender,
 	) -> Vec<Message<'a>> {
 		self.runtime
 			.paths
@@ -151,13 +137,12 @@ impl LintService {
 /// there is a brief moment when a concurrent fetch can miss the cache.
 ///
 /// Given `ModuleMap` is a `DashMap`, which conceptually is a `RwLock<HashMap>`.
-/// When two requests read the map at the exact same time from different threads,
-/// both will miss the cache so both thread will make a request.
+/// When two requests read the map at the exact same time from different
+/// threads, both will miss the cache so both thread will make a request.
 ///
 /// See the "problem section" in <https://medium.com/@polyglot_factotum/rust-concurrency-patterns-condvars-and-locks-e278f18db74f>
 /// and the solution is copied here to fix the issue.
-type CacheState =
-	Mutex<FxHashMap<Box<Path>, Arc<(Mutex<CacheStateEntry>, Condvar)>>>;
+type CacheState = Mutex<FxHashMap<Box<Path>, Arc<(Mutex<CacheStateEntry>, Condvar)>>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum CacheStateEntry {
@@ -175,68 +160,55 @@ enum ModuleState {
 }
 
 pub struct Runtime {
-	cwd: Box<Path>,
+	cwd:Box<Path>,
 	/// All paths to lint
-	paths: FxHashSet<Box<Path>>,
-	linter: Linter,
-	resolver: Option<Resolver>,
-	module_map: ModuleMap,
-	cache_state: CacheState,
+	paths:FxHashSet<Box<Path>>,
+	linter:Linter,
+	resolver:Option<Resolver>,
+	module_map:ModuleMap,
+	cache_state:CacheState,
 }
 
 impl Runtime {
-	fn new(linter: Linter, options: LintServiceOptions) -> Self {
+	fn new(linter:Linter, options:LintServiceOptions) -> Self {
 		let resolver = options.cross_module.then(|| {
-			Self::get_resolver(
-				options
-					.tsconfig
-					.or_else(|| Some(options.cwd.join("tsconfig.json"))),
-			)
+			Self::get_resolver(options.tsconfig.or_else(|| Some(options.cwd.join("tsconfig.json"))))
 		});
 		Self {
-			cwd: options.cwd,
-			paths: options.paths.iter().cloned().collect(),
+			cwd:options.cwd,
+			paths:options.paths.iter().cloned().collect(),
 			linter,
 			resolver,
-			module_map: ModuleMap::default(),
-			cache_state: CacheState::default(),
+			module_map:ModuleMap::default(),
+			cache_state:CacheState::default(),
 		}
 	}
 
-	fn get_resolver(tsconfig: Option<PathBuf>) -> Resolver {
-		use oxc_resolver::{
-			ResolveOptions, TsconfigOptions, TsconfigReferences,
-		};
+	fn get_resolver(tsconfig:Option<PathBuf>) -> Resolver {
+		use oxc_resolver::{ResolveOptions, TsconfigOptions, TsconfigReferences};
 		let tsconfig = tsconfig.and_then(|path| {
 			if path.is_file() {
-				Some(TsconfigOptions {
-					config_file: path,
-					references: TsconfigReferences::Auto,
-				})
+				Some(TsconfigOptions { config_file:path, references:TsconfigReferences::Auto })
 			} else {
 				None
 			}
 		});
 
 		Resolver::new(ResolveOptions {
-			extensions: VALID_EXTENSIONS
-				.iter()
-				.map(|ext| format!(".{ext}"))
-				.collect(),
-			condition_names: vec!["module".into(), "require".into()],
+			extensions:VALID_EXTENSIONS.iter().map(|ext| format!(".{ext}")).collect(),
+			condition_names:vec!["module".into(), "require".into()],
 			tsconfig,
 			..ResolveOptions::default()
 		})
 	}
 
 	fn get_source_type_and_text(
-		path: &Path,
-		ext: &str,
+		path:&Path,
+		ext:&str,
 	) -> Option<Result<(SourceType, String), Error>> {
 		let source_type = SourceType::from_path(path);
-		let not_supported_yet = source_type
-			.as_ref()
-			.is_err_and(|_| !LINT_PARTIAL_LOADER_EXT.contains(&ext));
+		let not_supported_yet =
+			source_type.as_ref().is_err_and(|_| !LINT_PARTIAL_LOADER_EXT.contains(&ext));
 		if not_supported_yet {
 			return None;
 		}
@@ -255,7 +227,7 @@ impl Runtime {
 	// clippy: the source field is checked and assumed to be less than 4GB, and
 	// we assume that the fix offset will not exceed 2GB in either direction
 	#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-	fn process_path(&self, path: &Path, tx_error: &DiagnosticSender) {
+	fn process_path(&self, path:&Path, tx_error:&DiagnosticSender) {
 		if self.init_cache_state(path) {
 			return;
 		}
@@ -265,9 +237,7 @@ impl Runtime {
 			return;
 		};
 
-		let Some(source_type_and_text) =
-			Self::get_source_type_and_text(path, ext)
-		else {
+		let Some(source_type_and_text) = Self::get_source_type_and_text(path, ext) else {
 			self.ignore_path(path);
 			return;
 		};
@@ -281,24 +251,23 @@ impl Runtime {
 			},
 		};
 
-		let sources =
-			PartialLoader::parse(ext, &source_text).unwrap_or_else(|| {
-				vec![JavaScriptSource::partial(&source_text, source_type, 0)]
-			});
+		let sources = PartialLoader::parse(ext, &source_text)
+			.unwrap_or_else(|| vec![JavaScriptSource::partial(&source_text, source_type, 0)]);
 
 		if sources.is_empty() {
 			self.ignore_path(path);
 			return;
 		}
 
-		// If there are fixes, we will accumulate all of them and write to the file at the end.
-		// This means we do not write multiple times to the same file if there are multiple sources
-		// in the same file (for example, multiple scripts in an `.astro` file).
+		// If there are fixes, we will accumulate all of them and write to the
+		// file at the end. This means we do not write multiple times to the
+		// same file if there are multiple sources in the same file (for
+		// example, multiple scripts in an `.astro` file).
 		let mut new_source_text = Cow::from(&source_text);
-		// This is used to keep track of the cumulative offset from applying fixes.
-		// Otherwise, spans for fixes will be incorrect due to varying size of the
-		// source code after each fix.
-		let mut fix_offset: i32 = 0;
+		// This is used to keep track of the cumulative offset from applying
+		// fixes. Otherwise, spans for fixes will be incorrect due to varying
+		// size of the source code after each fix.
+		let mut fix_offset:i32 = 0;
 
 		for source in sources {
 			let allocator = Allocator::default();
@@ -315,12 +284,9 @@ impl Runtime {
 				let fix_result = Fixer::new(source.source_text, messages).fix();
 				if fix_result.fixed {
 					// write to file, replacing only the changed part
-					let start =
-						source.start.saturating_add_signed(fix_offset) as usize;
+					let start = source.start.saturating_add_signed(fix_offset) as usize;
 					let end = start + source.source_text.len();
-					new_source_text
-						.to_mut()
-						.replace_range(start..end, &fix_result.fixed_code);
+					new_source_text.to_mut().replace_range(start..end, &fix_result.fixed_code);
 					let old_code_len = source.source_text.len() as u32;
 					let new_code_len = fix_result.fixed_code.len() as u32;
 					fix_offset += new_code_len as i32;
@@ -333,11 +299,8 @@ impl Runtime {
 				self.ignore_path(path);
 				let errors = messages.into_iter().map(Into::into).collect();
 				let path = path.strip_prefix(&self.cwd).unwrap_or(path);
-				let diagnostics = DiagnosticService::wrap_diagnostics(
-					path,
-					source.source_text,
-					errors,
-				);
+				let diagnostics =
+					DiagnosticService::wrap_diagnostics(path, source.source_text, errors);
 				tx_error.send(Some(diagnostics)).unwrap();
 			}
 		}
@@ -352,35 +315,31 @@ impl Runtime {
 	#[allow(clippy::too_many_arguments)]
 	fn process_source<'a>(
 		&self,
-		path: &Path,
-		allocator: &'a Allocator,
-		source_text: &'a str,
-		source_type: SourceType,
-		check_syntax_errors: bool,
-		tx_error: &DiagnosticSender,
+		path:&Path,
+		allocator:&'a Allocator,
+		source_text:&'a str,
+		source_type:SourceType,
+		check_syntax_errors:bool,
+		tx_error:&DiagnosticSender,
 	) -> Vec<Message<'a>> {
 		let ret = Parser::new(allocator, source_text, source_type)
 			.with_options(ParseOptions {
-				parse_regular_expression: true,
-				allow_return_outside_function: true,
+				parse_regular_expression:true,
+				allow_return_outside_function:true,
 				..ParseOptions::default()
 			})
 			.parse();
 
 		if !ret.errors.is_empty() {
-			return ret
-				.errors
-				.into_iter()
-				.map(|err| Message::new(err, None))
-				.collect();
+			return ret.errors.into_iter().map(|err| Message::new(err, None)).collect();
 		};
 
 		let program = allocator.alloc(ret.program);
 
 		let trivias = ret.trivias;
 
-		// Build the module record to unblock other threads from waiting for too long.
-		// The semantic model is not built at this stage.
+		// Build the module record to unblock other threads from waiting for too
+		// long. The semantic model is not built at this stage.
 		let semantic_builder = SemanticBuilder::new(source_text)
 			.with_cfg(true)
 			.with_trivias(trivias)
@@ -402,47 +361,34 @@ impl Runtime {
 				.requested_modules
 				.keys()
 				.par_bridge()
-				.map_with(
-					self.resolver.as_ref().unwrap(),
-					|resolver, specifier| {
-						resolver
-							.resolve(dir, specifier)
-							.ok()
-							.map(|r| (specifier, r))
-					},
-				)
+				.map_with(self.resolver.as_ref().unwrap(), |resolver, specifier| {
+					resolver.resolve(dir, specifier).ok().map(|r| (specifier, r))
+				})
 				.flatten()
-				.for_each_with(
-					tx_error,
-					|tx_error, (specifier, resolution)| {
-						let path = resolution.path();
-						self.process_path(path, tx_error);
-						let Some(target_module_record_ref) =
-							self.module_map.get(path)
-						else {
-							return;
-						};
-						let ModuleState::Resolved(target_module_record) =
-							target_module_record_ref.value()
-						else {
-							return;
-						};
-						// Append target_module to loaded_modules
-						module_record.loaded_modules.insert(
-							specifier.clone(),
-							Arc::clone(target_module_record),
-						);
-					},
-				);
+				.for_each_with(tx_error, |tx_error, (specifier, resolution)| {
+					let path = resolution.path();
+					self.process_path(path, tx_error);
+					let Some(target_module_record_ref) = self.module_map.get(path) else {
+						return;
+					};
+					let ModuleState::Resolved(target_module_record) =
+						target_module_record_ref.value()
+					else {
+						return;
+					};
+					// Append target_module to loaded_modules
+					module_record
+						.loaded_modules
+						.insert(specifier.clone(), Arc::clone(target_module_record));
+				});
 
-			// The thread is blocked here until all dependent modules are resolved.
+			// The thread is blocked here until all dependent modules are
+			// resolved.
 
 			// Resolve and append `star_export_bindings`
 			for export_entry in &module_record.star_export_entries {
-				let Some(remote_module_record_ref) = export_entry
-					.module_request
-					.as_ref()
-					.and_then(|module_request| {
+				let Some(remote_module_record_ref) =
+					export_entry.module_request.as_ref().and_then(|module_request| {
 						module_record.loaded_modules.get(module_request.name())
 					})
 				else {
@@ -450,12 +396,12 @@ impl Runtime {
 				};
 				let remote_module_record = remote_module_record_ref.value();
 
-				// Append both remote `bindings` and `exported_bindings_from_star_export`
-				let remote_exported_bindings_from_star_export =
-					remote_module_record
-						.exported_bindings_from_star_export
-						.iter()
-						.flat_map(|r| r.value().clone());
+				// Append both remote `bindings` and
+				// `exported_bindings_from_star_export`
+				let remote_exported_bindings_from_star_export = remote_module_record
+					.exported_bindings_from_star_export
+					.iter()
+					.flat_map(|r| r.value().clone());
 				let remote_bindings = remote_module_record
 					.exported_bindings
 					.keys()
@@ -479,33 +425,22 @@ impl Runtime {
 		let semantic_ret = semantic_builder.build(program);
 
 		if !semantic_ret.errors.is_empty() {
-			return semantic_ret
-				.errors
-				.into_iter()
-				.map(|err| Message::new(err, None))
-				.collect();
+			return semantic_ret.errors.into_iter().map(|err| Message::new(err, None)).collect();
 		};
 
 		self.linter.run(path, Rc::new(semantic_ret.semantic))
 	}
 
-	fn init_cache_state(&self, path: &Path) -> bool {
+	fn init_cache_state(&self, path:&Path) -> bool {
 		if self.resolver.is_none() {
 			return false;
 		}
 
 		let (lock, cvar) = {
 			let mut state_map = self.cache_state.lock().unwrap();
-			&*Arc::clone(
-				state_map
-					.entry(path.to_path_buf().into_boxed_path())
-					.or_insert_with(|| {
-						Arc::new((
-							Mutex::new(CacheStateEntry::ReadyToConstruct),
-							Condvar::new(),
-						))
-					}),
-			)
+			&*Arc::clone(state_map.entry(path.to_path_buf().into_boxed_path()).or_insert_with(
+				|| Arc::new((Mutex::new(CacheStateEntry::ReadyToConstruct), Condvar::new())),
+			))
 		};
 		let mut state = cvar
 			.wait_while(lock.lock().unwrap(), |state| {
@@ -516,11 +451,7 @@ impl Runtime {
 		let cache_hit = if self.module_map.contains_key(path) {
 			true
 		} else {
-			let i = if let CacheStateEntry::PendingStore(i) = *state {
-				i
-			} else {
-				0
-			};
+			let i = if let CacheStateEntry::PendingStore(i) = *state { i } else { 0 };
 			*state = CacheStateEntry::PendingStore(i + 1);
 			false
 		};
@@ -533,12 +464,14 @@ impl Runtime {
 		cache_hit
 	}
 
-	fn update_cache_state(&self, path: &Path) {
+	fn update_cache_state(&self, path:&Path) {
 		let (lock, cvar) = {
 			let mut state_map = self.cache_state.lock().unwrap();
-			&*Arc::clone(state_map.get_mut(path).expect(
-				"Entry in http-cache state to have been previously inserted",
-			))
+			&*Arc::clone(
+				state_map
+					.get_mut(path)
+					.expect("Entry in http-cache state to have been previously inserted"),
+			)
 		};
 		let mut state = lock.lock().unwrap();
 		if let CacheStateEntry::PendingStore(i) = *state {
@@ -553,12 +486,10 @@ impl Runtime {
 		}
 	}
 
-	fn ignore_path(&self, path: &Path) {
+	fn ignore_path(&self, path:&Path) {
 		if self.resolver.is_some() {
-			self.module_map.insert(
-				path.to_path_buf().into_boxed_path(),
-				ModuleState::Ignored,
-			);
+			self.module_map
+				.insert(path.to_path_buf().into_boxed_path(), ModuleState::Ignored);
 			self.update_cache_state(path);
 		}
 	}

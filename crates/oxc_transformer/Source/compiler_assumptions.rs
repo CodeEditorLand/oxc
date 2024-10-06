@@ -9,49 +9,49 @@ use serde::Deserialize;
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CompilerAssumptions {
 	#[serde(default)]
-	pub array_like_is_iterable: bool,
+	pub array_like_is_iterable:bool,
 	#[serde(default)]
-	pub constant_reexports: bool,
+	pub constant_reexports:bool,
 	#[serde(default)]
-	pub constant_super: bool,
+	pub constant_super:bool,
 	#[serde(default)]
-	pub enumerable_module_meta: bool,
+	pub enumerable_module_meta:bool,
 	#[serde(default)]
-	pub ignore_function_length: bool,
+	pub ignore_function_length:bool,
 	#[serde(default)]
-	pub ignore_to_primitive_hint: bool,
+	pub ignore_to_primitive_hint:bool,
 	#[serde(default)]
-	pub iterable_is_array: bool,
+	pub iterable_is_array:bool,
 	#[serde(default)]
-	pub mutable_template_object: bool,
+	pub mutable_template_object:bool,
 	#[serde(default)]
-	pub no_class_calls: bool,
+	pub no_class_calls:bool,
 	#[serde(default)]
-	pub no_document_all: bool,
+	pub no_document_all:bool,
 	#[serde(default)]
-	pub no_incomplete_ns_import_detection: bool,
+	pub no_incomplete_ns_import_detection:bool,
 	#[serde(default)]
-	pub no_new_arrows: bool,
+	pub no_new_arrows:bool,
 	#[serde(default)]
-	pub no_uninitialized_private_field_access: bool,
+	pub no_uninitialized_private_field_access:bool,
 	#[serde(default)]
-	pub object_rest_no_symbols: bool,
+	pub object_rest_no_symbols:bool,
 	#[serde(default)]
-	pub private_fields_as_symbols: bool,
+	pub private_fields_as_symbols:bool,
 	#[serde(default)]
-	pub private_fields_as_properties: bool,
+	pub private_fields_as_properties:bool,
 	#[serde(default)]
-	pub pure_getters: bool,
+	pub pure_getters:bool,
 	#[serde(default)]
-	pub set_class_methods: bool,
+	pub set_class_methods:bool,
 	#[serde(default)]
-	pub set_computed_properties: bool,
+	pub set_computed_properties:bool,
 	#[serde(default)]
-	pub set_public_class_fields: bool,
+	pub set_public_class_fields:bool,
 	#[serde(default)]
-	pub set_spread_properties: bool,
+	pub set_spread_properties:bool,
 	#[serde(default)]
-	pub skip_for_of_iterator_closing: bool,
+	pub skip_for_of_iterator_closing:bool,
 	#[serde(default)]
-	pub super_is_callable_constructor: bool,
+	pub super_is_callable_constructor:bool,
 }

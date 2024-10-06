@@ -3,34 +3,32 @@ use std::{
 	mem::{discriminant, Discriminant},
 };
 
-/// This trait works similarly to [std::hash::Hash] but it gives the liberty of hashing
-/// the object's content loosely. This would mean the implementor can skip some parts of
-/// the content while calculating the hash.
+/// This trait works similarly to [std::hash::Hash] but it gives the liberty of
+/// hashing the object's content loosely. This would mean the implementor can
+/// skip some parts of the content while calculating the hash.
 ///
 /// As an example, In AST types we ignore fields such as [crate::Span].
 pub trait ContentHash {
-	fn content_hash<H: Hasher>(&self, state: &mut H);
+	fn content_hash<H:Hasher>(&self, state:&mut H);
 
 	/// The default implementation is usually sufficient.
-	fn content_hash_slice<H: Hasher>(data: &[Self], state: &mut H)
+	fn content_hash_slice<H:Hasher>(data:&[Self], state:&mut H)
 	where
-		Self: Sized,
-	{
+		Self: Sized, {
 		for piece in data {
 			piece.content_hash(state);
 		}
 	}
 }
 
-/// Short-Circuting implementation for [Discriminant] since it is used to hash enums.
+/// Short-Circuting implementation for [Discriminant] since it is used to hash
+/// enums.
 impl<T> ContentHash for Discriminant<T> {
-	fn content_hash<H: Hasher>(&self, state: &mut H) {
-		Hash::hash(self, state);
-	}
+	fn content_hash<H:Hasher>(&self, state:&mut H) { Hash::hash(self, state); }
 }
 
-impl<T: ContentHash> ContentHash for Option<T> {
-	fn content_hash<H: Hasher>(&self, state: &mut H) {
+impl<T:ContentHash> ContentHash for Option<T> {
+	fn content_hash<H:Hasher>(&self, state:&mut H) {
 		ContentHash::content_hash(&discriminant(self), state);
 		if let Some(it) = self {
 			ContentHash::content_hash(it, state);
@@ -38,14 +36,14 @@ impl<T: ContentHash> ContentHash for Option<T> {
 	}
 }
 
-impl<'a, T: ContentHash> ContentHash for oxc_allocator::Box<'a, T> {
-	fn content_hash<H: Hasher>(&self, state: &mut H) {
+impl<'a, T:ContentHash> ContentHash for oxc_allocator::Box<'a, T> {
+	fn content_hash<H:Hasher>(&self, state:&mut H) {
 		ContentHash::content_hash(self.as_ref(), state);
 	}
 }
 
-impl<'a, T: ContentHash> ContentHash for oxc_allocator::Vec<'a, T> {
-	fn content_hash<H: Hasher>(&self, state: &mut H) {
+impl<'a, T:ContentHash> ContentHash for oxc_allocator::Vec<'a, T> {
+	fn content_hash<H:Hasher>(&self, state:&mut H) {
 		ContentHash::content_hash_slice(self.as_slice(), state);
 	}
 }

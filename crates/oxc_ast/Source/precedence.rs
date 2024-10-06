@@ -1,12 +1,25 @@
 use oxc_syntax::precedence::{GetPrecedence, Precedence};
 
 use crate::ast::{
-	match_member_expression, AssignmentExpression, AwaitExpression,
-	BinaryExpression, CallExpression, ComputedMemberExpression,
-	ConditionalExpression, Expression, ImportExpression, LogicalExpression,
-	MemberExpression, NewExpression, PrivateFieldExpression,
-	SequenceExpression, StaticMemberExpression, TSTypeAssertion,
-	UnaryExpression, UpdateExpression, YieldExpression,
+	match_member_expression,
+	AssignmentExpression,
+	AwaitExpression,
+	BinaryExpression,
+	CallExpression,
+	ComputedMemberExpression,
+	ConditionalExpression,
+	Expression,
+	ImportExpression,
+	LogicalExpression,
+	MemberExpression,
+	NewExpression,
+	PrivateFieldExpression,
+	SequenceExpression,
+	StaticMemberExpression,
+	TSTypeAssertion,
+	UnaryExpression,
+	UpdateExpression,
+	YieldExpression,
 };
 
 impl<'a> GetPrecedence for Expression<'a> {
@@ -23,116 +36,78 @@ impl<'a> GetPrecedence for Expression<'a> {
 			Self::AwaitExpression(expr) => expr.precedence(),
 			Self::NewExpression(expr) => expr.precedence(),
 			Self::CallExpression(expr) => expr.precedence(),
-			match_member_expression!(Self) => {
-				self.to_member_expression().precedence()
-			},
+			match_member_expression!(Self) => self.to_member_expression().precedence(),
 			_ => panic!("All cases should be covered"),
 		}
 	}
 }
 
 impl<'a> GetPrecedence for SequenceExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Comma
-	}
+	fn precedence(&self) -> Precedence { Precedence::Comma }
 }
 
 impl<'a> GetPrecedence for YieldExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Yield
-	}
+	fn precedence(&self) -> Precedence { Precedence::Yield }
 }
 
 impl<'a> GetPrecedence for ConditionalExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Conditional
-	}
+	fn precedence(&self) -> Precedence { Precedence::Conditional }
 }
 
 impl<'a> GetPrecedence for AssignmentExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Assign
-	}
+	fn precedence(&self) -> Precedence { Precedence::Assign }
 }
 
 impl<'a> GetPrecedence for LogicalExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		self.operator.precedence()
-	}
+	fn precedence(&self) -> Precedence { self.operator.precedence() }
 }
 
 impl<'a> GetPrecedence for BinaryExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		self.operator.precedence()
-	}
+	fn precedence(&self) -> Precedence { self.operator.precedence() }
 }
 
 impl<'a> GetPrecedence for UnaryExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Prefix
-	}
+	fn precedence(&self) -> Precedence { Precedence::Prefix }
 }
 
 impl<'a> GetPrecedence for AwaitExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Prefix
-	}
+	fn precedence(&self) -> Precedence { Precedence::Prefix }
 }
 
 impl<'a> GetPrecedence for UpdateExpression<'a> {
 	fn precedence(&self) -> Precedence {
-		if self.prefix {
-			Precedence::Prefix
-		} else {
-			Precedence::Postfix
-		}
+		if self.prefix { Precedence::Prefix } else { Precedence::Postfix }
 	}
 }
 
 impl<'a> GetPrecedence for CallExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Call
-	}
+	fn precedence(&self) -> Precedence { Precedence::Call }
 }
 
 impl<'a> GetPrecedence for ImportExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Call
-	}
+	fn precedence(&self) -> Precedence { Precedence::Call }
 }
 
 impl<'a> GetPrecedence for NewExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Call
-	}
+	fn precedence(&self) -> Precedence { Precedence::Call }
 }
 
 impl<'a> GetPrecedence for MemberExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Member
-	}
+	fn precedence(&self) -> Precedence { Precedence::Member }
 }
 
 impl<'a> GetPrecedence for ComputedMemberExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Member
-	}
+	fn precedence(&self) -> Precedence { Precedence::Member }
 }
 
 impl<'a> GetPrecedence for StaticMemberExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Member
-	}
+	fn precedence(&self) -> Precedence { Precedence::Member }
 }
 
 impl<'a> GetPrecedence for PrivateFieldExpression<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Member
-	}
+	fn precedence(&self) -> Precedence { Precedence::Member }
 }
 
 impl<'a> GetPrecedence for TSTypeAssertion<'a> {
-	fn precedence(&self) -> Precedence {
-		Precedence::Lowest
-	}
+	fn precedence(&self) -> Precedence { Precedence::Lowest }
 }

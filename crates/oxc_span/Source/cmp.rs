@@ -1,41 +1,36 @@
-/// This trait works similarly to [PartialEq] but it gives the liberty of checking the equality of the
-/// content loosely. This would mean the implementor can skip some parts of the content while doing
-/// equality checks.
+/// This trait works similarly to [PartialEq] but it gives the liberty of
+/// checking the equality of the content loosely. This would mean the
+/// implementor can skip some parts of the content while doing equality checks.
 /// As an example, In AST types we ignore fields such as [crate::Span].
 ///
-/// One should always prefer using the [PartialEq] over this since implementations of this trait
-/// inherently are slower or in the best-case scenario as fast as the [PartialEq] comparison.
+/// One should always prefer using the [PartialEq] over this since
+/// implementations of this trait inherently are slower or in the best-case
+/// scenario as fast as the [PartialEq] comparison.
 pub trait ContentEq {
 	/// This method tests for contents of `self` and `other` to be equal.
 	#[must_use]
-	fn content_eq(&self, other: &Self) -> bool;
+	fn content_eq(&self, other:&Self) -> bool;
 
 	/// This method tests for contents of `self` and `other` not to be equal.
 	/// The default implementation is almost always
 	/// sufficient, and should not be overridden without very good reason.
 	#[inline]
 	#[must_use]
-	fn content_ne(&self, other: &Self) -> bool {
-		!self.content_eq(other)
-	}
+	fn content_ne(&self, other:&Self) -> bool { !self.content_eq(other) }
 }
 
 impl ContentEq for () {
 	#[inline]
-	fn content_eq(&self, _other: &()) -> bool {
-		true
-	}
+	fn content_eq(&self, _other:&()) -> bool { true }
 
 	#[inline]
-	fn content_ne(&self, _other: &()) -> bool {
-		false
-	}
+	fn content_ne(&self, _other:&()) -> bool { false }
 }
 
 /// Blanket implementation for [Option] types
-impl<T: ContentEq> ContentEq for Option<T> {
+impl<T:ContentEq> ContentEq for Option<T> {
 	#[inline]
-	fn content_eq(&self, other: &Self) -> bool {
+	fn content_eq(&self, other:&Self) -> bool {
 		// NOTE: based on the standard library
 		// Spelling out the cases explicitly optimizes better than
 		// `_ => false`
@@ -50,22 +45,20 @@ impl<T: ContentEq> ContentEq for Option<T> {
 }
 
 /// Blanket implementation for [oxc_allocator::Box] types
-impl<'a, T: ContentEq> ContentEq for oxc_allocator::Box<'a, T> {
+impl<'a, T:ContentEq> ContentEq for oxc_allocator::Box<'a, T> {
 	#[inline]
-	fn content_eq(&self, other: &Self) -> bool {
-		self.as_ref().content_eq(other.as_ref())
-	}
+	fn content_eq(&self, other:&Self) -> bool { self.as_ref().content_eq(other.as_ref()) }
 }
 
 /// Blanket implementation for [oxc_allocator::Vec] types
 ///
 /// # Warning
-/// This implementation is slow compared to [PartialEq] for native types which are [Copy] (e.g. `u32`).
-/// Prefer comparing the 2 vectors using `==` if they contain such native types (e.g. `Vec<u32>`).
-/// <https://godbolt.org/z/54on5sMWc>
-impl<'a, T: ContentEq> ContentEq for oxc_allocator::Vec<'a, T> {
+/// This implementation is slow compared to [PartialEq] for native types which
+/// are [Copy] (e.g. `u32`). Prefer comparing the 2 vectors using `==` if they
+/// contain such native types (e.g. `Vec<u32>`). <https://godbolt.org/z/54on5sMWc>
+impl<'a, T:ContentEq> ContentEq for oxc_allocator::Vec<'a, T> {
 	#[inline]
-	fn content_eq(&self, other: &Self) -> bool {
+	fn content_eq(&self, other:&Self) -> bool {
 		if self.len() == other.len() {
 			!self.iter().zip(other).any(|(lhs, rhs)| lhs.content_ne(rhs))
 		} else {

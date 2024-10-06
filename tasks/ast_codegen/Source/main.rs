@@ -17,15 +17,14 @@ use std::{
 	rc::Rc,
 };
 
-use fmt::{cargo_fmt, pprint};
-use itertools::Itertools;
-use proc_macro2::TokenStream;
-use syn::parse_file;
-
 use defs::TypeDef;
+use fmt::{cargo_fmt, pprint};
 use generators::{AstGenerator, AstKindGenerator, VisitGenerator};
+use itertools::Itertools;
 use linker::{linker, Linker};
+use proc_macro2::TokenStream;
 use schema::{Inherit, Module, REnum, RStruct, RType, Schema};
+use syn::parse_file;
 
 use crate::generators::ImplGetSpanGenerator;
 
@@ -38,13 +37,13 @@ type TypeRef = Rc<RefCell<RType>>;
 
 #[derive(Default)]
 struct AstCodegen {
-	files: Vec<PathBuf>,
-	generators: Vec<Box<dyn Generator>>,
+	files:Vec<PathBuf>,
+	generators:Vec<Box<dyn Generator>>,
 }
 
 trait Generator {
 	fn name(&self) -> &'static str;
-	fn generate(&mut self, ctx: &CodegenCtx) -> GeneratorOutput;
+	fn generate(&mut self, ctx:&CodegenCtx) -> GeneratorOutput;
 }
 
 #[derive(Debug, Clone)]
@@ -86,22 +85,24 @@ impl GeneratorOutput {
 }
 
 struct CodegenCtx {
-	modules: Vec<Module>,
-	ty_table: TypeTable,
-	ident_table: IdentTable,
+	modules:Vec<Module>,
+	ty_table:TypeTable,
+	ident_table:IdentTable,
 }
 
 struct CodegenResult {
 	/// One schema per definition file
-	schema: Vec<Schema>,
+	schema:Vec<Schema>,
 	outputs: Vec<(
-		/* generator name */ &'static str,
-		/* output */ GeneratorOutput,
+		// generator name
+		&'static str,
+		// output
+		GeneratorOutput,
 	)>,
 }
 
 impl CodegenCtx {
-	fn new(mods: Vec<Module>) -> Self {
+	fn new(mods:Vec<Module>) -> Self {
 		// worst case len
 		let len = mods.iter().fold(0, |acc, it| acc + it.items.len());
 		let defs = mods.iter().flat_map(|it| it.items.iter());
@@ -116,33 +117,29 @@ impl CodegenCtx {
 				ident_table.insert(ident, type_id);
 			}
 		}
-		Self { modules: mods, ty_table, ident_table }
+		Self { modules:mods, ty_table, ident_table }
 	}
 
-	fn find(&self, key: &TypeName) -> Option<TypeRef> {
+	fn find(&self, key:&TypeName) -> Option<TypeRef> {
 		self.type_id(key).map(|id| TypeRef::clone(&self.ty_table[*id]))
 	}
 
-	fn type_id<'b>(&'b self, key: &'b TypeName) -> Option<&'b TypeId> {
-		self.ident_table.get(key)
-	}
+	fn type_id<'b>(&'b self, key:&'b TypeName) -> Option<&'b TypeId> { self.ident_table.get(key) }
 }
 
 impl AstCodegen {
 	#[must_use]
-	fn add_file<P>(mut self, path: P) -> Self
+	fn add_file<P>(mut self, path:P) -> Self
 	where
-		P: AsRef<str>,
-	{
+		P: AsRef<str>, {
 		self.files.push(path.as_ref().into());
 		self
 	}
 
 	#[must_use]
-	fn with<G>(mut self, generator: G) -> Self
+	fn with<G>(mut self, generator:G) -> Self
 	where
-		G: Generator + 'static,
-	{
+		G: Generator + 'static, {
 		self.generators.push(Box::new(generator));
 		self
 	}
@@ -167,21 +164,15 @@ impl AstCodegen {
 			.map(|mut gen| (gen.name(), gen.generate(&ctx)))
 			.collect_vec();
 
-		let schema = ctx
-			.modules
-			.into_iter()
-			.map(Module::build)
-			.collect::<Result<Vec<_>>>()?;
+		let schema = ctx.modules.into_iter().map(Module::build).collect::<Result<Vec<_>>>()?;
 		Ok(CodegenResult { schema, outputs })
 	}
 }
 
-const AST_ROOT_DIR: &str = "crates/oxc_ast";
+const AST_ROOT_DIR:&str = "crates/oxc_ast";
 
 fn files() -> impl std::iter::Iterator<Item = String> {
-	fn path(path: &str) -> String {
-		format!("{AST_ROOT_DIR}/src/ast/{path}.rs")
-	}
+	fn path(path:&str) -> String { format!("{AST_ROOT_DIR}/src/ast/{path}.rs") }
 
 	vec![path("literal"), path("js"), path("ts"), path("jsx")].into_iter()
 }
@@ -203,7 +194,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 		.generate()?;
 
 	let output_dir = output_dir()?;
-	let outputs: HashMap<_, _> = outputs.into_iter().collect();
+	let outputs:HashMap<_, _> = outputs.into_iter().collect();
 
 	{
 		// write `span.rs` file
@@ -234,8 +225,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 		let content_mut = pprint(&output["visit_mut"]);
 
 		let mut visit = fs::File::create(format!("{output_dir}/visit.rs"))?;
-		let mut visit_mut =
-			fs::File::create(format!("{output_dir}/visit_mut.rs"))?;
+		let mut visit_mut = fs::File::create(format!("{output_dir}/visit_mut.rs"))?;
 
 		visit.write_all(content.as_bytes())?;
 		visit_mut.write_all(content_mut.as_bytes())?;
@@ -243,7 +233,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
 	cargo_fmt(".")?;
 
-	// let schema = serde_json::to_string_pretty(&schema).map_err(|e| e.to_string())?;
-	// println!("{schema}");
+	// let schema = serde_json::to_string_pretty(&schema).map_err(|e|
+	// e.to_string())?; println!("{schema}");
 	Ok(())
 }

@@ -7,7 +7,7 @@ use oxc_allocator::{Allocator, CloneIn};
 pub use types::Span;
 
 /// An Empty span useful for creating AST nodes.
-pub const SPAN: Span = Span::new(0, 0);
+pub const SPAN:Span = Span::new(0, 0);
 
 impl Span {
 	/// Create a new [`Span`] from a start and end position.
@@ -16,11 +16,8 @@ impl Span {
 	/// The `start` position must be less than or equal to `end`. Note that this
 	/// invariant is only checked in debug builds to avoid a performance
 	/// penalty.
-	///
 	#[inline]
-	pub const fn new(start: u32, end: u32) -> Self {
-		Self { start, end }
-	}
+	pub const fn new(start:u32, end:u32) -> Self { Self { start, end } }
 
 	/// Create a new empty [`Span`] that starts and ends at an offset position.
 	///
@@ -33,9 +30,7 @@ impl Span {
 	/// assert_eq!(fifth, Span::sized(5, 0));
 	/// assert_eq!(fifth, Span::new(5, 5));
 	/// ```
-	pub fn empty(at: u32) -> Self {
-		Self { start: at, end: at }
-	}
+	pub fn empty(at:u32) -> Self { Self { start:at, end:at } }
 
 	/// Create a new [`Span`] starting at `start` and covering `size` bytes.
 	///
@@ -47,9 +42,7 @@ impl Span {
 	/// assert_eq!(span.size(), 4);
 	/// assert_eq!(span, Span::new(2, 6));
 	/// ```
-	pub const fn sized(start: u32, size: u32) -> Self {
-		Self::new(start, start + size)
-	}
+	pub const fn sized(start:u32, size:u32) -> Self { Self::new(start, start + size) }
 
 	/// Get the number of bytes covered by the [`Span`].
 	///
@@ -82,7 +75,8 @@ impl Span {
 	}
 
 	/// Returns `true` if `self` is not a real span.
-	/// i.e. `SPAN` which is used for generated nodes which are not in source code.
+	/// i.e. `SPAN` which is used for generated nodes which are not in source
+	/// code.
 	///
 	/// # Example
 	/// ```
@@ -92,9 +86,7 @@ impl Span {
 	/// assert!(!Span::new(0, 5).is_unspanned());
 	/// assert!(!Span::new(5, 5).is_unspanned());
 	/// ```
-	pub const fn is_unspanned(&self) -> bool {
-		self.start == SPAN.start && self.end == SPAN.end
-	}
+	pub const fn is_unspanned(&self) -> bool { self.start == SPAN.start && self.end == SPAN.end }
 
 	/// Check if this [`Span`] contains another [`Span`].
 	///
@@ -116,7 +108,7 @@ impl Span {
 	/// assert!(!span.contains_inclusive(Span::empty(0)));
 	/// ```
 	#[inline]
-	pub const fn contains_inclusive(self, span: Span) -> bool {
+	pub const fn contains_inclusive(self, span:Span) -> bool {
 		self.start <= span.start && span.end <= self.end
 	}
 
@@ -132,7 +124,7 @@ impl Span {
 	/// assert_eq!(merged_span, Span::new(0, 8));
 	/// ```
 	#[must_use]
-	pub fn merge(&self, other: &Self) -> Self {
+	pub fn merge(&self, other:&Self) -> Self {
 		Self::new(self.start.min(other.start), self.end.max(other.end))
 	}
 
@@ -154,11 +146,8 @@ impl Span {
 	/// [`expand_left`]: Span::expand_left
 	/// [`expand_right`]: Span::expand_right
 	#[must_use]
-	pub fn expand(self, offset: u32) -> Self {
-		Self::new(
-			self.start.saturating_sub(offset),
-			self.end.saturating_add(offset),
-		)
+	pub fn expand(self, offset:u32) -> Self {
+		Self::new(self.start.saturating_sub(offset), self.end.saturating_add(offset))
 	}
 
 	/// Create a [`Span`] that has its start and end positions shrunk by
@@ -180,7 +169,7 @@ impl Span {
 	/// [`shrink_left`]: Span::shrink_left
 	/// [`shrink_right`]: Span::shrink_right
 	#[must_use]
-	pub fn shrink(self, offset: u32) -> Self {
+	pub fn shrink(self, offset:u32) -> Self {
 		let start = self.start.saturating_add(offset);
 		let end = self.end.saturating_sub(offset);
 		debug_assert!(start <= end, "Cannot shrink span past zero length");
@@ -211,7 +200,7 @@ impl Span {
 	/// assert_eq!(a.expand_left(5), Span::new(0, 5));
 	/// ```
 	#[must_use]
-	pub const fn expand_left(self, offset: u32) -> Self {
+	pub const fn expand_left(self, offset:u32) -> Self {
 		Self::new(self.start.saturating_sub(offset), self.end)
 	}
 
@@ -233,12 +222,11 @@ impl Span {
 	/// // Shrinking past the end of the span is a logical error that will panic
 	/// // in debug builds.
 	/// std::panic::catch_unwind(|| {
-	///    shrunk.shrink_left(5);
+	/// 	shrunk.shrink_left(5);
 	/// });
 	/// ```
-	///
 	#[must_use]
-	pub const fn shrink_left(self, offset: u32) -> Self {
+	pub const fn shrink_left(self, offset:u32) -> Self {
 		let start = self.start.saturating_add(offset);
 		debug_assert!(start <= self.end);
 		Self::new(self.start.saturating_add(offset), self.end)
@@ -268,7 +256,7 @@ impl Span {
 	/// assert_eq!(a.expand_right(5), Span::new(0, u32::MAX));
 	/// ```
 	#[must_use]
-	pub const fn expand_right(self, offset: u32) -> Self {
+	pub const fn expand_right(self, offset:u32) -> Self {
 		Self::new(self.start, self.end.saturating_add(offset))
 	}
 
@@ -290,11 +278,11 @@ impl Span {
 	/// // Shrinking past the start of the span is a logical error that will panic
 	/// // in debug builds.
 	/// std::panic::catch_unwind(|| {
-	///    shrunk.shrink_right(5);
+	/// 	shrunk.shrink_right(5);
 	/// });
 	/// ```
 	#[must_use]
-	pub const fn shrink_right(self, offset: u32) -> Self {
+	pub const fn shrink_right(self, offset:u32) -> Self {
 		let end = self.end.saturating_sub(offset);
 		debug_assert!(self.start <= end);
 		Self::new(self.start, end)
@@ -311,21 +299,23 @@ impl Span {
 	/// let name = name_span.source_text(source);
 	/// assert_eq!(name_span.size(), name.len() as u32);
 	/// ```
-	pub fn source_text<'a>(&self, source_text: &'a str) -> &'a str {
+	pub fn source_text<'a>(&self, source_text:&'a str) -> &'a str {
 		&source_text[self.start as usize..self.end as usize]
 	}
 
 	/// Create a [`LabeledSpan`] covering this [`Span`] with the given label.
 	///
-	/// Use [`Span::primary_label`] if this is the primary span for the diagnostic.
+	/// Use [`Span::primary_label`] if this is the primary span for the
+	/// diagnostic.
 	#[must_use]
-	pub fn label<S: Into<String>>(self, label: S) -> LabeledSpan {
+	pub fn label<S:Into<String>>(self, label:S) -> LabeledSpan {
 		LabeledSpan::new_with_span(Some(label.into()), self)
 	}
 
-	/// Creates a primary [`LabeledSpan`] covering this [`Span`] with the given label.
+	/// Creates a primary [`LabeledSpan`] covering this [`Span`] with the given
+	/// label.
 	#[must_use]
-	pub fn primary_label<S: Into<String>>(self, label: S) -> LabeledSpan {
+	pub fn primary_label<S:Into<String>>(self, label:S) -> LabeledSpan {
 		LabeledSpan::new_primary_with_span(Some(label.into()), self)
 	}
 }
@@ -334,35 +324,29 @@ impl Index<Span> for str {
 	type Output = str;
 
 	#[inline]
-	fn index(&self, index: Span) -> &Self::Output {
-		&self[index.start as usize..index.end as usize]
-	}
+	fn index(&self, index:Span) -> &Self::Output { &self[index.start as usize..index.end as usize] }
 }
 
 impl IndexMut<Span> for str {
 	#[inline]
-	fn index_mut(&mut self, index: Span) -> &mut Self::Output {
+	fn index_mut(&mut self, index:Span) -> &mut Self::Output {
 		&mut self[index.start as usize..index.end as usize]
 	}
 }
 
 impl From<Range<u32>> for Span {
 	#[inline]
-	fn from(range: Range<u32>) -> Self {
-		Self::new(range.start, range.end)
-	}
+	fn from(range:Range<u32>) -> Self { Self::new(range.start, range.end) }
 }
 
 impl From<Span> for SourceSpan {
-	fn from(val: Span) -> Self {
+	fn from(val:Span) -> Self {
 		Self::new(SourceOffset::from(val.start as usize), val.size() as usize)
 	}
 }
 
 impl From<Span> for LabeledSpan {
-	fn from(val: Span) -> Self {
-		LabeledSpan::underline(val)
-	}
+	fn from(val:Span) -> Self { LabeledSpan::underline(val) }
 }
 
 /// Get the span for an AST node
@@ -377,25 +361,19 @@ pub trait GetSpanMut {
 
 impl GetSpan for Span {
 	#[inline]
-	fn span(&self) -> Span {
-		*self
-	}
+	fn span(&self) -> Span { *self }
 }
 
 impl GetSpanMut for Span {
 	#[inline]
-	fn span_mut(&mut self) -> &mut Span {
-		self
-	}
+	fn span_mut(&mut self) -> &mut Span { self }
 }
 
 impl<'a> CloneIn<'a> for Span {
 	type Cloned = Self;
 
 	#[inline]
-	fn clone_in(&self, _: &'a Allocator) -> Self {
-		*self
-	}
+	fn clone_in(&self, _:&'a Allocator) -> Self { *self }
 }
 
 #[cfg(test)]
@@ -450,7 +428,8 @@ mod test {
 		let span = Span::new(3, 5);
 		assert_eq!(span.expand(0), Span::new(3, 5));
 		assert_eq!(span.expand(1), Span::new(2, 6));
-		// start and end cannot be expanded past `0` and `u32::MAX`, respectively
+		// start and end cannot be expanded past `0` and `u32::MAX`,
+		// respectively
 		assert_eq!(span.expand(5), Span::new(0, 10));
 	}
 

@@ -13,80 +13,74 @@ enum DisabledRule<'a> {
 #[derive(Debug)]
 pub struct DisableRuleComment<'a> {
 	/// Span of the comment
-	pub span: Span,
+	pub span:Span,
 	/// Rules disabled by the comment
-	pub rules: Vec<&'a str>,
+	pub rules:Vec<&'a str>,
 }
 
 pub struct DisableDirectives<'a> {
 	/// All the disabled rules with their corresponding covering spans
-	intervals: Lapper<u32, DisabledRule<'a>>,
+	intervals:Lapper<u32, DisabledRule<'a>>,
 	/// Spans of comments that disable all rules
-	disable_all_comments: Box<[Span]>,
+	disable_all_comments:Box<[Span]>,
 	/// All comments that disable one or more specific rules
-	disable_rule_comments: Box<[DisableRuleComment<'a>]>,
+	disable_rule_comments:Box<[DisableRuleComment<'a>]>,
 }
 
 impl<'a> DisableDirectives<'a> {
-	pub fn contains(&self, rule_name: &'static str, span: Span) -> bool {
+	pub fn contains(&self, rule_name:&'static str, span:Span) -> bool {
 		self.intervals.find(span.start, span.end).any(|interval| {
-            interval.val == DisabledRule::All
+			interval.val == DisabledRule::All
                 // Our rule name currently does not contain the prefix.
                 // For example, this will match `@typescript-eslint/no-var-requires` given
                 // our rule_name is `no-var-requires`.
                 || matches!(interval.val, DisabledRule::Single(name) if name.contains(rule_name))
-        })
+		})
 	}
 
-	pub fn disable_all_comments(&self) -> &[Span] {
-		&self.disable_all_comments
-	}
+	pub fn disable_all_comments(&self) -> &[Span] { &self.disable_all_comments }
 
-	pub fn disable_rule_comments(&self) -> &[DisableRuleComment<'a>] {
-		&self.disable_rule_comments
-	}
+	pub fn disable_rule_comments(&self) -> &[DisableRuleComment<'a>] { &self.disable_rule_comments }
 }
 
 pub struct DisableDirectivesBuilder<'a> {
-	source_text: &'a str,
-	trivias: Trivias,
+	source_text:&'a str,
+	trivias:Trivias,
 	/// All the disabled rules with their corresponding covering spans
-	intervals: Lapper<u32, DisabledRule<'a>>,
+	intervals:Lapper<u32, DisabledRule<'a>>,
 	/// Start of `eslint-disable` or `oxlint-disable`
-	disable_all_start: Option<u32>,
+	disable_all_start:Option<u32>,
 	/// Start of `eslint-disable` or `oxlint-disable` rule_name`
-	disable_start_map: FxHashMap<&'a str, u32>,
+	disable_start_map:FxHashMap<&'a str, u32>,
 	/// Spans of comments that disable all rules
-	disable_all_comments: Vec<Span>,
+	disable_all_comments:Vec<Span>,
 	/// All comments that disable one or more specific rules
-	disable_rule_comments: Vec<DisableRuleComment<'a>>,
+	disable_rule_comments:Vec<DisableRuleComment<'a>>,
 }
 
 impl<'a> DisableDirectivesBuilder<'a> {
-	pub fn new(source_text: &'a str, trivias: Trivias) -> Self {
+	pub fn new(source_text:&'a str, trivias:Trivias) -> Self {
 		Self {
 			source_text,
 			trivias,
-			intervals: Lapper::new(vec![]),
-			disable_all_start: None,
-			disable_start_map: FxHashMap::default(),
-			disable_all_comments: vec![],
-			disable_rule_comments: vec![],
+			intervals:Lapper::new(vec![]),
+			disable_all_start:None,
+			disable_start_map:FxHashMap::default(),
+			disable_all_comments:vec![],
+			disable_rule_comments:vec![],
 		}
 	}
 
 	pub fn build(mut self) -> DisableDirectives<'a> {
 		self.build_impl();
 		DisableDirectives {
-			intervals: self.intervals,
-			disable_all_comments: self.disable_all_comments.into_boxed_slice(),
-			disable_rule_comments: self
-				.disable_rule_comments
-				.into_boxed_slice(),
+			intervals:self.intervals,
+			disable_all_comments:self.disable_all_comments.into_boxed_slice(),
+			disable_rule_comments:self.disable_rule_comments.into_boxed_slice(),
 		}
 	}
 
-	fn add_interval(&mut self, start: u32, stop: u32, val: DisabledRule<'a>) {
+	fn add_interval(&mut self, start:u32, stop:u32, val:DisabledRule<'a>) {
 		self.intervals.insert(Interval { start, stop, val });
 	}
 
@@ -118,15 +112,9 @@ impl<'a> DisableDirectivesBuilder<'a> {
 					let stop = self.source_text[comment.span.end as usize..]
 						.lines()
 						.take(2)
-						.fold(comment.span.end, |acc, line| {
-							acc + line.len() as u32
-						});
+						.fold(comment.span.end, |acc, line| acc + line.len() as u32);
 					if text.trim().is_empty() {
-						self.add_interval(
-							comment.span.end,
-							stop,
-							DisabledRule::All,
-						);
+						self.add_interval(comment.span.end, stop, DisabledRule::All);
 						self.disable_all_comments.push(comment.span);
 					} else {
 						// `eslint-disable-next-line rule_name1, rule_name2`
@@ -139,23 +127,19 @@ impl<'a> DisableDirectivesBuilder<'a> {
 							);
 							rules.push(rule_name);
 						});
-						self.disable_rule_comments.push(DisableRuleComment {
-							span: comment.span,
-							rules,
-						});
+						self.disable_rule_comments
+							.push(DisableRuleComment { span:comment.span, rules });
 					}
 					continue;
 				}
 				// `eslint-disable-line`
 				else if let Some(text) = text.strip_prefix("-line") {
-					// Get the span between the preceding newline to this comment
-					let start = self.source_text
-						[..=comment.span.start as usize]
+					// Get the span between the preceding newline to this
+					// comment
+					let start = self.source_text[..=comment.span.start as usize]
 						.lines()
 						.next_back()
-						.map_or(0, |line| {
-							comment.span.start - (line.len() as u32 - 1)
-						});
+						.map_or(0, |line| comment.span.start - (line.len() as u32 - 1));
 					let stop = comment.span.start;
 
 					// `eslint-disable-line`
@@ -166,33 +150,27 @@ impl<'a> DisableDirectivesBuilder<'a> {
 						// `eslint-disable-line rule-name1, rule-name2`
 						let mut rules = vec![];
 						Self::get_rule_names(text, |rule_name| {
-							self.add_interval(
-								start,
-								stop,
-								DisabledRule::Single(rule_name),
-							);
+							self.add_interval(start, stop, DisabledRule::Single(rule_name));
 							rules.push(rule_name);
 						});
-						self.disable_rule_comments.push(DisableRuleComment {
-							span: comment.span,
-							rules,
-						});
+						self.disable_rule_comments
+							.push(DisableRuleComment { span:comment.span, rules });
 					}
 					continue;
 				}
-				// Remaining text should start with a space, else it's probably a typo of the correct syntax.
-				// Like `eslint-disable-lext-nine` where `text` is `-lext-nine`, or directive is `eslint-disablefoo`
+				// Remaining text should start with a space, else it's probably
+				// a typo of the correct syntax.
+				// Like `eslint-disable-lext-nine` where `text` is `-lext-nine`,
+				// or directive is `eslint-disablefoo`
 				else if text.starts_with(' ') {
 					// `eslint-disable rule-name1, rule-name2`
 					let mut rules = vec![];
 					Self::get_rule_names(text, |rule_name| {
-						self.disable_start_map
-							.entry(rule_name)
-							.or_insert(comment.span.end);
+						self.disable_start_map.entry(rule_name).or_insert(comment.span.end);
 						rules.push(rule_name);
 					});
 					self.disable_rule_comments
-						.push(DisableRuleComment { span: comment.span, rules });
+						.push(DisableRuleComment { span:comment.span, rules });
 					continue;
 				}
 			}
@@ -204,18 +182,12 @@ impl<'a> DisableDirectivesBuilder<'a> {
 				// `eslint-enable`
 				if text.trim().is_empty() {
 					if let Some(start) = self.disable_all_start.take() {
-						self.add_interval(
-							start,
-							comment.span.start,
-							DisabledRule::All,
-						);
+						self.add_interval(start, comment.span.start, DisabledRule::All);
 					}
 				} else {
 					// `eslint-enable rule-name1, rule-name2`
 					Self::get_rule_names(text, |rule_name| {
-						if let Some(start) =
-							self.disable_start_map.remove(rule_name)
-						{
+						if let Some(start) = self.disable_start_map.remove(rule_name) {
 							self.add_interval(
 								start,
 								comment.span.start,
@@ -234,18 +206,13 @@ impl<'a> DisableDirectivesBuilder<'a> {
 		}
 
 		// Lone `eslint-disable rule_name`
-		let disable_start_map =
-			self.disable_start_map.drain().collect::<Vec<_>>();
+		let disable_start_map = self.disable_start_map.drain().collect::<Vec<_>>();
 		for (rule_name, start) in disable_start_map {
-			self.add_interval(
-				start,
-				source_len,
-				DisabledRule::Single(rule_name),
-			);
+			self.add_interval(start, source_len, DisabledRule::Single(rule_name));
 		}
 	}
 
-	fn get_rule_names<F: FnMut(&'a str)>(text: &'a str, cb: F) {
+	fn get_rule_names<F:FnMut(&'a str)>(text:&'a str, cb:F) {
 		if let Some(text) = text.split_terminator("--").next() {
 			text.split(',').map(str::trim).for_each(cb);
 		}
@@ -260,45 +227,49 @@ fn test() {
 		// [Disabling Rules](https://eslint.org/docs/latest/use/configure/rules#disabling-rules)
 		// Using configuration comments
 		let pass = vec![
-            // To disable rule warnings in a part of a file, use block comments in the following format:
-            format!(
-                "
+			// To disable rule warnings in a part of a file, use block comments
+			// in the following format:
+			format!(
+				"
         /* {prefix}-disable */
             debugger;
         /* {prefix}-enable */
         "
-            ),
-            // You can also disable or enable warnings for specific rules:
-            format!(
-                "
+			),
+			// You can also disable or enable warnings for specific rules:
+			format!(
+				"
         /* {prefix}-disable no-debugger, no-console */
             debugger;
         /* {prefix}-enable no-debugger, no-console */
         "
-            ),
-            // To disable rule warnings in an entire file, put a /* eslint-disable */ block comment at the top of the file:
-            format!(
-                "
+			),
+			// To disable rule warnings in an entire file, put a /*
+			// eslint-disable */ block comment at the top of the file:
+			format!(
+				"
         /* {prefix}-disable */
             debugger;
         "
-            ),
-            // You can also disable or enable specific rules for an entire file:
-            format!(
-                "
+			),
+			// You can also disable or enable specific rules for an entire
+			// file:
+			format!(
+				"
         /* {prefix}-disable no-debugger */
             debugger;
         "
-            ),
-            // To ensure that a rule is never applied (regardless of any future enable/disable lines):
-            // This is not supported.
-            // "
-            // /* eslint no-debugger: \"off\" */
-            //     debugger;
-            // "),
-            // To disable all rules on a specific line, use a line or block comment in one of the following formats:
-            format!(
-                "debugger; // {prefix}-disable-line
+			),
+			// To ensure that a rule is never applied (regardless of any future
+			// enable/disable lines): This is not supported.
+			// "
+			// /* eslint no-debugger: \"off\" */
+			//     debugger;
+			// "),
+			// To disable all rules on a specific line, use a line or block
+			// comment in one of the following formats:
+			format!(
+				"debugger; // {prefix}-disable-line
             debugger; // {prefix}-disable-line
 
             // {prefix}-disable-next-line
@@ -309,10 +280,10 @@ fn test() {
 
             debugger; /* {prefix}-disable-line */
         "
-            ),
-            // To disable a specific rule on a specific line:
-            format!(
-                "
+			),
+			// To disable a specific rule on a specific line:
+			format!(
+				"
             debugger; // {prefix}-disable-line no-debugger
 
             // {prefix}-disable-next-line no-debugger
@@ -323,10 +294,10 @@ fn test() {
             /* {prefix}-disable-next-line no-debugger */
             debugger;
         "
-            ),
-            // To disable multiple rules on a specific line:
-            format!(
-                "
+			),
+			// To disable multiple rules on a specific line:
+			format!(
+				"
             debugger; // {prefix}-disable-line no-debugger, quotes, semi
 
             // {prefix}-disable-next-line no-debugger, quotes, semi
@@ -344,29 +315,30 @@ fn test() {
             */
             debugger;
         "
-            ),
-            // To disable all rules twice:
-            format!(
-                "
+			),
+			// To disable all rules twice:
+			format!(
+				"
         /* {prefix}-disable */
             debugger;
         /* {prefix}-disable */
             debugger;
         "
-            ),
-            // To disable a rule twice:
-            format!(
-                "
+			),
+			// To disable a rule twice:
+			format!(
+				"
         /* {prefix}-disable no-debugger */
             debugger;
         /* {prefix}-disable no-debugger */
             debugger;
         "
-            ),
-            // Comment descriptions
-            format!(
-                "
-            // {prefix}-disable-next-line no-debugger -- Here's a description about why this configuration is necessary.
+			),
+			// Comment descriptions
+			format!(
+				"
+            // {prefix}-disable-next-line no-debugger -- Here's a description about why this \
+				 configuration is necessary.
             debugger;
 
             /* {prefix}-disable-next-line no-debugger --
@@ -375,25 +347,28 @@ fn test() {
             **/
             debugger;
         "
-            ),
-            // Should only match `eslint-enable` comments, not `eslint-enablefoo`
-            format!("
+			),
+			// Should only match `eslint-enable` comments, not
+			// `eslint-enablefoo`
+			format!(
+				"
             /* {prefix}-disable */
                 debugger;
             /* {prefix}-enablefoo */
                 debugger;
             "
-            ),
-            format!("
+			),
+			format!(
+				"
             /* {prefix}-disable no-debugger, no-console */
                 debugger;
             /* {prefix}-enablefoo no-debugger, no-console */
                 debugger;
             "
-            ),
-            // Handles no spaces in comment
-            format!(
-                "debugger; //{prefix}-disable-line
+			),
+			// Handles no spaces in comment
+			format!(
+				"debugger; //{prefix}-disable-line
             debugger; //{prefix}-disable-line
 
             //{prefix}-disable-next-line
@@ -414,10 +389,10 @@ fn test() {
             /*{prefix}-disable-next-line no-debugger*/
             debugger;
         "
-            ),
-            // Handles extra spaces in comment
-            format!(
-                "debugger; //       {prefix}-disable-line
+			),
+			// Handles extra spaces in comment
+			format!(
+				"debugger; //       {prefix}-disable-line
             debugger; // \t\t {prefix}-disable-line
 
             //         {prefix}-disable-next-line
@@ -438,10 +413,10 @@ fn test() {
             /*    \t   {prefix}-disable-next-line no-debugger       */
             debugger;
         "
-            ),
-            // Extra commas
-            format!(
-                "
+			),
+			// Extra commas
+			format!(
+				"
             debugger // {prefix}-disable-line no-debugger,
             debugger // {prefix}-disable-line ,no-debugger
             debugger // {prefix}-disable-line no-debugger,,
@@ -464,12 +439,14 @@ fn test() {
             debugger
             // {prefix}-disable-next-line ,  , ,,no-debugger, , ,
         "
-            ),
-            format!("
+			),
+			format!(
+				"
                 /* {prefix}-disable , ,no-debugger, , */
                 debugger;
-            ")
-        ];
+            "
+			),
+		];
 
 		let fail = vec![
             "debugger".to_string(),

@@ -4,31 +4,25 @@ use std::{fs, path::Path, str::FromStr};
 
 use oxc_allocator::Allocator;
 use oxc_ast::{
-	ast::{
-		Argument, ArrayExpressionElement, CallExpression, Expression,
-		ObjectPropertyKind,
-	},
+	ast::{Argument, ArrayExpressionElement, CallExpression, Expression, ObjectPropertyKind},
 	VisitMut,
 };
 use oxc_parser::Parser;
-use oxc_prettier::{
-	ArrowParens, EndOfLine, PrettierOptions, QuoteProps, TrailingComma,
-};
+use oxc_prettier::{ArrowParens, EndOfLine, PrettierOptions, QuoteProps, TrailingComma};
 use oxc_span::{GetSpan, SourceType};
 
 #[derive(Default)]
 pub struct SpecParser {
-	pub calls: Vec<(PrettierOptions, Vec<(String, String)>)>,
-	source_text: String,
+	pub calls:Vec<(PrettierOptions, Vec<(String, String)>)>,
+	source_text:String,
 }
 
 impl SpecParser {
-	pub fn parse(&mut self, spec: &Path) {
+	pub fn parse(&mut self, spec:&Path) {
 		let spec_content = fs::read_to_string(spec).unwrap_or_default();
 		let allocator = Allocator::default();
 		let source_type = SourceType::from_path(spec).unwrap_or_default();
-		let mut ret =
-			Parser::new(&allocator, &spec_content, source_type).parse();
+		let mut ret = Parser::new(&allocator, &spec_content, source_type).parse();
 		self.source_text.clone_from(&spec_content);
 		self.calls = vec![];
 		self.visit_program(&mut ret.program);
@@ -36,18 +30,19 @@ impl SpecParser {
 }
 
 impl VisitMut<'_> for SpecParser {
-	fn visit_call_expression(&mut self, expr: &mut CallExpression<'_>) {
+	fn visit_call_expression(&mut self, expr:&mut CallExpression<'_>) {
 		let Some(ident) = expr.callee.get_identifier_reference() else {
 			return;
 		};
-		// The `runFormatTest` function used on prettier's test cases. We need to collect all `run_spec` calls
-		// And then parse the arguments to get the options and parsers
-		// Finally we use this information to generate the snapshot tests
+		// The `runFormatTest` function used on prettier's test cases. We need
+		// to collect all `run_spec` calls And then parse the arguments to get
+		// the options and parsers Finally we use this information to generate
+		// the snapshot tests
 		if ident.name != "runFormatTest" {
 			return;
 		}
 		let mut parsers = vec![];
-		let mut snapshot_options: Vec<(String, String)> = vec![];
+		let mut snapshot_options:Vec<(String, String)> = vec![];
 		let mut options = PrettierOptions::default();
 
 		if let Some(argument) = expr.arguments.get(1) {
@@ -60,9 +55,7 @@ impl VisitMut<'_> for SpecParser {
 					.elements
 					.iter()
 					.filter_map(|el| {
-						if let ArrayExpressionElement::StringLiteral(literal) =
-							el
-						{
+						if let ArrayExpressionElement::StringLiteral(literal) = el {
 							return Some(literal.value.to_string());
 						}
 						None
@@ -73,9 +66,7 @@ impl VisitMut<'_> for SpecParser {
 			return;
 		}
 
-		if let Some(Argument::ObjectExpression(obj_expr)) =
-			expr.arguments.get(2)
-		{
+		if let Some(Argument::ObjectExpression(obj_expr)) = expr.arguments.get(2) {
 			obj_expr.properties.iter().for_each(|item| {
 				if let ObjectPropertyKind::ObjectProperty(obj_prop) = item {
 					if let Some(name) = obj_prop.key.static_name() {
@@ -89,58 +80,41 @@ impl VisitMut<'_> for SpecParser {
 									options.single_quote = literal.value;
 								}
 							},
-							Expression::NumericLiteral(literal) => match name
-								.as_ref()
-							{
-								"printWidth" => {
-									options.print_width = literal.value as usize
-								},
-								"tabWidth" => {
-									options.tab_width = literal.value as usize
-								},
-								_ => {},
+							Expression::NumericLiteral(literal) => {
+								match name.as_ref() {
+									"printWidth" => options.print_width = literal.value as usize,
+									"tabWidth" => options.tab_width = literal.value as usize,
+									_ => {},
+								}
 							},
-							Expression::StringLiteral(literal) => match name
-								.as_ref()
-							{
-								"trailingComma" => {
-									options.trailing_comma =
-										TrailingComma::from_str(
-											literal.value.as_str(),
-										)
-										.unwrap();
-								},
-								"endOfLine" => {
-									options.end_of_line = EndOfLine::from_str(
-										literal.value.as_str(),
-									)
-									.unwrap();
-								},
-								"quoteProps" => {
-									options.quote_props = QuoteProps::from_str(
-										literal.value.as_str(),
-									)
-									.unwrap();
-								},
-								"arrowParens" => {
-									options.arrow_parens =
-										ArrowParens::from_str(
-											literal.value.as_str(),
-										)
-										.unwrap();
-								},
-								_ => {},
+							Expression::StringLiteral(literal) => {
+								match name.as_ref() {
+									"trailingComma" => {
+										options.trailing_comma =
+											TrailingComma::from_str(literal.value.as_str())
+												.unwrap();
+									},
+									"endOfLine" => {
+										options.end_of_line =
+											EndOfLine::from_str(literal.value.as_str()).unwrap();
+									},
+									"quoteProps" => {
+										options.quote_props =
+											QuoteProps::from_str(literal.value.as_str()).unwrap();
+									},
+									"arrowParens" => {
+										options.arrow_parens =
+											ArrowParens::from_str(literal.value.as_str()).unwrap();
+									},
+									_ => {},
+								}
 							},
 							_ => {},
 						};
 						if name != "errors" {
 							snapshot_options.push((
 								name.to_string(),
-								obj_prop
-									.value
-									.span()
-									.source_text(&self.source_text)
-									.to_string(),
+								obj_prop.value.span().source_text(&self.source_text).to_string(),
 							));
 						}
 					};
@@ -152,11 +126,7 @@ impl VisitMut<'_> for SpecParser {
 			"parsers".to_string(),
 			format!(
 				"[{}]",
-				parsers
-					.iter()
-					.map(|p| format!("\"{p}\""))
-					.collect::<Vec<_>>()
-					.join(", ")
+				parsers.iter().map(|p| format!("\"{p}\"")).collect::<Vec<_>>().join(", ")
 			),
 		));
 

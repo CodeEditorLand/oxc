@@ -8,10 +8,11 @@ use oxc_semantic::SemanticBuilder;
 use oxc_span::SourceType;
 use oxc_tasks_common::TestFiles;
 
-fn bench_linter(criterion: &mut Criterion) {
+fn bench_linter(criterion:&mut Criterion) {
 	let mut group = criterion.benchmark_group("linter");
 
-	// If `FIXTURE` env is set, only run the specified benchmark. This is used for sharding in CI.
+	// If `FIXTURE` env is set, only run the specified benchmark. This is used
+	// for sharding in CI.
 	let test_files = if let Ok(fixture_index) = env::var("FIXTURE") {
 		let fixture_index = fixture_index.parse::<usize>().unwrap();
 		TestFiles::complicated_one(fixture_index)
@@ -26,8 +27,7 @@ fn bench_linter(criterion: &mut Criterion) {
 			&file.source_text,
 			|b, source_text| {
 				let allocator = Allocator::default();
-				let ret =
-					Parser::new(&allocator, source_text, source_type).parse();
+				let ret = Parser::new(&allocator, source_text, source_type).parse();
 				let program = allocator.alloc(ret.program);
 				let semantic_ret = SemanticBuilder::new(source_text)
 					.with_trivias(ret.trivias)
@@ -52,12 +52,7 @@ fn bench_linter(criterion: &mut Criterion) {
 					.with_node_plugin(true);
 				let linter = Linter::from_options(lint_options).unwrap();
 				let semantic = Rc::new(semantic_ret.semantic);
-				b.iter(|| {
-					linter.run(
-						Path::new(std::ffi::OsStr::new("")),
-						Rc::clone(&semantic),
-					)
-				});
+				b.iter(|| linter.run(Path::new(std::ffi::OsStr::new("")), Rc::clone(&semantic)));
 			},
 		);
 	}

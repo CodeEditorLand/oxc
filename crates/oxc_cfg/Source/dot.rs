@@ -9,8 +9,13 @@ use petgraph::{
 
 use super::IterationInstructionKind;
 use crate::{
-	BasicBlock, ControlFlowGraph, EdgeType, Instruction, InstructionKind,
-	LabeledInstruction, ReturnInstructionKind,
+	BasicBlock,
+	ControlFlowGraph,
+	EdgeType,
+	Instruction,
+	InstructionKind,
+	LabeledInstruction,
+	ReturnInstructionKind,
 };
 
 pub trait DisplayDot {
@@ -35,10 +40,9 @@ impl DisplayDot for ControlFlowGraph {
 						label
 					}
 				},
-				&|_graph, node| format!(
-					"label = {:?} ",
-					self.basic_blocks[*node.1].display_dot().trim()
-				),
+				&|_graph, node| {
+					format!("label = {:?} ", self.basic_blocks[*node.1].display_dot().trim())
+				},
 			)
 		)
 	}
@@ -61,28 +65,18 @@ impl DisplayDot for Instruction {
 			InstructionKind::Unreachable => "unreachable",
 			InstructionKind::Throw => "throw",
 			InstructionKind::Condition => "condition",
-			InstructionKind::Iteration(IterationInstructionKind::Of) => {
-				"iteration <of>"
-			},
-			InstructionKind::Iteration(IterationInstructionKind::In) => {
-				"iteration <in>"
-			},
-			InstructionKind::Break(LabeledInstruction::Labeled) => {
-				"break <label>"
-			},
+			InstructionKind::Iteration(IterationInstructionKind::Of) => "iteration <of>",
+			InstructionKind::Iteration(IterationInstructionKind::In) => "iteration <in>",
+			InstructionKind::Break(LabeledInstruction::Labeled) => "break <label>",
 			InstructionKind::Break(LabeledInstruction::Unlabeled) => "break",
-			InstructionKind::Continue(LabeledInstruction::Labeled) => {
-				"continue <label>"
+			InstructionKind::Continue(LabeledInstruction::Labeled) => "continue <label>",
+			InstructionKind::Continue(LabeledInstruction::Unlabeled) => "continue",
+			InstructionKind::Return(ReturnInstructionKind::ImplicitUndefined) => {
+				"return <implicit undefined>"
 			},
-			InstructionKind::Continue(LabeledInstruction::Unlabeled) => {
-				"continue"
+			InstructionKind::Return(ReturnInstructionKind::NotImplicitUndefined) => {
+				"return <value>"
 			},
-			InstructionKind::Return(
-				ReturnInstructionKind::ImplicitUndefined,
-			) => "return <implicit undefined>",
-			InstructionKind::Return(
-				ReturnInstructionKind::NotImplicitUndefined,
-			) => "return <value>",
 		}
 		.to_string()
 	}

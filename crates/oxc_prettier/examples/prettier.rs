@@ -15,11 +15,7 @@ use pico_args::Arguments;
 fn main() -> std::io::Result<()> {
 	let mut args = Arguments::from_env();
 
-	let name = args
-		.subcommand()
-		.ok()
-		.flatten()
-		.unwrap_or_else(|| String::from("test.js"));
+	let name = args.subcommand().ok().flatten().unwrap_or_else(|| String::from("test.js"));
 	let semi = !args.contains("--no-semi");
 
 	let path = Path::new(&name);
@@ -27,20 +23,13 @@ fn main() -> std::io::Result<()> {
 	let allocator = Allocator::default();
 	let source_type = SourceType::from_path(path).unwrap();
 	let ret = Parser::new(&allocator, &source_text, source_type)
-		.with_options(ParseOptions {
-			preserve_parens: false,
-			..ParseOptions::default()
-		})
+		.with_options(ParseOptions { preserve_parens:false, ..ParseOptions::default() })
 		.parse();
 	let output = Prettier::new(
 		&allocator,
 		&source_text,
 		ret.trivias,
-		PrettierOptions {
-			semi,
-			trailing_comma: TrailingComma::All,
-			..PrettierOptions::default()
-		},
+		PrettierOptions { semi, trailing_comma:TrailingComma::All, ..PrettierOptions::default() },
 	)
 	.build(&ret.program);
 	println!("{output}");

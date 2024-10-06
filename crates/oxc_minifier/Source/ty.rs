@@ -17,7 +17,7 @@ pub enum Ty {
 }
 
 impl<'a> From<&Expression<'a>> for Ty {
-	fn from(expr: &Expression<'a>) -> Self {
+	fn from(expr:&Expression<'a>) -> Self {
 		// TODO: complete this
 		match expr {
 			Expression::BigIntLiteral(_) => Self::BigInt,
@@ -29,10 +29,12 @@ impl<'a> From<&Expression<'a>> for Ty {
 			| Expression::ArrayExpression(_)
 			| Expression::RegExpLiteral(_)
 			| Expression::FunctionExpression(_) => Self::Object,
-			Expression::Identifier(ident) => match ident.name.as_str() {
-				"undefined" => Self::Void,
-				"NaN" | "Infinity" => Self::Number,
-				_ => Self::Undetermined,
+			Expression::Identifier(ident) => {
+				match ident.name.as_str() {
+					"undefined" => Self::Void,
+					"NaN" | "Infinity" => Self::Number,
+					_ => Self::Undetermined,
+				}
 			},
 			Expression::UnaryExpression(unary_expr) => {
 				match unary_expr.operator {

@@ -17,8 +17,7 @@ use pico_args::Arguments;
 fn main() {
 	let mut args = Arguments::from_env();
 	let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
-	let targets: Option<String> =
-		args.opt_value_from_str("--targets").unwrap_or(None);
+	let targets:Option<String> = args.opt_value_from_str("--targets").unwrap_or(None);
 
 	let path = Path::new(&name);
 	let source_text = std::fs::read_to_string(path).expect("{name} not found");
@@ -58,7 +57,7 @@ fn main() {
 
 	let transform_options = if let Some(targets) = &targets {
 		TransformOptions::from_preset_env(&EnvOptions {
-			targets: Targets::from_query(targets),
+			targets:Targets::from_query(targets),
 			..EnvOptions::default()
 		})
 		.unwrap()
@@ -66,14 +65,8 @@ fn main() {
 		TransformOptions::enable_all()
 	};
 
-	let ret = Transformer::new(
-		&allocator,
-		path,
-		&source_text,
-		trivias.clone(),
-		transform_options,
-	)
-	.build_with_symbols_and_scopes(symbols, scopes, &mut program);
+	let ret = Transformer::new(&allocator, path, &source_text, trivias.clone(), transform_options)
+		.build_with_symbols_and_scopes(symbols, scopes, &mut program);
 
 	if !ret.errors.is_empty() {
 		println!("Transformer Errors:");

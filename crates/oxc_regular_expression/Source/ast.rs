@@ -15,8 +15,8 @@ use tsify::Tsify;
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct Pattern<'a> {
-	pub span: Span,
-	pub body: Disjunction<'a>,
+	pub span:Span,
+	pub body:Disjunction<'a>,
 }
 
 /// Pile of [`Alternative`]s separated by `|`.
@@ -25,8 +25,8 @@ pub struct Pattern<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct Disjunction<'a> {
-	pub span: Span,
-	pub body: Vec<'a, Alternative<'a>>,
+	pub span:Span,
+	pub body:Vec<'a, Alternative<'a>>,
 }
 
 /// Single unit of `|` separated alternatives.
@@ -35,8 +35,8 @@ pub struct Disjunction<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct Alternative<'a> {
-	pub span: Span,
-	pub body: Vec<'a, Term<'a>>,
+	pub span:Span,
+	pub body:Vec<'a, Term<'a>>,
 }
 
 /// Single unit of [`Alternative`], containing various kinds.
@@ -89,8 +89,8 @@ impl<'a> GetSpan for Term<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct BoundaryAssertion {
-	pub span: Span,
-	pub kind: BoundaryAssertionKind,
+	pub span:Span,
+	pub kind:BoundaryAssertionKind,
 }
 
 #[ast]
@@ -111,9 +111,9 @@ pub enum BoundaryAssertionKind {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct LookAroundAssertion<'a> {
-	pub span: Span,
-	pub kind: LookAroundAssertionKind,
-	pub body: Disjunction<'a>,
+	pub span:Span,
+	pub kind:LookAroundAssertionKind,
+	pub body:Disjunction<'a>,
 }
 
 #[ast]
@@ -134,12 +134,12 @@ pub enum LookAroundAssertionKind {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct Quantifier<'a> {
-	pub span: Span,
-	pub min: u64,
+	pub span:Span,
+	pub min:u64,
 	/// `None` means no upper bound.
-	pub max: Option<u64>,
-	pub greedy: bool,
-	pub body: Term<'a>,
+	pub max:Option<u64>,
+	pub greedy:bool,
+	pub body:Term<'a>,
 }
 
 /// Single character.
@@ -148,11 +148,12 @@ pub struct Quantifier<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct Character {
-	/// This will be invalid position when `UnicodeMode` is disabled and `value` is a surrogate pair.
-	pub span: Span,
-	pub kind: CharacterKind,
+	/// This will be invalid position when `UnicodeMode` is disabled and
+	/// `value` is a surrogate pair.
+	pub span:Span,
+	pub kind:CharacterKind,
 	/// Unicode code point or UTF-16 code unit.
-	pub value: u32,
+	pub value:u32,
 }
 
 #[ast]
@@ -180,8 +181,8 @@ pub enum CharacterKind {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct CharacterClassEscape {
-	pub span: Span,
-	pub kind: CharacterClassEscapeKind,
+	pub span:Span,
+	pub kind:CharacterClassEscapeKind,
 }
 
 #[ast]
@@ -204,12 +205,13 @@ pub enum CharacterClassEscapeKind {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct UnicodePropertyEscape<'a> {
-	pub span: Span,
-	pub negative: bool,
-	/// `true` if `UnicodeSetsMode` and `name` matches unicode property of strings.
-	pub strings: bool,
-	pub name: Atom<'a>,
-	pub value: Option<Atom<'a>>,
+	pub span:Span,
+	pub negative:bool,
+	/// `true` if `UnicodeSetsMode` and `name` matches unicode property of
+	/// strings.
+	pub strings:bool,
+	pub name:Atom<'a>,
+	pub value:Option<Atom<'a>>,
 }
 
 /// The `.`.
@@ -218,7 +220,7 @@ pub struct UnicodePropertyEscape<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct Dot {
-	pub span: Span,
+	pub span:Span,
 }
 
 /// Character class wrapped by `[]`.
@@ -228,14 +230,15 @@ pub struct Dot {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct CharacterClass<'a> {
-	pub span: Span,
-	pub negative: bool,
+	pub span:Span,
+	pub negative:bool,
 	/// `true` if:
-	/// - `body` contains [`UnicodePropertyEscape`], nested [`CharacterClass`] or [`ClassStringDisjunction`] which `strings` is `true`
+	/// - `body` contains [`UnicodePropertyEscape`], nested [`CharacterClass`]
+	///   or [`ClassStringDisjunction`] which `strings` is `true`
 	/// - and matches each logic depends on `kind`
-	pub strings: bool,
-	pub kind: CharacterClassContentsKind,
-	pub body: Vec<'a, CharacterClassContents<'a>>,
+	pub strings:bool,
+	pub kind:CharacterClassContentsKind,
+	pub body:Vec<'a, CharacterClassContents<'a>>,
 }
 
 #[ast]
@@ -286,9 +289,9 @@ impl<'a> GetSpan for CharacterClassContents<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct CharacterClassRange {
-	pub span: Span,
-	pub min: Character,
-	pub max: Character,
+	pub span:Span,
+	pub min:Character,
+	pub max:Character,
 }
 
 /// `|` separated string of characters wrapped by `\q{}`.
@@ -297,10 +300,11 @@ pub struct CharacterClassRange {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct ClassStringDisjunction<'a> {
-	pub span: Span,
-	/// `true` if body is empty or contains [`ClassString`] which `strings` is `true`.
-	pub strings: bool,
-	pub body: Vec<'a, ClassString<'a>>,
+	pub span:Span,
+	/// `true` if body is empty or contains [`ClassString`] which `strings` is
+	/// `true`.
+	pub strings:bool,
+	pub body:Vec<'a, ClassString<'a>>,
 }
 
 /// Single unit of [`ClassStringDisjunction`].
@@ -309,10 +313,10 @@ pub struct ClassStringDisjunction<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct ClassString<'a> {
-	pub span: Span,
+	pub span:Span,
 	/// `true` if body is empty or contain 2 more characters.
-	pub strings: bool,
-	pub body: Vec<'a, Character>,
+	pub strings:bool,
+	pub body:Vec<'a, Character>,
 }
 
 /// Named or unnamed capturing group.
@@ -322,10 +326,10 @@ pub struct ClassString<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct CapturingGroup<'a> {
-	pub span: Span,
+	pub span:Span,
 	/// Group name to be referenced by [`NamedReference`].
-	pub name: Option<Atom<'a>>,
-	pub body: Disjunction<'a>,
+	pub name:Option<Atom<'a>>,
+	pub body:Disjunction<'a>,
 }
 
 /// Pseudo-group for ignoring.
@@ -335,10 +339,10 @@ pub struct CapturingGroup<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct IgnoreGroup<'a> {
-	pub span: Span,
-	pub enabling_modifiers: Option<ModifierFlags>,
-	pub disabling_modifiers: Option<ModifierFlags>,
-	pub body: Disjunction<'a>,
+	pub span:Span,
+	pub enabling_modifiers:Option<ModifierFlags>,
+	pub disabling_modifiers:Option<ModifierFlags>,
+	pub body:Disjunction<'a>,
 }
 
 /// Pattern modifiers in [`IgnoreGroup`].
@@ -348,9 +352,9 @@ pub struct IgnoreGroup<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct ModifierFlags {
-	pub ignore_case: bool,
-	pub sticky: bool,
-	pub multiline: bool,
+	pub ignore_case:bool,
+	pub sticky:bool,
+	pub multiline:bool,
 }
 
 /// Backreference by index.
@@ -360,8 +364,8 @@ pub struct ModifierFlags {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct IndexedReference {
-	pub span: Span,
-	pub index: u32,
+	pub span:Span,
+	pub index:u32,
 }
 
 /// Backreference by name.
@@ -371,8 +375,8 @@ pub struct IndexedReference {
 #[generate_derive(CloneIn, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 pub struct NamedReference<'a> {
-	pub span: Span,
-	pub name: Atom<'a>,
+	pub span:Span,
+	pub name:Atom<'a>,
 }
 
 // See `oxc_ast/src/lib.rs` for the details

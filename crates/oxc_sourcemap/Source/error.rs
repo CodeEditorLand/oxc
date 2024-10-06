@@ -18,7 +18,7 @@ pub enum Error {
 	BadNameReference(u32),
 }
 impl fmt::Display for Error {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f:&mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			Error::VlqLeftover => {
 				write!(f, "VLQ string was malformed and data was left over")
@@ -45,11 +45,7 @@ impl fmt::Display for Error {
 
 impl error::Error for Error {
 	fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-		if let Self::BadJson(err) = self {
-			Some(err)
-		} else {
-			None
-		}
+		if let Self::BadJson(err) = self { Some(err) } else { None }
 	}
 }
 
@@ -57,7 +53,5 @@ impl error::Error for Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 impl From<serde_json::Error> for Error {
-	fn from(err: serde_json::Error) -> Error {
-		Error::BadJson(err)
-	}
+	fn from(err:serde_json::Error) -> Error { Error::BadJson(err) }
 }

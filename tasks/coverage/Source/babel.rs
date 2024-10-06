@@ -1,45 +1,38 @@
 use std::path::{Path, PathBuf};
 
+use oxc_span::SourceType;
 use oxc_transformer::BabelOptions;
 use serde::{de::DeserializeOwned, Deserialize};
 use serde_json::Value;
-
-use oxc_span::SourceType;
 
 use crate::{
 	project_root,
 	suite::{Case, Suite, TestResult},
 };
 
-const FIXTURES_PATH: &str =
-	"tasks/coverage/babel/packages/babel-parser/test/fixtures";
+const FIXTURES_PATH:&str = "tasks/coverage/babel/packages/babel-parser/test/fixtures";
 
 /// output.json
 #[derive(Debug, Default, Clone, Deserialize)]
 pub struct BabelOutput {
-	pub errors: Option<Vec<String>>,
+	pub errors:Option<Vec<String>>,
 }
 
-pub struct BabelSuite<T: Case> {
-	test_root: PathBuf,
-	test_cases: Vec<T>,
+pub struct BabelSuite<T:Case> {
+	test_root:PathBuf,
+	test_cases:Vec<T>,
 }
 
-impl<T: Case> BabelSuite<T> {
+impl<T:Case> BabelSuite<T> {
 	pub fn new() -> Self {
-		Self {
-			test_root: project_root().join(FIXTURES_PATH),
-			test_cases: vec![],
-		}
+		Self { test_root:project_root().join(FIXTURES_PATH), test_cases:vec![] }
 	}
 }
 
-impl<T: Case> Suite<T> for BabelSuite<T> {
-	fn get_test_root(&self) -> &Path {
-		&self.test_root
-	}
+impl<T:Case> Suite<T> for BabelSuite<T> {
+	fn get_test_root(&self) -> &Path { &self.test_root }
 
-	fn skip_test_path(&self, path: &Path) -> bool {
+	fn skip_test_path(&self, path:&Path) -> bool {
 		let not_supported_directory = [
 			"experimental",
 			"es2022",
@@ -53,59 +46,47 @@ impl<T: Case> Suite<T> for BabelSuite<T> {
 		]
 		.iter()
 		.any(|p| path.to_string_lossy().contains(p));
-		let incorrect_extension =
-			path.extension().map_or(true, |ext| ext == "json" || ext == "md");
+		let incorrect_extension = path.extension().map_or(true, |ext| ext == "json" || ext == "md");
 		not_supported_directory || incorrect_extension
 	}
 
-	fn save_test_cases(&mut self, tests: Vec<T>) {
-		self.test_cases = tests;
-	}
+	fn save_test_cases(&mut self, tests:Vec<T>) { self.test_cases = tests; }
 
-	fn get_test_cases(&self) -> &Vec<T> {
-		&self.test_cases
-	}
-	fn get_test_cases_mut(&mut self) -> &mut Vec<T> {
-		&mut self.test_cases
-	}
+	fn get_test_cases(&self) -> &Vec<T> { &self.test_cases }
+
+	fn get_test_cases_mut(&mut self) -> &mut Vec<T> { &mut self.test_cases }
 }
 
 pub struct BabelCase {
-	path: PathBuf,
-	code: String,
-	source_type: SourceType,
-	options: BabelOptions,
-	should_fail: bool,
-	result: TestResult,
+	path:PathBuf,
+	code:String,
+	source_type:SourceType,
+	options:BabelOptions,
+	should_fail:bool,
+	result:TestResult,
 }
 
 impl BabelCase {
-	pub fn set_result(&mut self, result: TestResult) {
-		self.result = result;
-	}
+	pub fn set_result(&mut self, result:TestResult) { self.result = result; }
 
-	pub fn source_type(&self) -> SourceType {
-		self.source_type
-	}
+	pub fn source_type(&self) -> SourceType { self.source_type }
 
-	fn read_file<T>(path: &Path, file_name: &'static str) -> Option<T>
+	fn read_file<T>(path:&Path, file_name:&'static str) -> Option<T>
 	where
-		T: DeserializeOwned,
-	{
+		T: DeserializeOwned, {
 		let file = path.with_file_name(file_name);
 		if file.exists() {
 			let file = std::fs::File::open(file).unwrap();
 			let reader = std::io::BufReader::new(file);
-			let json: serde_json::Result<T> = serde_json::from_reader(reader);
+			let json:serde_json::Result<T> = serde_json::from_reader(reader);
 			return json.ok();
 		}
 		None
 	}
 
-	fn read_output_json(path: &Path) -> Option<BabelOutput> {
+	fn read_output_json(path:&Path) -> Option<BabelOutput> {
 		let dir = project_root().join(FIXTURES_PATH).join(path);
-		if let Some(json) = Self::read_file::<BabelOutput>(&dir, "output.json")
-		{
+		if let Some(json) = Self::read_file::<BabelOutput>(&dir, "output.json") {
 			return Some(json);
 		}
 		Self::read_file::<BabelOutput>(&dir, "output.extended.json")
@@ -114,13 +95,11 @@ impl BabelCase {
 	// it is an error if:
 	//   * its output.json contains an errors field
 	//   * the directory contains a options.json with a "throws" field
-	fn determine_should_fail(path: &Path, options: &BabelOptions) -> bool {
+	fn determine_should_fail(path:&Path, options:&BabelOptions) -> bool {
 		let output_json = Self::read_output_json(path);
 
 		if let Some(output_json) = output_json {
-			return output_json
-				.errors
-				.map_or(false, |errors| !errors.is_empty());
+			return output_json.errors.map_or(false, |errors| !errors.is_empty());
 		}
 
 		if options.throws.is_some() {
@@ -134,7 +113,7 @@ impl BabelCase {
 
 impl Case for BabelCase {
 	/// # Panics
-	fn new(path: PathBuf, code: String) -> Self {
+	fn new(path:PathBuf, code:String) -> Self {
 		let dir = project_root().join(FIXTURES_PATH).join(&path);
 		let options = BabelOptions::from_test_path(dir.parent().unwrap());
 		let source_type = SourceType::from_path(&path)
@@ -145,35 +124,18 @@ impl Case for BabelCase {
 			.with_typescript_definition(options.is_typescript_definition())
 			.with_module(options.is_module());
 		let should_fail = Self::determine_should_fail(&path, &options);
-		Self {
-			path,
-			code,
-			source_type,
-			options,
-			should_fail,
-			result: TestResult::ToBeRun,
-		}
+		Self { path, code, source_type, options, should_fail, result:TestResult::ToBeRun }
 	}
 
-	fn code(&self) -> &str {
-		&self.code
-	}
+	fn code(&self) -> &str { &self.code }
 
-	fn path(&self) -> &Path {
-		&self.path
-	}
+	fn path(&self) -> &Path { &self.path }
 
-	fn allow_return_outside_function(&self) -> bool {
-		self.options.allow_return_outside_function
-	}
+	fn allow_return_outside_function(&self) -> bool { self.options.allow_return_outside_function }
 
-	fn test_result(&self) -> &TestResult {
-		&self.result
-	}
+	fn test_result(&self) -> &TestResult { &self.result }
 
-	fn should_fail(&self) -> bool {
-		self.should_fail
-	}
+	fn should_fail(&self) -> bool { self.should_fail }
 
 	fn skip_test_case(&self) -> bool {
 		let not_supported_plugins = [

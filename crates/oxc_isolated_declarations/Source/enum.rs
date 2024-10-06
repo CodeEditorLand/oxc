@@ -20,27 +20,22 @@ impl<'a> IsolatedDeclarations<'a> {
 	/// if the enum member is a template literal with substitutions.
 	pub fn transform_ts_enum_declaration(
 		&mut self,
-		decl: &TSEnumDeclaration<'a>,
+		decl:&TSEnumDeclaration<'a>,
 	) -> Option<Declaration<'a>> {
 		let mut members = self.ast.vec();
 		let mut prev_initializer_value = Some(ConstantValue::Number(-1.0));
 		let mut prev_members = FxHashMap::default();
 		for member in &decl.members {
 			let value = if let Some(initializer) = &member.initializer {
-				let computed_value = self.computed_constant_value(
-					initializer,
-					&decl.id.name,
-					&prev_members,
-				);
+				let computed_value =
+					self.computed_constant_value(initializer, &decl.id.name, &prev_members);
 
 				if computed_value.is_none() {
 					self.error(enum_member_initializers(member.id.span()));
 				}
 
 				computed_value
-			} else if let Some(ConstantValue::Number(v)) =
-				prev_initializer_value
-			{
+			} else if let Some(ConstantValue::Number(v)) = prev_initializer_value {
 				Some(ConstantValue::Number(v + 1.0))
 			} else {
 				None
@@ -53,9 +48,7 @@ impl<'a> IsolatedDeclarations<'a> {
 					TSEnumMemberName::StaticIdentifier(id) => &id.name,
 					TSEnumMemberName::StaticStringLiteral(str) => &str.value,
 					TSEnumMemberName::StaticTemplateLiteral(template) => {
-						&template.quasi().expect(
-							"Template enum members cannot have substitutions.",
-						)
+						&template.quasi().expect("Template enum members cannot have substitutions.")
 					},
 					#[allow(clippy::unnested_or_patterns)] // Clippy is wrong
 					TSEnumMemberName::StaticNumericLiteral(_)
@@ -70,38 +63,32 @@ impl<'a> IsolatedDeclarations<'a> {
 				member.span,
 				// SAFETY: `ast.copy` is unsound! We need to fix.
 				unsafe { self.ast.copy(&member.id) },
-				value.map(|v| match v {
-					ConstantValue::Number(v) => {
-						let is_negative = v < 0.0;
+				value.map(|v| {
+					match v {
+						ConstantValue::Number(v) => {
+							let is_negative = v < 0.0;
 
-						// Infinity
-						let expr = if v.is_infinite() {
-							self.ast.expression_identifier_reference(
-								SPAN, "Infinity",
-							)
-						} else {
-							let value = if is_negative { -v } else { v };
-							self.ast.expression_numeric_literal(
-								SPAN,
-								value,
-								value.to_string(),
-								NumberBase::Decimal,
-							)
-						};
+							// Infinity
+							let expr = if v.is_infinite() {
+								self.ast.expression_identifier_reference(SPAN, "Infinity")
+							} else {
+								let value = if is_negative { -v } else { v };
+								self.ast.expression_numeric_literal(
+									SPAN,
+									value,
+									value.to_string(),
+									NumberBase::Decimal,
+								)
+							};
 
-						if is_negative {
-							self.ast.expression_unary(
-								SPAN,
-								UnaryOperator::UnaryNegation,
-								expr,
-							)
-						} else {
-							expr
-						}
-					},
-					ConstantValue::String(v) => {
-						self.ast.expression_string_literal(SPAN, v)
-					},
+							if is_negative {
+								self.ast.expression_unary(SPAN, UnaryOperator::UnaryNegation, expr)
+							} else {
+								expr
+							}
+						},
+						ConstantValue::String(v) => self.ast.expression_string_literal(SPAN, v),
+					}
 				}),
 			);
 
@@ -122,9 +109,9 @@ impl<'a> IsolatedDeclarations<'a> {
 	/// Refer to [babel](https://github.com/babel/babel/blob/610897a9a96c5e344e77ca9665df7613d2f88358/packages/babel-plugin-transform-typescript/src/enum.ts#L241C1-L394C2)
 	fn computed_constant_value(
 		&self,
-		expr: &Expression<'a>,
-		enum_name: &str,
-		prev_members: &FxHashMap<Atom<'a>, ConstantValue>,
+		expr:&Expression<'a>,
+		enum_name:&str,
+		prev_members:&FxHashMap<Atom<'a>, ConstantValue>,
 	) -> Option<ConstantValue> {
 		self.evaluate(expr, enum_name, prev_members)
 	}
@@ -132,9 +119,9 @@ impl<'a> IsolatedDeclarations<'a> {
 	#[allow(clippy::unused_self, clippy::needless_pass_by_value)]
 	fn evaluate_ref(
 		&self,
-		expr: &Expression<'a>,
-		enum_name: &str,
-		prev_members: &FxHashMap<Atom<'a>, ConstantValue>,
+		expr:&Expression<'a>,
+		enum_name:&str,
+		prev_members:&FxHashMap<Atom<'a>, ConstantValue>,
 	) -> Option<ConstantValue> {
 		match expr {
 			match_member_expression!(Expression) => {
@@ -168,29 +155,23 @@ impl<'a> IsolatedDeclarations<'a> {
 
 	fn evaluate(
 		&self,
-		expr: &Expression<'a>,
-		enum_name: &str,
-		prev_members: &FxHashMap<Atom<'a>, ConstantValue>,
+		expr:&Expression<'a>,
+		enum_name:&str,
+		prev_members:&FxHashMap<Atom<'a>, ConstantValue>,
 	) -> Option<ConstantValue> {
 		match expr {
 			Expression::Identifier(_)
 			| Expression::ComputedMemberExpression(_)
 			| Expression::StaticMemberExpression(_)
-			| Expression::PrivateFieldExpression(_) => {
-				self.evaluate_ref(expr, enum_name, prev_members)
-			},
+			| Expression::PrivateFieldExpression(_) => self.evaluate_ref(expr, enum_name, prev_members),
 			Expression::BinaryExpression(expr) => {
 				self.eval_binary_expression(expr, enum_name, prev_members)
 			},
 			Expression::UnaryExpression(expr) => {
 				self.eval_unary_expression(expr, enum_name, prev_members)
 			},
-			Expression::NumericLiteral(lit) => {
-				Some(ConstantValue::Number(lit.value))
-			},
-			Expression::StringLiteral(lit) => {
-				Some(ConstantValue::String(lit.value.to_string()))
-			},
+			Expression::NumericLiteral(lit) => Some(ConstantValue::Number(lit.value)),
+			Expression::StringLiteral(lit) => Some(ConstantValue::String(lit.value.to_string())),
 			Expression::TemplateLiteral(lit) => {
 				let mut value = String::new();
 				for part in &lit.quasis {
@@ -212,9 +193,9 @@ impl<'a> IsolatedDeclarations<'a> {
 	)]
 	fn eval_binary_expression(
 		&self,
-		expr: &BinaryExpression<'a>,
-		enum_name: &str,
-		prev_members: &FxHashMap<Atom<'a>, ConstantValue>,
+		expr:&BinaryExpression<'a>,
+		enum_name:&str,
+		prev_members:&FxHashMap<Atom<'a>, ConstantValue>,
 	) -> Option<ConstantValue> {
 		let left = self.evaluate(&expr.left, enum_name, prev_members)?;
 		let right = self.evaluate(&expr.right, enum_name, prev_members)?;
@@ -233,9 +214,7 @@ impl<'a> IsolatedDeclarations<'a> {
 				ConstantValue::Number(v) => v.to_js_string(),
 			};
 
-			return Some(ConstantValue::String(format!(
-				"{left_string}{right_string}"
-			)));
+			return Some(ConstantValue::String(format!("{left_string}{right_string}")));
 		}
 
 		let left = match left {
@@ -251,49 +230,34 @@ impl<'a> IsolatedDeclarations<'a> {
 		match expr.operator {
 			BinaryOperator::ShiftRight => {
 				Some(ConstantValue::Number(f64::from(
-					left.to_js_int_32()
-						.wrapping_shr(right.to_js_int_32() as u32),
+					left.to_js_int_32().wrapping_shr(right.to_js_int_32() as u32),
 				)))
 			},
 			BinaryOperator::ShiftRightZeroFill => {
 				Some(ConstantValue::Number(f64::from(
-					(left.to_js_int_32() as u32)
-						.wrapping_shr(right.to_js_int_32() as u32),
+					(left.to_js_int_32() as u32).wrapping_shr(right.to_js_int_32() as u32),
 				)))
 			},
 			BinaryOperator::ShiftLeft => {
 				Some(ConstantValue::Number(f64::from(
-					left.to_js_int_32()
-						.wrapping_shl(right.to_js_int_32() as u32),
+					left.to_js_int_32().wrapping_shl(right.to_js_int_32() as u32),
 				)))
 			},
-			BinaryOperator::BitwiseXOR => Some(ConstantValue::Number(
-				f64::from(left.to_js_int_32() ^ right.to_js_int_32()),
-			)),
-			BinaryOperator::BitwiseOR => Some(ConstantValue::Number(
-				f64::from(left.to_js_int_32() | right.to_js_int_32()),
-			)),
-			BinaryOperator::BitwiseAnd => Some(ConstantValue::Number(
-				f64::from(left.to_js_int_32() & right.to_js_int_32()),
-			)),
-			BinaryOperator::Multiplication => {
-				Some(ConstantValue::Number(left * right))
+			BinaryOperator::BitwiseXOR => {
+				Some(ConstantValue::Number(f64::from(left.to_js_int_32() ^ right.to_js_int_32())))
 			},
-			BinaryOperator::Division => {
-				Some(ConstantValue::Number(left / right))
+			BinaryOperator::BitwiseOR => {
+				Some(ConstantValue::Number(f64::from(left.to_js_int_32() | right.to_js_int_32())))
 			},
-			BinaryOperator::Addition => {
-				Some(ConstantValue::Number(left + right))
+			BinaryOperator::BitwiseAnd => {
+				Some(ConstantValue::Number(f64::from(left.to_js_int_32() & right.to_js_int_32())))
 			},
-			BinaryOperator::Subtraction => {
-				Some(ConstantValue::Number(left - right))
-			},
-			BinaryOperator::Remainder => {
-				Some(ConstantValue::Number(left % right))
-			},
-			BinaryOperator::Exponential => {
-				Some(ConstantValue::Number(left.powf(right)))
-			},
+			BinaryOperator::Multiplication => Some(ConstantValue::Number(left * right)),
+			BinaryOperator::Division => Some(ConstantValue::Number(left / right)),
+			BinaryOperator::Addition => Some(ConstantValue::Number(left + right)),
+			BinaryOperator::Subtraction => Some(ConstantValue::Number(left - right)),
+			BinaryOperator::Remainder => Some(ConstantValue::Number(left % right)),
+			BinaryOperator::Exponential => Some(ConstantValue::Number(left.powf(right))),
 			_ => None,
 		}
 	}
@@ -301,9 +265,9 @@ impl<'a> IsolatedDeclarations<'a> {
 	#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 	fn eval_unary_expression(
 		&self,
-		expr: &UnaryExpression<'a>,
-		enum_name: &str,
-		prev_members: &FxHashMap<Atom<'a>, ConstantValue>,
+		expr:&UnaryExpression<'a>,
+		enum_name:&str,
+		prev_members:&FxHashMap<Atom<'a>, ConstantValue>,
 	) -> Option<ConstantValue> {
 		let value = self.evaluate(&expr.argument, enum_name, prev_members)?;
 

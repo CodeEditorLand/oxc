@@ -5,206 +5,204 @@ use oxc_span::Span;
 use oxc_syntax::operator::{BinaryOperator, UnaryOperator};
 
 use crate::{
-    context::{ContextHost, LintContext},
-    rule::Rule,
-    AstNode,
+	context::{ContextHost, LintContext},
+	rule::Rule,
+	AstNode,
 };
 
-fn prefer_literal_enum_member_diagnostic(span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn(
-        "Explicit enum value must only be a literal value (string, number, boolean, etc).",
-    )
-    .with_help("Require all enum members to be literal values.")
-    .with_label(span)
+fn prefer_literal_enum_member_diagnostic(span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::warn(
+		"Explicit enum value must only be a literal value (string, number, boolean, etc).",
+	)
+	.with_help("Require all enum members to be literal values.")
+	.with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct PreferLiteralEnumMember {
-    allow_bitwise_expressions: bool,
+	allow_bitwise_expressions:bool,
 }
 
 declare_oxc_lint!(
-    /// ### What it does
-    /// Explicit enum value must only be a literal value (string, number, boolean, etc).
-    ///
-    /// ### Why is this bad?
-    /// TypeScript allows the value of an enum member to be many different kinds of valid JavaScript expressions.
-    /// However, because enums create their own scope whereby each enum member becomes a variable in that scope, developers are often surprised at the resultant values.
-    ///
-    /// ### Example
-    /// ```ts
-    /// const imOutside = 2;
-    /// const b = 2;
-    /// enum Foo {
-    ///   outer = imOutside,
-    ///   a = 1,
-    ///   b = a,
-    ///   c = b,
-    /// }
-    /// ```
-    PreferLiteralEnumMember,
-    restriction
+	/// ### What it does
+	/// Explicit enum value must only be a literal value (string, number, boolean, etc).
+	///
+	/// ### Why is this bad?
+	/// TypeScript allows the value of an enum member to be many different kinds of valid JavaScript expressions.
+	/// However, because enums create their own scope whereby each enum member becomes a variable in that scope, developers are often surprised at the resultant values.
+	///
+	/// ### Example
+	/// ```ts
+	/// const imOutside = 2;
+	/// const b = 2;
+	/// enum Foo {
+	///   outer = imOutside,
+	///   a = 1,
+	///   b = a,
+	///   c = b,
+	/// }
+	/// ```
+	PreferLiteralEnumMember,
+	restriction
 );
 
 impl Rule for PreferLiteralEnumMember {
-    fn from_configuration(value: serde_json::Value) -> Self {
-        let options: Option<&serde_json::Value> = value.get(0);
+	fn from_configuration(value:serde_json::Value) -> Self {
+		let options:Option<&serde_json::Value> = value.get(0);
 
-        Self {
-            allow_bitwise_expressions: options
-                .and_then(|x| x.get("allowBitwiseExpressions"))
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
-        }
-    }
+		Self {
+			allow_bitwise_expressions:options
+				.and_then(|x| x.get("allowBitwiseExpressions"))
+				.and_then(serde_json::Value::as_bool)
+				.unwrap_or(false),
+		}
+	}
 
-    fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
-        let AstKind::TSEnumMember(decl) = node.kind() else {
-            return;
-        };
-        let Some(initializer) = &decl.initializer else {
-            return;
-        };
-        if initializer.is_literal() {
-            return;
-        }
+	fn run<'a>(&self, node:&AstNode<'a>, ctx:&LintContext<'a>) {
+		let AstKind::TSEnumMember(decl) = node.kind() else {
+			return;
+		};
+		let Some(initializer) = &decl.initializer else {
+			return;
+		};
+		if initializer.is_literal() {
+			return;
+		}
 
-        if let Expression::TemplateLiteral(template) = initializer {
-            if template.expressions.len() == 0 {
-                return;
-            }
-        }
+		if let Expression::TemplateLiteral(template) = initializer {
+			if template.expressions.len() == 0 {
+				return;
+			}
+		}
 
-        if let Expression::UnaryExpression(unary_expr) = initializer {
-            if unary_expr.argument.is_literal() {
-                if matches!(
-                    unary_expr.operator,
-                    UnaryOperator::UnaryPlus | UnaryOperator::UnaryNegation,
-                ) {
-                    return;
-                }
+		if let Expression::UnaryExpression(unary_expr) = initializer {
+			if unary_expr.argument.is_literal() {
+				if matches!(
+					unary_expr.operator,
+					UnaryOperator::UnaryPlus | UnaryOperator::UnaryNegation,
+				) {
+					return;
+				}
 
-                if self.allow_bitwise_expressions
-                    && matches!(unary_expr.operator, UnaryOperator::BitwiseNot)
-                {
-                    return;
-                }
-            }
-        }
+				if self.allow_bitwise_expressions
+					&& matches!(unary_expr.operator, UnaryOperator::BitwiseNot)
+				{
+					return;
+				}
+			}
+		}
 
-        if self.allow_bitwise_expressions {
-            if let Expression::BinaryExpression(binary_expr) = initializer {
-                if matches!(
-                    binary_expr.operator,
-                    BinaryOperator::BitwiseOR
-                        | BinaryOperator::BitwiseAnd
-                        | BinaryOperator::BitwiseXOR
-                        | BinaryOperator::ShiftLeft
-                        | BinaryOperator::ShiftRight
-                        | BinaryOperator::ShiftRightZeroFill
-                ) && binary_expr.left.is_literal()
-                    && binary_expr.right.is_literal()
-                {
-                    return;
-                }
-            }
-        }
+		if self.allow_bitwise_expressions {
+			if let Expression::BinaryExpression(binary_expr) = initializer {
+				if matches!(
+					binary_expr.operator,
+					BinaryOperator::BitwiseOR
+						| BinaryOperator::BitwiseAnd
+						| BinaryOperator::BitwiseXOR
+						| BinaryOperator::ShiftLeft
+						| BinaryOperator::ShiftRight
+						| BinaryOperator::ShiftRightZeroFill
+				) && binary_expr.left.is_literal()
+					&& binary_expr.right.is_literal()
+				{
+					return;
+				}
+			}
+		}
 
-        ctx.diagnostic(prefer_literal_enum_member_diagnostic(decl.span));
-    }
+		ctx.diagnostic(prefer_literal_enum_member_diagnostic(decl.span));
+	}
 
-    fn should_run(&self, ctx: &ContextHost) -> bool {
-        ctx.source_type().is_typescript()
-    }
+	fn should_run(&self, ctx:&ContextHost) -> bool { ctx.source_type().is_typescript() }
 }
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+	use crate::tester::Tester;
 
-    let pass = vec![
-        (
-            "
+	let pass = vec![
+		(
+			"
         	enum ValidRegex {
                 A = /test/,
             }
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidString {
         	  A = 'test',
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidLiteral {
         	  A = `test`,
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidNumber {
         	  A = 42,
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidNumber {
         	  A = -42,
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidNumber {
         	  A = +42,
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidNull {
         	  A = null,
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidPlain {
         	  A,
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidQuotedKey {
         	  'a',
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum ValidQuotedKeyWithAssignment {
         	  'a' = 1,
         	}
         	    ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum Foo {
         	  A = 1 << 0,
         	  B = 1 >> 0,
@@ -215,53 +213,53 @@ fn test() {
         	  G = ~1,
         	}
         	      ",
-            Some(serde_json::json!([{ "allowBitwiseExpressions": true }])),
-        ),
-    ];
+			Some(serde_json::json!([{ "allowBitwiseExpressions": true }])),
+		),
+	];
 
-    let fail = vec![
-        (
-            "
+	let fail = vec![
+		(
+			"
         	enum InvalidObject {
         	  A = {},
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum InvalidArray {
         	  A = [],
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum InvalidTemplateLiteral {
         	  A = `foo ${0}`,
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum InvalidConstructor {
         	  A = new Set(),
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum InvalidExpression {
         	  A = 2 + 2,
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum InvalidExpression {
         	  A = delete 2,
         	  B = -a,
@@ -270,10 +268,10 @@ fn test() {
         	  E = !0,
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	const variable = 'Test';
         	enum InvalidVariable {
         	  A = 'TestStr',
@@ -282,29 +280,29 @@ fn test() {
         	  V = variable,
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum InvalidEnumMember {
         	  A = 'TestStr',
         	  B = A,
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	const Valid = { A: 2 };
         	enum InvalidObjectMember {
         	  A = 'TestStr',
         	  B = Valid.A,
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum Valid {
         	  A,
         	}
@@ -313,20 +311,20 @@ fn test() {
         	  B = Valid.A,
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	const obj = { a: 1 };
         	enum InvalidSpread {
         	  A = 'TestStr',
         	  B = { ...a },
         	}
         	      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
         	enum Foo {
         	  A = 1 << 0,
         	  B = 1 >> 0,
@@ -337,10 +335,10 @@ fn test() {
         	  G = ~1,
         	}
         	      ",
-            Some(serde_json::json!([{ "allowBitwiseExpressions": false }])),
-        ),
-        (
-            "
+			Some(serde_json::json!([{ "allowBitwiseExpressions": false }])),
+		),
+		(
+			"
         	const x = 1;
         	enum Foo {
         	  A = x << 0,
@@ -352,9 +350,9 @@ fn test() {
         	  G = ~x,
         	}
         	      ",
-            Some(serde_json::json!([{ "allowBitwiseExpressions": true }])),
-        ),
-    ];
+			Some(serde_json::json!([{ "allowBitwiseExpressions": true }])),
+		),
+	];
 
-    Tester::new(PreferLiteralEnumMember::NAME, pass, fail).test_and_snapshot();
+	Tester::new(PreferLiteralEnumMember::NAME, pass, fail).test_and_snapshot();
 }

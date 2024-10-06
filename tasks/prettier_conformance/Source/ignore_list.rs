@@ -1,4 +1,4 @@
-pub const JS_IGNORE_TESTS: &[&str] = &[
+pub const JS_IGNORE_TESTS:&[&str] = &[
 	// non-standard syntax
 	"js/deferred-import-evaluation",
 	"js/bind-expressions",
@@ -36,4 +36,4 @@ pub const JS_IGNORE_TESTS: &[&str] = &[
 	"optional-chaining-assignment/invalid-",
 ];
 
-pub const TS_IGNORE_TESTS: &[&str] = &[];
+pub const TS_IGNORE_TESTS:&[&str] = &[];

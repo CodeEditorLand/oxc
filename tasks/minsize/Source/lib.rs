@@ -73,15 +73,15 @@ pub fn run() -> Result<(), io::Error> {
 	for file in files.files() {
 		let minified = minify_twice(file);
 		let s = format!(
-            "{:width$} | {:width$} | {:width$} | {:width$} | {:width$} | {:width$}\n\n",
-            format_size(file.source_text.len(), DECIMAL),
-            format_size(minified.len(), DECIMAL),
-            targets[file.file_name.as_str()],
-            format_size(gzip_size(&minified), DECIMAL),
-            gzip_targets[file.file_name.as_str()],
-            &file.file_name,
-            width = 10
-        );
+			"{:width$} | {:width$} | {:width$} | {:width$} | {:width$} | {:width$}\n\n",
+			format_size(file.source_text.len(), DECIMAL),
+			format_size(minified.len(), DECIMAL),
+			targets[file.file_name.as_str()],
+			format_size(gzip_size(&minified), DECIMAL),
+			gzip_targets[file.file_name.as_str()],
+			&file.file_name,
+			width = 10
+		);
 		out.push_str(&s);
 	}
 
@@ -93,42 +93,32 @@ pub fn run() -> Result<(), io::Error> {
 	Ok(())
 }
 
-fn minify_twice(file: &TestFile) -> String {
+fn minify_twice(file:&TestFile) -> String {
 	let source_type = SourceType::from_path(&file.file_name).unwrap();
 	let options = MinifierOptions {
-		mangle: true,
-		compress: CompressOptions {
-			evaluate: false,
-			..CompressOptions::default()
-		},
+		mangle:true,
+		compress:CompressOptions { evaluate:false, ..CompressOptions::default() },
 	};
 	// let source_text1 = minify(&file.source_text, source_type, options);
 	// let source_text2 = minify(&source_text1, source_type, options);
-	// assert!(source_text1 == source_text2, "Minification failed for {}", &file.file_name);
-	// source_text2
+	// assert!(source_text1 == source_text2, "Minification failed for {}",
+	// &file.file_name); source_text2
 	minify(&file.source_text, source_type, options)
 }
 
-fn minify(
-	source_text: &str,
-	source_type: SourceType,
-	options: MinifierOptions,
-) -> String {
+fn minify(source_text:&str, source_type:SourceType, options:MinifierOptions) -> String {
 	let allocator = Allocator::default();
 	let ret = Parser::new(&allocator, source_text, source_type).parse();
 	let program = allocator.alloc(ret.program);
 	let ret = Minifier::new(options).build(&allocator, program);
 	CodeGenerator::new()
-		.with_options(CodegenOptions {
-			minify: true,
-			..CodegenOptions::default()
-		})
+		.with_options(CodegenOptions { minify:true, ..CodegenOptions::default() })
 		.with_mangler(ret.mangler)
 		.build(program)
 		.source_text
 }
 
-fn gzip_size(s: &str) -> usize {
+fn gzip_size(s:&str) -> usize {
 	let mut e = GzEncoder::new(Vec::new(), Compression::best());
 	e.write_all(s.as_bytes()).unwrap();
 	let s = e.finish().unwrap();

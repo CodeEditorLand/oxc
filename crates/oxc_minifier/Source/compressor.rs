@@ -5,25 +5,31 @@ use oxc_traverse::TraverseCtx;
 
 use crate::{
 	ast_passes::{
-		CollapseVariableDeclarations, ExploitAssigns, PeepholeFoldConstants,
-		PeepholeMinimizeConditions, PeepholeRemoveDeadCode,
-		PeepholeReplaceKnownMethods, PeepholeSubstituteAlternateSyntax,
-		RemoveSyntax, StatementFusion,
+		CollapseVariableDeclarations,
+		ExploitAssigns,
+		PeepholeFoldConstants,
+		PeepholeMinimizeConditions,
+		PeepholeRemoveDeadCode,
+		PeepholeReplaceKnownMethods,
+		PeepholeSubstituteAlternateSyntax,
+		RemoveSyntax,
+		StatementFusion,
 	},
-	CompressOptions, CompressorPass,
+	CompressOptions,
+	CompressorPass,
 };
 
 pub struct Compressor<'a> {
-	allocator: &'a Allocator,
-	options: CompressOptions,
+	allocator:&'a Allocator,
+	options:CompressOptions,
 }
 
 impl<'a> Compressor<'a> {
-	pub fn new(allocator: &'a Allocator, options: CompressOptions) -> Self {
+	pub fn new(allocator:&'a Allocator, options:CompressOptions) -> Self {
 		Self { allocator, options }
 	}
 
-	pub fn build(self, program: &mut Program<'a>) {
+	pub fn build(self, program:&mut Program<'a>) {
 		let (symbols, scopes) = SemanticBuilder::new("")
 			.build(program)
 			.semantic
@@ -33,9 +39,9 @@ impl<'a> Compressor<'a> {
 
 	pub fn build_with_symbols_and_scopes(
 		self,
-		symbols: SymbolTable,
-		scopes: ScopeTree,
-		program: &mut Program<'a>,
+		symbols:SymbolTable,
+		scopes:ScopeTree,
+		program:&mut Program<'a>,
 	) {
 		let mut ctx = TraverseCtx::new(scopes, symbols, self.allocator);
 		RemoveSyntax::new(self.options).build(program, &mut ctx);
@@ -46,11 +52,10 @@ impl<'a> Compressor<'a> {
 		}
 
 		ExploitAssigns::new().build(program, &mut ctx);
-		CollapseVariableDeclarations::new(self.options)
-			.build(program, &mut ctx);
+		CollapseVariableDeclarations::new(self.options).build(program, &mut ctx);
 
 		// See `latePeepholeOptimizations`
-		let mut passes: [&mut dyn CompressorPass; 6] = [
+		let mut passes:[&mut dyn CompressorPass; 6] = [
 			&mut StatementFusion::new(),
 			&mut PeepholeRemoveDeadCode::new(),
 			// TODO: MinimizeExitPoints
@@ -80,11 +85,7 @@ impl<'a> Compressor<'a> {
 		}
 	}
 
-	fn dead_code_elimination(
-		self,
-		program: &mut Program<'a>,
-		ctx: &mut TraverseCtx<'a>,
-	) {
+	fn dead_code_elimination(self, program:&mut Program<'a>, ctx:&mut TraverseCtx<'a>) {
 		PeepholeFoldConstants::new().build(program, ctx);
 		PeepholeMinimizeConditions::new().build(program, ctx);
 		PeepholeRemoveDeadCode::new().build(program, ctx);

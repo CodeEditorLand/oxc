@@ -3,9 +3,9 @@ use oxc_diagnostics::Result;
 use crate::{lexer::Kind, ParserImpl};
 
 pub trait SeparatedList<'a>: Sized {
-	fn new(p: &ParserImpl<'a>) -> Self;
+	fn new(p:&ParserImpl<'a>) -> Self;
 
-	fn parse(p: &mut ParserImpl<'a>) -> Result<Self> {
+	fn parse(p:&mut ParserImpl<'a>) -> Result<Self> {
 		let mut list = Self::new(p);
 		list.parse_list(p)?;
 		Ok(list)
@@ -18,14 +18,12 @@ pub trait SeparatedList<'a>: Sized {
 	fn close(&self) -> Kind;
 
 	/// Separator element, e.g. `,`
-	fn separator(&self) -> Kind {
-		Kind::Comma
-	}
+	fn separator(&self) -> Kind { Kind::Comma }
 
-	fn parse_element(&mut self, p: &mut ParserImpl<'a>) -> Result<()>;
+	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()>;
 
 	/// Main entry point, parse the list
-	fn parse_list(&mut self, p: &mut ParserImpl<'a>) -> Result<()> {
+	fn parse_list(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		p.expect(self.open())?;
 
 		let mut first = true;

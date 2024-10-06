@@ -5,13 +5,13 @@ mod error;
 
 use std::{hash::Hash, path::Path};
 
+pub use error::UnknownExtension;
 use oxc_allocator::{Allocator, CloneIn};
 use oxc_ast_macros::ast;
 #[cfg(feature = "serialize")]
 use {serde::Serialize, tsify::Tsify};
 
 use crate::{cmp::ContentEq, hash::ContentHash};
-pub use error::UnknownExtension;
 
 /// Source Type for JavaScript vs TypeScript / Script vs Module / JSX
 #[ast]
@@ -20,13 +20,13 @@ pub use error::UnknownExtension;
 #[serde(rename_all = "camelCase")]
 pub struct SourceType {
 	/// JavaScript or TypeScript, default JavaScript
-	pub(super) language: Language,
+	pub(super) language:Language,
 
 	/// Script or Module, default Module
-	pub(super) module_kind: ModuleKind,
+	pub(super) module_kind:ModuleKind,
 
 	/// Support JSX for JavaScript and TypeScript? default without JSX
-	pub(super) variant: LanguageVariant,
+	pub(super) variant:LanguageVariant,
 }
 
 /// JavaScript or TypeScript
@@ -51,9 +51,11 @@ pub enum ModuleKind {
 	Script = 0,
 	/// ES6 Module
 	Module = 1,
-	/// Consider the file a "module" if ESM syntax is present, or else consider it a "script".
+	/// Consider the file a "module" if ESM syntax is present, or else consider
+	/// it a "script".
 	///
-	/// ESM syntax includes `import` statement, `export` statement and `import.meta`.
+	/// ESM syntax includes `import` statement, `export` statement and
+	/// `import.meta`.
 	///
 	/// Note: Dynamic import expression is not ESM syntax.
 	///
@@ -73,43 +75,34 @@ pub enum LanguageVariant {
 
 impl Default for SourceType {
 	#[inline]
-	fn default() -> Self {
-		Self::mjs()
-	}
+	fn default() -> Self { Self::mjs() }
 }
 
 impl<'a> CloneIn<'a> for SourceType {
 	type Cloned = Self;
 
 	#[inline]
-	fn clone_in(&self, _: &'a Allocator) -> Self {
-		*self
-	}
+	fn clone_in(&self, _:&'a Allocator) -> Self { *self }
 }
 
 impl ContentEq for SourceType {
 	#[inline]
-	fn content_eq(&self, other: &Self) -> bool {
-		self == other
-	}
+	fn content_eq(&self, other:&Self) -> bool { self == other }
 }
 
 impl ContentHash for SourceType {
 	#[inline]
-	fn content_hash<H: std::hash::Hasher>(&self, state: &mut H) {
-		self.hash(state);
-	}
+	fn content_hash<H:std::hash::Hasher>(&self, state:&mut H) { self.hash(state); }
 }
 
 /// Valid file extensions
-pub const VALID_EXTENSIONS: [&str; 8] =
-	["js", "mjs", "cjs", "jsx", "ts", "mts", "cts", "tsx"];
+pub const VALID_EXTENSIONS:[&str; 8] = ["js", "mjs", "cjs", "jsx", "ts", "mts", "cts", "tsx"];
 
 impl SourceType {
 	/// Creates a [`SourceType`] representing a regular [`JavaScript`] file.
 	///
-	/// The resulting source type is not a [`module`], nor does it support [`JSX`].
-	/// Use [`SourceType::jsx`] for [`JSX`] sources.
+	/// The resulting source type is not a [`module`], nor does it support
+	/// [`JSX`]. Use [`SourceType::jsx`] for [`JSX`] sources.
 	///
 	/// ## Example
 	/// ```
@@ -126,25 +119,25 @@ impl SourceType {
 	/// [`JSX`]: LanguageVariant::Jsx
 	pub const fn cjs() -> Self {
 		Self {
-			language: Language::JavaScript,
-			module_kind: ModuleKind::Script,
-			variant: LanguageVariant::Standard,
+			language:Language::JavaScript,
+			module_kind:ModuleKind::Script,
+			variant:LanguageVariant::Standard,
 		}
 	}
 
 	pub const fn mjs() -> Self {
 		Self {
-			language: Language::JavaScript,
-			module_kind: ModuleKind::Module,
-			variant: LanguageVariant::Standard,
+			language:Language::JavaScript,
+			module_kind:ModuleKind::Module,
+			variant:LanguageVariant::Standard,
 		}
 	}
 
 	pub const fn unambiguous() -> Self {
 		Self {
-			language: Language::JavaScript,
-			module_kind: ModuleKind::Unambiguous,
-			variant: LanguageVariant::Standard,
+			language:Language::JavaScript,
+			module_kind:ModuleKind::Unambiguous,
+			variant:LanguageVariant::Standard,
 		}
 	}
 
@@ -160,9 +153,7 @@ impl SourceType {
 	/// ```
 	///
 	/// [`JavaScript`]: Language::JavaScript
-	pub const fn jsx() -> Self {
-		Self::mjs().with_jsx(true)
-	}
+	pub const fn jsx() -> Self { Self::mjs().with_jsx(true) }
 
 	/// Creates a [`SourceType`] representing a [`TypeScript`] file.
 	///
@@ -185,13 +176,14 @@ impl SourceType {
 	/// [`JSX`]: LanguageVariant::Jsx
 	pub const fn ts() -> Self {
 		Self {
-			language: Language::TypeScript,
-			module_kind: ModuleKind::Module,
-			variant: LanguageVariant::Standard,
+			language:Language::TypeScript,
+			module_kind:ModuleKind::Module,
+			variant:LanguageVariant::Standard,
 		}
 	}
 
-	/// Creates a [`SourceType`] representing a [`TypeScript`] file with [`JSX`].
+	/// Creates a [`SourceType`] representing a [`TypeScript`] file with
+	/// [`JSX`].
 	///
 	/// ## Example
 	/// ```
@@ -206,9 +198,7 @@ impl SourceType {
 	///
 	/// [`TypeScript`]: Language::TypeScript
 	/// [`JSX`]: LanguageVariant::Jsx
-	pub const fn tsx() -> Self {
-		Self::ts().with_jsx(true)
-	}
+	pub const fn tsx() -> Self { Self::ts().with_jsx(true) }
 
 	/// Creates a [`SourceType`] representing a [`TypeScript definition`] file.
 	///
@@ -224,56 +214,40 @@ impl SourceType {
 	/// ```
 	pub const fn d_ts() -> Self {
 		Self {
-			language: Language::TypeScriptDefinition,
-			module_kind: ModuleKind::Module,
-			variant: LanguageVariant::Standard,
+			language:Language::TypeScriptDefinition,
+			module_kind:ModuleKind::Module,
+			variant:LanguageVariant::Standard,
 		}
 	}
 
-	pub fn is_script(self) -> bool {
-		self.module_kind == ModuleKind::Script
-	}
+	pub fn is_script(self) -> bool { self.module_kind == ModuleKind::Script }
 
-	pub fn is_module(self) -> bool {
-		self.module_kind == ModuleKind::Module
-	}
+	pub fn is_module(self) -> bool { self.module_kind == ModuleKind::Module }
 
-	pub fn is_unambiguous(self) -> bool {
-		self.module_kind == ModuleKind::Unambiguous
-	}
+	pub fn is_unambiguous(self) -> bool { self.module_kind == ModuleKind::Unambiguous }
 
-	pub fn module_kind(self) -> ModuleKind {
-		self.module_kind
-	}
+	pub fn module_kind(self) -> ModuleKind { self.module_kind }
 
-	pub fn is_javascript(self) -> bool {
-		self.language == Language::JavaScript
-	}
+	pub fn is_javascript(self) -> bool { self.language == Language::JavaScript }
 
-	/// Returns `true` if this is a TypeScript file or TypeScript definition file.
+	/// Returns `true` if this is a TypeScript file or TypeScript definition
+	/// file.
 	///
 	/// I.e., `true` for `.ts`, `.cts`, `.mts`, `.tsx`, and `.d.ts` files.
 	pub fn is_typescript(self) -> bool {
-		matches!(
-			self.language,
-			Language::TypeScript | Language::TypeScriptDefinition
-		)
+		matches!(self.language, Language::TypeScript | Language::TypeScriptDefinition)
 	}
 
 	pub fn is_typescript_definition(self) -> bool {
 		self.language == Language::TypeScriptDefinition
 	}
 
-	pub fn is_jsx(self) -> bool {
-		self.variant == LanguageVariant::Jsx
-	}
+	pub fn is_jsx(self) -> bool { self.variant == LanguageVariant::Jsx }
 
-	pub fn is_strict(self) -> bool {
-		self.is_module()
-	}
+	pub fn is_strict(self) -> bool { self.is_module() }
 
 	#[must_use]
-	pub const fn with_script(mut self, yes: bool) -> Self {
+	pub const fn with_script(mut self, yes:bool) -> Self {
 		if yes {
 			self.module_kind = ModuleKind::Script;
 		}
@@ -281,7 +255,7 @@ impl SourceType {
 	}
 
 	#[must_use]
-	pub const fn with_module(mut self, yes: bool) -> Self {
+	pub const fn with_module(mut self, yes:bool) -> Self {
 		if yes {
 			self.module_kind = ModuleKind::Module;
 		} else {
@@ -291,7 +265,7 @@ impl SourceType {
 	}
 
 	#[must_use]
-	pub const fn with_unambiguous(mut self, yes: bool) -> Self {
+	pub const fn with_unambiguous(mut self, yes:bool) -> Self {
 		if yes {
 			self.module_kind = ModuleKind::Unambiguous;
 		}
@@ -299,7 +273,7 @@ impl SourceType {
 	}
 
 	#[must_use]
-	pub const fn with_typescript(mut self, yes: bool) -> Self {
+	pub const fn with_typescript(mut self, yes:bool) -> Self {
 		if yes {
 			self.language = Language::TypeScript;
 		}
@@ -307,7 +281,7 @@ impl SourceType {
 	}
 
 	#[must_use]
-	pub const fn with_typescript_definition(mut self, yes: bool) -> Self {
+	pub const fn with_typescript_definition(mut self, yes:bool) -> Self {
 		if yes {
 			self.language = Language::TypeScriptDefinition;
 		}
@@ -315,7 +289,7 @@ impl SourceType {
 	}
 
 	#[must_use]
-	pub const fn with_jsx(mut self, yes: bool) -> Self {
+	pub const fn with_jsx(mut self, yes:bool) -> Self {
 		if yes {
 			self.variant = LanguageVariant::Jsx;
 		}
@@ -345,14 +319,14 @@ impl SourceType {
 	/// babel) also do not make a distinction between `.js` and `.jsx`. However,
 	/// for TypeScript files, only `.tsx` files are treated as JSX.
 	///
-	/// Note that this behavior deviates from [`SourceType::cjs`], which produces
-	/// [`scripts`].
+	/// Note that this behavior deviates from [`SourceType::cjs`], which
+	/// produces [`scripts`].
 	///
 	/// ### Modules vs. Scripts.
 	/// Oxc has partial support for Node's
 	/// [CommonJS](https://nodejs.org/api/modules.html#enabling) detection
-	/// strategy. Any file with a `.c[tj]s` extension is treated as a [`script`].
-	/// All other files are treated as [`modules`].
+	/// strategy. Any file with a `.c[tj]s` extension is treated as a
+	/// [`script`]. All other files are treated as [`modules`].
 	///
 	/// # Errors
 	/// Returns [`UnknownExtension`] if:
@@ -364,28 +338,25 @@ impl SourceType {
 	/// [`script`]: ModuleKind::Script
 	/// [`scripts`]: ModuleKind::Script
 	/// [`modules`]: ModuleKind::Module
-	pub fn from_path<P: AsRef<Path>>(
-		path: P,
-	) -> Result<Self, UnknownExtension> {
+	pub fn from_path<P:AsRef<Path>>(path:P) -> Result<Self, UnknownExtension> {
 		let file_name = path
 			.as_ref()
 			.file_name()
 			.and_then(std::ffi::OsStr::to_str)
-			.ok_or_else(|| {
-				UnknownExtension::new("Please provide a valid file name.")
-			})?;
+			.ok_or_else(|| UnknownExtension::new("Please provide a valid file name."))?;
 
 		let extension = path
-            .as_ref()
-            .extension()
-            .and_then(std::ffi::OsStr::to_str)
-            .filter(|s| VALID_EXTENSIONS.contains(s))
-            .ok_or_else(|| {
-                let path = path.as_ref().to_string_lossy();
-                UnknownExtension::new(
-                    format!("Please provide a valid file extension for {path}: .js, .mjs, .jsx or .cjs for JavaScript, or .ts, .d.ts, .mts, .cts or .tsx for TypeScript"),
-                )
-            })?;
+			.as_ref()
+			.extension()
+			.and_then(std::ffi::OsStr::to_str)
+			.filter(|s| VALID_EXTENSIONS.contains(s))
+			.ok_or_else(|| {
+				let path = path.as_ref().to_string_lossy();
+				UnknownExtension::new(format!(
+					"Please provide a valid file extension for {path}: .js, .mjs, .jsx or .cjs \
+					 for JavaScript, or .ts, .d.ts, .mts, .cts or .tsx for TypeScript"
+				))
+			})?;
 
 		let (language, module_kind) = match extension {
 			"js" | "mjs" | "jsx" => (Language::JavaScript, ModuleKind::Module),
@@ -405,9 +376,7 @@ impl SourceType {
 				#[cfg(debug_assertions)]
 				unreachable!();
 				#[cfg(not(debug_assertions))]
-				return Err(UnknownExtension(
-					format!("Unknown extension: {}", extension).into(),
-				));
+				return Err(UnknownExtension(format!("Unknown extension: {}", extension).into()));
 			},
 		};
 
@@ -468,15 +437,12 @@ mod tests {
 	#[test]
 	#[allow(clippy::similar_names)]
 	fn test_d_ts_from_path() {
-		let dts = SourceType::from_path("foo.d.ts").expect(
-			"foo.d.ts should be a valid TypeScript definition file path.",
-		);
-		let dmts = SourceType::from_path("foo.d.mts").expect(
-			"foo.d.mts should be a valid TypeScript definition file path.",
-		);
-		let dcts = SourceType::from_path("foo.d.cts").expect(
-			"foo.d.cts should be a valid TypeScript definition file path.",
-		);
+		let dts = SourceType::from_path("foo.d.ts")
+			.expect("foo.d.ts should be a valid TypeScript definition file path.");
+		let dmts = SourceType::from_path("foo.d.mts")
+			.expect("foo.d.mts should be a valid TypeScript definition file path.");
+		let dcts = SourceType::from_path("foo.d.cts")
+			.expect("foo.d.cts should be a valid TypeScript definition file path.");
 
 		for ty in &[dts, dmts, dcts] {
 			assert!(ty.is_typescript());

@@ -30,11 +30,9 @@ fn main() -> std::io::Result<()> {
 	}
 
 	let program = allocator.alloc(ret.program);
-	let semantic_ret = SemanticBuilder::new(&source_text)
-		.with_trivias(ret.trivias)
-		.build(program);
+	let semantic_ret = SemanticBuilder::new(&source_text).with_trivias(ret.trivias).build(program);
 
-	let mut errors: Vec<OxcDiagnostic> = vec![];
+	let mut errors:Vec<OxcDiagnostic> = vec![];
 
 	for node in semantic_ret.semantic.nodes() {
 		match node.kind() {
@@ -60,7 +58,7 @@ fn main() -> std::io::Result<()> {
 	Ok(())
 }
 
-fn print_errors(source_text: &str, errors: Vec<OxcDiagnostic>) {
+fn print_errors(source_text:&str, errors:Vec<OxcDiagnostic>) {
 	for error in errors {
 		let error = error.with_source_code(source_text.to_string());
 		println!("{error:?}");
@@ -74,9 +72,8 @@ fn print_errors(source_text: &str, errors: Vec<OxcDiagnostic>) {
 // 1 │ debugger;
 //   · ─────────
 //   ╰────
-fn no_debugger(debugger_span: Span) -> OxcDiagnostic {
-	OxcDiagnostic::error("`debugger` statement is not allowed")
-		.with_label(debugger_span)
+fn no_debugger(debugger_span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::error("`debugger` statement is not allowed").with_label(debugger_span)
 }
 
 // This prints:
@@ -87,7 +84,7 @@ fn no_debugger(debugger_span: Span) -> OxcDiagnostic {
 //   ·     ─┬
 //   ·      ╰── Empty object binding pattern
 //   ╰────
-fn no_empty_pattern(binding_kind: &str, span: Span) -> OxcDiagnostic {
+fn no_empty_pattern(binding_kind:&str, span:Span) -> OxcDiagnostic {
 	OxcDiagnostic::error("empty destructuring pattern is not allowed")
 		.with_label(span.label(format!("Empty {binding_kind} binding pattern")))
 }

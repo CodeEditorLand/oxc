@@ -1,7 +1,7 @@
 use console::Style;
 use similar::{ChangeTag, TextDiff};
 
-pub fn print_diff_in_terminal(expected: &str, actual: &str) {
+pub fn print_diff_in_terminal(expected:&str, actual:&str) {
 	let diff = TextDiff::from_lines(expected, actual);
 
 	for op in diff.ops() {

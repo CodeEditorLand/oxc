@@ -40,23 +40,23 @@ fn main() -> std::io::Result<()> {
 
 #[derive(Debug, Default)]
 struct CountASTNodes {
-	functions: usize,
-	classes: usize,
-	ts_import_types: usize,
+	functions:usize,
+	classes:usize,
+	ts_import_types:usize,
 }
 
 impl<'a> Visit<'a> for CountASTNodes {
-	fn visit_function(&mut self, func: &Function<'a>, flags: ScopeFlags) {
+	fn visit_function(&mut self, func:&Function<'a>, flags:ScopeFlags) {
 		self.functions += 1;
 		walk::walk_function(self, func, flags);
 	}
 
-	fn visit_class(&mut self, class: &Class<'a>) {
+	fn visit_class(&mut self, class:&Class<'a>) {
 		self.classes += 1;
 		walk::walk_class(self, class);
 	}
 
-	fn visit_ts_import_type(&mut self, ty: &TSImportType<'a>) {
+	fn visit_ts_import_type(&mut self, ty:&TSImportType<'a>) {
 		self.ts_import_types += 1;
 		walk::walk_ts_import_type(self, ty);
 	}

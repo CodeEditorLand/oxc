@@ -2,21 +2,25 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
 	parse::{Parse, ParseStream},
-	Ident, LitFloat, LitInt, LitStr, Token,
+	Ident,
+	LitFloat,
+	LitInt,
+	LitStr,
+	Token,
 };
 
 use super::declare_oxc_lint::rule_name_converter;
 
 pub struct SecretRuleMeta {
-	struct_name: Ident,
-	message: LitStr,
-	entropy: Option<LitFloat>,
-	min_len: Option<LitInt>,
-	max_len: Option<LitInt>,
+	struct_name:Ident,
+	message:LitStr,
+	entropy:Option<LitFloat>,
+	min_len:Option<LitInt>,
+	max_len:Option<LitInt>,
 }
 
 impl Parse for SecretRuleMeta {
-	fn parse(mut input: syn::parse::ParseStream) -> syn::Result<Self> {
+	fn parse(mut input:syn::parse::ParseStream) -> syn::Result<Self> {
 		let struct_name = input.parse()?;
 		input.parse::<Token!(,)>()?;
 		let description = input.parse()?;
@@ -25,69 +29,70 @@ impl Parse for SecretRuleMeta {
 
 		let mut rule = SecretRuleMeta {
 			struct_name,
-			message: description,
-			entropy: None,
-			min_len: None,
-			max_len: None,
+			message:description,
+			entropy:None,
+			min_len:None,
+			max_len:None,
 		};
 
 		while input.peek(Ident) {
 			let ident = input.parse::<Ident>()?;
 			match ident.to_string().as_str() {
-                "entropy" => {
-                    input.parse::<Token!(=)>()?;
-                    let entropy = input.parse::<LitFloat>()?;
-                    if entropy.base10_parse::<f32>()? < 0.0 {
-                        return Err(syn::Error::new_spanned(
-                            entropy,
-                            "Entropy must be greater than or equal to 0.",
-                        ));
-                    }
-                    rule.entropy = Some(entropy);
-                }
-                "min_len" => {
-                    input.parse::<Token!(=)>()?;
-                    let min_len = input.parse::<LitInt>()?;
-                    if min_len.base10_parse::<u32>()? < 1 {
-                        return Err(syn::Error::new_spanned(
-                            min_len,
-                            "Minimum length cannot be zero.",
-                        ));
-                    }
-                    rule.min_len = Some(min_len);
-                }
-                "max_len" => {
-                    input.parse::<Token!(=)>()?;
-                    let max_len = input.parse::<LitInt>()?;
-                    if max_len.base10_parse::<u32>()? < 1 {
-                        return Err(syn::Error::new_spanned(
-                            max_len,
-                            "Maximum length cannot be zero.",
-                        ));
-                    }
-                    rule.max_len = Some(max_len);
-                }
-                _ => return Err(syn::Error::new_spanned(
-                    ident,
-                    "Unexpected attribute. Only `entropy`, `min_len`, and `max_len` are allowed",
-                )),
-            }
+				"entropy" => {
+					input.parse::<Token!(=)>()?;
+					let entropy = input.parse::<LitFloat>()?;
+					if entropy.base10_parse::<f32>()? < 0.0 {
+						return Err(syn::Error::new_spanned(
+							entropy,
+							"Entropy must be greater than or equal to 0.",
+						));
+					}
+					rule.entropy = Some(entropy);
+				},
+				"min_len" => {
+					input.parse::<Token!(=)>()?;
+					let min_len = input.parse::<LitInt>()?;
+					if min_len.base10_parse::<u32>()? < 1 {
+						return Err(syn::Error::new_spanned(
+							min_len,
+							"Minimum length cannot be zero.",
+						));
+					}
+					rule.min_len = Some(min_len);
+				},
+				"max_len" => {
+					input.parse::<Token!(=)>()?;
+					let max_len = input.parse::<LitInt>()?;
+					if max_len.base10_parse::<u32>()? < 1 {
+						return Err(syn::Error::new_spanned(
+							max_len,
+							"Maximum length cannot be zero.",
+						));
+					}
+					rule.max_len = Some(max_len);
+				},
+				_ => {
+					return Err(syn::Error::new_spanned(
+						ident,
+						"Unexpected attribute. Only `entropy`, `min_len`, and `max_len` are \
+						 allowed",
+					));
+				},
+			}
 			eat_comma(&mut input)?;
 		}
 
 		// Ignore the rest
 		input.parse::<proc_macro2::TokenStream>()?;
 
-		if let (Some(min), Some(max)) =
-			(rule.min_len.as_ref(), &rule.max_len.as_ref())
-		{
+		if let (Some(min), Some(max)) = (rule.min_len.as_ref(), &rule.max_len.as_ref()) {
 			let min = min.base10_parse::<u32>()?;
 			let max = max.base10_parse::<u32>()?;
 			if min > max {
 				return Err(syn::Error::new_spanned(
-                    max,
-                    "Maximum length must be greater than or equal to minimum length.",
-                ));
+					max,
+					"Maximum length must be greater than or equal to minimum length.",
+				));
 			}
 		}
 
@@ -95,7 +100,7 @@ impl Parse for SecretRuleMeta {
 	}
 }
 
-pub fn declare_oxc_secret(meta: SecretRuleMeta) -> TokenStream {
+pub fn declare_oxc_secret(meta:SecretRuleMeta) -> TokenStream {
 	let SecretRuleMeta {
 		//
 		struct_name,
@@ -158,7 +163,7 @@ pub fn declare_oxc_secret(meta: SecretRuleMeta) -> TokenStream {
 	TokenStream::from(output)
 }
 
-fn eat_comma(input: &mut ParseStream) -> syn::Result<()> {
+fn eat_comma(input:&mut ParseStream) -> syn::Result<()> {
 	if input.peek(Token!(,)) {
 		input.parse::<Token!(,)>()?;
 	}

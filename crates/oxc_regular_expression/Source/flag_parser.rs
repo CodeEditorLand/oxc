@@ -2,26 +2,20 @@ use oxc_allocator::Allocator;
 use oxc_diagnostics::Result;
 use rustc_hash::FxHashSet;
 
-use crate::{
-	ast, diagnostics, options::ParserOptions, span_factory::SpanFactory,
-};
+use crate::{ast, diagnostics, options::ParserOptions, span_factory::SpanFactory};
 
 pub struct FlagsParser<'a> {
-	source_text: &'a str,
+	source_text:&'a str,
 	// options: ParserOptions,
-	span_factory: SpanFactory,
+	span_factory:SpanFactory,
 }
 
 impl<'a> FlagsParser<'a> {
-	pub fn new(
-		_allocator: &'a Allocator,
-		source_text: &'a str,
-		options: ParserOptions,
-	) -> Self {
+	pub fn new(_allocator:&'a Allocator, source_text:&'a str, options:ParserOptions) -> Self {
 		Self {
 			source_text,
 			// options,
-			span_factory: SpanFactory::new(options.span_offset),
+			span_factory:SpanFactory::new(options.span_offset),
 		}
 	}
 
@@ -39,9 +33,7 @@ impl<'a> FlagsParser<'a> {
 		let mut existing_flags = FxHashSet::default();
 		for (idx, c) in self.source_text.char_indices() {
 			if !existing_flags.insert(c) {
-				return Err(diagnostics::duplicated_flag(
-					self.span_factory.create(idx, idx),
-				));
+				return Err(diagnostics::duplicated_flag(self.span_factory.create(idx, idx)));
 			}
 
 			match c {
@@ -54,9 +46,7 @@ impl<'a> FlagsParser<'a> {
 				'd' => has_indices = true,
 				'v' => unicode_sets = true,
 				_ => {
-					return Err(diagnostics::unknown_flag(
-						self.span_factory.create(idx, idx),
-					))
+					return Err(diagnostics::unknown_flag(self.span_factory.create(idx, idx)));
 				},
 			}
 		}

@@ -2,59 +2,56 @@
 /// It is a helper for decode vlq soucemap string to `SourceMap`.
 use std::sync::Arc;
 
-use crate::error::{Error, Result};
-use crate::{SourceMap, Token};
+use crate::{
+	error::{Error, Result},
+	SourceMap,
+	Token,
+};
 
 /// See <https://github.com/tc39/source-map/blob/main/source-map-rev3.md>.
 #[derive(serde::Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct JSONSourceMap {
-	/// An optional name of the generated code that this source map is associated with.
-	pub file: Option<String>,
+	/// An optional name of the generated code that this source map is
+	/// associated with.
+	pub file:Option<String>,
 	/// A string with the encoded mapping data.
-	pub mappings: String,
-	/// An optional source root, useful for relocating source files on a server or removing repeated values in the “sources” entry.
-	/// This value is prepended to the individual entries in the “source” field.
-	pub source_root: Option<String>,
+	pub mappings:String,
+	/// An optional source root, useful for relocating source files on a server
+	/// or removing repeated values in the “sources” entry. This value is
+	/// prepended to the individual entries in the “source” field.
+	pub source_root:Option<String>,
 	/// A list of original sources used by the “mappings” entry.
-	pub sources: Vec<String>,
-	/// An optional list of source content, useful when the “source” can’t be hosted.
-	/// The contents are listed in the same order as the sources in line 5. “null” may be used if some original sources should be retrieved by name.
-	pub sources_content: Option<Vec<Option<String>>>,
+	pub sources:Vec<String>,
+	/// An optional list of source content, useful when the “source” can’t be
+	/// hosted. The contents are listed in the same order as the sources in
+	/// line 5. “null” may be used if some original sources should be retrieved
+	/// by name.
+	pub sources_content:Option<Vec<Option<String>>>,
 	/// A list of symbol names used by the “mappings” entry.
-	pub names: Vec<String>,
+	pub names:Vec<String>,
 }
 
-pub fn decode(json: JSONSourceMap) -> Result<SourceMap> {
-	let tokens =
-		decode_mapping(&json.mappings, json.names.len(), json.sources.len())?;
+pub fn decode(json:JSONSourceMap) -> Result<SourceMap> {
+	let tokens = decode_mapping(&json.mappings, json.names.len(), json.sources.len())?;
 	Ok(SourceMap {
-		file: json.file.map(Arc::from),
-		names: json.names.into_iter().map(Arc::from).collect(),
-		source_root: json.source_root,
-		sources: json.sources.into_iter().map(Arc::from).collect(),
-		source_contents: json.sources_content.map(|content| {
-			content
-				.into_iter()
-				.map(|c| c.map(Arc::from).unwrap_or_default())
-				.collect()
+		file:json.file.map(Arc::from),
+		names:json.names.into_iter().map(Arc::from).collect(),
+		source_root:json.source_root,
+		sources:json.sources.into_iter().map(Arc::from).collect(),
+		source_contents:json.sources_content.map(|content| {
+			content.into_iter().map(|c| c.map(Arc::from).unwrap_or_default()).collect()
 		}),
 		tokens,
-		token_chunks: None,
-		x_google_ignore_list: None,
+		token_chunks:None,
+		x_google_ignore_list:None,
 	})
 }
 
-pub fn decode_from_string(value: &str) -> Result<SourceMap> {
-	decode(serde_json::from_str(value)?)
-}
+pub fn decode_from_string(value:&str) -> Result<SourceMap> { decode(serde_json::from_str(value)?) }
 
 #[allow(clippy::cast_possible_truncation)]
-fn decode_mapping(
-	mapping: &str,
-	names_len: usize,
-	sources_len: usize,
-) -> Result<Vec<Token>> {
+fn decode_mapping(mapping:&str, names_len:usize, sources_len:usize) -> Result<Vec<Token>> {
 	let mut tokens = vec![];
 
 	let mut dst_col;
@@ -122,7 +119,7 @@ fn decode_mapping(
 #[rustfmt::skip]
 const B64: [i8; 256] = [ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1 - 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, ];
 
-fn parse_vlq_segment_into(segment: &str, rv: &mut Vec<i64>) -> Result<()> {
+fn parse_vlq_segment_into(segment:&str, rv:&mut Vec<i64>) -> Result<()> {
 	let mut cur = 0;
 	let mut shift = 0;
 
@@ -165,21 +162,10 @@ fn test_decode_sourcemap() {
     }"#;
 	let sm = SourceMap::from_json_string(input).unwrap();
 	assert_eq!(sm.get_source_root(), Some("x"));
-	let mut iter = sm
-		.get_source_view_tokens()
-		.filter(|token| token.get_name_id().is_some());
-	assert_eq!(
-		iter.next().unwrap().to_tuple(),
-		(Some("coolstuff.js"), 0, 4, Some("x"))
-	);
-	assert_eq!(
-		iter.next().unwrap().to_tuple(),
-		(Some("coolstuff.js"), 1, 4, Some("x"))
-	);
-	assert_eq!(
-		iter.next().unwrap().to_tuple(),
-		(Some("coolstuff.js"), 2, 2, Some("alert"))
-	);
+	let mut iter = sm.get_source_view_tokens().filter(|token| token.get_name_id().is_some());
+	assert_eq!(iter.next().unwrap().to_tuple(), (Some("coolstuff.js"), 0, 4, Some("x")));
+	assert_eq!(iter.next().unwrap().to_tuple(), (Some("coolstuff.js"), 1, 4, Some("x")));
+	assert_eq!(iter.next().unwrap().to_tuple(), (Some("coolstuff.js"), 2, 2, Some("alert")));
 	assert!(iter.next().is_none());
 }
 

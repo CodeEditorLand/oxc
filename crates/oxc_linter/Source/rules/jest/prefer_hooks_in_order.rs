@@ -6,227 +6,232 @@ use oxc_span::Span;
 use rustc_hash::FxHashMap;
 
 use crate::{
-    context::LintContext,
-    rule::Rule,
-    utils::{
-        parse_jest_fn_call, JestFnKind, JestGeneralFnKind, ParsedJestFnCallNew, PossibleJestNode,
-    },
+	context::LintContext,
+	rule::Rule,
+	utils::{
+		parse_jest_fn_call,
+		JestFnKind,
+		JestGeneralFnKind,
+		ParsedJestFnCallNew,
+		PossibleJestNode,
+	},
 };
 
-fn reorder_hooks(hook: (&str, Span), previous_hook: (&str, Span)) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Test hooks are not in a consistent order.")
-        .with_help(format!("{:?} hooks should be before any {:?} hooks", hook.0, previous_hook.0))
-        .with_label(
-            hook.1.label(format!("this should be moved to before the {:?} hook", previous_hook.0)),
-        )
-        .and_label(previous_hook.1.label(format!("{:?} hook should be called before this", hook.0)))
+fn reorder_hooks(hook:(&str, Span), previous_hook:(&str, Span)) -> OxcDiagnostic {
+	OxcDiagnostic::warn("Test hooks are not in a consistent order.")
+		.with_help(format!("{:?} hooks should be before any {:?} hooks", hook.0, previous_hook.0))
+		.with_label(
+			hook.1
+				.label(format!("this should be moved to before the {:?} hook", previous_hook.0)),
+		)
+		.and_label(previous_hook.1.label(format!("{:?} hook should be called before this", hook.0)))
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct PreferHooksInOrder;
 
 declare_oxc_lint!(
-    /// ### What it does
-    ///
-    /// While hooks can be setup in any order, they're always called by `jest` in this
-    /// specific order:
-    /// 1. `beforeAll`
-    /// 2. `beforeEach`
-    /// 3. `afterEach`
-    /// 4. `afterAll`
-    ///
-    /// This rule aims to make that more obvious by enforcing grouped hooks be setup in
-    /// that order within tests.
-    ///
-    /// ### Example
-    ///
-    /// ```javascript
-    /// // invalid
-    /// describe('foo', () => {
-    ///     beforeEach(() => {
-    ///         seedMyDatabase();
-    ///     });
-    ///     beforeAll(() => {
-    ///         createMyDatabase();
-    ///     });
-    ///     it('accepts this input', () => {
-    ///         // ...
-    ///     });
-    ///     it('returns that value', () => {
-    ///         // ...
-    ///     });
-    ///     describe('when the database has specific values', () => {
-    ///         const specificValue = '...';
-    ///         beforeEach(() => {
-    ///             seedMyDatabase(specificValue);
-    ///         });
-    ///
-    ///         it('accepts that input', () => {
-    ///             // ...
-    ///         });
-    ///         it('throws an error', () => {
-    ///             // ...
-    ///         });
-    ///         afterEach(() => {
-    ///             clearLogger();
-    ///         });
-    ///         beforeEach(() => {
-    ///             mockLogger();
-    ///         });
-    ///         it('logs a message', () => {
-    ///             // ...
-    ///         });
-    ///     });
-    ///     afterAll(() => {
-    ///         removeMyDatabase();
-    ///     });
-    /// });
-    /// ```
-    ///
-    /// ```javascript
-    /// // valid
-    /// describe('foo', () => {
-    ///     beforeAll(() => {
-    ///         createMyDatabase();
-    ///     });
-    ///
-    ///     beforeEach(() => {
-    ///         seedMyDatabase();
-    ///     });
-    ///
-    ///     it('accepts this input', () => {
-    ///         // ...
-    ///     });
-    ///     it('returns that value', () => {
-    ///         // ...
-    ///     });
-    ///     describe('when the database has specific values', () => {
-    ///         const specificValue = '...';
-    ///         beforeEach(() => {
-    ///             seedMyDatabase(specificValue);
-    ///         });
-    ///         it('accepts that input', () => {
-    ///             // ...
-    ///         });
-    ///         it('throws an error', () => {
-    ///             // ...
-    ///         });
-    ///         beforeEach(() => {
-    ///             mockLogger();
-    ///         });
-    ///         afterEach(() => {
-    ///             clearLogger();
-    ///         });
-    ///         it('logs a message', () => {
-    ///             // ...
-    ///         });
-    ///     });
-    ///     afterAll(() => {
-    ///         removeMyDatabase();
-    ///     });
-    /// });
-    /// ```
-    ///
-    ///
-    /// This rule is compatible with [eslint-plugin-vitest](https://github.com/veritem/eslint-plugin-vitest/blob/main/docs/rules/prefer-hooks-in-order.md),
-    /// to use it, add the following configuration to your `.eslintrc.json`:
-    ///
-    /// ```json
-    /// {
-    ///   "rules": {
-    ///      "vitest/prefer-hooks-in-order": "error"
-    ///   }
-    /// }
-    PreferHooksInOrder,
-    style,
+	/// ### What it does
+	///
+	/// While hooks can be setup in any order, they're always called by `jest` in this
+	/// specific order:
+	/// 1. `beforeAll`
+	/// 2. `beforeEach`
+	/// 3. `afterEach`
+	/// 4. `afterAll`
+	///
+	/// This rule aims to make that more obvious by enforcing grouped hooks be setup in
+	/// that order within tests.
+	///
+	/// ### Example
+	///
+	/// ```javascript
+	/// // invalid
+	/// describe('foo', () => {
+	///     beforeEach(() => {
+	///         seedMyDatabase();
+	///     });
+	///     beforeAll(() => {
+	///         createMyDatabase();
+	///     });
+	///     it('accepts this input', () => {
+	///         // ...
+	///     });
+	///     it('returns that value', () => {
+	///         // ...
+	///     });
+	///     describe('when the database has specific values', () => {
+	///         const specificValue = '...';
+	///         beforeEach(() => {
+	///             seedMyDatabase(specificValue);
+	///         });
+	///
+	///         it('accepts that input', () => {
+	///             // ...
+	///         });
+	///         it('throws an error', () => {
+	///             // ...
+	///         });
+	///         afterEach(() => {
+	///             clearLogger();
+	///         });
+	///         beforeEach(() => {
+	///             mockLogger();
+	///         });
+	///         it('logs a message', () => {
+	///             // ...
+	///         });
+	///     });
+	///     afterAll(() => {
+	///         removeMyDatabase();
+	///     });
+	/// });
+	/// ```
+	///
+	/// ```javascript
+	/// // valid
+	/// describe('foo', () => {
+	///     beforeAll(() => {
+	///         createMyDatabase();
+	///     });
+	///
+	///     beforeEach(() => {
+	///         seedMyDatabase();
+	///     });
+	///
+	///     it('accepts this input', () => {
+	///         // ...
+	///     });
+	///     it('returns that value', () => {
+	///         // ...
+	///     });
+	///     describe('when the database has specific values', () => {
+	///         const specificValue = '...';
+	///         beforeEach(() => {
+	///             seedMyDatabase(specificValue);
+	///         });
+	///         it('accepts that input', () => {
+	///             // ...
+	///         });
+	///         it('throws an error', () => {
+	///             // ...
+	///         });
+	///         beforeEach(() => {
+	///             mockLogger();
+	///         });
+	///         afterEach(() => {
+	///             clearLogger();
+	///         });
+	///         it('logs a message', () => {
+	///             // ...
+	///         });
+	///     });
+	///     afterAll(() => {
+	///         removeMyDatabase();
+	///     });
+	/// });
+	/// ```
+	///
+	///
+	/// This rule is compatible with [eslint-plugin-vitest](https://github.com/veritem/eslint-plugin-vitest/blob/main/docs/rules/prefer-hooks-in-order.md),
+	/// to use it, add the following configuration to your `.eslintrc.json`:
+	///
+	/// ```json
+	/// {
+	///   "rules": {
+	///      "vitest/prefer-hooks-in-order": "error"
+	///   }
+	/// }
+	PreferHooksInOrder,
+	style,
 );
 
 impl Rule for PreferHooksInOrder {
-    fn run_once(&self, ctx: &LintContext) {
-        let mut previous_hook_orders: FxHashMap<ScopeId, (u8, Span)> = FxHashMap::default();
+	fn run_once(&self, ctx:&LintContext) {
+		let mut previous_hook_orders:FxHashMap<ScopeId, (u8, Span)> = FxHashMap::default();
 
-        for node in ctx.nodes() {
-            if let AstKind::CallExpression(call_expr) = node.kind() {
-                let possible_jest_node = &PossibleJestNode { node, original: None };
-                let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
-                    parse_jest_fn_call(call_expr, possible_jest_node, ctx)
-                else {
-                    previous_hook_orders.remove(&node.scope_id());
-                    continue;
-                };
+		for node in ctx.nodes() {
+			if let AstKind::CallExpression(call_expr) = node.kind() {
+				let possible_jest_node = &PossibleJestNode { node, original:None };
+				let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
+					parse_jest_fn_call(call_expr, possible_jest_node, ctx)
+				else {
+					previous_hook_orders.remove(&node.scope_id());
+					continue;
+				};
 
-                if !matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Hook)) {
-                    previous_hook_orders.remove(&node.scope_id());
-                    continue;
-                }
+				if !matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Hook)) {
+					previous_hook_orders.remove(&node.scope_id());
+					continue;
+				}
 
-                let previous_hook_order = previous_hook_orders.get(&node.scope_id());
+				let previous_hook_order = previous_hook_orders.get(&node.scope_id());
 
-                let hook_name = jest_fn_call.name.as_ref();
-                let Some(hook_order) = get_hook_order(hook_name) else {
-                    continue;
-                };
+				let hook_name = jest_fn_call.name.as_ref();
+				let Some(hook_order) = get_hook_order(hook_name) else {
+					continue;
+				};
 
-                if let Some((previous_hook_order, previous_hook_span)) = previous_hook_order {
-                    if hook_order < *previous_hook_order {
-                        let Some(previous_hook_name) = get_hook_name(*previous_hook_order) else {
-                            continue;
-                        };
+				if let Some((previous_hook_order, previous_hook_span)) = previous_hook_order {
+					if hook_order < *previous_hook_order {
+						let Some(previous_hook_name) = get_hook_name(*previous_hook_order) else {
+							continue;
+						};
 
-                        ctx.diagnostic(reorder_hooks(
-                            (hook_name, call_expr.span),
-                            (previous_hook_name, *previous_hook_span),
-                        ));
-                        continue;
-                    }
-                }
-                previous_hook_orders.insert(node.scope_id(), (hook_order, call_expr.span));
-            };
-        }
-    }
+						ctx.diagnostic(reorder_hooks(
+							(hook_name, call_expr.span),
+							(previous_hook_name, *previous_hook_span),
+						));
+						continue;
+					}
+				}
+				previous_hook_orders.insert(node.scope_id(), (hook_order, call_expr.span));
+			};
+		}
+	}
 }
 
-fn get_hook_order(hook_name: &str) -> Option<u8> {
-    match hook_name {
-        "beforeAll" => Some(0),
-        "beforeEach" => Some(1),
-        "afterEach" => Some(2),
-        "afterAll" => Some(3),
-        _ => None,
-    }
+fn get_hook_order(hook_name:&str) -> Option<u8> {
+	match hook_name {
+		"beforeAll" => Some(0),
+		"beforeEach" => Some(1),
+		"afterEach" => Some(2),
+		"afterAll" => Some(3),
+		_ => None,
+	}
 }
 
-fn get_hook_name(hook_order: u8) -> Option<&'static str> {
-    match hook_order {
-        0 => Some("beforeAll"),
-        1 => Some("beforeEach"),
-        2 => Some("afterEach"),
-        3 => Some("afterAll"),
-        _ => None,
-    }
+fn get_hook_name(hook_order:u8) -> Option<&'static str> {
+	match hook_order {
+		0 => Some("beforeAll"),
+		1 => Some("beforeEach"),
+		2 => Some("afterEach"),
+		3 => Some("afterAll"),
+		_ => None,
+	}
 }
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+	use crate::tester::Tester;
 
-    let mut pass = vec![
-        ("beforeAll(() => {})", None),
-        ("beforeEach(() => {})", None),
-        ("afterEach(() => {})", None),
-        ("afterAll(() => {})", None),
-        ("describe(() => {})", None),
-        (
-            "
+	let mut pass = vec![
+		("beforeAll(() => {})", None),
+		("beforeEach(() => {})", None),
+		("afterEach(() => {})", None),
+		("afterAll(() => {})", None),
+		("describe(() => {})", None),
+		(
+			"
                 beforeAll(() => {});
                 beforeEach(() => {});
                 afterEach(() => {});
                 afterAll(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('foo', () => {
                     someSetupFn();
                     beforeEach(() => {});
@@ -237,61 +242,61 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 beforeAll(() => {});
                 afterAll(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 beforeEach(() => {});
                 afterEach(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 beforeAll(() => {});
                 afterEach(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 beforeAll(() => {});
                 beforeEach(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterEach(() => {});
                 afterAll(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 beforeAll(() => {});
                 beforeAll(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterEach(() => {});
                     afterAll(() => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterAll(() => {});
 
@@ -301,10 +306,10 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('foo', () => {
                     beforeAll(() => {
                         createMyDatabase();
@@ -355,10 +360,10 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterEach(() => {});
                     afterAll(() => {});
@@ -369,10 +374,10 @@ fn test() {
                     beforeEach(() => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterEach(() => {});
                     afterAll(() => {});
@@ -383,10 +388,10 @@ fn test() {
                     beforeEach(() => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterAll(() => {});
 
@@ -420,10 +425,10 @@ fn test() {
                     beforeEach(() => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 const withDatabase = () => {
                     beforeAll(() => {
                         createMyDatabase();
@@ -470,10 +475,10 @@ fn test() {
                     beforeEach(() => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('A file with a lot of test', () => {
                     beforeAll(() => {
                         setupTheDatabase();
@@ -516,13 +521,13 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-    ];
+			None,
+		),
+	];
 
-    let mut fail = vec![
-        (
-            "
+	let mut fail = vec![
+		(
+			"
                 const withDatabase = () => {
                     afterAll(() => {
                         removeMyDatabase();
@@ -532,10 +537,10 @@ fn test() {
                     });
                 };
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterAll(() => {
                     removeMyDatabase();
                 });
@@ -543,71 +548,71 @@ fn test() {
                     createMyDatabase();
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterAll(() => {});
                 beforeAll(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterEach(() => {});
                 beforeEach(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterEach(() => {});
                 beforeAll(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 beforeEach(() => {});
                 beforeAll(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterAll(() => {});
                 afterEach(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterAll(() => {});
                 // The afterEach should do this
                 // This comment does not matter for the order
                 afterEach(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterAll(() => {});
                 afterAll(() => {});
                 afterEach(() => {});
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterAll(() => {});
                     afterEach(() => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterAll(() => {});
                     afterEach(() => {});
@@ -618,10 +623,10 @@ fn test() {
                     beforeAll(() => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterAll(() => {});
                     afterEach(() => {});
@@ -632,10 +637,10 @@ fn test() {
                     beforeAll(() => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     afterAll(() => {});
 
@@ -645,10 +650,10 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     beforeAll(() => {});
                     afterAll(() => {});
@@ -662,10 +667,10 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     beforeAll(() => {});
                     beforeAll(() => {});
@@ -698,10 +703,10 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('my test', () => {
                     const setupDatabase = () => {
                         beforeEach(() => {
@@ -727,10 +732,10 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('foo', () => {
                     beforeEach(() => {
                         seedMyDatabase();
@@ -781,23 +786,23 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-    ];
+			None,
+		),
+	];
 
-    let pass_vitest = vec![
-        r"beforeAll(() => {})",
-        r"beforeEach(() => {})",
-        r"afterEach(() => {})",
-        r"afterAll(() => {})",
-        r"describe(() => {})",
-        r"
+	let pass_vitest = vec![
+		r"beforeAll(() => {})",
+		r"beforeEach(() => {})",
+		r"afterEach(() => {})",
+		r"afterAll(() => {})",
+		r"describe(() => {})",
+		r"
             beforeAll(() => {});
             beforeEach(() => {});
             afterEach(() => {});
             afterAll(() => {});
         ",
-        r"
+		r"
             describe('foo', () => {
                 someSetupFn();
                 beforeEach(() => {});
@@ -808,37 +813,37 @@ fn test() {
                 });
             });
         ",
-        r"
+		r"
             beforeAll(() => {});
             afterAll(() => {});
         ",
-        r"
+		r"
             beforeEach(() => {});
             afterEach(() => {});
         ",
-        r"
+		r"
             beforeAll(() => {});
             afterEach(() => {});
         ",
-        r"
+		r"
             beforeAll(() => {});
             beforeEach(() => {});
         ",
-        r"
+		r"
             afterEach(() => {});
             afterAll(() => {});
         ",
-        r"
+		r"
             beforeAll(() => {});
             beforeAll(() => {});
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterEach(() => {});
                 afterAll(() => {});
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterEach(() => {});
                 afterAll(() => {});
@@ -849,7 +854,7 @@ fn test() {
                 beforeEach(() => {});
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterEach(() => {});
                 afterAll(() => {});
@@ -860,7 +865,7 @@ fn test() {
                 beforeEach(() => {});
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterAll(() => {});
 
@@ -870,7 +875,7 @@ fn test() {
                 });
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterAll(() => {});
 
@@ -904,7 +909,7 @@ fn test() {
                 beforeEach(() => {});
             });
         ",
-        r"
+		r"
             const withDatabase = () => {
                 beforeAll(() => {
                     createMyDatabase();
@@ -951,7 +956,7 @@ fn test() {
                 beforeEach(() => {});
             });
         ",
-        r"
+		r"
             describe('foo', () => {
                 beforeAll(() => {
                     createMyDatabase();
@@ -1002,7 +1007,7 @@ fn test() {
                 });
             });
         ",
-        r"
+		r"
             describe('A file with a lot of test', () => {
                 beforeAll(() => {
                     setupTheDatabase();
@@ -1045,10 +1050,10 @@ fn test() {
                 });
             });
         ",
-    ];
+	];
 
-    let fail_vitest = vec![
-        r"
+	let fail_vitest = vec![
+		r"
             const withDatabase = () => {
                 afterAll(() => {
                     removeMyDatabase();
@@ -1058,7 +1063,7 @@ fn test() {
                 });
             };
         ",
-        r"
+		r"
             afterAll(() => {
                 removeMyDatabase();
             });
@@ -1066,44 +1071,44 @@ fn test() {
                 createMyDatabase();
             });
         ",
-        r"
+		r"
             afterAll(() => {});
             beforeAll(() => {});
         ",
-        r"
+		r"
             afterEach(() => {});
             beforeEach(() => {});
         ",
-        r"
+		r"
             afterEach(() => {});
             beforeAll(() => {});
         ",
-        r"
+		r"
             beforeEach(() => {});
             beforeAll(() => {});
         ",
-        r"
+		r"
             afterAll(() => {});
             afterEach(() => {});
         ",
-        r"
+		r"
             afterAll(() => {});
             // The afterEach should do this
             // This comment does not matter for the order
             afterEach(() => {});
         ",
-        r"
+		r"
             afterAll(() => {});
             afterAll(() => {});
             afterEach(() => {});
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterAll(() => {});
                 afterEach(() => {});
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterAll(() => {});
                 afterEach(() => {});
@@ -1114,7 +1119,7 @@ fn test() {
                 beforeAll(() => {});
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterAll(() => {});
                 afterEach(() => {});
@@ -1125,7 +1130,7 @@ fn test() {
                 beforeAll(() => {});
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 afterAll(() => {});
 
@@ -1135,7 +1140,7 @@ fn test() {
                 });
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 beforeAll(() => {});
                 afterAll(() => {});
@@ -1149,7 +1154,7 @@ fn test() {
                 });
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 beforeAll(() => {});
                 beforeAll(() => {});
@@ -1182,7 +1187,7 @@ fn test() {
                 });
             });
         ",
-        r"
+		r"
             describe('my test', () => {
                 const setupDatabase = () => {
                     beforeEach(() => {
@@ -1208,7 +1213,7 @@ fn test() {
                 });
             });
         ",
-        r"
+		r"
             describe('foo', () => {
                 beforeEach(() => {
                     seedMyDatabase();
@@ -1259,13 +1264,13 @@ fn test() {
                 });
             });
         ",
-    ];
+	];
 
-    pass.extend(pass_vitest.into_iter().map(|x| (x, None)));
-    fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
+	pass.extend(pass_vitest.into_iter().map(|x| (x, None)));
+	fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
 
-    Tester::new(PreferHooksInOrder::NAME, pass, fail)
-        .with_jest_plugin(true)
-        .with_vitest_plugin(true)
-        .test_and_snapshot();
+	Tester::new(PreferHooksInOrder::NAME, pass, fail)
+		.with_jest_plugin(true)
+		.with_vitest_plugin(true)
+		.test_and_snapshot();
 }

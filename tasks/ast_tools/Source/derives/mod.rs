@@ -15,15 +15,13 @@ pub use content_hash::DeriveContentHash;
 pub use get_span::{DeriveGetSpan, DeriveGetSpanMut};
 
 pub trait Derive {
-    fn trait_name() -> &'static str;
-    fn derive(&mut self, def: &TypeDef, ctx: &LateCtx) -> TokenStream;
-    fn prelude() -> TokenStream {
-        TokenStream::default()
-    }
+	fn trait_name() -> &'static str;
+	fn derive(&mut self, def:&TypeDef, ctx:&LateCtx) -> TokenStream;
+	fn prelude() -> TokenStream { TokenStream::default() }
 }
 
 pub trait DeriveTemplate: Derive {
-    fn template(module_path: Vec<&str>, impls: TokenStream) -> TokenStream;
+	fn template(module_path:Vec<&str>, impls:TokenStream) -> TokenStream;
 }
 
 #[derive(Debug, Clone)]

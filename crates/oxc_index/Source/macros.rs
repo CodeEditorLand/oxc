@@ -12,12 +12,12 @@
 ///
 /// ```rust,no_run
 /// oxc_index::define_index_type! {
-///     // Note that isn't actually a type alias, `MyIndex` is
-///     // actually defined as a struct. XXX is this too confusing?
-///     pub struct MyIndex = u32;
-///     // optional extra configuration here of the form:
-///     // `OPTION_NAME = stuff;`
-///     // See below for details.
+/// 	// Note that isn't actually a type alias, `MyIndex` is
+/// 	// actually defined as a struct. XXX is this too confusing?
+/// 	pub struct MyIndex = u32;
+/// 	// optional extra configuration here of the form:
+/// 	// `OPTION_NAME = stuff;`
+/// 	// See below for details.
 /// }
 /// ```
 ///
@@ -32,14 +32,14 @@
 ///
 /// ```rust,no_run
 /// oxc_index::define_index_type! {
-///     pub struct Span = u32;
+/// 	pub struct Span = u32;
 ///
-///     // Don't allow any spans with values higher this.
-///     MAX_INDEX = 0x7fff_ff00;
+/// 	// Don't allow any spans with values higher this.
+/// 	MAX_INDEX = 0x7fff_ff00;
 ///
-///     // But I also am not too worried about it, so only
-///     // perform the asserts in debug builds.
-///     DISABLE_MAX_INDEX_CHECK = cfg!(not(debug_assertions));
+/// 	// But I also am not too worried about it, so only
+/// 	// perform the asserts in debug builds.
+/// 	DISABLE_MAX_INDEX_CHECK = cfg!(not(debug_assertions));
 /// }
 /// ```
 ///
@@ -84,13 +84,13 @@
 ///
 /// ```rust,no_run
 /// oxc_index::define_index_type! {
-///     pub struct MyIdx = u16;
-///     MAX_INDEX = (u16::max_value() - 1) as usize;
-///     // Set the default index to be an invalid index, as
-///     // a hacky way of having this type behave somewhat
-///     // like it were an Option<MyIdx> without consuming
-///     // extra space.
-///     DEFAULT = (MyIdx::from_raw_unchecked(u16::max_value()));
+/// 	pub struct MyIdx = u16;
+/// 	MAX_INDEX = (u16::max_value() - 1) as usize;
+/// 	// Set the default index to be an invalid index, as
+/// 	// a hacky way of having this type behave somewhat
+/// 	// like it were an Option<MyIdx> without consuming
+/// 	// extra space.
+/// 	DEFAULT = (MyIdx::from_raw_unchecked(u16::max_value()));
 /// }
 /// ```
 ///
@@ -102,8 +102,8 @@
 ///
 /// ```rust
 /// oxc_index::define_index_type! {
-///     struct FooIdx = usize;
-///     DEBUG_FORMAT = "Foo({})";
+/// 	struct FooIdx = usize;
+/// 	DEBUG_FORMAT = "Foo({})";
 /// }
 /// // Then ...
 /// # fn main() {
@@ -120,10 +120,10 @@
 ///
 /// ```rust
 /// oxc_index::define_index_type! {
-///     struct FooIdx = usize;
-///     DISPLAY_FORMAT = "{}";
-///     // Note that you can use both DEBUG_FORMAT and DISPLAY_FORMAT.
-///     DEBUG_FORMAT = "#<foo {}>";
+/// 	struct FooIdx = usize;
+/// 	DISPLAY_FORMAT = "{}";
+/// 	// Note that you can use both DEBUG_FORMAT and DISPLAY_FORMAT.
+/// 	DEBUG_FORMAT = "#<foo {}>";
 /// }
 /// // Then ...
 /// # fn main() {
@@ -142,8 +142,8 @@
 ///
 /// ```rust
 /// oxc_index::define_index_type! {
-///     struct FooIdx = u32;
-///     IMPL_RAW_CONVERSIONS = true;
+/// 	struct FooIdx = u32;
+/// 	IMPL_RAW_CONVERSIONS = true;
 /// }
 ///
 /// # fn main() {
@@ -184,17 +184,14 @@ macro_rules! unknown_define_index_type_option {
 macro_rules! __internal_maybe_index_impl_serde {
 	($type:ident) => {
 		impl serde::ser::Serialize for $type {
-			fn serialize<S: serde::ser::Serializer>(
-				&self,
-				serializer: S,
-			) -> Result<S::Ok, S::Error> {
+			fn serialize<S:serde::ser::Serializer>(&self, serializer:S) -> Result<S::Ok, S::Error> {
 				self.index().serialize(serializer)
 			}
 		}
 
 		impl<'de> serde::de::Deserialize<'de> for $type {
-			fn deserialize<D: serde::de::Deserializer<'de>>(
-				deserializer: D,
+			fn deserialize<D:serde::de::Deserializer<'de>>(
+				deserializer:D,
 			) -> Result<Self, D::Error> {
 				usize::deserialize(deserializer).map(Self::from_usize)
 			}

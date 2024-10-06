@@ -23,15 +23,10 @@ fn main() -> std::io::Result<()> {
 	// Parse the source text into an AST
 	let parser_ret = Parser::new(&allocator, &source_text, source_type).parse();
 	if !parser_ret.errors.is_empty() {
-		let error_message: String = parser_ret
+		let error_message:String = parser_ret
 			.errors
 			.into_iter()
-			.map(|error| {
-				format!(
-					"{:?}",
-					error.with_source_code(Arc::clone(&source_text))
-				)
-			})
+			.map(|error| format!("{:?}", error.with_source_code(Arc::clone(&source_text))))
 			.join("\n");
 		println!("Parsing failed:\n\n{error_message}",);
 		return Ok(());
@@ -48,15 +43,10 @@ fn main() -> std::io::Result<()> {
         .build(program);
 
 	if !semantic.errors.is_empty() {
-		let error_message: String = semantic
+		let error_message:String = semantic
 			.errors
 			.into_iter()
-			.map(|error| {
-				format!(
-					"{:?}",
-					error.with_source_code(Arc::clone(&source_text))
-				)
-			})
+			.map(|error| format!("{:?}", error.with_source_code(Arc::clone(&source_text))))
 			.join("\n");
 		println!("Semantic analysis failed:\n\n{error_message}",);
 	}

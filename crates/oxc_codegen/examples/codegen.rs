@@ -49,9 +49,9 @@ fn main() -> std::io::Result<()> {
 }
 
 fn parse<'a>(
-	allocator: &'a Allocator,
-	source_text: &'a str,
-	source_type: SourceType,
+	allocator:&'a Allocator,
+	source_text:&'a str,
+	source_type:SourceType,
 ) -> Option<ParserReturn<'a>> {
 	let ret = Parser::new(allocator, source_text, source_type).parse();
 	if !ret.errors.is_empty() {
@@ -63,12 +63,12 @@ fn parse<'a>(
 	Some(ret)
 }
 
-fn codegen(source_text: &str, ret: &ParserReturn<'_>, minify: bool) -> String {
+fn codegen(source_text:&str, ret:&ParserReturn<'_>, minify:bool) -> String {
 	CodeGenerator::new()
 		.enable_comment(
 			source_text,
 			ret.trivias.clone(),
-			CommentOptions { preserve_annotate_comments: true },
+			CommentOptions { preserve_annotate_comments:true },
 		)
 		.with_options(CodegenOptions { minify, ..CodegenOptions::default() })
 		.build(&ret.program)

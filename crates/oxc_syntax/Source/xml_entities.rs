@@ -4,7 +4,7 @@ use phf::{phf_map, Map};
 ///
 /// <https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references>
 /// <https://github.com/microsoft/TypeScript/blob/514f7e639a2a8466c075c766ee9857a30ed4e196/src/compiler/transformers/jsx.ts#L681>
-pub const XML_ENTITIES: Map<&'static str, char> = phf_map! {
+pub const XML_ENTITIES:Map<&'static str, char> = phf_map! {
 	"quot" => '\u{0022}',
 	"amp" => '&',
 	"apos" => '\u{0027}',

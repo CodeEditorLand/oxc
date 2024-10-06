@@ -8,19 +8,13 @@ pub(crate) enum Operator {
 }
 
 impl From<BinaryOperator> for Operator {
-	fn from(op: BinaryOperator) -> Self {
-		Self::Binary(op)
-	}
+	fn from(op:BinaryOperator) -> Self { Self::Binary(op) }
 }
 
 impl From<UnaryOperator> for Operator {
-	fn from(op: UnaryOperator) -> Self {
-		Self::Unary(op)
-	}
+	fn from(op:UnaryOperator) -> Self { Self::Unary(op) }
 }
 
 impl From<UpdateOperator> for Operator {
-	fn from(op: UpdateOperator) -> Self {
-		Self::Update(op)
-	}
+	fn from(op:UpdateOperator) -> Self { Self::Update(op) }
 }

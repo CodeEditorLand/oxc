@@ -4,17 +4,15 @@ use oxc::span::SourceType;
 
 use crate::suite::{Case, Suite, TestResult};
 
-const FIXTURES_PATH: &str = "misc";
+const FIXTURES_PATH:&str = "misc";
 
-pub struct MiscSuite<T: Case> {
-	test_root: PathBuf,
-	test_cases: Vec<T>,
+pub struct MiscSuite<T:Case> {
+	test_root:PathBuf,
+	test_cases:Vec<T>,
 }
 
-impl<T: Case> MiscSuite<T> {
-	pub fn new() -> Self {
-		Self { test_root: PathBuf::from(FIXTURES_PATH), test_cases: vec![] }
-	}
+impl<T:Case> MiscSuite<T> {
+	pub fn new() -> Self { Self { test_root:PathBuf::from(FIXTURES_PATH), test_cases:vec![] } }
 
 	fn extra_cases() -> Vec<T> {
 		vec![Self::huge_binary_expression(), Self::huge_nested_statements()]
@@ -32,74 +30,46 @@ impl<T: Case> MiscSuite<T> {
 	}
 }
 
-impl<T: Case> Suite<T> for MiscSuite<T> {
-	fn get_test_root(&self) -> &Path {
-		&self.test_root
-	}
+impl<T:Case> Suite<T> for MiscSuite<T> {
+	fn get_test_root(&self) -> &Path { &self.test_root }
 
-	fn save_test_cases(&mut self, cases: Vec<T>) {
-		self.test_cases = cases;
-	}
+	fn save_test_cases(&mut self, cases:Vec<T>) { self.test_cases = cases; }
 
-	fn save_extra_test_cases(&mut self) {
-		self.test_cases.extend(Self::extra_cases());
-	}
+	fn save_extra_test_cases(&mut self) { self.test_cases.extend(Self::extra_cases()); }
 
-	fn get_test_cases(&self) -> &Vec<T> {
-		&self.test_cases
-	}
+	fn get_test_cases(&self) -> &Vec<T> { &self.test_cases }
 
-	fn get_test_cases_mut(&mut self) -> &mut Vec<T> {
-		&mut self.test_cases
-	}
+	fn get_test_cases_mut(&mut self) -> &mut Vec<T> { &mut self.test_cases }
 }
 
 pub struct MiscCase {
-	path: PathBuf,
-	code: String,
-	source_type: SourceType,
-	should_fail: bool,
-	result: TestResult,
+	path:PathBuf,
+	code:String,
+	source_type:SourceType,
+	should_fail:bool,
+	result:TestResult,
 }
 
 impl MiscCase {
-	pub fn source_type(&self) -> SourceType {
-		self.source_type
-	}
+	pub fn source_type(&self) -> SourceType { self.source_type }
 
-	pub fn set_result(&mut self, result: TestResult) {
-		self.result = result;
-	}
+	pub fn set_result(&mut self, result:TestResult) { self.result = result; }
 }
 
 impl Case for MiscCase {
-	fn new(path: PathBuf, code: String) -> Self {
+	fn new(path:PathBuf, code:String) -> Self {
 		let should_fail = path.to_string_lossy().contains("fail");
 		let source_type = SourceType::from_path(&path).unwrap();
-		Self {
-			path,
-			code,
-			source_type,
-			should_fail,
-			result: TestResult::ToBeRun,
-		}
+		Self { path, code, source_type, should_fail, result:TestResult::ToBeRun }
 	}
 
-	fn code(&self) -> &str {
-		&self.code
-	}
+	fn code(&self) -> &str { &self.code }
 
-	fn path(&self) -> &Path {
-		&self.path
-	}
+	fn path(&self) -> &Path { &self.path }
 
-	fn test_result(&self) -> &TestResult {
-		&self.result
-	}
+	fn test_result(&self) -> &TestResult { &self.result }
 
-	fn should_fail(&self) -> bool {
-		self.should_fail
-	}
+	fn should_fail(&self) -> bool { self.should_fail }
 
 	fn run(&mut self) {
 		let result = self.execute(self.source_type);

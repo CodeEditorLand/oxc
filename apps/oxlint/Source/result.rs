@@ -7,29 +7,29 @@ use std::{
 #[derive(Debug)]
 pub enum CliRunResult {
 	None,
-	InvalidOptions { message: String },
-	PathNotFound { paths: Vec<PathBuf> },
+	InvalidOptions { message:String },
+	PathNotFound { paths:Vec<PathBuf> },
 	LintResult(LintResult),
 	FormatResult(FormatResult),
-	TypeCheckResult { duration: Duration, number_of_diagnostics: usize },
+	TypeCheckResult { duration:Duration, number_of_diagnostics:usize },
 }
 
 #[derive(Debug, Default)]
 pub struct LintResult {
-	pub duration: Duration,
-	pub number_of_rules: usize,
-	pub number_of_files: usize,
-	pub number_of_warnings: usize,
-	pub number_of_errors: usize,
-	pub max_warnings_exceeded: bool,
-	pub deny_warnings: bool,
-	pub print_summary: bool,
+	pub duration:Duration,
+	pub number_of_rules:usize,
+	pub number_of_files:usize,
+	pub number_of_warnings:usize,
+	pub number_of_errors:usize,
+	pub max_warnings_exceeded:bool,
+	pub deny_warnings:bool,
+	pub print_summary:bool,
 }
 
 #[derive(Debug)]
 pub struct FormatResult {
-	pub duration: Duration,
-	pub number_of_files: usize,
+	pub duration:Duration,
+	pub number_of_files:usize,
 }
 
 impl Termination for CliRunResult {
@@ -57,8 +57,7 @@ impl Termination for CliRunResult {
 			}) => {
 				if print_summary {
 					let threads = rayon::current_num_threads();
-					let number_of_diagnostics =
-						number_of_warnings + number_of_errors;
+					let number_of_diagnostics = number_of_warnings + number_of_errors;
 
 					if number_of_diagnostics > 0 {
 						println!();
@@ -67,27 +66,26 @@ impl Termination for CliRunResult {
 					let time = Self::get_execution_time(&duration);
 					let s = if number_of_files == 1 { "" } else { "s" };
 					println!(
-                        "Finished in {time} on {number_of_files} file{s} with {number_of_rules} rules using {threads} threads."
-                    );
+						"Finished in {time} on {number_of_files} file{s} with {number_of_rules} \
+						 rules using {threads} threads."
+					);
 
 					if max_warnings_exceeded {
 						println!(
-                            "Exceeded maximum number of warnings. Found {number_of_warnings}."
-                        );
+							"Exceeded maximum number of warnings. Found {number_of_warnings}."
+						);
 						return ExitCode::from(1);
 					}
 
 					println!(
-                        "Found {number_of_warnings} warning{} and {number_of_errors} error{}.",
-                        if number_of_warnings == 1 { "" } else { "s" },
-                        if number_of_errors == 1 { "" } else { "s" }
-                    );
+						"Found {number_of_warnings} warning{} and {number_of_errors} error{}.",
+						if number_of_warnings == 1 { "" } else { "s" },
+						if number_of_errors == 1 { "" } else { "s" }
+					);
 				}
 
-				let exit_code = u8::from(
-					(number_of_warnings > 0 && deny_warnings)
-						|| number_of_errors > 0,
-				);
+				let exit_code =
+					u8::from((number_of_warnings > 0 && deny_warnings) || number_of_errors > 0);
 				ExitCode::from(exit_code)
 			},
 			Self::FormatResult(FormatResult { duration, number_of_files }) => {
@@ -95,8 +93,8 @@ impl Termination for CliRunResult {
 				let time = Self::get_execution_time(&duration);
 				let s = if number_of_files == 1 { "" } else { "s" };
 				println!(
-                    "Finished in {time} on {number_of_files} file{s} using {threads} threads."
-                );
+					"Finished in {time} on {number_of_files} file{s} using {threads} threads."
+				);
 				ExitCode::from(0)
 			},
 			Self::TypeCheckResult { duration, number_of_diagnostics } => {
@@ -115,7 +113,7 @@ impl Termination for CliRunResult {
 }
 
 impl CliRunResult {
-	fn get_execution_time(duration: &Duration) -> String {
+	fn get_execution_time(duration:&Duration) -> String {
 		let ms = duration.as_millis();
 		if ms < 1000 {
 			format!("{ms}ms")

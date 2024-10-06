@@ -5,8 +5,11 @@ use std::{
 };
 
 use oxc::{
-	allocator::Allocator, codegen::CodeGenerator, parser::Parser,
-	sourcemap::SourcemapVisualizer, span::SourceType,
+	allocator::Allocator,
+	codegen::CodeGenerator,
+	parser::Parser,
+	sourcemap::SourcemapVisualizer,
+	span::SourceType,
 };
 use oxc_tasks_common::TestFiles;
 
@@ -15,55 +18,41 @@ use crate::{
 	workspace_root,
 };
 
-static FIXTURES_PATH: &str =
-	"babel/packages/babel-generator/test/fixtures/sourcemaps";
+static FIXTURES_PATH:&str = "babel/packages/babel-generator/test/fixtures/sourcemaps";
 
-pub struct SourcemapSuite<T: Case> {
-	test_root: PathBuf,
-	test_cases: Vec<T>,
+pub struct SourcemapSuite<T:Case> {
+	test_root:PathBuf,
+	test_cases:Vec<T>,
 }
 
-impl<T: Case> SourcemapSuite<T> {
+impl<T:Case> SourcemapSuite<T> {
 	pub fn new() -> Self {
 		Self {
-			test_root: PathBuf::from(FIXTURES_PATH),
-			test_cases: TestFiles::react()
+			test_root:PathBuf::from(FIXTURES_PATH),
+			test_cases:TestFiles::react()
 				.files()
 				.iter()
-				.map(|file| {
-					T::new(
-						file.file_name.clone().into(),
-						file.source_text.clone(),
-					)
-				})
+				.map(|file| T::new(file.file_name.clone().into(), file.source_text.clone()))
 				.collect::<Vec<_>>(),
 		}
 	}
 }
 
-impl<T: Case> Suite<T> for SourcemapSuite<T> {
-	fn get_test_root(&self) -> &Path {
-		&self.test_root
-	}
+impl<T:Case> Suite<T> for SourcemapSuite<T> {
+	fn get_test_root(&self) -> &Path { &self.test_root }
 
-	fn save_test_cases(&mut self, tests: Vec<T>) {
-		self.test_cases.extend(tests);
-	}
+	fn save_test_cases(&mut self, tests:Vec<T>) { self.test_cases.extend(tests); }
 
-	fn get_test_cases(&self) -> &Vec<T> {
-		&self.test_cases
-	}
+	fn get_test_cases(&self) -> &Vec<T> { &self.test_cases }
 
-	fn get_test_cases_mut(&mut self) -> &mut Vec<T> {
-		&mut self.test_cases
-	}
+	fn get_test_cases_mut(&mut self) -> &mut Vec<T> { &mut self.test_cases }
 
-	fn skip_test_path(&self, path: &Path) -> bool {
+	fn skip_test_path(&self, path:&Path) -> bool {
 		let path = path.to_string_lossy();
 		!path.contains("input.js")
 	}
 
-	fn run_coverage(&self, name: &str, _args: &crate::AppArgs) {
+	fn run_coverage(&self, name:&str, _args:&crate::AppArgs) {
 		let path = workspace_root().join(format!("{name}.snap"));
 		let mut file = File::create(path).unwrap();
 
@@ -88,42 +77,34 @@ impl<T: Case> Suite<T> for SourcemapSuite<T> {
 }
 
 pub struct SourcemapCase {
-	path: PathBuf,
-	code: String,
-	source_type: SourceType,
-	result: TestResult,
+	path:PathBuf,
+	code:String,
+	source_type:SourceType,
+	result:TestResult,
 }
 
 impl SourcemapCase {
-	pub fn source_type(&self) -> SourceType {
-		self.source_type
-	}
+	pub fn source_type(&self) -> SourceType { self.source_type }
 }
 
 impl Case for SourcemapCase {
-	fn new(path: PathBuf, code: String) -> Self {
+	fn new(path:PathBuf, code:String) -> Self {
 		let source_type = SourceType::from_path(&path).unwrap();
-		Self { path, code, source_type, result: TestResult::ToBeRun }
+		Self { path, code, source_type, result:TestResult::ToBeRun }
 	}
 
-	fn code(&self) -> &str {
-		&self.code
-	}
+	fn code(&self) -> &str { &self.code }
 
-	fn path(&self) -> &Path {
-		&self.path
-	}
+	fn path(&self) -> &Path { &self.path }
 
-	fn test_result(&self) -> &TestResult {
-		&self.result
-	}
+	fn test_result(&self) -> &TestResult { &self.result }
 
 	fn run(&mut self) {
 		let source_type = self.source_type();
 		self.result = self.execute(source_type);
 	}
 
-	fn execute(&mut self, source_type: SourceType) -> TestResult {
+	fn execute(&mut self, source_type:SourceType) -> TestResult {
 		let source_text = self.code();
 		let allocator = Allocator::default();
 		let ret = Parser::new(&allocator, source_text, source_type).parse();
@@ -136,18 +117,12 @@ impl Case for SourcemapCase {
 		}
 
 		let codegen_ret = CodeGenerator::new()
-			.enable_source_map(
-				self.path.to_string_lossy().as_ref(),
-				source_text,
-			)
+			.enable_source_map(self.path.to_string_lossy().as_ref(), source_text)
 			.build(&ret.program);
 
 		TestResult::Snapshot(
-			SourcemapVisualizer::new(
-				&codegen_ret.source_text,
-				&codegen_ret.source_map.unwrap(),
-			)
-			.into_visualizer_text(),
+			SourcemapVisualizer::new(&codegen_ret.source_text, &codegen_ret.source_map.unwrap())
+				.into_visualizer_text(),
 		)
 	}
 }

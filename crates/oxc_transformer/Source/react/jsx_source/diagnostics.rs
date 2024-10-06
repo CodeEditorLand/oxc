@@ -1,6 +1,6 @@
 use oxc_diagnostics::{
-    miette::{self, Diagnostic},
-    thiserror::Error,
+	miette::{self, Diagnostic},
+	thiserror::Error,
 };
 use oxc_span::Span;
 

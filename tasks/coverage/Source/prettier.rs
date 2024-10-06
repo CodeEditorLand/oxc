@@ -16,27 +16,21 @@ use crate::{
 };
 
 /// Idempotency test
-fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
+fn get_result(source_text:&str, source_type:SourceType) -> TestResult {
 	let options = PrettierOptions::default();
 
 	let allocator = Allocator::default();
-	let parse_options =
-		ParseOptions { preserve_parens: false, ..ParseOptions::default() };
-	let ParserReturn { program, trivias, .. } =
-		Parser::new(&allocator, source_text, source_type)
-			.with_options(parse_options)
-			.parse();
-	let source_text1 = Prettier::new(&allocator, source_text, trivias, options)
-		.build(&program);
+	let parse_options = ParseOptions { preserve_parens:false, ..ParseOptions::default() };
+	let ParserReturn { program, trivias, .. } = Parser::new(&allocator, source_text, source_type)
+		.with_options(parse_options)
+		.parse();
+	let source_text1 = Prettier::new(&allocator, source_text, trivias, options).build(&program);
 
 	let allocator = Allocator::default();
-	let ParserReturn { program, trivias, .. } =
-		Parser::new(&allocator, &source_text1, source_type)
-			.with_options(parse_options)
-			.parse();
-	let source_text2 =
-		Prettier::new(&allocator, &source_text1, trivias, options)
-			.build(&program);
+	let ParserReturn { program, trivias, .. } = Parser::new(&allocator, &source_text1, source_type)
+		.with_options(parse_options)
+		.parse();
+	let source_text2 = Prettier::new(&allocator, &source_text1, trivias, options).build(&program);
 
 	if source_text1 == source_text2 {
 		TestResult::Passed
@@ -46,29 +40,19 @@ fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
 }
 
 pub struct PrettierTest262Case {
-	base: Test262Case,
+	base:Test262Case,
 }
 
 impl Case for PrettierTest262Case {
-	fn new(path: PathBuf, code: String) -> Self {
-		Self { base: Test262Case::new(path, code) }
-	}
+	fn new(path:PathBuf, code:String) -> Self { Self { base:Test262Case::new(path, code) } }
 
-	fn code(&self) -> &str {
-		self.base.code()
-	}
+	fn code(&self) -> &str { self.base.code() }
 
-	fn path(&self) -> &Path {
-		self.base.path()
-	}
+	fn path(&self) -> &Path { self.base.path() }
 
-	fn test_result(&self) -> &TestResult {
-		self.base.test_result()
-	}
+	fn test_result(&self) -> &TestResult { self.base.test_result() }
 
-	fn skip_test_case(&self) -> bool {
-		self.base.should_fail() || self.base.skip_test_case()
-	}
+	fn skip_test_case(&self) -> bool { self.base.should_fail() || self.base.skip_test_case() }
 
 	fn run(&mut self) {
 		let source_text = self.base.code();
@@ -80,29 +64,19 @@ impl Case for PrettierTest262Case {
 }
 
 pub struct PrettierBabelCase {
-	base: BabelCase,
+	base:BabelCase,
 }
 
 impl Case for PrettierBabelCase {
-	fn new(path: PathBuf, code: String) -> Self {
-		Self { base: BabelCase::new(path, code) }
-	}
+	fn new(path:PathBuf, code:String) -> Self { Self { base:BabelCase::new(path, code) } }
 
-	fn code(&self) -> &str {
-		self.base.code()
-	}
+	fn code(&self) -> &str { self.base.code() }
 
-	fn path(&self) -> &Path {
-		self.base.path()
-	}
+	fn path(&self) -> &Path { self.base.path() }
 
-	fn test_result(&self) -> &TestResult {
-		self.base.test_result()
-	}
+	fn test_result(&self) -> &TestResult { self.base.test_result() }
 
-	fn skip_test_case(&self) -> bool {
-		self.base.skip_test_case() || self.base.should_fail()
-	}
+	fn skip_test_case(&self) -> bool { self.base.skip_test_case() || self.base.should_fail() }
 
 	fn run(&mut self) {
 		let source_text = self.base.code();
@@ -113,29 +87,19 @@ impl Case for PrettierBabelCase {
 }
 
 pub struct PrettierTypeScriptCase {
-	base: TypeScriptCase,
+	base:TypeScriptCase,
 }
 
 impl Case for PrettierTypeScriptCase {
-	fn new(path: PathBuf, code: String) -> Self {
-		Self { base: TypeScriptCase::new(path, code) }
-	}
+	fn new(path:PathBuf, code:String) -> Self { Self { base:TypeScriptCase::new(path, code) } }
 
-	fn code(&self) -> &str {
-		self.base.code()
-	}
+	fn code(&self) -> &str { self.base.code() }
 
-	fn path(&self) -> &Path {
-		self.base.path()
-	}
+	fn path(&self) -> &Path { self.base.path() }
 
-	fn test_result(&self) -> &TestResult {
-		self.base.test_result()
-	}
+	fn test_result(&self) -> &TestResult { self.base.test_result() }
 
-	fn skip_test_case(&self) -> bool {
-		self.base.skip_test_case() || self.base.should_fail()
-	}
+	fn skip_test_case(&self) -> bool { self.base.skip_test_case() || self.base.should_fail() }
 
 	fn run(&mut self) {
 		let units = self.base.units.clone();
@@ -152,29 +116,19 @@ impl Case for PrettierTypeScriptCase {
 }
 
 pub struct PrettierMiscCase {
-	base: MiscCase,
+	base:MiscCase,
 }
 
 impl Case for PrettierMiscCase {
-	fn new(path: PathBuf, code: String) -> Self {
-		Self { base: MiscCase::new(path, code) }
-	}
+	fn new(path:PathBuf, code:String) -> Self { Self { base:MiscCase::new(path, code) } }
 
-	fn code(&self) -> &str {
-		self.base.code()
-	}
+	fn code(&self) -> &str { self.base.code() }
 
-	fn path(&self) -> &Path {
-		self.base.path()
-	}
+	fn path(&self) -> &Path { self.base.path() }
 
-	fn test_result(&self) -> &TestResult {
-		self.base.test_result()
-	}
+	fn test_result(&self) -> &TestResult { self.base.test_result() }
 
-	fn skip_test_case(&self) -> bool {
-		self.base.skip_test_case() || self.base.should_fail()
-	}
+	fn skip_test_case(&self) -> bool { self.base.skip_test_case() || self.base.should_fail() }
 
 	fn run(&mut self) {
 		let source_text = self.base.code();

@@ -8,22 +8,15 @@ use syn::{
 };
 
 pub struct LintRuleMeta {
-	name: syn::Ident,
-	path: syn::Path,
+	name:syn::Ident,
+	path:syn::Path,
 }
 
 impl Parse for LintRuleMeta {
-	fn parse(input: ParseStream<'_>) -> Result<Self> {
+	fn parse(input:ParseStream<'_>) -> Result<Self> {
 		let path = input.parse::<syn::Path>()?;
 		let name = syn::parse_str(
-			&path
-				.segments
-				.iter()
-				.last()
-				.unwrap()
-				.ident
-				.to_string()
-				.to_case(Case::Pascal),
+			&path.segments.iter().last().unwrap().ident.to_string().to_case(Case::Pascal),
 		)
 		.unwrap();
 		Ok(Self { name, path })
@@ -31,11 +24,11 @@ impl Parse for LintRuleMeta {
 }
 
 pub struct AllLintRulesMeta {
-	rules: Vec<LintRuleMeta>,
+	rules:Vec<LintRuleMeta>,
 }
 
 impl Parse for AllLintRulesMeta {
-	fn parse(input: ParseStream<'_>) -> Result<Self> {
+	fn parse(input:ParseStream<'_>) -> Result<Self> {
 		let rules = input
 			.parse_terminated(LintRuleMeta::parse, syn::Token![,])?
 			.into_iter()
@@ -45,7 +38,7 @@ impl Parse for AllLintRulesMeta {
 }
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)]
-pub fn declare_all_lint_rules(metadata: AllLintRulesMeta) -> TokenStream {
+pub fn declare_all_lint_rules(metadata:AllLintRulesMeta) -> TokenStream {
 	let AllLintRulesMeta { rules } = metadata;
 
 	let mut use_stmts = Vec::with_capacity(rules.len());

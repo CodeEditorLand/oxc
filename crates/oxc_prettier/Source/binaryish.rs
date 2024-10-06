@@ -10,15 +10,11 @@ pub enum BinaryishOperator {
 }
 
 impl From<BinaryOperator> for BinaryishOperator {
-	fn from(op: BinaryOperator) -> Self {
-		Self::BinaryOperator(op)
-	}
+	fn from(op:BinaryOperator) -> Self { Self::BinaryOperator(op) }
 }
 
 impl From<LogicalOperator> for BinaryishOperator {
-	fn from(op: LogicalOperator) -> Self {
-		Self::LogicalOperator(op)
-	}
+	fn from(op:LogicalOperator) -> Self { Self::LogicalOperator(op) }
 }
 
 impl GetPrecedence for BinaryishOperator {
@@ -31,7 +27,7 @@ impl GetPrecedence for BinaryishOperator {
 }
 
 impl BinaryishOperator {
-	pub fn should_flatten(self, parent_op: Self) -> bool {
+	pub fn should_flatten(self, parent_op:Self) -> bool {
 		if self.precedence() != parent_op.precedence() {
 			return false;
 		}
@@ -57,18 +53,14 @@ impl BinaryishOperator {
 
 		// x * y % z --> (x * y) % z
 		if (op == BinaryOperator::Remainder && parent_op.is_multiplicative())
-			|| (parent_op == BinaryOperator::Remainder
-				&& op.is_multiplicative())
+			|| (parent_op == BinaryOperator::Remainder && op.is_multiplicative())
 		{
 			return false;
 		}
 
 		// x * y / z --> (x * y) / z
 		// x / y * z --> (x / y) * z
-		if op != parent_op
-			&& parent_op.is_multiplicative()
-			&& op.is_multiplicative()
-		{
+		if op != parent_op && parent_op.is_multiplicative() && op.is_multiplicative() {
 			return false;
 		}
 

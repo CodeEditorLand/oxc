@@ -2,16 +2,13 @@ use itertools::Itertools;
 use proc_macro2::{Group, TokenStream, TokenTree};
 use quote::{format_ident, ToTokens};
 use serde::Serialize;
-use syn::{
-	spanned::Spanned, GenericArgument, Ident, ItemMacro, PathArguments, Type,
-	TypePath,
-};
+use syn::{spanned::Spanned, GenericArgument, Ident, ItemMacro, PathArguments, Type, TypePath};
 
 use crate::{codegen::EarlyCtx, TypeId};
 
 pub trait NormalizeError<T> {
 	fn normalize(self) -> crate::Result<T>;
-	fn normalize_with<E>(self, err: E) -> crate::Result<T>
+	fn normalize_with<E>(self, err:E) -> crate::Result<T>
 	where
 		E: ToString;
 }
@@ -20,45 +17,39 @@ impl<T, E> NormalizeError<T> for Result<T, E>
 where
 	E: ToString,
 {
-	fn normalize(self) -> crate::Result<T> {
-		self.map_err(|e| e.to_string())
-	}
+	fn normalize(self) -> crate::Result<T> { self.map_err(|e| e.to_string()) }
 
-	fn normalize_with<U>(self, err: U) -> crate::Result<T>
+	fn normalize_with<U>(self, err:U) -> crate::Result<T>
 	where
-		U: ToString,
-	{
+		U: ToString, {
 		self.map_err(|_| err.to_string())
 	}
 }
 
 impl<T> NormalizeError<T> for Option<T> {
-	fn normalize(self) -> crate::Result<T> {
-		self.normalize_with(String::default())
-	}
+	fn normalize(self) -> crate::Result<T> { self.normalize_with(String::default()) }
 
-	fn normalize_with<E>(self, err: E) -> crate::Result<T>
+	fn normalize_with<E>(self, err:E) -> crate::Result<T>
 	where
-		E: ToString,
-	{
+		E: ToString, {
 		self.map_or_else(|| Err(err.to_string()), |r| Ok(r))
 	}
 }
 
 pub trait TokenStreamExt {
-	fn replace_ident(self, needle: &str, replace: &Ident) -> TokenStream;
+	fn replace_ident(self, needle:&str, replace:&Ident) -> TokenStream;
 }
 
 pub trait TypeExt {
 	fn get_ident(&self) -> TypeIdentResult;
-	fn analyze(&self, ctx: &EarlyCtx) -> TypeAnalysis;
+	fn analyze(&self, ctx:&EarlyCtx) -> TypeAnalysis;
 }
 
 pub trait StrExt: AsRef<str> {
 	/// Dead simple, just adds either `s` or `es` based on the last character.
-	/// doesn't handle things like `sh`, `x`, `z`, etc. It also creates wrong results when the word
-	/// ends with `y` but there is a preceding vowl similar to `toys`,
-	/// It WILL output the WRONG result `toies`!
+	/// doesn't handle things like `sh`, `x`, `z`, etc. It also creates wrong
+	/// results when the word ends with `y` but there is a preceding vowl
+	/// similar to `toys`, It WILL output the WRONG result `toies`!
 	/// As an edge case would output `children` for the input `child`.
 	fn to_plural(self) -> String;
 }
@@ -79,25 +70,15 @@ pub enum TypeIdentResult<'a> {
 }
 
 impl<'a> TypeIdentResult<'a> {
-	fn boxed(inner: Self) -> Self {
-		Self::Box(Box::new(inner))
-	}
+	fn boxed(inner:Self) -> Self { Self::Box(Box::new(inner)) }
 
-	fn vec(inner: Self) -> Self {
-		Self::Vec(Box::new(inner))
-	}
+	fn vec(inner:Self) -> Self { Self::Vec(Box::new(inner)) }
 
-	fn option(inner: Self) -> Self {
-		Self::Option(Box::new(inner))
-	}
+	fn option(inner:Self) -> Self { Self::Option(Box::new(inner)) }
 
-	fn complex(inner: Self) -> Self {
-		Self::Complex(Box::new(inner))
-	}
+	fn complex(inner:Self) -> Self { Self::Complex(Box::new(inner)) }
 
-	fn reference(inner: Self) -> Self {
-		Self::Reference(Box::new(inner))
-	}
+	fn reference(inner:Self) -> Self { Self::Reference(Box::new(inner)) }
 
 	pub fn inner_ident(&self) -> &'a Ident {
 		match self {
@@ -111,11 +92,7 @@ impl<'a> TypeIdentResult<'a> {
 	}
 
 	pub fn as_ident(&self) -> Option<&'a Ident> {
-		if let Self::Ident(it) = self {
-			Some(it)
-		} else {
-			None
-		}
+		if let Self::Ident(it) = self { Some(it) } else { None }
 	}
 }
 
@@ -136,11 +113,11 @@ pub enum TypeWrapper {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct TypeAnalysis {
-	pub type_id: Option<TypeId>,
-	pub wrapper: TypeWrapper,
+	pub type_id:Option<TypeId>,
+	pub wrapper:TypeWrapper,
 	// pub name: String,
 	#[serde(skip)]
-	pub typ: Type,
+	pub typ:Type,
 }
 
 impl TypeExt for Type {
@@ -152,10 +129,7 @@ impl TypeExt for Type {
 					PathArguments::None => TypeIdentResult::Ident(&seg1.ident),
 					PathArguments::AngleBracketed(it) => {
 						let args = &it.args.iter().collect_vec();
-						assert!(
-							args.len() < 3,
-							"Max path arguments here is 2, eg `Box<'a, Adt>`"
-						);
+						assert!(args.len() < 3, "Max path arguments here is 2, eg `Box<'a, Adt>`");
 						if let Some(second) = args.get(1) {
 							let GenericArgument::Type(second) = second else {
 								panic!()
@@ -190,17 +164,13 @@ impl TypeExt for Type {
 					},
 				}
 			},
-			Type::Reference(typ) => {
-				TypeIdentResult::reference(typ.elem.get_ident())
-			},
+			Type::Reference(typ) => TypeIdentResult::reference(typ.elem.get_ident()),
 			_ => panic!("Unsupported type."),
 		}
 	}
 
-	fn analyze(&self, ctx: &EarlyCtx) -> TypeAnalysis {
-		fn analyze<'a>(
-			res: &'a TypeIdentResult,
-		) -> Option<(&'a Ident, TypeWrapper)> {
+	fn analyze(&self, ctx:&EarlyCtx) -> TypeAnalysis {
+		fn analyze<'a>(res:&'a TypeIdentResult) -> Option<(&'a Ident, TypeWrapper)> {
 			let mut wrapper = TypeWrapper::None;
 			let ident = match res {
 				TypeIdentResult::Ident(inner) => inner,
@@ -243,19 +213,15 @@ impl TypeExt for Type {
 		}
 		let type_ident = self.get_ident();
 		let Some((type_ident, wrapper)) = analyze(&type_ident) else {
-			return TypeAnalysis {
-				type_id: None,
-				wrapper: TypeWrapper::Ref,
-				typ: self.clone(),
-			};
+			return TypeAnalysis { type_id:None, wrapper:TypeWrapper::Ref, typ:self.clone() };
 		};
 
 		let type_id = ctx.type_id(&type_ident.to_string());
-		TypeAnalysis { type_id, wrapper, typ: self.clone() }
+		TypeAnalysis { type_id, wrapper, typ:self.clone() }
 	}
 }
 
-impl<T: AsRef<str>> StrExt for T {
+impl<T:AsRef<str>> StrExt for T {
 	fn to_plural(self) -> String {
 		let txt = self.as_ref();
 		if txt.is_empty() {
@@ -282,18 +248,17 @@ impl<T: AsRef<str>> StrExt for T {
 }
 
 impl TokenStreamExt for TokenStream {
-	fn replace_ident(self, needle: &str, replace: &Ident) -> TokenStream {
+	fn replace_ident(self, needle:&str, replace:&Ident) -> TokenStream {
 		self.into_iter()
-			.map(|it| match it {
-				TokenTree::Ident(ident) if ident == needle => {
-					replace.to_token_stream()
-				},
-				TokenTree::Group(group) => Group::new(
-					group.delimiter(),
-					group.stream().replace_ident(needle, replace),
-				)
-				.to_token_stream(),
-				_ => it.to_token_stream(),
+			.map(|it| {
+				match it {
+					TokenTree::Ident(ident) if ident == needle => replace.to_token_stream(),
+					TokenTree::Group(group) => {
+						Group::new(group.delimiter(), group.stream().replace_ident(needle, replace))
+							.to_token_stream()
+					},
+					_ => it.to_token_stream(),
+				}
 			})
 			.collect()
 	}
@@ -328,10 +293,7 @@ where
 	}
 }
 
-pub fn write_all_to<S: AsRef<std::path::Path>>(
-	data: &[u8],
-	path: S,
-) -> std::io::Result<()> {
+pub fn write_all_to<S:AsRef<std::path::Path>>(data:&[u8], path:S) -> std::io::Result<()> {
 	use std::{fs, io::Write};
 	let path = path.as_ref();
 	if let Some(parent) = path.parent() {
@@ -342,6 +304,6 @@ pub fn write_all_to<S: AsRef<std::path::Path>>(
 	Ok(())
 }
 
-pub fn unexpanded_macro_err(mac: &ItemMacro) -> String {
+pub fn unexpanded_macro_err(mac:&ItemMacro) -> String {
 	format!("Unexpanded macro: {:?}:{:?}", mac.ident, mac.span())
 }

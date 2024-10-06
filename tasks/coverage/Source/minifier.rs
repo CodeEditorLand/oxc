@@ -13,29 +13,19 @@ use crate::{
 };
 
 pub struct MinifierTest262Case {
-	base: Test262Case,
+	base:Test262Case,
 }
 
 impl Case for MinifierTest262Case {
-	fn new(path: PathBuf, code: String) -> Self {
-		Self { base: Test262Case::new(path, code) }
-	}
+	fn new(path:PathBuf, code:String) -> Self { Self { base:Test262Case::new(path, code) } }
 
-	fn code(&self) -> &str {
-		self.base.code()
-	}
+	fn code(&self) -> &str { self.base.code() }
 
-	fn path(&self) -> &Path {
-		self.base.path()
-	}
+	fn path(&self) -> &Path { self.base.path() }
 
-	fn test_result(&self) -> &TestResult {
-		self.base.test_result()
-	}
+	fn test_result(&self) -> &TestResult { self.base.test_result() }
 
-	fn skip_test_case(&self) -> bool {
-		self.base.should_fail()
-	}
+	fn skip_test_case(&self) -> bool { self.base.should_fail() }
 
 	fn run(&mut self) {
 		let source_text = self.base.code();
@@ -47,25 +37,17 @@ impl Case for MinifierTest262Case {
 }
 
 pub struct MinifierBabelCase {
-	base: BabelCase,
+	base:BabelCase,
 }
 
 impl Case for MinifierBabelCase {
-	fn new(path: PathBuf, code: String) -> Self {
-		Self { base: BabelCase::new(path, code) }
-	}
+	fn new(path:PathBuf, code:String) -> Self { Self { base:BabelCase::new(path, code) } }
 
-	fn code(&self) -> &str {
-		self.base.code()
-	}
+	fn code(&self) -> &str { self.base.code() }
 
-	fn path(&self) -> &Path {
-		self.base.path()
-	}
+	fn path(&self) -> &Path { self.base.path() }
 
-	fn test_result(&self) -> &TestResult {
-		self.base.test_result()
-	}
+	fn test_result(&self) -> &TestResult { self.base.test_result() }
 
 	fn skip_test_case(&self) -> bool {
 		self.base.skip_test_case()
@@ -81,7 +63,7 @@ impl Case for MinifierBabelCase {
 	}
 }
 // Test minification by minifying twice because it is a idempotent
-fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
+fn get_result(source_text:&str, source_type:SourceType) -> TestResult {
 	let source_text1 = minify(source_text, source_type);
 	let source_text2 = minify(&source_text1, source_type);
 	if source_text1 == source_text2 {
@@ -91,7 +73,7 @@ fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
 	}
 }
 
-fn minify(source_text: &str, source_type: SourceType) -> String {
+fn minify(source_text:&str, source_type:SourceType) -> String {
 	let allocator = Allocator::default();
 	let ret = Parser::new(&allocator, source_text, source_type).parse();
 	let program = allocator.alloc(ret.program);

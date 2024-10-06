@@ -3,9 +3,7 @@ use std::{env, path::Path};
 
 use oxc_allocator::Allocator;
 use oxc_codegen::{CodeGenerator, CommentOptions};
-use oxc_isolated_declarations::{
-	IsolatedDeclarations, IsolatedDeclarationsOptions,
-};
+use oxc_isolated_declarations::{IsolatedDeclarations, IsolatedDeclarationsOptions};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 
@@ -38,14 +36,14 @@ fn main() {
 		&allocator,
 		&source_text,
 		&ret.trivias,
-		IsolatedDeclarationsOptions { strip_internal: true },
+		IsolatedDeclarationsOptions { strip_internal:true },
 	)
 	.build(&ret.program);
 	let printed = CodeGenerator::new()
 		.enable_comment(
 			&source_text,
 			ret.trivias,
-			CommentOptions { preserve_annotate_comments: false },
+			CommentOptions { preserve_annotate_comments:false },
 		)
 		.build(&id_ret.program)
 		.source_text;

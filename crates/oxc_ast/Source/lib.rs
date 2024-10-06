@@ -1,6 +1,6 @@
 #![allow(clippy::wildcard_imports)]
-// TODO: I'm not sure if it is a but or intentional but clippy needs this allowed both on this
-// module and the generated one.
+// TODO: I'm not sure if it is a but or intentional but clippy needs this
+// allowed both on this module and the generated one.
 #![allow(clippy::self_named_module_files)]
 
 //! # Oxc AST
@@ -8,12 +8,15 @@
 //! Abstract Syntax Tree nodes for Oxc. Supports both TypeScript and JavaScript.
 //!
 //! This is almost similar to [estree](https://github.com/estree/estree) except a few places:
-//! * `Identifier` is replaced with explicit [`BindingIdentifier`], [`IdentifierReference`], [`IdentifierName`] per spec
-//! * `AssignmentExpression`.`left` `Pattern` is replaced with [`AssignmentTarget`]
+//! * `Identifier` is replaced with explicit [`BindingIdentifier`],
+//!   [`IdentifierReference`], [`IdentifierName`] per spec
+//! * `AssignmentExpression`.`left` `Pattern` is replaced with
+//!   [`AssignmentTarget`]
 //!
 //! ## Parsing
 //!
-//! You can obtain an AST by parsing source code with a [`Parser`] from [`oxc_parser`].
+//! You can obtain an AST by parsing source code with a [`Parser`] from
+//! [`oxc_parser`].
 //!
 //! ## Cargo Features
 //! * `"serde"` enables support for serde serialization
@@ -84,9 +87,9 @@ pub use crate::{
 //          expression: Box<Expression>
 //      }
 //   ```
-//  I have concluded that the first options is more performant and more ergonomic to use.
-//  The following test make sure all enum variants are boxed, resulting 16 bytes for each enum.
-//  Read `https://nnethercote.github.io/perf-book/type-sizes.html` for more details.
+//  I have concluded that the first options is more performant and more
+// ergonomic to use.  The following test make sure all enum variants are boxed,
+// resulting 16 bytes for each enum.  Read `https://nnethercote.github.io/perf-book/type-sizes.html` for more details.
 #[cfg(target_pointer_width = "64")]
 #[test]
 fn size_asserts() {
@@ -112,9 +115,7 @@ fn size_asserts() {
 fn lifetime_variance() {
 	use crate::ast;
 
-	fn _assert_program_variant_lifetime<'a: 'b, 'b>(
-		program: ast::Program<'a>,
-	) -> ast::Program<'b> {
+	fn _assert_program_variant_lifetime<'a:'b, 'b>(program:ast::Program<'a>) -> ast::Program<'b> {
 		program
 	}
 }

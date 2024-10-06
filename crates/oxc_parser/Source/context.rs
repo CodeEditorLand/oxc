@@ -51,36 +51,24 @@ bitflags! {
 }
 
 impl Default for Context {
-	fn default() -> Self {
-		Self::In
-	}
+	fn default() -> Self { Self::In }
 }
 
 impl Context {
 	#[inline]
-	pub(crate) fn has_in(self) -> bool {
-		self.contains(Self::In)
-	}
+	pub(crate) fn has_in(self) -> bool { self.contains(Self::In) }
 
 	#[inline]
-	pub(crate) fn has_yield(self) -> bool {
-		self.contains(Self::Yield)
-	}
+	pub(crate) fn has_yield(self) -> bool { self.contains(Self::Yield) }
 
 	#[inline]
-	pub(crate) fn has_await(self) -> bool {
-		self.contains(Self::Await)
-	}
+	pub(crate) fn has_await(self) -> bool { self.contains(Self::Await) }
 
 	#[inline]
-	pub(crate) fn has_return(self) -> bool {
-		self.contains(Self::Return)
-	}
+	pub(crate) fn has_return(self) -> bool { self.contains(Self::Return) }
 
 	#[inline]
-	pub(crate) fn has_decorator(self) -> bool {
-		self.contains(Self::Decorator)
-	}
+	pub(crate) fn has_decorator(self) -> bool { self.contains(Self::Decorator) }
 
 	#[inline]
 	pub(crate) fn has_disallow_conditional_types(self) -> bool {
@@ -88,72 +76,44 @@ impl Context {
 	}
 
 	#[inline]
-	pub(crate) fn has_ambient(self) -> bool {
-		self.contains(Self::Ambient)
-	}
+	pub(crate) fn has_ambient(self) -> bool { self.contains(Self::Ambient) }
 
 	#[inline]
-	pub(crate) fn union_await_if(self, include: bool) -> Self {
-		self.union_if(Self::Await, include)
-	}
+	pub(crate) fn union_await_if(self, include:bool) -> Self { self.union_if(Self::Await, include) }
 
 	#[inline]
-	pub(crate) fn union_ambient_if(self, include: bool) -> Self {
+	pub(crate) fn union_ambient_if(self, include:bool) -> Self {
 		self.union_if(Self::Ambient, include)
 	}
 
 	#[inline]
-	pub(crate) fn union_yield_if(self, include: bool) -> Self {
-		self.union_if(Self::Yield, include)
+	pub(crate) fn union_yield_if(self, include:bool) -> Self { self.union_if(Self::Yield, include) }
+
+	#[inline]
+	fn union_if(self, other:Self, include:bool) -> Self {
+		if include { self.union(other) } else { self }
 	}
 
 	#[inline]
-	fn union_if(self, other: Self, include: bool) -> Self {
-		if include {
-			self.union(other)
-		} else {
-			self
-		}
-	}
+	pub(crate) fn and_in(self, include:bool) -> Self { self.and(Self::In, include) }
 
 	#[inline]
-	pub(crate) fn and_in(self, include: bool) -> Self {
-		self.and(Self::In, include)
-	}
+	pub(crate) fn and_yield(self, include:bool) -> Self { self.and(Self::Yield, include) }
 
 	#[inline]
-	pub(crate) fn and_yield(self, include: bool) -> Self {
-		self.and(Self::Yield, include)
-	}
+	pub(crate) fn and_await(self, include:bool) -> Self { self.and(Self::Await, include) }
 
 	#[inline]
-	pub(crate) fn and_await(self, include: bool) -> Self {
-		self.and(Self::Await, include)
-	}
+	pub(crate) fn and_return(self, include:bool) -> Self { self.and(Self::Return, include) }
 
 	#[inline]
-	pub(crate) fn and_return(self, include: bool) -> Self {
-		self.and(Self::Return, include)
-	}
+	pub(crate) fn and_decorator(self, include:bool) -> Self { self.and(Self::Decorator, include) }
 
 	#[inline]
-	pub(crate) fn and_decorator(self, include: bool) -> Self {
-		self.and(Self::Decorator, include)
-	}
+	pub(crate) fn and_ambient(self, include:bool) -> Self { self.and(Self::Ambient, include) }
 
 	#[inline]
-	pub(crate) fn and_ambient(self, include: bool) -> Self {
-		self.and(Self::Ambient, include)
-	}
-
-	#[inline]
-	fn and(self, flag: Self, set: bool) -> Self {
-		if set {
-			self | flag
-		} else {
-			self - flag
-		}
-	}
+	fn and(self, flag:Self, set:bool) -> Self { if set { self | flag } else { self - flag } }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -168,7 +128,5 @@ pub enum StatementContext {
 }
 
 impl StatementContext {
-	pub(crate) fn is_single_statement(self) -> bool {
-		self != Self::StatementList
-	}
+	pub(crate) fn is_single_statement(self) -> bool { self != Self::StatementList }
 }

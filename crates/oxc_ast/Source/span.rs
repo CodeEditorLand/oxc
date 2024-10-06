@@ -117,9 +117,7 @@ impl<'a> GetSpan for BindingPattern<'a> {
 }
 
 impl GetSpan for BindingProperty<'_> {
-	fn span(&self) -> Span {
-		self.span
-	}
+	fn span(&self) -> Span { self.span }
 }
 
 impl<'a> GetSpan for ClassElement<'a> {
@@ -285,9 +283,7 @@ impl<'a> GetSpan for AssignmentTarget<'a> {
 impl<'a> GetSpan for AssignmentTargetProperty<'a> {
 	fn span(&self) -> Span {
 		match self {
-			Self::AssignmentTargetPropertyIdentifier(identifier) => {
-				identifier.span
-			},
+			Self::AssignmentTargetPropertyIdentifier(identifier) => identifier.span,
 			Self::AssignmentTargetPropertyProperty(literal) => literal.span,
 		}
 	}
@@ -345,9 +341,7 @@ impl<'a> GetSpan for Argument<'a> {
 }
 
 impl<'a> GetSpan for ArrayExpression<'a> {
-	fn span(&self) -> Span {
-		self.span
-	}
+	fn span(&self) -> Span { self.span }
 }
 
 impl<'a> GetSpan for ArrayExpressionElement<'a> {
@@ -504,9 +498,7 @@ impl<'a> GetSpan for JSXElementName<'a> {
 }
 
 impl<'a> GetSpan for JSXElement<'a> {
-	fn span(&self) -> Span {
-		self.span
-	}
+	fn span(&self) -> Span { self.span }
 }
 
 impl<'a> GetSpan for TSSignature<'a> {
@@ -712,9 +704,7 @@ impl<'a> GetSpan for JSXAttributeName<'a> {
 	fn span(&self) -> Span {
 		match &self {
 			JSXAttributeName::Identifier(ident) => ident.span,
-			JSXAttributeName::NamespacedName(namespaced_name) => {
-				namespaced_name.span
-			},
+			JSXAttributeName::NamespacedName(namespaced_name) => namespaced_name.span,
 		}
 	}
 }
@@ -745,9 +735,7 @@ impl<'a> GetSpan for TSEnumMemberName<'a> {
 			TSEnumMemberName::StaticIdentifier(ident) => ident.span,
 			TSEnumMemberName::StaticStringLiteral(literal) => literal.span,
 			TSEnumMemberName::StaticNumericLiteral(literal) => literal.span,
-			expr @ match_expression!(TSEnumMemberName) => {
-				expr.to_expression().span()
-			},
+			expr @ match_expression!(TSEnumMemberName) => expr.to_expression().span(),
 		}
 	}
 }

@@ -4,13 +4,8 @@ use oxc_ast::{Comment, CommentKind};
 use oxc_span::Span;
 
 use crate::Codegen;
-static MATCHER: Lazy<DoubleArrayAhoCorasick<usize>> = Lazy::new(|| {
-	let patterns = vec![
-		"#__NO_SIDE_EFFECTS__",
-		"@__NO_SIDE_EFFECTS__",
-		"@__PURE__",
-		"#__PURE__",
-	];
+static MATCHER:Lazy<DoubleArrayAhoCorasick<usize>> = Lazy::new(|| {
+	let patterns = vec!["#__NO_SIDE_EFFECTS__", "@__NO_SIDE_EFFECTS__", "@__PURE__", "#__PURE__"];
 
 	DoubleArrayAhoCorasick::new(patterns).unwrap()
 });
@@ -27,34 +22,28 @@ bitflags::bitflags! {
 
 #[derive(Debug, Clone, Copy)]
 pub struct AnnotationComment {
-	pub(crate) annotation_kind: AnnotationKind,
-	pub(crate) comment: Comment,
+	pub(crate) annotation_kind:AnnotationKind,
+	pub(crate) comment:Comment,
 }
 
 impl AnnotationComment {
-	pub fn annotation_kind(&self) -> AnnotationKind {
-		self.annotation_kind
-	}
+	pub fn annotation_kind(&self) -> AnnotationKind { self.annotation_kind }
 
-	pub fn span(&self) -> Span {
-		self.comment.span
-	}
+	pub fn span(&self) -> Span { self.comment.span }
 
-	pub fn kind(&self) -> CommentKind {
-		self.comment.kind
-	}
+	pub fn kind(&self) -> CommentKind { self.comment.kind }
 }
 
 impl From<(Comment, AnnotationKind)> for AnnotationComment {
-	fn from(value: (Comment, AnnotationKind)) -> Self {
-		Self { annotation_kind: value.1, comment: value.0 }
+	fn from(value:(Comment, AnnotationKind)) -> Self {
+		Self { annotation_kind:value.1, comment:value.0 }
 	}
 }
 
 impl<'a> Codegen<'a> {
 	pub(crate) fn get_leading_annotate_comments(
 		&mut self,
-		node_start: u32,
+		node_start:u32,
 	) -> Vec<AnnotationComment> {
 		if !self.preserve_annotate_comments() {
 			return vec![];
@@ -91,7 +80,7 @@ impl<'a> Codegen<'a> {
 		ret
 	}
 
-	pub(crate) fn print_comment(&mut self, comment: AnnotationComment) {
+	pub(crate) fn print_comment(&mut self, comment:AnnotationComment) {
 		// ```js
 		// /*#__PURE__*/
 		// Object.getOwnPropertyNames(Symbol)
@@ -102,8 +91,11 @@ impl<'a> Codegen<'a> {
 		//   .map(key => (Symbol)[key])
 		//   .filter(isSymbol),
 		// ```
-		// in this example, `Object.getOwnPropertyNames(Symbol)` and `Object.getOwnPropertyNames(Symbol).filter()`, `Object.getOwnPropertyNames(Symbol).filter().map()`
-		// share the same leading comment. since they both are call expr and has same span start, we need to avoid print the same comment multiple times.
+		// in this example, `Object.getOwnPropertyNames(Symbol)` and
+		// `Object.getOwnPropertyNames(Symbol).filter()`,
+		// `Object.getOwnPropertyNames(Symbol).filter().map()` share the same
+		// leading comment. since they both are call expr and has same span
+		// start, we need to avoid print the same comment multiple times.
 		let comment_span = comment.span();
 		let real_span_end = comment.comment.real_span_end();
 		if self.latest_consumed_comment_end >= real_span_end {
@@ -132,7 +124,7 @@ impl<'a> Codegen<'a> {
 		self.start_of_default_export = self.code_len();
 	}
 
-	pub(crate) fn gen_comments(&mut self, node_start: u32) {
+	pub(crate) fn gen_comments(&mut self, node_start:u32) {
 		if !self.preserve_annotate_comments() {
 			return;
 		}
@@ -140,19 +132,15 @@ impl<'a> Codegen<'a> {
 		if let Some(comments) = self.try_take_moved_comment(node_start) {
 			self.print_comments(&comments, &mut annotation_kind_set);
 		}
-		let leading_annotate_comments =
-			self.get_leading_annotate_comments(node_start);
-		self.print_comments(
-			&leading_annotate_comments,
-			&mut annotation_kind_set,
-		);
+		let leading_annotate_comments = self.get_leading_annotate_comments(node_start);
+		self.print_comments(&leading_annotate_comments, &mut annotation_kind_set);
 	}
 
 	#[inline]
 	pub(crate) fn print_comments(
 		&mut self,
-		leading_annotate_comment: &Vec<AnnotationComment>,
-		annotation_kind_set: &mut AnnotationKind,
+		leading_annotate_comment:&Vec<AnnotationComment>,
+		annotation_kind_set:&mut AnnotationKind,
 	) {
 		for &comment in leading_annotate_comment {
 			let kind = comment.annotation_kind();
@@ -164,8 +152,7 @@ impl<'a> Codegen<'a> {
 	}
 
 	#[inline]
-	pub fn update_last_consumed_comment_end(&mut self, end: u32) {
-		self.latest_consumed_comment_end =
-			self.latest_consumed_comment_end.max(end);
+	pub fn update_last_consumed_comment_end(&mut self, end:u32) {
+		self.latest_consumed_comment_end = self.latest_consumed_comment_end.max(end);
 	}
 }

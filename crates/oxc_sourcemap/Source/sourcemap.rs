@@ -10,29 +10,34 @@ use crate::{
 
 #[derive(Debug, Clone, Default)]
 pub struct SourceMap {
-	pub(crate) file: Option<Arc<str>>,
-	pub(crate) names: Vec<Arc<str>>,
-	pub(crate) source_root: Option<String>,
-	pub(crate) sources: Vec<Arc<str>>,
-	pub(crate) source_contents: Option<Vec<Arc<str>>>,
-	pub(crate) tokens: Vec<Token>,
-	pub(crate) token_chunks: Option<Vec<TokenChunk>>,
-	/// Identifies third-party sources (such as framework code or bundler-generated code), allowing developers to avoid code that they don't want to see or step through, without having to configure this beforehand.
-	/// The `x_google_ignoreList` field refers to the `sources` array, and lists the indices of all the known third-party sources in that source map.
-	/// When parsing the source map, developer tools can use this to determine sections of the code that the browser loads and runs that could be automatically ignore-listed.
-	pub(crate) x_google_ignore_list: Option<Vec<u32>>,
+	pub(crate) file:Option<Arc<str>>,
+	pub(crate) names:Vec<Arc<str>>,
+	pub(crate) source_root:Option<String>,
+	pub(crate) sources:Vec<Arc<str>>,
+	pub(crate) source_contents:Option<Vec<Arc<str>>>,
+	pub(crate) tokens:Vec<Token>,
+	pub(crate) token_chunks:Option<Vec<TokenChunk>>,
+	/// Identifies third-party sources (such as framework code or
+	/// bundler-generated code), allowing developers to avoid code that they
+	/// don't want to see or step through, without having to configure this
+	/// beforehand. The `x_google_ignoreList` field refers to the `sources`
+	/// array, and lists the indices of all the known third-party sources in
+	/// that source map. When parsing the source map, developer tools can use
+	/// this to determine sections of the code that the browser loads and runs
+	/// that could be automatically ignore-listed.
+	pub(crate) x_google_ignore_list:Option<Vec<u32>>,
 }
 
 #[allow(clippy::cast_possible_truncation)]
 impl SourceMap {
 	pub fn new(
-		file: Option<Arc<str>>,
-		names: Vec<Arc<str>>,
-		source_root: Option<String>,
-		sources: Vec<Arc<str>>,
-		source_contents: Option<Vec<Arc<str>>>,
-		tokens: Vec<Token>,
-		token_chunks: Option<Vec<TokenChunk>>,
+		file:Option<Arc<str>>,
+		names:Vec<Arc<str>>,
+		source_root:Option<String>,
+		sources:Vec<Arc<str>>,
+		source_contents:Option<Vec<Arc<str>>>,
+		tokens:Vec<Token>,
+		token_chunks:Option<Vec<TokenChunk>>,
 	) -> Self {
 		Self {
 			file,
@@ -42,7 +47,7 @@ impl SourceMap {
 			source_contents,
 			tokens,
 			token_chunks,
-			x_google_ignore_list: None,
+			x_google_ignore_list:None,
 		}
 	}
 
@@ -50,58 +55,41 @@ impl SourceMap {
 	/// # Errors
 	///
 	/// The `serde_json` deserialize Error.
-	pub fn from_json(value: JSONSourceMap) -> Result<Self> {
-		decode(value)
-	}
+	pub fn from_json(value:JSONSourceMap) -> Result<Self> { decode(value) }
 
 	/// Convert the vlq sourcemap string to `SourceMap`.
 	/// # Errors
 	///
 	/// The `serde_json` deserialize Error.
-	pub fn from_json_string(value: &str) -> Result<Self> {
-		decode_from_string(value)
-	}
+	pub fn from_json_string(value:&str) -> Result<Self> { decode_from_string(value) }
 
 	/// Convert `SourceMap` to vlq sourcemap.
-	pub fn to_json(&self) -> JSONSourceMap {
-		encode(self)
-	}
+	pub fn to_json(&self) -> JSONSourceMap { encode(self) }
 
 	/// Convert `SourceMap` to vlq sourcemap string.
-	pub fn to_json_string(&self) -> String {
-		encode_to_string(self)
-	}
+	pub fn to_json_string(&self) -> String { encode_to_string(self) }
 
 	/// Convert `SourceMap` to vlq sourcemap data url.
 	pub fn to_data_url(&self) -> String {
-		let base_64_str = base64_simd::STANDARD
-			.encode_to_string(self.to_json_string().as_bytes());
+		let base_64_str = base64_simd::STANDARD.encode_to_string(self.to_json_string().as_bytes());
 		format!("data:application/json;charset=utf-8;base64,{base_64_str}")
 	}
 
-	pub fn get_file(&self) -> Option<&str> {
-		self.file.as_deref()
-	}
+	pub fn get_file(&self) -> Option<&str> { self.file.as_deref() }
 
-	pub fn set_file(&mut self, file: &str) {
-		self.file = Some(file.into());
-	}
+	pub fn set_file(&mut self, file:&str) { self.file = Some(file.into()); }
 
-	pub fn get_source_root(&self) -> Option<&str> {
-		self.source_root.as_deref()
-	}
+	pub fn get_source_root(&self) -> Option<&str> { self.source_root.as_deref() }
 
 	/// Set `x_google_ignoreList`.
-	pub fn set_x_google_ignore_list(&mut self, x_google_ignore_list: Vec<u32>) {
+	pub fn set_x_google_ignore_list(&mut self, x_google_ignore_list:Vec<u32>) {
 		self.x_google_ignore_list = Some(x_google_ignore_list);
 	}
 
-	pub fn get_names(&self) -> impl Iterator<Item = &str> {
-		self.names.iter().map(AsRef::as_ref)
-	}
+	pub fn get_names(&self) -> impl Iterator<Item = &str> { self.names.iter().map(AsRef::as_ref) }
 
 	/// Adjust `sources`.
-	pub fn set_sources(&mut self, sources: Vec<&str>) {
+	pub fn set_sources(&mut self, sources:Vec<&str>) {
 		self.sources = sources.into_iter().map(Into::into).collect();
 	}
 
@@ -110,61 +98,50 @@ impl SourceMap {
 	}
 
 	/// Adjust `source_content`.
-	pub fn set_source_contents(&mut self, source_contents: Vec<&str>) {
-		self.source_contents =
-			Some(source_contents.into_iter().map(Into::into).collect());
+	pub fn set_source_contents(&mut self, source_contents:Vec<&str>) {
+		self.source_contents = Some(source_contents.into_iter().map(Into::into).collect());
 	}
 
 	pub fn get_source_contents(&self) -> Option<impl Iterator<Item = &str>> {
 		self.source_contents.as_ref().map(|v| v.iter().map(AsRef::as_ref))
 	}
 
-	pub fn get_token(&self, index: u32) -> Option<&Token> {
-		self.tokens.get(index as usize)
-	}
+	pub fn get_token(&self, index:u32) -> Option<&Token> { self.tokens.get(index as usize) }
 
-	pub fn get_source_view_token(
-		&self,
-		index: u32,
-	) -> Option<SourceViewToken<'_>> {
-		self.tokens
-			.get(index as usize)
-			.map(|token| SourceViewToken::new(token, self))
+	pub fn get_source_view_token(&self, index:u32) -> Option<SourceViewToken<'_>> {
+		self.tokens.get(index as usize).map(|token| SourceViewToken::new(token, self))
 	}
 
 	/// Get raw tokens.
-	pub fn get_tokens(&self) -> impl Iterator<Item = &Token> {
-		self.tokens.iter()
-	}
+	pub fn get_tokens(&self) -> impl Iterator<Item = &Token> { self.tokens.iter() }
 
 	/// Get source view tokens. See [`SourceViewToken`] for more information.
-	pub fn get_source_view_tokens(
-		&self,
-	) -> impl Iterator<Item = SourceViewToken<'_>> {
+	pub fn get_source_view_tokens(&self) -> impl Iterator<Item = SourceViewToken<'_>> {
 		self.tokens.iter().map(|token| SourceViewToken::new(token, self))
 	}
 
-	pub fn get_name(&self, id: u32) -> Option<&str> {
+	pub fn get_name(&self, id:u32) -> Option<&str> {
 		self.names.get(id as usize).map(AsRef::as_ref)
 	}
 
-	pub fn get_source(&self, id: u32) -> Option<&str> {
+	pub fn get_source(&self, id:u32) -> Option<&str> {
 		self.sources.get(id as usize).map(AsRef::as_ref)
 	}
 
-	pub fn get_source_content(&self, id: u32) -> Option<&str> {
+	pub fn get_source_content(&self, id:u32) -> Option<&str> {
 		self.source_contents
 			.as_ref()
 			.and_then(|x| x.get(id as usize).map(AsRef::as_ref))
 	}
 
-	pub fn get_source_and_content(&self, id: u32) -> Option<(&str, &str)> {
+	pub fn get_source_and_content(&self, id:u32) -> Option<(&str, &str)> {
 		let source = self.get_source(id)?;
 		let content = self.get_source_content(id)?;
 		Some((source, content))
 	}
 
-	/// Generate a lookup table, it will be used at `lookup_token` or `lookup_source_view_token`.
+	/// Generate a lookup table, it will be used at `lookup_token` or
+	/// `lookup_source_view_token`.
 	pub fn generate_lookup_table(&self) -> Vec<(u32, u32, u32)> {
 		let mut table = self
 			.tokens
@@ -179,46 +156,46 @@ impl SourceMap {
 	/// Lookup a token by line and column, it will used at remapping.
 	pub fn lookup_token(
 		&self,
-		lookup_table: &[(u32, u32, u32)],
-		line: u32,
-		col: u32,
+		lookup_table:&[(u32, u32, u32)],
+		line:u32,
+		col:u32,
 	) -> Option<&Token> {
-		let table =
-			greatest_lower_bound(lookup_table, &(line, col), |table| {
-				(table.0, table.1)
-			})?;
+		let table = greatest_lower_bound(lookup_table, &(line, col), |table| (table.0, table.1))?;
 		self.get_token(table.2)
 	}
 
-	/// Lookup a token by line and column, it will used at remapping. See `SourceViewToken`.
+	/// Lookup a token by line and column, it will used at remapping. See
+	/// `SourceViewToken`.
 	pub fn lookup_source_view_token(
 		&self,
-		lookup_table: &[(u32, u32, u32)],
-		line: u32,
-		col: u32,
+		lookup_table:&[(u32, u32, u32)],
+		line:u32,
+		col:u32,
 	) -> Option<SourceViewToken<'_>> {
 		self.lookup_token(lookup_table, line, col)
 			.map(|token| SourceViewToken::new(token, self))
 	}
 }
 
-fn greatest_lower_bound<'a, T, K: Ord, F: Fn(&'a T) -> K>(
-	slice: &'a [T],
-	key: &K,
-	map: F,
+fn greatest_lower_bound<'a, T, K:Ord, F:Fn(&'a T) -> K>(
+	slice:&'a [T],
+	key:&K,
+	map:F,
 ) -> Option<&'a T> {
 	let mut idx = match slice.binary_search_by_key(key, &map) {
 		Ok(index) => index,
 		Err(index) => {
-			// If there is no match, then we know for certain that the index is where we should
-			// insert a new token, and that the token directly before is the greatest lower bound.
+			// If there is no match, then we know for certain that the index is
+			// where we should insert a new token, and that the token
+			// directly before is the greatest lower bound.
 			return slice.get(index.checked_sub(1)?);
 		},
 	};
 
-	// If we get an exact match, then we need to continue looking at previous tokens to see if
-	// they also match. We use a linear search because the number of exact matches is generally
-	// very small, and almost certainly smaller than the number of tokens before the index.
+	// If we get an exact match, then we need to continue looking at previous
+	// tokens to see if they also match. We use a linear search because the
+	// number of exact matches is generally very small, and almost certainly
+	// smaller than the number of tokens before the index.
 	for i in (0..idx).rev() {
 		if map(&slice[i]) == *key {
 			idx = i;

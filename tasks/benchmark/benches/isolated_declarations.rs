@@ -1,18 +1,16 @@
 use oxc_allocator::Allocator;
 use oxc_benchmark::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use oxc_isolated_declarations::{
-	IsolatedDeclarations, IsolatedDeclarationsOptions,
-};
+use oxc_isolated_declarations::{IsolatedDeclarations, IsolatedDeclarationsOptions};
 use oxc_parser::{Parser, ParserReturn};
 use oxc_span::SourceType;
 use oxc_tasks_common::TestFile;
 
-fn bench_isolated_declarations(criterion: &mut Criterion) {
+fn bench_isolated_declarations(criterion:&mut Criterion) {
 	let mut group = criterion.benchmark_group("isolated-declarations");
 
 	let file = TestFile::new(
-        "https://raw.githubusercontent.com/oxc-project/benchmark-files/main/vue-id.ts",
-    );
+		"https://raw.githubusercontent.com/oxc-project/benchmark-files/main/vue-id.ts",
+	);
 
 	let id = BenchmarkId::from_parameter(&file.file_name);
 	let source_type = SourceType::from_path(&file.file_name).unwrap();
@@ -26,7 +24,7 @@ fn bench_isolated_declarations(criterion: &mut Criterion) {
 				&allocator,
 				source_text,
 				&trivias,
-				IsolatedDeclarationsOptions { strip_internal: true },
+				IsolatedDeclarationsOptions { strip_internal:true },
 			)
 			.build(&program);
 		});

@@ -17,33 +17,31 @@ mod statement;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Tristate {
-    True,
-    False,
-    Maybe,
+	True,
+	False,
+	Maybe,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum FunctionKind {
-    Declaration,
-    Expression,
-    DefaultExport,
-    TSDeclaration,
+	Declaration,
+	Expression,
+	DefaultExport,
+	TSDeclaration,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum VariableDeclarationParent {
-    For,
-    Statement,
-    Clause,
+	For,
+	Statement,
+	Clause,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct VariableDeclarationContext {
-    pub parent: VariableDeclarationParent,
+	pub parent:VariableDeclarationParent,
 }
 
 impl VariableDeclarationContext {
-    pub(crate) fn new(parent: VariableDeclarationParent) -> Self {
-        Self { parent }
-    }
+	pub(crate) fn new(parent:VariableDeclarationParent) -> Self { Self { parent } }
 }

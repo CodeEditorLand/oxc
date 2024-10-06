@@ -5,55 +5,53 @@ use crate::{token::TokenChunk, SourceMap, Token};
 /// The `ConcatSourceMapBuilder` is a helper to concat sourcemaps.
 #[derive(Debug, Default)]
 pub struct ConcatSourceMapBuilder {
-	pub(crate) names: Vec<Arc<str>>,
-	pub(crate) sources: Vec<Arc<str>>,
-	pub(crate) source_contents: Vec<Arc<str>>,
-	pub(crate) tokens: Vec<Token>,
-	/// The `token_chunks` is used for encode tokens to vlq mappings at parallel.
-	pub(crate) token_chunks: Vec<TokenChunk>,
-	pub(crate) token_chunk_prev_name_id: u32,
+	pub(crate) names:Vec<Arc<str>>,
+	pub(crate) sources:Vec<Arc<str>>,
+	pub(crate) source_contents:Vec<Arc<str>>,
+	pub(crate) tokens:Vec<Token>,
+	/// The `token_chunks` is used for encode tokens to vlq mappings at
+	/// parallel.
+	pub(crate) token_chunks:Vec<TokenChunk>,
+	pub(crate) token_chunk_prev_name_id:u32,
 }
 
 #[allow(clippy::cast_possible_truncation)]
 impl ConcatSourceMapBuilder {
 	/// Create new `ConcatSourceMapBuilder` with pre-allocated capacity.
 	///
-	/// Allocating capacity before adding sourcemaps with `add_sourcemap` avoids memory copies
-	/// and increases performance.
+	/// Allocating capacity before adding sourcemaps with `add_sourcemap` avoids
+	/// memory copies and increases performance.
 	///
 	/// Alternatively, use `from_sourcemaps`.
 	pub fn with_capacity(
-		names_len: usize,
-		sources_len: usize,
-		tokens_len: usize,
-		token_chunks_len: usize,
+		names_len:usize,
+		sources_len:usize,
+		tokens_len:usize,
+		token_chunks_len:usize,
 	) -> Self {
 		Self {
-			names: Vec::with_capacity(names_len),
-			sources: Vec::with_capacity(sources_len),
-			source_contents: Vec::with_capacity(sources_len),
-			tokens: Vec::with_capacity(tokens_len),
-			token_chunks: Vec::with_capacity(token_chunks_len),
-			token_chunk_prev_name_id: 0,
+			names:Vec::with_capacity(names_len),
+			sources:Vec::with_capacity(sources_len),
+			source_contents:Vec::with_capacity(sources_len),
+			tokens:Vec::with_capacity(tokens_len),
+			token_chunks:Vec::with_capacity(token_chunks_len),
+			token_chunk_prev_name_id:0,
 		}
 	}
 
-	/// Create new `ConcatSourceMapBuilder` from an array of `SourceMap`s and line offsets.
+	/// Create new `ConcatSourceMapBuilder` from an array of `SourceMap`s and
+	/// line offsets.
 	///
-	/// This avoids memory copies versus creating builder with `ConcatSourceMapBuilder::default()`
-	/// and then adding sourcemaps individually with `add_sourcemap`.
+	/// This avoids memory copies versus creating builder with
+	/// `ConcatSourceMapBuilder::default()` and then adding sourcemaps
+	/// individually with `add_sourcemap`.
 	///
 	/// # Example
 	/// ```
-	/// let builder = ConcatSourceMapBuilder::from_sourcemaps(&[
-	///   (&sourcemap1, 0),
-	///   (&sourcemap2, 100),
-	/// ]);
+	/// let builder = ConcatSourceMapBuilder::from_sourcemaps(&[(&sourcemap1, 0), (&sourcemap2, 100)]);
 	/// let combined_sourcemap = builder.into_sourcemap();
 	/// ```
-	pub fn from_sourcemaps(
-		sourcemap_and_line_offsets: &[(&SourceMap, u32)],
-	) -> Self {
+	pub fn from_sourcemaps(sourcemap_and_line_offsets:&[(&SourceMap, u32)]) -> Self {
 		// Calculate length of `Vec`s required
 		let mut names_len = 0;
 		let mut sources_len = 0;
@@ -71,16 +69,14 @@ impl ConcatSourceMapBuilder {
 			sourcemap_and_line_offsets.len(),
 		);
 
-		for (sourcemap, line_offset) in
-			sourcemap_and_line_offsets.iter().copied()
-		{
+		for (sourcemap, line_offset) in sourcemap_and_line_offsets.iter().copied() {
 			builder.add_sourcemap(sourcemap, line_offset);
 		}
 
 		builder
 	}
 
-	pub fn add_sourcemap(&mut self, sourcemap: &SourceMap, line_offset: u32) {
+	pub fn add_sourcemap(&mut self, sourcemap:&SourceMap, line_offset:u32) {
 		let source_offset = self.sources.len() as u32;
 		let name_offset = self.names.len() as u32;
 
@@ -113,13 +109,12 @@ impl ConcatSourceMapBuilder {
 		self.sources.extend(sourcemap.get_sources().map(Into::into));
 
 		if let Some(source_contents) = &sourcemap.source_contents {
-			// Clone `Arc` instead of generating a new `Arc` and copying string data because
-			// source texts are generally long strings. Cost of copying a large string is higher
-			// than cloning an `Arc`.
+			// Clone `Arc` instead of generating a new `Arc` and copying string
+			// data because source texts are generally long strings. Cost of
+			// copying a large string is higher than cloning an `Arc`.
 			self.source_contents.extend(source_contents.iter().map(Arc::clone));
 		} else {
-			self.source_contents
-				.extend((0..sourcemap.sources.len()).map(|_| "".into()));
+			self.source_contents.extend((0..sourcemap.sources.len()).map(|_| "".into()));
 		}
 
 		// Extend `names`.
@@ -161,9 +156,7 @@ impl ConcatSourceMapBuilder {
 fn test_concat_sourcemap_builder() {
 	run_test(|sourcemap_and_line_offsets| {
 		let mut builder = ConcatSourceMapBuilder::default();
-		for (sourcemap, line_offset) in
-			sourcemap_and_line_offsets.iter().copied()
-		{
+		for (sourcemap, line_offset) in sourcemap_and_line_offsets.iter().copied() {
 			builder.add_sourcemap(sourcemap, line_offset);
 		}
 		builder
@@ -176,10 +169,9 @@ fn test_concat_sourcemap_builder_from_sourcemaps() {
 }
 
 #[cfg(test)]
-fn run_test<F>(create_builder: F)
+fn run_test<F>(create_builder:F)
 where
-	F: Fn(&[(&SourceMap, u32)]) -> ConcatSourceMapBuilder,
-{
+	F: Fn(&[(&SourceMap, u32)]) -> ConcatSourceMapBuilder, {
 	let sm1 = SourceMap::new(
 		None,
 		vec!["foo".into(), "foo2".into()],

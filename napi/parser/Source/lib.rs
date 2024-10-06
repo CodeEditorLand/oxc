@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use napi::{bindgen_prelude::AsyncTask, Task};
 use napi_derive::napi;
-
 use oxc::{
 	allocator::Allocator,
 	ast::CommentKind,
@@ -17,9 +16,9 @@ use oxc::{
 pub use crate::module_lexer::*;
 
 fn parse<'a>(
-	allocator: &'a Allocator,
-	source_text: &'a str,
-	options: &ParserOptions,
+	allocator:&'a Allocator,
+	source_text:&'a str,
+	options:&ParserOptions,
 ) -> ParserReturn<'a> {
 	let source_type = options
 		.source_filename
@@ -33,14 +32,15 @@ fn parse<'a>(
 	};
 	Parser::new(allocator, source_text, source_type)
 		.with_options(ParseOptions {
-			preserve_parens: options.preserve_parens.unwrap_or(true),
+			preserve_parens:options.preserve_parens.unwrap_or(true),
 			..ParseOptions::default()
 		})
 		.parse()
 }
 
 /// Parse without returning anything.
-/// This is for benchmark purposes such as measuring napi communication overhead.
+/// This is for benchmark purposes such as measuring napi communication
+/// overhead.
 ///
 /// # Panics
 ///
@@ -48,20 +48,14 @@ fn parse<'a>(
 /// * Serde JSON serialization
 #[allow(clippy::needless_pass_by_value)]
 #[napi]
-pub fn parse_without_return(
-	source_text: String,
-	options: Option<ParserOptions>,
-) {
+pub fn parse_without_return(source_text:String, options:Option<ParserOptions>) {
 	let options = options.unwrap_or_default();
 	let allocator = Allocator::default();
 	parse(&allocator, &source_text, &options);
 }
 
 #[allow(clippy::needless_lifetimes)]
-fn parse_with_return<'a>(
-	source_text: &'a str,
-	options: &ParserOptions,
-) -> ParseResult {
+fn parse_with_return<'a>(source_text:&'a str, options:&ParserOptions) -> ParseResult {
 	let allocator = Allocator::default();
 	let ret = parse(&allocator, source_text, options);
 	let program = serde_json::to_string(&ret.program).unwrap();
@@ -70,13 +64,10 @@ fn parse_with_return<'a>(
 		vec![]
 	} else {
 		let file_name = options.source_filename.clone().unwrap_or_default();
-		let source =
-			Arc::new(NamedSource::new(file_name, source_text.to_string()));
+		let source = Arc::new(NamedSource::new(file_name, source_text.to_string()));
 		ret.errors
 			.into_iter()
-			.map(|diagnostic| {
-				Error::from(diagnostic).with_source_code(Arc::clone(&source))
-			})
+			.map(|diagnostic| Error::from(diagnostic).with_source_code(Arc::clone(&source)))
 			.map(|error| format!("{error:?}"))
 			.collect()
 	};
@@ -84,14 +75,16 @@ fn parse_with_return<'a>(
 	let comments = ret
 		.trivias
 		.comments()
-		.map(|comment| Comment {
-			r#type: match comment.kind {
-				CommentKind::Line => "Line",
-				CommentKind::Block => "Block",
-			},
-			value: comment.span.source_text(source_text).to_string(),
-			start: comment.span.start,
-			end: comment.span.end,
+		.map(|comment| {
+			Comment {
+				r#type:match comment.kind {
+					CommentKind::Line => "Line",
+					CommentKind::Block => "Block",
+				},
+				value:comment.span.source_text(source_text).to_string(),
+				start:comment.span.start,
+				end:comment.span.end,
+			}
 		})
 		.collect::<Vec<Comment>>();
 
@@ -104,17 +97,14 @@ fn parse_with_return<'a>(
 /// * Serde JSON serialization
 #[allow(clippy::needless_pass_by_value)]
 #[napi]
-pub fn parse_sync(
-	source_text: String,
-	options: Option<ParserOptions>,
-) -> ParseResult {
+pub fn parse_sync(source_text:String, options:Option<ParserOptions>) -> ParseResult {
 	let options = options.unwrap_or_default();
 	parse_with_return(&source_text, &options)
 }
 
 pub struct ResolveTask {
-	source_text: String,
-	options: ParserOptions,
+	source_text:String,
+	options:ParserOptions,
 }
 
 #[napi]
@@ -126,11 +116,7 @@ impl Task for ResolveTask {
 		Ok(parse_with_return(&self.source_text, &self.options))
 	}
 
-	fn resolve(
-		&mut self,
-		_: napi::Env,
-		result: Self::Output,
-	) -> napi::Result<Self::JsValue> {
+	fn resolve(&mut self, _:napi::Env, result:Self::Output) -> napi::Result<Self::JsValue> {
 		Ok(result)
 	}
 }
@@ -140,10 +126,7 @@ impl Task for ResolveTask {
 /// * Tokio crashes
 #[allow(clippy::needless_pass_by_value)]
 #[napi]
-pub fn parse_async(
-	source_text: String,
-	options: Option<ParserOptions>,
-) -> AsyncTask<ResolveTask> {
+pub fn parse_async(source_text:String, options:Option<ParserOptions>) -> AsyncTask<ResolveTask> {
 	let options = options.unwrap_or_default();
 	AsyncTask::new(ResolveTask { source_text, options })
 }

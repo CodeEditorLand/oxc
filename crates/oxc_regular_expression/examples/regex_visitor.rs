@@ -3,18 +3,19 @@
 use oxc_allocator::Allocator;
 use oxc_regular_expression::{
 	visit::{RegExpAstKind, Visit},
-	Parser, ParserOptions,
+	Parser,
+	ParserOptions,
 };
 use oxc_span::GetSpan;
 
 struct TestVisitor;
 
 impl Visit<'_> for TestVisitor {
-	fn enter_node(&mut self, kind: RegExpAstKind) {
+	fn enter_node(&mut self, kind:RegExpAstKind) {
 		println!("enter_node: {:?} {kind:?}", kind.span());
 	}
 
-	fn leave_node(&mut self, kind: RegExpAstKind) {
+	fn leave_node(&mut self, kind:RegExpAstKind) {
 		println!("leave_node: {:?} {kind:?}", kind.span());
 	}
 }

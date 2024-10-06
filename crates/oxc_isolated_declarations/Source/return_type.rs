@@ -2,11 +2,19 @@ use std::cell::Cell;
 
 use oxc_ast::{
 	ast::{
-		ArrowFunctionExpression, BindingIdentifier, Expression, Function,
-		FunctionBody, ReturnStatement, TSType, TSTypeAliasDeclaration,
-		TSTypeName, TSTypeQueryExprName,
+		ArrowFunctionExpression,
+		BindingIdentifier,
+		Expression,
+		Function,
+		FunctionBody,
+		ReturnStatement,
+		TSType,
+		TSTypeAliasDeclaration,
+		TSTypeName,
+		TSTypeQueryExprName,
 	},
-	AstBuilder, Visit,
+	AstBuilder,
+	Visit,
 };
 use oxc_span::{Atom, GetSpan, SPAN};
 use oxc_syntax::scope::{ScopeFlags, ScopeId};
@@ -38,33 +46,32 @@ use crate::{diagnostics::type_containing_private_name, IsolatedDeclarations};
 /// ```
 #[allow(clippy::option_option)]
 pub struct FunctionReturnType<'a> {
-	ast: AstBuilder<'a>,
-	return_expression: Option<Option<Expression<'a>>>,
-	value_bindings: Vec<Atom<'a>>,
-	type_bindings: Vec<Atom<'a>>,
-	return_statement_count: u8,
-	scope_depth: u32,
+	ast:AstBuilder<'a>,
+	return_expression:Option<Option<Expression<'a>>>,
+	value_bindings:Vec<Atom<'a>>,
+	type_bindings:Vec<Atom<'a>>,
+	return_statement_count:u8,
+	scope_depth:u32,
 }
 
 impl<'a> FunctionReturnType<'a> {
 	pub fn infer(
-		transformer: &IsolatedDeclarations<'a>,
-		body: &FunctionBody<'a>,
+		transformer:&IsolatedDeclarations<'a>,
+		body:&FunctionBody<'a>,
 	) -> Option<TSType<'a>> {
 		let mut visitor = FunctionReturnType {
-			ast: transformer.ast,
-			return_expression: None,
-			return_statement_count: 0,
-			scope_depth: 0,
-			value_bindings: Vec::default(),
-			type_bindings: Vec::default(),
+			ast:transformer.ast,
+			return_expression:None,
+			return_statement_count:0,
+			scope_depth:0,
+			value_bindings:Vec::default(),
+			type_bindings:Vec::default(),
 		};
 
 		visitor.visit_function_body(body);
 
 		let expr = visitor.return_expression??;
-		let Some(mut expr_type) = transformer.infer_type_from_expression(&expr)
-		else {
+		let Some(mut expr_type) = transformer.infer_type_from_expression(&expr) else {
 			// Avoid report error in parent function
 			return if expr.is_function() {
 				Some(transformer.ast.ts_type_unknown_keyword(SPAN))
@@ -75,18 +82,14 @@ impl<'a> FunctionReturnType<'a> {
 
 		if let Some((reference_name, is_value)) = match &expr_type {
 			TSType::TSTypeReference(type_reference) => {
-				if let TSTypeName::IdentifierReference(ident) =
-					&type_reference.type_name
-				{
+				if let TSTypeName::IdentifierReference(ident) = &type_reference.type_name {
 					Some((ident.name.clone(), false))
 				} else {
 					None
 				}
 			},
 			TSType::TSTypeQuery(query) => {
-				if let TSTypeQueryExprName::IdentifierReference(ident) =
-					&query.expr_name
-				{
+				if let TSTypeQueryExprName::IdentifierReference(ident) = &query.expr_name {
 					Some((ident.name.clone(), true))
 				} else {
 					None
@@ -110,18 +113,18 @@ impl<'a> FunctionReturnType<'a> {
 			}
 		}
 
-		// If there are multiple return statements, which means there must be a union with `undefined`
+		// If there are multiple return statements, which means there must be a
+		// union with `undefined`
 		if visitor.return_statement_count > 1 {
-			// Here is a union type, if the return type is a function type, we need to wrap it in parentheses
+			// Here is a union type, if the return type is a function type, we
+			// need to wrap it in parentheses
 			if matches!(expr_type, TSType::TSFunctionType(_)) {
-				expr_type =
-					transformer.ast.ts_type_parenthesized_type(SPAN, expr_type);
+				expr_type = transformer.ast.ts_type_parenthesized_type(SPAN, expr_type);
 			}
 
-			let types = transformer.ast.vec_from_iter([
-				expr_type,
-				transformer.ast.ts_type_undefined_keyword(SPAN),
-			]);
+			let types = transformer
+				.ast
+				.vec_from_iter([expr_type, transformer.ast.ts_type_undefined_keyword(SPAN)]);
 			expr_type = transformer.ast.ts_type_union_type(SPAN, types);
 		}
 		Some(expr_type)
@@ -129,45 +132,38 @@ impl<'a> FunctionReturnType<'a> {
 }
 
 impl<'a> Visit<'a> for FunctionReturnType<'a> {
-	fn enter_scope(&mut self, _flags: ScopeFlags, _: &Cell<Option<ScopeId>>) {
+	fn enter_scope(&mut self, _flags:ScopeFlags, _:&Cell<Option<ScopeId>>) {
 		self.scope_depth += 1;
 	}
 
-	fn leave_scope(&mut self) {
-		self.scope_depth -= 1;
-	}
+	fn leave_scope(&mut self) { self.scope_depth -= 1; }
 
-	fn visit_binding_identifier(&mut self, ident: &BindingIdentifier<'a>) {
+	fn visit_binding_identifier(&mut self, ident:&BindingIdentifier<'a>) {
 		if self.scope_depth == 0 {
 			self.value_bindings.push(ident.name.clone());
 		}
 	}
 
-	fn visit_ts_type_alias_declaration(
-		&mut self,
-		decl: &TSTypeAliasDeclaration<'a>,
-	) {
+	fn visit_ts_type_alias_declaration(&mut self, decl:&TSTypeAliasDeclaration<'a>) {
 		if self.scope_depth == 0 {
 			self.type_bindings.push(decl.id.name.clone());
 		}
 	}
 
-	fn visit_function(&mut self, _func: &Function<'a>, _flags: ScopeFlags) {
+	fn visit_function(&mut self, _func:&Function<'a>, _flags:ScopeFlags) {
 		// We don't care about nested functions
 	}
 
-	fn visit_arrow_function_expression(
-		&mut self,
-		_expr: &ArrowFunctionExpression<'a>,
-	) {
+	fn visit_arrow_function_expression(&mut self, _expr:&ArrowFunctionExpression<'a>) {
 		// We don't care about nested functions
 	}
 
-	fn visit_return_statement(&mut self, stmt: &ReturnStatement<'a>) {
+	fn visit_return_statement(&mut self, stmt:&ReturnStatement<'a>) {
 		self.return_statement_count += 1;
 		if self.return_statement_count > 1 {
 			if let Some(expr) = &self.return_expression {
-				// if last return statement is not empty, we can't infer return type
+				// if last return statement is not empty, we can't infer return
+				// type
 				if expr.is_some() {
 					self.return_expression = None;
 					return;

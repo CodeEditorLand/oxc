@@ -8,7 +8,8 @@ use oxc_cfg::{
 		dot::{Config, Dot},
 		visit::EdgeRef,
 	},
-	DisplayDot, EdgeType,
+	DisplayDot,
+	EdgeType,
 };
 use oxc_parser::Parser;
 use oxc_semantic::{dot::DebugDot, SemanticBuilder};
@@ -17,22 +18,18 @@ use rustc_hash::FxHashMap;
 
 // Instruction:
 // 1. create a `test.js`,
-// 2. run `cargo run -p oxc_semantic --example cfg`
-//    or `just watch "run -p oxc_semantic --example cfg"`
+// 2. run `cargo run -p oxc_semantic --example cfg` or `just watch "run -p
+//    oxc_semantic --example cfg"`
 // 3. observe visualizations of:
 //    - AST (test.ast.txt)
 //    - CFG blocks (test.cfg.txt)
 //    - CFG graph (test.dot)
 
 fn main() -> std::io::Result<()> {
-	let test_file_name =
-		env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
-	let ast_file_name =
-		env::args().nth(1).unwrap_or_else(|| "test.ast.txt".to_string());
-	let cfg_file_name =
-		env::args().nth(1).unwrap_or_else(|| "test.cfg.txt".to_string());
-	let dot_file_name =
-		env::args().nth(1).unwrap_or_else(|| "test.dot".to_string());
+	let test_file_name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
+	let ast_file_name = env::args().nth(1).unwrap_or_else(|| "test.ast.txt".to_string());
+	let cfg_file_name = env::args().nth(1).unwrap_or_else(|| "test.cfg.txt".to_string());
+	let dot_file_name = env::args().nth(1).unwrap_or_else(|| "test.dot".to_string());
 
 	let test_file_path = Path::new(&test_file_name);
 	let ast_file_path = Path::new(&ast_file_name);
@@ -45,12 +42,10 @@ fn main() -> std::io::Result<()> {
 	let parser_ret = Parser::new(&allocator, &source_text, source_type).parse();
 
 	if !parser_ret.errors.is_empty() {
-		let error_message: String = parser_ret
+		let error_message:String = parser_ret
 			.errors
 			.into_iter()
-			.map(|error| {
-				error.with_source_code(Arc::clone(&source_text)).to_string()
-			})
+			.map(|error| error.with_source_code(Arc::clone(&source_text)).to_string())
 			.join("\n\n");
 
 		println!("Parsing failed:\n\n{error_message}",);
@@ -68,22 +63,20 @@ fn main() -> std::io::Result<()> {
 		.build(program);
 
 	if !semantic.errors.is_empty() {
-		let error_message: String = semantic
+		let error_message:String = semantic
 			.errors
 			.into_iter()
-			.map(|error| {
-				error.with_source_code(Arc::clone(&source_text)).to_string()
-			})
+			.map(|error| error.with_source_code(Arc::clone(&source_text)).to_string())
 			.join("\n\n");
 
 		println!("Semantic analysis failed:\n\n{error_message}",);
 		return Ok(());
 	}
 
-	let cfg = semantic
-        .semantic
-        .cfg()
-        .expect("we set semantic to build the control flow (`with_cfg`) for us so it should always be `Some`");
+	let cfg = semantic.semantic.cfg().expect(
+		"we set semantic to build the control flow (`with_cfg`) for us so it should always be \
+		 `Some`",
+	);
 
 	let mut ast_nodes_by_block = FxHashMap::<_, Vec<_>>::default();
 	for node in semantic.semantic.nodes() {
@@ -104,10 +97,7 @@ fn main() -> std::io::Result<()> {
 				ast_nodes_by_block
 					.get(&i)
 					.map(|nodes| {
-						nodes
-							.iter()
-							.map(|node| format!("{}", node.kind().debug_name()))
-							.join("\n")
+						nodes.iter().map(|node| format!("{}", node.kind().debug_name())).join("\n")
 					})
 					.unwrap_or_default()
 			)
@@ -134,34 +124,24 @@ fn main() -> std::io::Result<()> {
 				}
 			},
 			&|_graph, node| {
-				let nodes = ast_nodes_by_block.get(node.1).map_or(
-					"None".to_string(),
-					|nodes| {
-						let nodes: Vec<_> = nodes
-							.iter()
-							.map(|node| format!("{}", node.kind().debug_name()))
-							.collect();
-						if nodes.len() > 1 {
-							format!(
-								"{}\\l",
-								nodes
-									.into_iter()
-									.map(|it| format!("\\l    {it}"))
-									.join("")
-							)
-						} else {
-							nodes.into_iter().join("")
-						}
-					},
-				);
+				let nodes = ast_nodes_by_block.get(node.1).map_or("None".to_string(), |nodes| {
+					let nodes:Vec<_> =
+						nodes.iter().map(|node| format!("{}", node.kind().debug_name())).collect();
+					if nodes.len() > 1 {
+						format!(
+							"{}\\l",
+							nodes.into_iter().map(|it| format!("\\l    {it}")).join("")
+						)
+					} else {
+						nodes.into_iter().join("")
+					}
+				});
 				format!(
 					"xlabel = \"nodes{} [{}]\\l\", label = \"bb{}\n{}\"",
 					node.1,
 					nodes,
 					node.1,
-					cfg.basic_blocks[*node.1]
-						.debug_dot(semantic.semantic.nodes().into())
-						.trim()
+					cfg.basic_blocks[*node.1].debug_dot(semantic.semantic.nodes().into()).trim()
 				)
 			}
 		)

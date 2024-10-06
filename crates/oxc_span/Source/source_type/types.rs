@@ -11,19 +11,19 @@ use {serde::Serialize, tsify::Tsify};
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub struct SourceType {
-    /// JavaScript or TypeScript, default JavaScript
-    pub(super) language: Language,
+	/// JavaScript or TypeScript, default JavaScript
+	pub(super) language:Language,
 
-    /// Script or Module, default Module
-    pub(super) module_kind: ModuleKind,
+	/// Script or Module, default Module
+	pub(super) module_kind:ModuleKind,
 
-    /// Support JSX for JavaScript and TypeScript? default without JSX
-    pub(super) variant: LanguageVariant,
+	/// Support JSX for JavaScript and TypeScript? default without JSX
+	pub(super) variant:LanguageVariant,
 
-    /// Mark strict mode as always strict
-    ///
-    /// See <https://github.com/tc39/test262/blob/main/INTERPRETING.md#strict-mode>
-    pub(super) always_strict: bool,
+	/// Mark strict mode as always strict
+	///
+	/// See <https://github.com/tc39/test262/blob/main/INTERPRETING.md#strict-mode>
+	pub(super) always_strict:bool,
 }
 
 /// JavaScript or TypeScript
@@ -32,10 +32,10 @@ pub struct SourceType {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "lowercase")]
 pub enum Language {
-    JavaScript = 0,
-    TypeScript = 1,
-    #[serde(rename = "typescriptDefinition")]
-    TypeScriptDefinition = 2,
+	JavaScript = 0,
+	TypeScript = 1,
+	#[serde(rename = "typescriptDefinition")]
+	TypeScriptDefinition = 2,
 }
 
 /// Script or Module
@@ -44,10 +44,10 @@ pub enum Language {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub enum ModuleKind {
-    /// Regular JS script or CommonJS file
-    Script = 0,
-    /// ES6 Module
-    Module = 1,
+	/// Regular JS script or CommonJS file
+	Script = 0,
+	/// ES6 Module
+	Module = 1,
 }
 
 /// JSX for JavaScript and TypeScript
@@ -56,6 +56,6 @@ pub enum ModuleKind {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(rename_all = "camelCase")]
 pub enum LanguageVariant {
-    Standard = 0,
-    Jsx = 1,
+	Standard = 0,
+	Jsx = 1,
 }

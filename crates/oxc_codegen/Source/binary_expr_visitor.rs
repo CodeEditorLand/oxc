@@ -46,13 +46,13 @@ pub enum BinaryishOperator {
 	Logical(LogicalOperator),
 }
 
-fn print_binary_operator(op: BinaryOperator, p: &mut Codegen) {
+fn print_binary_operator(op:BinaryOperator, p:&mut Codegen) {
 	let operator = op.as_str();
 	if op.is_keyword() {
 		p.print_space_before_identifier();
 		p.print_str(operator);
 	} else {
-		let op: Operator = op.into();
+		let op:Operator = op.into();
 		p.print_space_before_operator(op);
 		p.print_str(operator);
 		p.prev_op = Some(op);
@@ -61,7 +61,7 @@ fn print_binary_operator(op: BinaryOperator, p: &mut Codegen) {
 }
 
 impl BinaryishOperator {
-	fn gen(self, p: &mut Codegen) {
+	fn gen(self, p:&mut Codegen) {
 		match self {
 			Self::Binary(op) => print_binary_operator(op, p),
 			Self::Logical(op) => p.print_str(op.as_str()),
@@ -89,20 +89,20 @@ impl BinaryishOperator {
 
 #[derive(Clone, Copy)]
 pub struct BinaryExpressionVisitor<'a> {
-	pub e: Binaryish<'a>,
-	pub precedence: Precedence,
-	pub ctx: Context,
+	pub e:Binaryish<'a>,
+	pub precedence:Precedence,
+	pub ctx:Context,
 
-	pub left_precedence: Precedence,
-	pub left_ctx: Context,
+	pub left_precedence:Precedence,
+	pub left_ctx:Context,
 
-	pub operator: BinaryishOperator,
-	pub wrap: bool,
-	pub right_precedence: Precedence,
+	pub operator:BinaryishOperator,
+	pub wrap:bool,
+	pub right_precedence:Precedence,
 }
 
 impl<'a> BinaryExpressionVisitor<'a> {
-	pub fn gen_expr(v: Self, p: &mut Codegen<'a>) {
+	pub fn gen_expr(v:Self, p:&mut Codegen<'a>) {
 		let mut v = v;
 		let stack_bottom = p.binary_expr_stack.len();
 		loop {
@@ -125,14 +125,14 @@ impl<'a> BinaryExpressionVisitor<'a> {
 
 			p.binary_expr_stack.push(v);
 			v = BinaryExpressionVisitor {
-				e: left_binary,
-				precedence: v.left_precedence,
-				ctx: v.left_ctx,
-				left_precedence: Precedence::Lowest,
-				left_ctx: Context::empty(),
-				operator: v.operator,
-				wrap: false,
-				right_precedence: Precedence::Lowest,
+				e:left_binary,
+				precedence:v.left_precedence,
+				ctx:v.left_ctx,
+				left_precedence:Precedence::Lowest,
+				left_ctx:Context::empty(),
+				operator:v.operator,
+				wrap:false,
+				right_precedence:Precedence::Lowest,
 			};
 		}
 
@@ -146,7 +146,7 @@ impl<'a> BinaryExpressionVisitor<'a> {
 		}
 	}
 
-	pub fn check_and_prepare(&mut self, p: &mut Codegen) -> bool {
+	pub fn check_and_prepare(&mut self, p:&mut Codegen) -> bool {
 		let e = self.e;
 		self.operator = e.operator();
 
@@ -173,18 +173,12 @@ impl<'a> BinaryExpressionVisitor<'a> {
 		match self.operator {
 			BinaryishOperator::Logical(LogicalOperator::Coalesce) => {
 				if let Expression::LogicalExpression(logical_expr) = e.left() {
-					if matches!(
-						logical_expr.operator,
-						LogicalOperator::And | LogicalOperator::Or
-					) {
+					if matches!(logical_expr.operator, LogicalOperator::And | LogicalOperator::Or) {
 						self.left_precedence = Precedence::Prefix;
 					}
 				}
 				if let Expression::LogicalExpression(logical_expr) = e.right() {
-					if matches!(
-						logical_expr.operator,
-						LogicalOperator::And | LogicalOperator::Or
-					) {
+					if matches!(logical_expr.operator, LogicalOperator::And | LogicalOperator::Or) {
 						self.right_precedence = Precedence::Prefix;
 					}
 				}
@@ -200,15 +194,11 @@ impl<'a> BinaryExpressionVisitor<'a> {
 		true
 	}
 
-	pub fn visit_right_and_finish(&self, p: &mut Codegen) {
+	pub fn visit_right_and_finish(&self, p:&mut Codegen) {
 		p.print_soft_space();
 		self.operator.gen(p);
 		p.print_soft_space();
-		self.e.right().gen_expr(
-			p,
-			self.right_precedence,
-			self.ctx & Context::FORBID_IN,
-		);
+		self.e.right().gen_expr(p, self.right_precedence, self.ctx & Context::FORBID_IN);
 		if self.wrap {
 			p.print_char(b')');
 		}

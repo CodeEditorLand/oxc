@@ -5,8 +5,19 @@ use syn::{
 	parse::{Parse, ParseBuffer},
 	parse_quote,
 	punctuated::Punctuated,
-	Attribute, Generics, Ident, Item, ItemEnum, ItemMacro, ItemStruct, Meta,
-	Path, Token, Type, Variant, Visibility,
+	Attribute,
+	Generics,
+	Ident,
+	Item,
+	ItemEnum,
+	ItemMacro,
+	ItemStruct,
+	Meta,
+	Path,
+	Token,
+	Type,
+	Variant,
+	Visibility,
 };
 
 use super::{parse_file, Itertools, PathBuf, Rc, Read, RefCell, Result};
@@ -20,33 +31,31 @@ pub type AstRef = Rc<RefCell<AstType>>;
 #[derive(Debug, Clone)]
 pub enum Inherit {
 	Unlinked(String),
-	Linked { super_: Type, variants: Punctuated<Variant, Token![,]> },
+	Linked { super_:Type, variants:Punctuated<Variant, Token![,]> },
 }
 
 impl From<Ident> for Inherit {
-	fn from(ident: Ident) -> Self {
-		Self::Unlinked(ident.to_string())
-	}
+	fn from(ident:Ident) -> Self { Self::Unlinked(ident.to_string()) }
 }
 
 #[derive(Debug, Clone)]
 pub struct EnumMeta {
-	pub inherits: Vec<Inherit>,
-	pub layout_32: Layout,
-	pub layout_64: Layout,
-	pub visitable: bool,
-	pub ast: bool,
-	pub module_path: String,
+	pub inherits:Vec<Inherit>,
+	pub layout_32:Layout,
+	pub layout_64:Layout,
+	pub visitable:bool,
+	pub ast:bool,
+	pub module_path:String,
 }
 
 impl EnumMeta {
-	fn new(module_path: String) -> Self {
+	fn new(module_path:String) -> Self {
 		Self {
-			inherits: Vec::default(),
-			layout_32: Layout::default(),
-			layout_64: Layout::default(),
-			visitable: false,
-			ast: false,
+			inherits:Vec::default(),
+			layout_32:Layout::default(),
+			layout_64:Layout::default(),
+			visitable:false,
+			ast:false,
 			module_path,
 		}
 	}
@@ -54,18 +63,14 @@ impl EnumMeta {
 
 #[derive(Debug)]
 pub struct Enum {
-	pub item: ItemEnum,
-	pub meta: EnumMeta,
+	pub item:ItemEnum,
+	pub meta:EnumMeta,
 }
 
 impl Enum {
-	pub fn with_meta(item: ItemEnum, meta: EnumMeta) -> Self {
-		Self { item, meta }
-	}
+	pub fn with_meta(item:ItemEnum, meta:EnumMeta) -> Self { Self { item, meta } }
 
-	pub fn ident(&self) -> &Ident {
-		&self.item.ident
-	}
+	pub fn ident(&self) -> &Ident { &self.item.ident }
 
 	pub fn as_type(&self) -> Type {
 		let ident = self.ident();
@@ -77,20 +82,20 @@ impl Enum {
 /// Placeholder for now!
 #[derive(Debug, Clone)]
 pub struct StructMeta {
-	pub layout_32: Layout,
-	pub layout_64: Layout,
-	pub visitable: bool,
-	pub ast: bool,
-	pub module_path: String,
+	pub layout_32:Layout,
+	pub layout_64:Layout,
+	pub visitable:bool,
+	pub ast:bool,
+	pub module_path:String,
 }
 
 impl StructMeta {
-	fn new(module_path: String) -> Self {
+	fn new(module_path:String) -> Self {
 		Self {
-			layout_32: Layout::default(),
-			layout_64: Layout::default(),
-			visitable: false,
-			ast: false,
+			layout_32:Layout::default(),
+			layout_64:Layout::default(),
+			visitable:false,
+			ast:false,
 			module_path,
 		}
 	}
@@ -98,18 +103,14 @@ impl StructMeta {
 
 #[derive(Debug)]
 pub struct Struct {
-	pub item: ItemStruct,
-	pub meta: StructMeta,
+	pub item:ItemStruct,
+	pub meta:StructMeta,
 }
 
 impl Struct {
-	pub fn with_meta(item: ItemStruct, meta: StructMeta) -> Self {
-		Self { item, meta }
-	}
+	pub fn with_meta(item:ItemStruct, meta:StructMeta) -> Self { Self { item, meta } }
 
-	pub fn ident(&self) -> &Ident {
-		&self.item.ident
-	}
+	pub fn ident(&self) -> &Ident { &self.item.ident }
 
 	pub fn as_type(&self) -> Type {
 		let ident = self.ident();
@@ -120,25 +121,21 @@ impl Struct {
 
 #[derive(Debug)]
 pub struct Macro {
-	pub item: ItemMacro,
-	pub meta: MacroMeta,
+	pub item:ItemMacro,
+	pub meta:MacroMeta,
 }
 
 impl Macro {
-	pub fn with_meta(item: ItemMacro, meta: MacroMeta) -> Self {
-		Self { item, meta }
-	}
+	pub fn with_meta(item:ItemMacro, meta:MacroMeta) -> Self { Self { item, meta } }
 }
 
 #[derive(Debug)]
 pub struct MacroMeta {
-	pub module_path: String,
+	pub module_path:String,
 }
 
 impl MacroMeta {
-	fn new(module_path: String) -> Self {
-		Self { module_path }
-	}
+	fn new(module_path:String) -> Self { Self { module_path } }
 }
 
 #[derive(Debug)]
@@ -151,7 +148,7 @@ pub enum AstType {
 }
 
 impl ToTokens for AstType {
-	fn to_tokens(&self, tokens: &mut TokenStream) {
+	fn to_tokens(&self, tokens:&mut TokenStream) {
 		match self {
 			Self::Enum(it) => it.item.to_tokens(tokens),
 			Self::Struct(it) => it.item.to_tokens(tokens),
@@ -161,20 +158,15 @@ impl ToTokens for AstType {
 }
 
 impl AstType {
-	fn new(item: Item, module_path: String) -> Result<Self> {
+	fn new(item:Item, module_path:String) -> Result<Self> {
 		match item {
-			Item::Enum(it) => Ok(AstType::Enum(Enum::with_meta(
-				it,
-				EnumMeta::new(module_path),
-			))),
-			Item::Struct(it) => Ok(AstType::Struct(Struct::with_meta(
-				it,
-				StructMeta::new(module_path),
-			))),
-			Item::Macro(it) => Ok(AstType::Macro(Macro::with_meta(
-				it,
-				MacroMeta::new(module_path),
-			))),
+			Item::Enum(it) => Ok(AstType::Enum(Enum::with_meta(it, EnumMeta::new(module_path)))),
+			Item::Struct(it) => {
+				Ok(AstType::Struct(Struct::with_meta(it, StructMeta::new(module_path))))
+			},
+			Item::Macro(it) => {
+				Ok(AstType::Macro(Macro::with_meta(it, MacroMeta::new(module_path))))
+			},
 			_ => Err(String::from("Unsupported Item!")),
 		}
 	}
@@ -204,7 +196,7 @@ impl AstType {
 		}
 	}
 
-	pub fn set_visitable(&mut self, value: bool) -> Result<()> {
+	pub fn set_visitable(&mut self, value:bool) -> Result<()> {
 		macro_rules! assign {
 			($it:ident) => {{
 				debug_assert!($it.meta.ast, "only ast types can be visitable!");
@@ -219,7 +211,7 @@ impl AstType {
 		Ok(())
 	}
 
-	pub fn set_ast(&mut self, value: bool) -> Result<()> {
+	pub fn set_ast(&mut self, value:bool) -> Result<()> {
 		match self {
 			AstType::Enum(it) => it.meta.ast = value,
 			AstType::Struct(it) => it.meta.ast = value,
@@ -248,11 +240,7 @@ impl AstType {
 		self.layout_64().and_then(|x64| self.layout_32().map(|x32| (x64, x32)))
 	}
 
-	pub fn set_layout(
-		&mut self,
-		layout_64: Layout,
-		layout_32: Layout,
-	) -> Result<()> {
+	pub fn set_layout(&mut self, layout_64:Layout, layout_32:Layout) -> Result<()> {
 		macro_rules! assign {
 			($it:ident) => {{
 				$it.meta.layout_32 = layout_32;
@@ -276,19 +264,19 @@ impl AstType {
 	}
 }
 
-const LOAD_ERROR: &str = "should be loaded by now!";
+const LOAD_ERROR:&str = "should be loaded by now!";
 #[derive(Debug)]
 pub struct Module {
-	pub file: PathBuf,
-	pub path: String,
-	pub shebang: Option<String>,
-	pub attrs: Vec<Attribute>,
-	pub items: Vec<AstRef>,
-	pub loaded: bool,
+	pub file:PathBuf,
+	pub path:String,
+	pub shebang:Option<String>,
+	pub attrs:Vec<Attribute>,
+	pub items:Vec<AstRef>,
+	pub loaded:bool,
 }
 
 impl ToTokens for Module {
-	fn to_tokens(&self, tokens: &mut TokenStream) {
+	fn to_tokens(&self, tokens:&mut TokenStream) {
 		tokens.append_all(self.attrs.clone());
 		self.items.iter().for_each(|it| it.borrow().to_tokens(tokens));
 	}
@@ -296,7 +284,7 @@ impl ToTokens for Module {
 
 impl Module {
 	/// Expects a file path to a rust source file in the `crates` directory.
-	pub fn with_path(file: PathBuf) -> Self {
+	pub fn with_path(file:PathBuf) -> Self {
 		let path = {
 			let no_ext = file.with_extension("");
 			let string = no_ext.to_string_lossy();
@@ -307,26 +295,14 @@ impl Module {
 			let mut parts = [krate].into_iter().chain(parts);
 			parts.join("::")
 		};
-		Self {
-			file,
-			path,
-			shebang: None,
-			attrs: Vec::new(),
-			items: Vec::new(),
-			loaded: false,
-		}
+		Self { file, path, shebang:None, attrs:Vec::new(), items:Vec::new(), loaded:false }
 	}
 
 	pub fn load(mut self) -> Result<Self> {
 		assert!(!self.loaded, "can't load twice!");
-		let mut file =
-			std::fs::File::open(&self.file).normalize().map_err(|err| {
-				format!(
-					"Error reading file: {}, reason: {}",
-					&self.file.to_string_lossy(),
-					err
-				)
-			})?;
+		let mut file = std::fs::File::open(&self.file).normalize().map_err(|err| {
+			format!("Error reading file: {}, reason: {}", &self.file.to_string_lossy(), err)
+		})?;
 		let mut content = String::new();
 		file.read_to_string(&mut content).normalize()?;
 		let file = parse_file(content.as_str()).normalize()?;
@@ -335,13 +311,13 @@ impl Module {
 		self.items = file
 			.items
 			.into_iter()
-			.filter(|it| match it {
-				Item::Enum(_) | Item::Struct(_) => true,
-				// These contain enums with inheritance
-				Item::Macro(m) if m.mac.path.is_ident("inherit_variants") => {
-					true
-				},
-				_ => false,
+			.filter(|it| {
+				match it {
+					Item::Enum(_) | Item::Struct(_) => true,
+					// These contain enums with inheritance
+					Item::Macro(m) if m.mac.path.is_ident("inherit_variants") => true,
+					_ => false,
+				}
 			})
 			.map(|it| AstType::new(it, self.path.clone()))
 			.map_ok(|it| Rc::new(RefCell::new(it)))
@@ -372,18 +348,19 @@ impl Module {
 	}
 }
 
-pub fn expand(ast_ref: &AstRef) -> Result<()> {
+pub fn expand(ast_ref:&AstRef) -> Result<()> {
 	let to_replace = match &*ast_ref.borrow() {
 		ast_ref @ AstType::Macro(mac) => {
 			let (enum_, inherits) = mac
 				.item
 				.mac
-				.parse_body_with(|input: &ParseBuffer| {
-					// Because of `@inherit`s we can't use the actual `ItemEnum` parse,
-					// This closure is similar to how `ItemEnum` parser works, With the exception
-					// of how we approach our variants, First we try to parse a variant out of our
-					// tokens if we fail we try parsing the inheritance, And we would raise an
-					// error only if both of these fail.
+				.parse_body_with(|input:&ParseBuffer| {
+					// Because of `@inherit`s we can't use the actual `ItemEnum`
+					// parse, This closure is similar to how `ItemEnum`
+					// parser works, With the exception of how we approach
+					// our variants, First we try to parse a variant out of our
+					// tokens if we fail we try parsing the inheritance, And we
+					// would raise an error only if both of these fail.
 					let attrs = input.call(Attribute::parse_outer)?;
 					let vis = input.parse::<Visibility>()?;
 					let enum_token = input.parse::<Token![enum]>()?;
@@ -402,9 +379,7 @@ pub fn expand(ast_ref: &AstRef) -> Result<()> {
 								let punct = content.parse()?;
 								variants.push_punct(punct);
 							} else if content.parse::<Token![@]>().is_ok()
-								&& content
-									.parse::<Ident>()
-									.is_ok_and(|id| id == "inherit")
+								&& content.parse::<Ident>().is_ok_and(|id| id == "inherit")
 							{
 								inherits.push(content.parse::<Ident>()?);
 							} else {
@@ -420,7 +395,7 @@ pub fn expand(ast_ref: &AstRef) -> Result<()> {
 							vis,
 							enum_token,
 							ident,
-							generics: Generics { where_clause, ..generics },
+							generics:Generics { where_clause, ..generics },
 							brace_token,
 							variants,
 						},
@@ -431,7 +406,7 @@ pub fn expand(ast_ref: &AstRef) -> Result<()> {
 			Some(AstType::Enum(Enum::with_meta(
 				enum_,
 				EnumMeta {
-					inherits: inherits.into_iter().map(Into::into).collect(),
+					inherits:inherits.into_iter().map(Into::into).collect(),
 					..EnumMeta::new(ast_ref.module_path())
 				},
 			)))
@@ -446,7 +421,7 @@ pub fn expand(ast_ref: &AstRef) -> Result<()> {
 	Ok(())
 }
 
-pub fn analyze(ast_ref: &AstRef) -> Result<()> {
+pub fn analyze(ast_ref:&AstRef) -> Result<()> {
 	enum AstAttr {
 		None,
 		Mark,
@@ -459,18 +434,13 @@ pub fn analyze(ast_ref: &AstRef) -> Result<()> {
 			let attr = match attr {
 				Some(Attribute { meta: Meta::Path(_), .. }) => AstAttr::Mark,
 				Some(attr @ Attribute { meta: Meta::List(_), .. }) => {
-					// TODO: support for punctuated list of arguments here if needed!
+					// TODO: support for punctuated list of arguments here if
+					// needed!
 					let args = attr.parse_args::<Path>().normalize()?;
-					if args.is_ident("visit") {
-						AstAttr::Visit
-					} else {
-						AstAttr::Mark
-					}
+					if args.is_ident("visit") { AstAttr::Visit } else { AstAttr::Mark }
 				},
 				Some(_) => {
-					return Err(String::from(
-						"Invalid arguments in the `ast` attribute!",
-					))
+					return Err(String::from("Invalid arguments in the `ast` attribute!"));
 				},
 				None => AstAttr::None,
 			};
@@ -490,19 +460,17 @@ pub fn analyze(ast_ref: &AstRef) -> Result<()> {
 		},
 		Some(AstAttr::None) => {
 			return Err(format!(
-                "All `enums` and `structs` defined in the source of truth should be marked with an `#[ast]` attribute(missing `#[ast]` on '{:?}')",
-                ast_ref.borrow().ident()
-            ));
+				"All `enums` and `structs` defined in the source of truth should be marked with \
+				 an `#[ast]` attribute(missing `#[ast]` on '{:?}')",
+				ast_ref.borrow().ident()
+			));
 		},
-		None => { /* unrelated items like `use`, `type` and `macro` definitions */
-		},
+		None => { /* unrelated items like `use`, `type` and `macro` definitions */ },
 	}
 
 	Ok(())
 }
 
 impl From<PathBuf> for Module {
-	fn from(path: PathBuf) -> Self {
-		Self::with_path(path)
-	}
+	fn from(path:PathBuf) -> Self { Self::with_path(path) }
 }

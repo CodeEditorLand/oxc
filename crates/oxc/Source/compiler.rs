@@ -7,26 +7,20 @@ use oxc_diagnostics::OxcDiagnostic;
 use oxc_mangler::{MangleOptions, Mangler};
 use oxc_minifier::{CompressOptions, Compressor};
 use oxc_parser::{ParseOptions, Parser, ParserReturn};
-use oxc_semantic::{
-	ScopeTree, SemanticBuilder, SemanticBuilderReturn, SymbolTable,
-};
+use oxc_semantic::{ScopeTree, SemanticBuilder, SemanticBuilderReturn, SymbolTable};
 use oxc_span::SourceType;
 use oxc_transformer::{TransformOptions, Transformer, TransformerReturn};
 
 #[derive(Default)]
 pub struct Compiler {
-	printed: String,
-	errors: Vec<OxcDiagnostic>,
+	printed:String,
+	errors:Vec<OxcDiagnostic>,
 }
 
 impl CompilerInterface for Compiler {
-	fn handle_errors(&mut self, errors: Vec<OxcDiagnostic>) {
-		self.errors.extend(errors);
-	}
+	fn handle_errors(&mut self, errors:Vec<OxcDiagnostic>) { self.errors.extend(errors); }
 
-	fn after_codegen(&mut self, printed: String) {
-		self.printed = printed;
-	}
+	fn after_codegen(&mut self, printed:String) { self.printed = printed; }
 }
 
 impl Compiler {
@@ -35,9 +29,9 @@ impl Compiler {
 	/// * A list of [OxcDiagnostic].
 	pub fn execute(
 		&mut self,
-		source_text: &str,
-		source_type: SourceType,
-		source_path: &Path,
+		source_text:&str,
+		source_type:SourceType,
+		source_path:&Path,
 	) -> Result<String, Vec<OxcDiagnostic>> {
 		self.compile(source_text, source_type, source_path);
 		if self.errors.is_empty() {
@@ -49,73 +43,50 @@ impl Compiler {
 }
 
 pub trait CompilerInterface {
-	fn handle_errors(&mut self, _errors: Vec<OxcDiagnostic>) {}
+	fn handle_errors(&mut self, _errors:Vec<OxcDiagnostic>) {}
 
-	fn parse_options(&self) -> ParseOptions {
-		ParseOptions::default()
-	}
+	fn parse_options(&self) -> ParseOptions { ParseOptions::default() }
 
-	fn transform_options(&self) -> Option<TransformOptions> {
-		Some(TransformOptions::default())
-	}
+	fn transform_options(&self) -> Option<TransformOptions> { Some(TransformOptions::default()) }
 
-	fn compress_options(&self) -> Option<CompressOptions> {
-		None
-	}
+	fn compress_options(&self) -> Option<CompressOptions> { None }
 
-	fn mangle_options(&self) -> Option<MangleOptions> {
-		None
-	}
+	fn mangle_options(&self) -> Option<MangleOptions> { None }
 
-	fn codegen_options(&self) -> Option<CodegenOptions> {
-		Some(CodegenOptions::default())
-	}
+	fn codegen_options(&self) -> Option<CodegenOptions> { Some(CodegenOptions::default()) }
 
-	fn check_semantic_error(&self) -> bool {
-		true
-	}
+	fn check_semantic_error(&self) -> bool { true }
 
-	fn semantic_child_scope_ids(&self) -> bool {
-		false
-	}
+	fn semantic_child_scope_ids(&self) -> bool { false }
 
-	fn after_parse(
-		&mut self,
-		_parser_return: &mut ParserReturn,
-	) -> ControlFlow<()> {
+	fn after_parse(&mut self, _parser_return:&mut ParserReturn) -> ControlFlow<()> {
 		ControlFlow::Continue(())
 	}
 
 	fn after_semantic(
 		&mut self,
-		_program: &mut Program<'_>,
-		_semantic_return: &mut SemanticBuilderReturn,
+		_program:&mut Program<'_>,
+		_semantic_return:&mut SemanticBuilderReturn,
 	) -> ControlFlow<()> {
 		ControlFlow::Continue(())
 	}
 
 	fn after_transform(
 		&mut self,
-		_program: &mut Program<'_>,
-		_transformer_return: &mut TransformerReturn,
+		_program:&mut Program<'_>,
+		_transformer_return:&mut TransformerReturn,
 	) -> ControlFlow<()> {
 		ControlFlow::Continue(())
 	}
 
-	fn after_codegen(&mut self, _printed: String) {}
+	fn after_codegen(&mut self, _printed:String) {}
 
-	fn compile(
-		&mut self,
-		source_text: &str,
-		source_type: SourceType,
-		source_path: &Path,
-	) {
+	fn compile(&mut self, source_text:&str, source_type:SourceType, source_path:&Path) {
 		let allocator = Allocator::default();
 
-		/* Parse */
+		// Parse
 
-		let mut parser_return =
-			self.parse(&allocator, source_text, source_type);
+		let mut parser_return = self.parse(&allocator, source_text, source_type);
 		if self.after_parse(&mut parser_return).is_break() {
 			return;
 		}
@@ -123,13 +94,12 @@ pub trait CompilerInterface {
 			self.handle_errors(parser_return.errors);
 		}
 
-		/* Semantic */
+		// Semantic
 
 		let mut program = parser_return.program;
 		let trivias = parser_return.trivias;
 
-		let mut semantic_return =
-			self.semantic(&program, source_text, source_path);
+		let mut semantic_return = self.semantic(&program, source_text, source_path);
 		if !semantic_return.errors.is_empty() {
 			self.handle_errors(semantic_return.errors);
 			return;
@@ -138,10 +108,9 @@ pub trait CompilerInterface {
 			return;
 		}
 
-		let (symbols, scopes) =
-			semantic_return.semantic.into_symbol_table_and_scope_tree();
+		let (symbols, scopes) = semantic_return.semantic.into_symbol_table_and_scope_tree();
 
-		/* Transform */
+		// Transform
 
 		if let Some(options) = self.transform_options() {
 			let mut transformer_return = self.transform(
@@ -160,40 +129,34 @@ pub trait CompilerInterface {
 				return;
 			}
 
-			if self
-				.after_transform(&mut program, &mut transformer_return)
-				.is_break()
-			{
+			if self.after_transform(&mut program, &mut transformer_return).is_break() {
 				return;
 			}
 		}
 
-		/* Compress */
+		// Compress
 
 		if let Some(options) = self.compress_options() {
 			self.compress(&allocator, &mut program, options);
 		}
 
-		/* Mangler */
+		// Mangler
 
-		let mangler = self
-			.mangle_options()
-			.map(|options| self.mangle(&mut program, options));
+		let mangler = self.mangle_options().map(|options| self.mangle(&mut program, options));
 
-		/* Codegen */
+		// Codegen
 
 		if let Some(options) = self.codegen_options() {
-			let printed =
-				self.codegen(&program, source_text, &trivias, mangler, options);
+			let printed = self.codegen(&program, source_text, &trivias, mangler, options);
 			self.after_codegen(printed);
 		}
 	}
 
 	fn parse<'a>(
 		&self,
-		allocator: &'a Allocator,
-		source_text: &'a str,
-		source_type: SourceType,
+		allocator:&'a Allocator,
+		source_text:&'a str,
+		source_type:SourceType,
 	) -> ParserReturn<'a> {
 		Parser::new(allocator, source_text, source_type)
 			.with_options(self.parse_options())
@@ -202,9 +165,9 @@ pub trait CompilerInterface {
 
 	fn semantic<'a>(
 		&self,
-		program: &Program<'a>,
-		source_text: &'a str,
-		source_path: &Path,
+		program:&Program<'a>,
+		source_text:&'a str,
+		source_path:&Path,
 	) -> SemanticBuilderReturn<'a> {
 		let mut builder = SemanticBuilder::new(source_text);
 
@@ -223,52 +186,41 @@ pub trait CompilerInterface {
 	#[allow(clippy::too_many_arguments)]
 	fn transform<'a>(
 		&self,
-		options: TransformOptions,
-		allocator: &'a Allocator,
-		program: &mut Program<'a>,
-		source_path: &Path,
-		source_text: &'a str,
-		trivias: &Trivias,
-		symbols: SymbolTable,
-		scopes: ScopeTree,
+		options:TransformOptions,
+		allocator:&'a Allocator,
+		program:&mut Program<'a>,
+		source_path:&Path,
+		source_text:&'a str,
+		trivias:&Trivias,
+		symbols:SymbolTable,
+		scopes:ScopeTree,
 	) -> TransformerReturn {
-		Transformer::new(
-			allocator,
-			source_path,
-			source_text,
-			trivias.clone(),
-			options,
-		)
-		.build_with_symbols_and_scopes(symbols, scopes, program)
+		Transformer::new(allocator, source_path, source_text, trivias.clone(), options)
+			.build_with_symbols_and_scopes(symbols, scopes, program)
 	}
 
 	fn compress<'a>(
 		&self,
-		allocator: &'a Allocator,
-		program: &mut Program<'a>,
-		options: CompressOptions,
+		allocator:&'a Allocator,
+		program:&mut Program<'a>,
+		options:CompressOptions,
 	) {
 		Compressor::new(allocator, options).build(program);
 	}
 
-	fn mangle(
-		&self,
-		program: &mut Program<'_>,
-		options: MangleOptions,
-	) -> Mangler {
+	fn mangle(&self, program:&mut Program<'_>, options:MangleOptions) -> Mangler {
 		Mangler::new().with_options(options).build(program)
 	}
 
 	fn codegen<'a>(
 		&self,
-		program: &Program<'a>,
-		source_text: &'a str,
-		trivias: &Trivias,
-		mangler: Option<Mangler>,
-		options: CodegenOptions,
+		program:&Program<'a>,
+		source_text:&'a str,
+		trivias:&Trivias,
+		mangler:Option<Mangler>,
+		options:CodegenOptions,
 	) -> String {
-		let comment_options =
-			CommentOptions { preserve_annotate_comments: true };
+		let comment_options = CommentOptions { preserve_annotate_comments:true };
 		CodeGenerator::new()
 			.with_options(options)
 			.with_mangler(mangler)

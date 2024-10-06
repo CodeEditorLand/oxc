@@ -23,29 +23,25 @@ bitflags! {
 /// Declaration scope.
 #[derive(Debug)]
 struct Scope<'a> {
-	bindings: FxHashMap<Atom<'a>, KindFlags>,
-	references: FxHashMap<Atom<'a>, KindFlags>,
-	flags: ScopeFlags,
+	bindings:FxHashMap<Atom<'a>, KindFlags>,
+	references:FxHashMap<Atom<'a>, KindFlags>,
+	flags:ScopeFlags,
 }
 
 impl<'a> Scope<'a> {
-	fn new(flags: ScopeFlags) -> Self {
-		Self {
-			bindings: FxHashMap::default(),
-			references: FxHashMap::default(),
-			flags,
-		}
+	fn new(flags:ScopeFlags) -> Self {
+		Self { bindings:FxHashMap::default(), references:FxHashMap::default(), flags }
 	}
 }
 
 /// Linear tree of declaration scopes.
 #[derive(Debug)]
 pub struct ScopeTree<'a> {
-	levels: Vec<'a, Scope<'a>>,
+	levels:Vec<'a, Scope<'a>>,
 }
 
 impl<'a> ScopeTree<'a> {
-	pub fn new(allocator: &'a Allocator) -> Self {
+	pub fn new(allocator:&'a Allocator) -> Self {
 		let ast = AstBuilder::new(allocator);
 		let levels = ast.vec1(Scope::new(ScopeFlags::Top));
 		Self { levels }
@@ -56,17 +52,17 @@ impl<'a> ScopeTree<'a> {
 		scope.flags.contains(ScopeFlags::TsModuleBlock)
 	}
 
-	pub fn has_reference(&self, name: &str) -> bool {
+	pub fn has_reference(&self, name:&str) -> bool {
 		let scope = self.levels.last().unwrap();
 		scope.references.contains_key(name)
 	}
 
-	fn add_binding(&mut self, name: Atom<'a>, flags: KindFlags) {
+	fn add_binding(&mut self, name:Atom<'a>, flags:KindFlags) {
 		let scope = self.levels.last_mut().unwrap();
 		scope.bindings.insert(name, flags);
 	}
 
-	fn add_reference(&mut self, name: Atom<'a>, flags: KindFlags) {
+	fn add_reference(&mut self, name:Atom<'a>, flags:KindFlags) {
 		let scope = self.levels.last_mut().unwrap();
 		scope.references.insert(name, flags);
 	}
@@ -82,9 +78,7 @@ impl<'a> ScopeTree<'a> {
 		let current_bindings = current_scope.bindings;
 		let mut current_references = current_scope.references;
 		current_references.retain(|name, reference_flags| {
-			!current_bindings
-				.get(name)
-				.is_some_and(|flags| flags.contains(*reference_flags))
+			!current_bindings.get(name).is_some_and(|flags| flags.contains(*reference_flags))
 		});
 
 		// Merge unresolved references to the parent scope.
@@ -93,27 +87,25 @@ impl<'a> ScopeTree<'a> {
 }
 
 impl<'a> Visit<'a> for ScopeTree<'a> {
-	fn enter_scope(&mut self, flags: ScopeFlags, _: &Cell<Option<ScopeId>>) {
+	fn enter_scope(&mut self, flags:ScopeFlags, _:&Cell<Option<ScopeId>>) {
 		let scope = Scope::new(flags);
 		self.levels.push(scope);
 	}
 
-	fn leave_scope(&mut self) {
-		self.resolve_references();
-	}
+	fn leave_scope(&mut self) { self.resolve_references(); }
 
-	fn visit_identifier_reference(&mut self, ident: &IdentifierReference<'a>) {
+	fn visit_identifier_reference(&mut self, ident:&IdentifierReference<'a>) {
 		self.add_reference(ident.name.clone(), KindFlags::Value);
 	}
 
-	fn visit_binding_pattern(&mut self, pattern: &BindingPattern<'a>) {
+	fn visit_binding_pattern(&mut self, pattern:&BindingPattern<'a>) {
 		if let BindingPatternKind::BindingIdentifier(ident) = &pattern.kind {
 			self.add_binding(ident.name.clone(), KindFlags::Value);
 		}
 		walk_binding_pattern(self, pattern);
 	}
 
-	fn visit_ts_type_name(&mut self, name: &TSTypeName<'a>) {
+	fn visit_ts_type_name(&mut self, name:&TSTypeName<'a>) {
 		if let TSTypeName::IdentifierReference(ident) = name {
 			self.add_reference(ident.name.clone(), KindFlags::Type);
 		} else {
@@ -121,7 +113,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 		}
 	}
 
-	fn visit_ts_type_query(&mut self, ty: &TSTypeQuery<'a>) {
+	fn visit_ts_type_query(&mut self, ty:&TSTypeQuery<'a>) {
 		if let Some(type_name) = ty.expr_name.as_ts_type_name() {
 			let ident = TSTypeName::get_first_name(type_name);
 			self.add_reference(ident.name.clone(), KindFlags::Value);
@@ -130,10 +122,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 		}
 	}
 
-	fn visit_export_named_declaration(
-		&mut self,
-		decl: &ExportNamedDeclaration<'a>,
-	) {
+	fn visit_export_named_declaration(&mut self, decl:&ExportNamedDeclaration<'a>) {
 		if let Some(declaration) = &decl.declaration {
 			walk_declaration(self, declaration);
 		} else if decl.source.is_none() {
@@ -146,20 +135,15 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 		}
 	}
 
-	fn visit_export_default_declaration(
-		&mut self,
-		decl: &ExportDefaultDeclaration<'a>,
-	) {
-		if let ExportDefaultDeclarationKind::Identifier(ident) =
-			&decl.declaration
-		{
+	fn visit_export_default_declaration(&mut self, decl:&ExportDefaultDeclaration<'a>) {
+		if let ExportDefaultDeclarationKind::Identifier(ident) = &decl.declaration {
 			self.add_reference(ident.name.clone(), KindFlags::All);
 		} else {
 			walk_export_default_declaration(self, decl);
 		}
 	}
 
-	fn visit_declaration(&mut self, declaration: &Declaration<'a>) {
+	fn visit_declaration(&mut self, declaration:&Declaration<'a>) {
 		match declaration {
 			Declaration::VariableDeclaration(_) => {
 				// add binding in BindingPattern

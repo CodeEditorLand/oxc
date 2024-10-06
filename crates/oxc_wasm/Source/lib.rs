@@ -18,7 +18,11 @@ use oxc::{
 	parser::{ParseOptions, Parser, ParserReturn},
 	semantic::{
 		dot::{DebugDot, DebugDotContext},
-		ScopeFlags, ScopeId, ScopeTree, SemanticBuilder, SymbolTable,
+		ScopeFlags,
+		ScopeId,
+		ScopeTree,
+		SemanticBuilder,
+		SymbolTable,
 	},
 	span::SourceType,
 	transformer::{EnvOptions, Targets, TransformOptions, Transformer},
@@ -38,52 +42,48 @@ use crate::options::{OxcOptions, OxcRunOptions};
 pub struct Oxc {
 	#[wasm_bindgen(readonly, skip_typescript)]
 	#[tsify(type = "Program")]
-	pub ast: JsValue,
+	pub ast:JsValue,
 
 	#[wasm_bindgen(readonly, skip_typescript)]
-	pub ir: String,
+	pub ir:String,
 
 	#[wasm_bindgen(readonly, skip_typescript, js_name = "controlFlowGraph")]
-	pub control_flow_graph: String,
+	pub control_flow_graph:String,
 
 	#[wasm_bindgen(readonly, skip_typescript)]
 	#[tsify(type = "SymbolTable")]
-	pub symbols: JsValue,
+	pub symbols:JsValue,
 
 	#[wasm_bindgen(readonly, skip_typescript, js_name = "scopeText")]
-	pub scope_text: String,
+	pub scope_text:String,
 
 	#[wasm_bindgen(readonly, skip_typescript, js_name = "codegenText")]
-	pub codegen_text: String,
+	pub codegen_text:String,
 
 	#[wasm_bindgen(readonly, skip_typescript, js_name = "formattedText")]
-	pub formatted_text: String,
+	pub formatted_text:String,
 
-	#[wasm_bindgen(
-		readonly,
-		skip_typescript,
-		js_name = "prettierFormattedText"
-	)]
-	pub prettier_formatted_text: String,
+	#[wasm_bindgen(readonly, skip_typescript, js_name = "prettierFormattedText")]
+	pub prettier_formatted_text:String,
 
 	#[wasm_bindgen(readonly, skip_typescript, js_name = "prettierIrText")]
-	pub prettier_ir_text: String,
+	pub prettier_ir_text:String,
 
-	comments: Vec<Comment>,
+	comments:Vec<Comment>,
 
-	diagnostics: RefCell<Vec<Error>>,
+	diagnostics:RefCell<Vec<Error>>,
 
 	#[serde(skip)]
-	serializer: serde_wasm_bindgen::Serializer,
+	serializer:serde_wasm_bindgen::Serializer,
 }
 
 #[derive(Clone, Tsify, Serialize)]
 #[tsify(into_wasm_abi)]
 pub struct Comment {
-	pub r#type: CommentType,
-	pub value: String,
-	pub start: u32,
-	pub end: u32,
+	pub r#type:CommentType,
+	pub value:String,
+	pub start:u32,
+	pub end:u32,
 }
 
 #[derive(Clone, Copy, Tsify, Serialize)]
@@ -95,10 +95,10 @@ pub enum CommentType {
 
 #[derive(Default, Clone, Serialize)]
 pub struct OxcDiagnostic {
-	pub start: usize,
-	pub end: usize,
-	pub severity: String,
-	pub message: String,
+	pub start:usize,
+	pub end:usize,
+	pub severity:String,
+	pub message:String,
 }
 
 #[wasm_bindgen]
@@ -106,19 +106,14 @@ impl Oxc {
 	#[wasm_bindgen(constructor)]
 	pub fn new() -> Self {
 		console_error_panic_hook::set_once();
-		Self {
-			serializer: serde_wasm_bindgen::Serializer::json_compatible(),
-			..Self::default()
-		}
+		Self { serializer:serde_wasm_bindgen::Serializer::json_compatible(), ..Self::default() }
 	}
 
 	/// Returns Array of String
 	/// # Errors
 	/// # Panics
 	#[wasm_bindgen(js_name = getDiagnostics)]
-	pub fn get_diagnostics(
-		&self,
-	) -> Result<Vec<JsValue>, serde_wasm_bindgen::Error> {
+	pub fn get_diagnostics(&self) -> Result<Vec<JsValue>, serde_wasm_bindgen::Error> {
 		Ok(self
 			.diagnostics
 			.borrow()
@@ -130,13 +125,10 @@ impl Oxc {
 				labels
 					.map(|label| {
 						OxcDiagnostic {
-							start: label.offset(),
-							end: label.offset() + label.len(),
-							severity: format!(
-								"{:?}",
-								error.severity().unwrap_or_default()
-							),
-							message: format!("{error}"),
+							start:label.offset(),
+							end:label.offset() + label.len(),
+							severity:format!("{:?}", error.severity().unwrap_or_default()),
+							message:format!("{error}"),
 						}
 						.serialize(&self.serializer)
 						.unwrap()
@@ -149,9 +141,7 @@ impl Oxc {
 	/// Returns comments
 	/// # Errors
 	#[wasm_bindgen(js_name = getComments)]
-	pub fn get_comments(
-		&self,
-	) -> Result<Vec<JsValue>, serde_wasm_bindgen::Error> {
+	pub fn get_comments(&self) -> Result<Vec<JsValue>, serde_wasm_bindgen::Error> {
 		self.comments.iter().map(|c| c.serialize(&self.serializer)).collect()
 	}
 
@@ -160,8 +150,8 @@ impl Oxc {
 	#[wasm_bindgen]
 	pub fn run(
 		&mut self,
-		source_text: &str,
-		options: OxcOptions,
+		source_text:&str,
+		options:OxcOptions,
 	) -> Result<(), serde_wasm_bindgen::Error> {
 		self.diagnostics = RefCell::default();
 
@@ -185,10 +175,7 @@ impl Oxc {
 		let allocator = Allocator::default();
 
 		let path = PathBuf::from(
-			parser_options
-				.source_filename
-				.clone()
-				.unwrap_or_else(|| "test.tsx".to_string()),
+			parser_options.source_filename.clone().unwrap_or_else(|| "test.tsx".to_string()),
 		);
 		let source_type = SourceType::from_path(&path).unwrap_or_default();
 		let source_type = match parser_options.source_type.as_deref() {
@@ -199,13 +186,11 @@ impl Oxc {
 
 		let default_parser_options = ParseOptions::default();
 		let oxc_parser_options = ParseOptions {
-			parse_regular_expression: true,
-			allow_return_outside_function: parser_options
+			parse_regular_expression:true,
+			allow_return_outside_function:parser_options
 				.allow_return_outside_function
-				.unwrap_or(
-					default_parser_options.allow_return_outside_function,
-				),
-			preserve_parens: parser_options
+				.unwrap_or(default_parser_options.allow_return_outside_function),
+			preserve_parens:parser_options
 				.preserve_parens
 				.unwrap_or(default_parser_options.preserve_parens),
 		};
@@ -230,13 +215,12 @@ impl Oxc {
 			.build_module_record(&path, &program)
 			.build(&program);
 
-		self.control_flow_graph =
-			semantic_ret.semantic.cfg().map_or_else(String::default, |cfg| {
-				cfg.debug_dot(DebugDotContext::new(
-					semantic_ret.semantic.nodes(),
-					control_flow_options.verbose.unwrap_or_default(),
-				))
-			});
+		self.control_flow_graph = semantic_ret.semantic.cfg().map_or_else(String::default, |cfg| {
+			cfg.debug_dot(DebugDotContext::new(
+				semantic_ret.semantic.nodes(),
+				control_flow_options.verbose.unwrap_or_default(),
+			))
+		});
 		if run_options.syntax.unwrap_or_default() {
 			self.save_diagnostics(
 				errors
@@ -251,13 +235,11 @@ impl Oxc {
 
 		self.run_prettier(&run_options, source_text, source_type);
 
-		let (symbols, scopes) =
-			semantic_ret.semantic.into_symbol_table_and_scope_tree();
+		let (symbols, scopes) = semantic_ret.semantic.into_symbol_table_and_scope_tree();
 
 		if !source_type.is_typescript_definition() {
 			if run_options.scope.unwrap_or_default() {
-				self.scope_text =
-					Self::get_scope_text(&program, &symbols, &scopes);
+				self.scope_text = Self::get_scope_text(&program, &symbols, &scopes);
 			}
 			if run_options.symbol.unwrap_or_default() {
 				self.symbols = symbols.serialize(&self.serializer)?;
@@ -265,30 +247,16 @@ impl Oxc {
 		}
 
 		if run_options.transform.unwrap_or_default() {
-			if let Ok(options) =
-				TransformOptions::from_preset_env(&EnvOptions {
-					targets: Targets::from_query("chrome 51"),
-					..EnvOptions::default()
-				}) {
-				let result = Transformer::new(
-					&allocator,
-					&path,
-					source_text,
-					trivias.clone(),
-					options,
-				)
-				.build_with_symbols_and_scopes(
-					symbols,
-					scopes,
-					&mut program,
-				);
+			if let Ok(options) = TransformOptions::from_preset_env(&EnvOptions {
+				targets:Targets::from_query("chrome 51"),
+				..EnvOptions::default()
+			}) {
+				let result =
+					Transformer::new(&allocator, &path, source_text, trivias.clone(), options)
+						.build_with_symbols_and_scopes(symbols, scopes, &mut program);
 				if !result.errors.is_empty() {
 					self.save_diagnostics(
-						result
-							.errors
-							.into_iter()
-							.map(Error::from)
-							.collect::<Vec<_>>(),
+						result.errors.into_iter().map(Error::from).collect::<Vec<_>>(),
 					);
 				}
 			}
@@ -297,19 +265,18 @@ impl Oxc {
 		let mangler = if minifier_options.compress.unwrap_or_default()
 			|| minifier_options.mangle.unwrap_or_default()
 		{
-			let compress_options =
-				minifier_options.compress_options.unwrap_or_default();
+			let compress_options = minifier_options.compress_options.unwrap_or_default();
 			let options = MinifierOptions {
-				mangle: minifier_options.mangle.unwrap_or_default(),
-				compress: if minifier_options.compress.unwrap_or_default() {
+				mangle:minifier_options.mangle.unwrap_or_default(),
+				compress:if minifier_options.compress.unwrap_or_default() {
 					CompressOptions {
-						booleans: compress_options.booleans,
-						drop_console: compress_options.drop_console,
-						drop_debugger: compress_options.drop_debugger,
-						evaluate: compress_options.evaluate,
-						join_vars: compress_options.join_vars,
-						loops: compress_options.loops,
-						typeofs: compress_options.typeofs,
+						booleans:compress_options.booleans,
+						drop_console:compress_options.drop_console,
+						drop_debugger:compress_options.drop_debugger,
+						evaluate:compress_options.evaluate,
+						join_vars:compress_options.join_vars,
+						loops:compress_options.loops,
+						typeofs:compress_options.typeofs,
 						..CompressOptions::default()
 					}
 				} else {
@@ -324,7 +291,7 @@ impl Oxc {
 		self.codegen_text = CodeGenerator::new()
 			.with_mangler(mangler)
 			.with_options(CodegenOptions {
-				minify: minifier_options.whitespace.unwrap_or_default(),
+				minify:minifier_options.whitespace.unwrap_or_default(),
 				..CodegenOptions::default()
 			})
 			.build(&program)
@@ -335,16 +302,14 @@ impl Oxc {
 
 	fn run_linter(
 		&mut self,
-		run_options: &OxcRunOptions,
-		source_text: &str,
-		path: &Path,
-		trivias: &Trivias,
-		program: &Program,
+		run_options:&OxcRunOptions,
+		source_text:&str,
+		path:&Path,
+		trivias:&Trivias,
+		program:&Program,
 	) {
 		// Only lint if there are no syntax errors
-		if run_options.lint.unwrap_or_default()
-			&& self.diagnostics.borrow().is_empty()
-		{
+		if run_options.lint.unwrap_or_default() && self.diagnostics.borrow().is_empty() {
 			let semantic_ret = SemanticBuilder::new(source_text)
 				.with_cfg(true)
 				.with_trivias(trivias.clone())
@@ -352,27 +317,23 @@ impl Oxc {
 				.build(program);
 			let semantic = Rc::new(semantic_ret.semantic);
 			let linter_ret = Linter::default().run(path, Rc::clone(&semantic));
-			let diagnostics =
-				linter_ret.into_iter().map(|e| Error::from(e.error)).collect();
+			let diagnostics = linter_ret.into_iter().map(|e| Error::from(e.error)).collect();
 			self.save_diagnostics(diagnostics);
 		}
 	}
 
 	fn run_prettier(
 		&mut self,
-		run_options: &OxcRunOptions,
-		source_text: &str,
-		source_type: SourceType,
+		run_options:&OxcRunOptions,
+		source_text:&str,
+		source_type:SourceType,
 	) {
 		let allocator = Allocator::default();
 		if run_options.prettier_format.unwrap_or_default()
 			|| run_options.prettier_ir.unwrap_or_default()
 		{
 			let ret = Parser::new(&allocator, source_text, source_type)
-				.with_options(ParseOptions {
-					preserve_parens: false,
-					..ParseOptions::default()
-				})
+				.with_options(ParseOptions { preserve_parens:false, ..ParseOptions::default() })
 				.parse();
 
 			let mut prettier = Prettier::new(
@@ -389,12 +350,7 @@ impl Oxc {
 			if run_options.prettier_ir.unwrap_or_default() {
 				let prettier_doc = prettier.doc(&ret.program).to_string();
 				self.prettier_ir_text = {
-					let ret = Parser::new(
-						&allocator,
-						&prettier_doc,
-						SourceType::default(),
-					)
-					.parse();
+					let ret = Parser::new(&allocator, &prettier_doc, SourceType::default()).parse();
 					Prettier::new(
 						&allocator,
 						&prettier_doc,
@@ -407,31 +363,21 @@ impl Oxc {
 		}
 	}
 
-	fn get_scope_text(
-		program: &Program<'_>,
-		symbols: &SymbolTable,
-		scopes: &ScopeTree,
-	) -> String {
+	fn get_scope_text(program:&Program<'_>, symbols:&SymbolTable, scopes:&ScopeTree) -> String {
 		struct ScopesTextWriter<'s> {
-			symbols: &'s SymbolTable,
-			scopes: &'s ScopeTree,
-			scope_text: String,
-			indent: usize,
-			space: String,
+			symbols:&'s SymbolTable,
+			scopes:&'s ScopeTree,
+			scope_text:String,
+			indent:usize,
+			space:String,
 		}
 
 		impl<'s> ScopesTextWriter<'s> {
-			fn new(symbols: &'s SymbolTable, scopes: &'s ScopeTree) -> Self {
-				Self {
-					symbols,
-					scopes,
-					scope_text: String::new(),
-					indent: 0,
-					space: String::new(),
-				}
+			fn new(symbols:&'s SymbolTable, scopes:&'s ScopeTree) -> Self {
+				Self { symbols, scopes, scope_text:String::new(), indent:0, space:String::new() }
 			}
 
-			fn write_line<S: AsRef<str>>(&mut self, line: S) {
+			fn write_line<S:AsRef<str>>(&mut self, line:S) {
 				self.scope_text.push_str(&self.space[0..self.indent]);
 				self.scope_text.push_str(line.as_ref());
 				self.scope_text.push('\n');
@@ -444,22 +390,13 @@ impl Oxc {
 				}
 			}
 
-			fn indent_out(&mut self) {
-				self.indent -= 2;
-			}
+			fn indent_out(&mut self) { self.indent -= 2; }
 		}
 
 		impl<'a, 's> Visit<'a> for ScopesTextWriter<'s> {
-			fn enter_scope(
-				&mut self,
-				flags: ScopeFlags,
-				scope_id: &Cell<Option<ScopeId>>,
-			) {
+			fn enter_scope(&mut self, flags:ScopeFlags, scope_id:&Cell<Option<ScopeId>>) {
 				let scope_id = scope_id.get().unwrap();
-				self.write_line(format!(
-					"Scope {} ({flags:?}) {{",
-					scope_id.index()
-				));
+				self.write_line(format!("Scope {} ({flags:?}) {{", scope_id.index()));
 				self.indent_in();
 
 				let bindings = self.scopes.get_bindings(scope_id);
@@ -467,9 +404,7 @@ impl Oxc {
 					self.write_line("Bindings: {");
 					bindings.iter().for_each(|(name, &symbol_id)| {
 						let symbol_flags = self.symbols.get_flags(symbol_id);
-						self.write_line(format!(
-							"  {name} ({symbol_id:?} {symbol_flags:?})",
-						));
+						self.write_line(format!("  {name} ({symbol_id:?} {symbol_flags:?})",));
 					});
 					self.write_line("}");
 				}
@@ -486,21 +421,23 @@ impl Oxc {
 		writer.scope_text
 	}
 
-	fn save_diagnostics(&self, diagnostics: Vec<Error>) {
+	fn save_diagnostics(&self, diagnostics:Vec<Error>) {
 		self.diagnostics.borrow_mut().extend(diagnostics);
 	}
 
-	fn map_comments(source_text: &str, trivias: &Trivias) -> Vec<Comment> {
+	fn map_comments(source_text:&str, trivias:&Trivias) -> Vec<Comment> {
 		trivias
 			.comments()
-			.map(|comment| Comment {
-				r#type: match comment.kind {
-					CommentKind::Line => CommentType::Line,
-					CommentKind::Block => CommentType::Block,
-				},
-				value: comment.span.source_text(source_text).to_string(),
-				start: comment.span.start,
-				end: comment.span.end,
+			.map(|comment| {
+				Comment {
+					r#type:match comment.kind {
+						CommentKind::Line => CommentType::Line,
+						CommentKind::Block => CommentType::Block,
+					},
+					value:comment.span.source_text(source_text).to_string(),
+					start:comment.span.start,
+					end:comment.span.end,
+				}
 			})
 			.collect()
 	}

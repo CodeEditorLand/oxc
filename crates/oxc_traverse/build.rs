@@ -1,7 +1,7 @@
 fn main() {
 	// Exit if on CI.
-	// The built files should be checked into git, so want to run tests etc on what's actually in repo,
-	// rather than regenerating them.
+	// The built files should be checked into git, so want to run tests etc on
+	// what's actually in repo, rather than regenerating them.
 	if std::option_env!("CI") == Some("true") {
 		return;
 	}
