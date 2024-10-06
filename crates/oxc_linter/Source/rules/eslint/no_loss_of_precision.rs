@@ -8,242 +8,235 @@ use oxc_span::Span;
 
 use crate::{context::LintContext, rule::Rule, AstNode};
 
-fn no_loss_of_precision_diagnostic(span:Span) -> OxcDiagnostic {
-	OxcDiagnostic::warn("This number literal will lose precision at runtime.").with_label(span)
+fn no_loss_of_precision_diagnostic(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::warn("This number literal will lose precision at runtime.").with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct NoLossOfPrecision;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Disallow precision loss of number literal
-	///
-	/// ### Why is this bad?
-	///
-	/// It can lead to unexpected results in certain situations
-	/// For example, when performing mathematical operations
-	///
-	/// ### Example
-	///
-	/// ```javascript
-	/// var x = 2e999;
-	/// ```
-	NoLossOfPrecision,
-	correctness
+    /// ### What it does
+    ///
+    /// Disallow precision loss of number literal
+    ///
+    /// ### Why is this bad?
+    ///
+    /// It can lead to unexpected results in certain situations
+    /// For example, when performing mathematical operations
+    ///
+    /// ### Example
+    ///
+    /// ```javascript
+    /// var x = 2e999;
+    /// ```
+    NoLossOfPrecision,
+    correctness
 );
 
 impl Rule for NoLossOfPrecision {
-	fn run<'a>(&self, node:&AstNode<'a>, ctx:&LintContext<'a>) {
-		match node.kind() {
-			AstKind::NumericLiteral(node) if Self::lose_precision(node) => {
-				ctx.diagnostic(no_loss_of_precision_diagnostic(node.span));
-			},
-			_ => {},
-		}
-	}
+    fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
+        match node.kind() {
+            AstKind::NumericLiteral(node) if Self::lose_precision(node) => {
+                ctx.diagnostic(no_loss_of_precision_diagnostic(node.span));
+            }
+            _ => {}
+        }
+    }
 }
 
 pub struct RawNum<'a> {
-	int:&'a str,
-	frac:&'a str,
-	exp:isize,
+    int: &'a str,
+    frac: &'a str,
+    exp: isize,
 }
 
 #[derive(Debug)]
 pub struct ScientificNotation<'a> {
-	int:&'a str,
-	frac:Cow<'a, str>,
-	exp:isize,
-	scientific:bool,
-	precision:usize,
+    int: &'a str,
+    frac: Cow<'a, str>,
+    exp: isize,
+    scientific: bool,
+    precision: usize,
 }
 
 impl PartialEq for ScientificNotation<'_> {
-	fn eq(&self, other:&Self) -> bool {
-		if self.int == other.int && self.frac == other.frac {
-			if self.int == "0" && self.frac == "" {
-				return true;
-			}
-			return self.exp == other.exp;
-		}
-		false
-	}
+    fn eq(&self, other: &Self) -> bool {
+        if self.int == other.int && self.frac == other.frac {
+            if self.int == "0" && self.frac == "" {
+                return true;
+            }
+            return self.exp == other.exp;
+        }
+        false
+    }
 }
 
 impl<'a> RawNum<'a> {
-	fn new(num:&str) -> Option<RawNum<'_>> {
-		// remove sign
-		let num = num.trim_start_matches(['+', '-']);
+    fn new(num: &str) -> Option<RawNum<'_>> {
+        // remove sign
+        let num = num.trim_start_matches(['+', '-']);
 
-		let (int, num_without_int) = {
-			// skip leading zeros
-			let num_without_zeros = num.trim_start_matches('0');
+        let (int, num_without_int) = {
+            // skip leading zeros
+            let num_without_zeros = num.trim_start_matches('0');
 
-			// read the integer part and store the end index
-			let int_end = num_without_zeros
-				.chars()
-				.position(|ch| !ch.is_ascii_digit())
-				.unwrap_or(num_without_zeros.len());
+            // read the integer part and store the end index
+            let int_end = num_without_zeros
+                .chars()
+                .position(|ch| !ch.is_ascii_digit())
+                .unwrap_or(num_without_zeros.len());
 
-			// if no integer part was found, default to 0
-			let int = if int_end == 0 { "0" } else { &num_without_zeros[..int_end] };
+            // if no integer part was found, default to 0
+            let int = if int_end == 0 { "0" } else { &num_without_zeros[..int_end] };
 
-			// make a slice of the rest of the string
-			let num_without_int = &num_without_zeros[int_end..];
+            // make a slice of the rest of the string
+            let num_without_int = &num_without_zeros[int_end..];
 
-			(int, num_without_int)
-		};
+            (int, num_without_int)
+        };
 
-		// if next char is a dot, parse the fractional part
-		let (frac, num_without_frac) =
-			num_without_int
-				.strip_prefix('.')
-				.map_or(("", num_without_int), |num_without_dot| {
-					let frac_end = num_without_dot
-						.chars()
-						.position(|ch| !ch.is_ascii_digit())
-						.unwrap_or(num_without_dot.len());
+        // if next char is a dot, parse the fractional part
+        let (frac, num_without_frac) =
+            num_without_int.strip_prefix('.').map_or(("", num_without_int), |num_without_dot| {
+                let frac_end = num_without_dot
+                    .chars()
+                    .position(|ch| !ch.is_ascii_digit())
+                    .unwrap_or(num_without_dot.len());
 
-					// slice the fractional part and the rest of the string
-					let frac = &num_without_dot[..frac_end];
-					let num_without_frac = &num_without_dot[frac_end..];
+                // slice the fractional part and the rest of the string
+                let frac = &num_without_dot[..frac_end];
+                let num_without_frac = &num_without_dot[frac_end..];
 
-					(frac, num_without_frac)
-				});
+                (frac, num_without_frac)
+            });
 
-		// if next char is an e, treat the rest as the exponent
-		let exp = num_without_frac
-			.strip_prefix(['e', 'E'])
-			.map_or("0", |num_without_e| num_without_e);
+        // if next char is an e, treat the rest as the exponent
+        let exp =
+            num_without_frac.strip_prefix(['e', 'E']).map_or("0", |num_without_e| num_without_e);
 
-		let Ok(exp) = exp.parse::<isize>() else {
-			return None;
-		};
+        let Ok(exp) = exp.parse::<isize>() else {
+            return None;
+        };
 
-		Some(RawNum { int, frac, exp })
-	}
+        Some(RawNum { int, frac, exp })
+    }
 
-	fn normalize(&mut self) -> ScientificNotation<'a> {
-		let scientific = self.exp != 0;
-		let precision = self.frac.len();
-		if self.int.starts_with('0') {
-			let frac_zeros = self.frac.chars().take_while(|&ch| ch == '0').count();
-			#[allow(clippy::cast_possible_wrap)]
-			let exp = self.exp - 1 - frac_zeros as isize;
-			self.frac = &self.frac[frac_zeros..];
+    fn normalize(&mut self) -> ScientificNotation<'a> {
+        let scientific = self.exp != 0;
+        let precision = self.frac.len();
+        if self.int.starts_with('0') {
+            let frac_zeros = self.frac.chars().take_while(|&ch| ch == '0').count();
+            #[allow(clippy::cast_possible_wrap)]
+            let exp = self.exp - 1 - frac_zeros as isize;
+            self.frac = &self.frac[frac_zeros..];
 
-			match self.frac.len() {
-				0 => {
-					ScientificNotation {
-						int:"0",
-						frac:Cow::Borrowed(""),
-						exp,
-						scientific,
-						precision,
-					}
-				},
-				1 => {
-					ScientificNotation {
-						int:&self.frac[..1],
-						frac:Cow::Borrowed(""),
-						exp,
-						scientific,
-						precision,
-					}
-				},
-				_ => {
-					ScientificNotation {
-						int:&self.frac[..1],
-						frac:Cow::Borrowed(&self.frac[1..]),
-						exp,
-						scientific,
-						precision,
-					}
-				},
-			}
-		} else {
-			#[allow(clippy::cast_possible_wrap)]
-			let exp = self.exp + self.int.len() as isize - 1;
-			if self.int.len() == 1 {
-				ScientificNotation {
-					int:self.int,
-					frac:Cow::Borrowed(self.frac),
-					exp,
-					scientific,
-					precision,
-				}
-			} else {
-				let frac = if self.frac.is_empty() {
-					Cow::Borrowed(&self.int[1..])
-				} else {
-					Cow::Owned(
-						format!("{}{}", &self.int[1..], self.frac)
-							.trim_end_matches('0')
-							.to_string(),
-					)
-				};
+            match self.frac.len() {
+                0 => ScientificNotation {
+                    int: "0",
+                    frac: Cow::Borrowed(""),
+                    exp,
+                    scientific,
+                    precision,
+                },
+                1 => ScientificNotation {
+                    int: &self.frac[..1],
+                    frac: Cow::Borrowed(""),
+                    exp,
+                    scientific,
+                    precision,
+                },
+                _ => ScientificNotation {
+                    int: &self.frac[..1],
+                    frac: Cow::Borrowed(&self.frac[1..]),
+                    exp,
+                    scientific,
+                    precision,
+                },
+            }
+        } else {
+            #[allow(clippy::cast_possible_wrap)]
+            let exp = self.exp + self.int.len() as isize - 1;
+            if self.int.len() == 1 {
+                ScientificNotation {
+                    int: self.int,
+                    frac: Cow::Borrowed(self.frac),
+                    exp,
+                    scientific,
+                    precision,
+                }
+            } else {
+                let frac = if self.frac.is_empty() {
+                    Cow::Borrowed(&self.int[1..])
+                } else {
+                    Cow::Owned(
+                        format!("{}{}", &self.int[1..], self.frac)
+                            .trim_end_matches('0')
+                            .to_string(),
+                    )
+                };
 
-				ScientificNotation { int:&self.int[..1], frac, exp, scientific, precision }
-			}
-		}
-	}
+                ScientificNotation { int: &self.int[..1], frac, exp, scientific, precision }
+            }
+        }
+    }
 }
 
 impl NoLossOfPrecision {
-	fn not_base_ten_loses_precision(node:&'_ NumericLiteral) -> bool {
-		let raw = node.raw.cow_replace('_', "");
-		let raw = raw.cow_to_uppercase();
-		#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-		// AST always store number as f64, need a cast to format in bin/oct/hex
-		let value = node.value as u64;
-		let suffix = if raw.starts_with("0B") {
-			format!("{value:b}")
-		} else if raw.starts_with("0X") {
-			format!("{value:x}")
-		} else {
-			format!("{value:o}")
-		};
-		!raw.ends_with(&suffix.cow_to_uppercase().as_ref())
-	}
+    fn not_base_ten_loses_precision(node: &'_ NumericLiteral) -> bool {
+        let raw = node.raw.cow_replace('_', "");
+        let raw = raw.cow_to_uppercase();
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        // AST always store number as f64, need a cast to format in bin/oct/hex
+        let value = node.value as u64;
+        let suffix = if raw.starts_with("0B") {
+            format!("{value:b}")
+        } else if raw.starts_with("0X") {
+            format!("{value:x}")
+        } else {
+            format!("{value:o}")
+        };
+        !raw.ends_with(&suffix.cow_to_uppercase().as_ref())
+    }
 
-	fn base_ten_loses_precision(node:&'_ NumericLiteral) -> bool {
-		let raw = node.raw.cow_replace('_', "");
-		let Some(raw) = Self::normalize(&raw) else {
-			return true;
-		};
+    fn base_ten_loses_precision(node: &'_ NumericLiteral) -> bool {
+        let raw = node.raw.cow_replace('_', "");
+        let Some(raw) = Self::normalize(&raw) else {
+            return true;
+        };
 
-		if raw.frac.len() >= 100 {
-			return true;
-		}
-		let stored = match (raw.scientific, raw.precision) {
-			(true, _) => format!("{:.1$e}", node.value, raw.frac.len()),
-			(false, 0) => node.value.to_string(),
-			(false, precision) => format!("{:.1$}", node.value, precision),
-		};
-		let Some(stored) = Self::normalize(&stored) else {
-			return true;
-		};
-		raw != stored
-	}
+        if raw.frac.len() >= 100 {
+            return true;
+        }
+        let stored = match (raw.scientific, raw.precision) {
+            (true, _) => format!("{:.1$e}", node.value, raw.frac.len()),
+            (false, 0) => node.value.to_string(),
+            (false, precision) => format!("{:.1$}", node.value, precision),
+        };
+        let Some(stored) = Self::normalize(&stored) else {
+            return true;
+        };
+        raw != stored
+    }
 
-	fn normalize(num:&str) -> Option<ScientificNotation<'_>> { Some(RawNum::new(num)?.normalize()) }
+    fn normalize(num: &str) -> Option<ScientificNotation<'_>> {
+        Some(RawNum::new(num)?.normalize())
+    }
 
-	pub fn lose_precision(node:&'_ NumericLiteral) -> bool {
-		if node.base.is_base_10() {
-			Self::base_ten_loses_precision(node)
-		} else {
-			Self::not_base_ten_loses_precision(node)
-		}
-	}
+    pub fn lose_precision(node: &'_ NumericLiteral) -> bool {
+        if node.base.is_base_10() {
+            Self::base_ten_loses_precision(node)
+        } else {
+            Self::not_base_ten_loses_precision(node)
+        }
+    }
 }
 
 #[test]
 fn test() {
-	use crate::tester::Tester;
+    use crate::tester::Tester;
 
-	let pass = vec![
+    let pass = vec![
         ("var x = 12345", None),
         ("var x = 123.456", None),
         ("var x = -123.456", None),
@@ -314,7 +307,7 @@ fn test() {
         ("var a = -30.00", None),
     ];
 
-	let fail = vec![
+    let fail = vec![
         ("var x = 9007199254740993", None),
         ("var x = 9007199254740.993e3", None),
         ("var x = 9.007199254740993e15", None),
@@ -363,5 +356,5 @@ fn test() {
         ("var x = 1e18_446_744_073_709_551_615", None),
     ];
 
-	Tester::new(NoLossOfPrecision::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoLossOfPrecision::NAME, pass, fail).test_and_snapshot();
 }

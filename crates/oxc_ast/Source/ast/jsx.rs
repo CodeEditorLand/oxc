@@ -1,9 +1,8 @@
 //! [JSX](https://facebook.github.io/jsx)
 
-// NB: `#[span]`, `#[scope(...)]`,`#[visit(...)]` and `#[generate_derive(...)]`
-// do NOT do anything to the code. They are purely markers for codegen used in
-// `tasks/ast_tools` and `crates/oxc_traverse/scripts`. See docs in those
-// crates. Read [`macro@oxc_ast_macros::ast`] for more information.
+// NB: `#[span]`, `#[scope(...)]`,`#[visit(...)]` and `#[generate_derive(...)]` do NOT do anything to the code.
+// They are purely markers for codegen used in `tasks/ast_tools` and `crates/oxc_traverse/scripts`. See docs in those crates.
+// Read [`macro@oxc_ast_macros::ast`] for more information.
 
 // Silence erroneous warnings from Rust Analyser for `#[derive(Tsify)]`
 #![allow(non_snake_case)]
@@ -22,9 +21,9 @@ use super::{inherit_variants, js::*, literal::*, ts::*};
 
 /// JSX Element
 ///
-/// Note that fragments (`<></>`) are represented as [`JSXFragment`], unless
-/// they are written as members of React (e.g.
-/// `<React.Fragment></React.Fragment>`). ## Examples
+/// Note that fragments (`<></>`) are represented as [`JSXFragment`], unless they are written as
+/// members of React (e.g. `<React.Fragment></React.Fragment>`).
+/// ## Examples
 ///
 /// ```tsx
 /// <Foo>        // <- opening_element
@@ -43,15 +42,14 @@ use super::{inherit_variants, js::*, literal::*, ts::*};
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct JSXElement<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// Opening tag of the element.
-	pub opening_element:Box<'a, JSXOpeningElement<'a>>,
-	/// Closing tag of the element. Will be [`None`] for self-closing tags.
-	pub closing_element:Option<Box<'a, JSXClosingElement<'a>>>,
-	/// Children of the element. This can be text, other elements, or
-	/// expressions.
-	pub children:Vec<'a, JSXChild<'a>>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// Opening tag of the element.
+    pub opening_element: Box<'a, JSXOpeningElement<'a>>,
+    /// Closing tag of the element. Will be [`None`] for self-closing tags.
+    pub closing_element: Option<Box<'a, JSXClosingElement<'a>>>,
+    /// Children of the element. This can be text, other elements, or expressions.
+    pub children: Vec<'a, JSXChild<'a>>,
 }
 
 /// JSX Opening Element
@@ -75,27 +73,26 @@ pub struct JSXElement<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct JSXOpeningElement<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// Is this tag self-closing?
-	///
-	/// ## Examples
-	/// ```tsx
-	/// <Foo />  // <- self_closing = true
-	/// <Foo>    // <- self_closing = false
-	/// ```
-	pub self_closing:bool,
-	pub name:JSXElementName<'a>,
-	/// List of JSX attributes. In React-like applications, these become props.
-	pub attributes:Vec<'a, JSXAttributeItem<'a>>,
-	/// Type parameters for generic JSX elements.
-	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// Is this tag self-closing?
+    ///
+    /// ## Examples
+    /// ```tsx
+    /// <Foo />  // <- self_closing = true
+    /// <Foo>    // <- self_closing = false
+    /// ```
+    pub self_closing: bool,
+    pub name: JSXElementName<'a>,
+    /// List of JSX attributes. In React-like applications, these become props.
+    pub attributes: Vec<'a, JSXAttributeItem<'a>>,
+    /// Type parameters for generic JSX elements.
+    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
 /// JSX Closing Element
 ///
-/// Closing tag in a [`JSXElement`]. Self-closing tags do not have closing
-/// elements.
+/// Closing tag in a [`JSXElement`]. Self-closing tags do not have closing elements.
 ///
 /// ## Example
 ///
@@ -110,15 +107,15 @@ pub struct JSXOpeningElement<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXClosingElement<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	pub name:JSXElementName<'a>,
+    #[serde(flatten)]
+    pub span: Span,
+    pub name: JSXElementName<'a>,
 }
 
 /// JSX Fragment
 ///
-/// A fragment written with the special `<></>` syntax. When written as a
-/// `<Fragment>` component, fragments will be represented as [`JSXElement`]s.
+/// A fragment written with the special `<></>` syntax. When written as a `<Fragment>` component,
+/// fragments will be represented as [`JSXElement`]s.
 ///
 /// Note that fragments cannot have attributes or type parameters.
 ///
@@ -129,14 +126,14 @@ pub struct JSXClosingElement<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub struct JSXFragment<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// `<>`
-	pub opening_fragment:JSXOpeningFragment,
-	/// `</>`
-	pub closing_fragment:JSXClosingFragment,
-	/// Elements inside the fragment.
-	pub children:Vec<'a, JSXChild<'a>>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// `<>`
+    pub opening_fragment: JSXOpeningFragment,
+    /// `</>`
+    pub closing_fragment: JSXClosingFragment,
+    /// Elements inside the fragment.
+    pub children: Vec<'a, JSXChild<'a>>,
 }
 
 /// JSX Opening Fragment (`<>`)
@@ -146,8 +143,8 @@ pub struct JSXFragment<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXOpeningFragment {
-	#[serde(flatten)]
-	pub span:Span,
+    #[serde(flatten)]
+    pub span: Span,
 }
 
 /// JSX Closing Fragment (`</>`)
@@ -157,8 +154,8 @@ pub struct JSXOpeningFragment {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXClosingFragment {
-	#[serde(flatten)]
-	pub span:Span,
+    #[serde(flatten)]
+    pub span: Span,
 }
 
 /// JSX Element Name
@@ -167,16 +164,16 @@ pub struct JSXClosingFragment {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash)]
 #[serde(untagged)]
 pub enum JSXElementName<'a> {
-	/// `<div />`
-	Identifier(Box<'a, JSXIdentifier<'a>>) = 0,
-	/// `<Apple />`
-	IdentifierReference(Box<'a, IdentifierReference<'a>>) = 1,
-	/// `<Apple:Orange />`
-	NamespacedName(Box<'a, JSXNamespacedName<'a>>) = 2,
-	/// `<Apple.Orange />`
-	MemberExpression(Box<'a, JSXMemberExpression<'a>>) = 3,
-	/// `<this />`
-	ThisExpression(Box<'a, ThisExpression>) = 4,
+    /// `<div />`
+    Identifier(Box<'a, JSXIdentifier<'a>>) = 0,
+    /// `<Apple />`
+    IdentifierReference(Box<'a, IdentifierReference<'a>>) = 1,
+    /// `<Apple:Orange />`
+    NamespacedName(Box<'a, JSXNamespacedName<'a>>) = 2,
+    /// `<Apple.Orange />`
+    MemberExpression(Box<'a, JSXMemberExpression<'a>>) = 3,
+    /// `<this />`
+    ThisExpression(Box<'a, ThisExpression>) = 4,
 }
 
 /// JSX Namespaced Name
@@ -192,18 +189,18 @@ pub enum JSXElementName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXNamespacedName<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// Namespace portion of the name, e.g. `Apple` in `<Apple:Orange />`
-	pub namespace:JSXIdentifier<'a>,
-	/// Name portion of the name, e.g. `Orange` in `<Apple:Orange />`
-	pub property:JSXIdentifier<'a>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// Namespace portion of the name, e.g. `Apple` in `<Apple:Orange />`
+    pub namespace: JSXIdentifier<'a>,
+    /// Name portion of the name, e.g. `Orange` in `<Apple:Orange />`
+    pub property: JSXIdentifier<'a>,
 }
 
 /// JSX Member Expression
 ///
-/// Used in [`JSXElementName`]. Multiple member expressions may be chained
-/// together. In this case, [`object`] will be a [`member expression`].
+/// Used in [`JSXElementName`]. Multiple member expressions may be chained together. In this case,
+/// [`object`] will be a [`member expression`].
 ///
 /// ## Example
 ///
@@ -221,12 +218,12 @@ pub struct JSXNamespacedName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXMemberExpression<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// The object being accessed. This is everything before the last `.`.
-	pub object:JSXMemberExpressionObject<'a>,
-	/// The property being accessed. This is everything after the last `.`.
-	pub property:JSXIdentifier<'a>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// The object being accessed. This is everything before the last `.`.
+    pub object: JSXMemberExpressionObject<'a>,
+    /// The property being accessed. This is everything after the last `.`.
+    pub property: JSXIdentifier<'a>,
 }
 
 #[ast(visit)]
@@ -234,15 +231,14 @@ pub struct JSXMemberExpression<'a> {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash)]
 #[serde(untagged)]
 pub enum JSXMemberExpressionObject<'a> {
-	IdentifierReference(Box<'a, IdentifierReference<'a>>) = 0,
-	MemberExpression(Box<'a, JSXMemberExpression<'a>>) = 1,
-	ThisExpression(Box<'a, ThisExpression>) = 2,
+    IdentifierReference(Box<'a, IdentifierReference<'a>>) = 0,
+    MemberExpression(Box<'a, JSXMemberExpression<'a>>) = 1,
+    ThisExpression(Box<'a, ThisExpression>) = 2,
 }
 
 /// JSX Expression Container
 ///
-/// Expression containers wrap [`JSXExpression`]s in JSX attributes and children
-/// using `{}`.
+/// Expression containers wrap [`JSXExpression`]s in JSX attributes and children using `{}`.
 ///
 /// ## Example
 ///
@@ -259,10 +255,10 @@ pub enum JSXMemberExpressionObject<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXExpressionContainer<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// The expression inside the container.
-	pub expression:JSXExpression<'a>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// The expression inside the container.
+    pub expression: JSXExpression<'a>,
 }
 
 inherit_variants! {
@@ -278,9 +274,9 @@ inherit_variants! {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum JSXExpression<'a> {
-	EmptyExpression(JSXEmptyExpression) = 64,
-	// `Expression` variants added here by `inherit_variants!` macro
-	@inherit Expression
+    EmptyExpression(JSXEmptyExpression) = 64,
+    // `Expression` variants added here by `inherit_variants!` macro
+    @inherit Expression
 }
 }
 
@@ -291,8 +287,8 @@ pub enum JSXExpression<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXEmptyExpression {
-	#[serde(flatten)]
-	pub span:Span,
+    #[serde(flatten)]
+    pub span: Span,
 }
 
 // 1.3 JSX Attributes
@@ -312,10 +308,10 @@ pub struct JSXEmptyExpression {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum JSXAttributeItem<'a> {
-	/// A `key="value"` attribute
-	Attribute(Box<'a, JSXAttribute<'a>>) = 0,
-	/// a `{...spread}` attribute
-	SpreadAttribute(Box<'a, JSXSpreadAttribute<'a>>) = 1,
+    /// A `key="value"` attribute
+    Attribute(Box<'a, JSXAttribute<'a>>) = 0,
+    /// a `{...spread}` attribute
+    SpreadAttribute(Box<'a, JSXSpreadAttribute<'a>>) = 1,
 }
 
 /// JSX Attribute
@@ -335,14 +331,14 @@ pub enum JSXAttributeItem<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXAttribute<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// The name of the attribute. This is a prop in React-like applications.
-	pub name:JSXAttributeName<'a>,
-	/// The value of the attribute. This can be a string literal, an
-	/// expression, or an element. Will be [`None`] for boolean-like
-	/// attributes (e.g. `<button disabled />`).
-	pub value:Option<JSXAttributeValue<'a>>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// The name of the attribute. This is a prop in React-like applications.
+    pub name: JSXAttributeName<'a>,
+    /// The value of the attribute. This can be a string literal, an expression,
+    /// or an element. Will be [`None`] for boolean-like attributes (e.g.
+    /// `<button disabled />`).
+    pub value: Option<JSXAttributeValue<'a>>,
 }
 
 /// JSX Spread Attribute
@@ -358,9 +354,9 @@ pub struct JSXAttribute<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXSpreadAttribute<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	pub argument:Expression<'a>,
+    #[serde(flatten)]
+    pub span: Span,
+    pub argument: Expression<'a>,
 }
 
 /// JSX Attribute Name
@@ -384,11 +380,10 @@ pub struct JSXSpreadAttribute<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum JSXAttributeName<'a> {
-	/// An attribute name without a namespace prefix, e.g. `foo` in `foo="bar"`.
-	Identifier(Box<'a, JSXIdentifier<'a>>) = 0,
-	/// An attribute name with a namespace prefix, e.g. `foo:bar` in
-	/// `foo:bar="baz"`.
-	NamespacedName(Box<'a, JSXNamespacedName<'a>>) = 1,
+    /// An attribute name without a namespace prefix, e.g. `foo` in `foo="bar"`.
+    Identifier(Box<'a, JSXIdentifier<'a>>) = 0,
+    /// An attribute name with a namespace prefix, e.g. `foo:bar` in `foo:bar="baz"`.
+    NamespacedName(Box<'a, JSXNamespacedName<'a>>) = 1,
 }
 
 /// JSX Attribute Value
@@ -415,10 +410,10 @@ pub enum JSXAttributeName<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum JSXAttributeValue<'a> {
-	StringLiteral(Box<'a, StringLiteral<'a>>) = 0,
-	ExpressionContainer(Box<'a, JSXExpressionContainer<'a>>) = 1,
-	Element(Box<'a, JSXElement<'a>>) = 2,
-	Fragment(Box<'a, JSXFragment<'a>>) = 3,
+    StringLiteral(Box<'a, StringLiteral<'a>>) = 0,
+    ExpressionContainer(Box<'a, JSXExpressionContainer<'a>>) = 1,
+    Element(Box<'a, JSXElement<'a>>) = 2,
+    Fragment(Box<'a, JSXFragment<'a>>) = 3,
 }
 
 /// JSX Identifier
@@ -432,10 +427,10 @@ pub enum JSXAttributeValue<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXIdentifier<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// The name of the identifier.
-	pub name:Atom<'a>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// The name of the identifier.
+    pub name: Atom<'a>,
 }
 
 // 1.4 JSX Children
@@ -449,32 +444,31 @@ pub struct JSXIdentifier<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(untagged)]
 pub enum JSXChild<'a> {
-	/// `<Foo>Some Text</Foo>`
-	Text(Box<'a, JSXText<'a>>) = 0,
-	/// `<Foo><Child /></Foo>`
-	Element(Box<'a, JSXElement<'a>>) = 1,
-	/// `<Foo><></></Foo>`
-	Fragment(Box<'a, JSXFragment<'a>>) = 2,
-	/// `<Foo>{expression}</Foo>`
-	ExpressionContainer(Box<'a, JSXExpressionContainer<'a>>) = 3,
-	/// `<Foo>{...spread}</Foo>`
-	Spread(Box<'a, JSXSpreadChild<'a>>) = 4,
+    /// `<Foo>Some Text</Foo>`
+    Text(Box<'a, JSXText<'a>>) = 0,
+    /// `<Foo><Child /></Foo>`
+    Element(Box<'a, JSXElement<'a>>) = 1,
+    /// `<Foo><></></Foo>`
+    Fragment(Box<'a, JSXFragment<'a>>) = 2,
+    /// `<Foo>{expression}</Foo>`
+    ExpressionContainer(Box<'a, JSXExpressionContainer<'a>>) = 3,
+    /// `<Foo>{...spread}</Foo>`
+    Spread(Box<'a, JSXSpreadChild<'a>>) = 4,
 }
 
 /// JSX Spread Child.
 ///
-/// Variant of [`JSXChild`] that represents an object spread
-/// (`{...expression}`).
+/// Variant of [`JSXChild`] that represents an object spread (`{...expression}`).
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXSpreadChild<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// The expression being spread.
-	pub expression:Expression<'a>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// The expression being spread.
+    pub expression: Expression<'a>,
 }
 
 /// Text inside a JSX element.
@@ -493,8 +487,8 @@ pub struct JSXSpreadChild<'a> {
 #[cfg_attr(feature = "serialize", derive(Serialize, Tsify))]
 #[serde(tag = "type")]
 pub struct JSXText<'a> {
-	#[serde(flatten)]
-	pub span:Span,
-	/// The text content.
-	pub value:Atom<'a>,
+    #[serde(flatten)]
+    pub span: Span,
+    /// The text content.
+    pub value: Atom<'a>,
 }

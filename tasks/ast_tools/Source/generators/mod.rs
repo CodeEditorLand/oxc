@@ -17,13 +17,13 @@ pub use visit::{VisitGenerator, VisitMutGenerator};
 /// Inserts a newline in the `TokenStream`.
 #[expect(unused)]
 macro_rules! endl {
-	() => {
-		// only works in the context of `quote` macro family!
-	};
+    () => {
+        /* only works in the context of `quote` macro family! */
+    };
 }
 
 pub trait Generator {
-	fn generate(&mut self, ctx:&LateCtx) -> GeneratorOutput;
+    fn generate(&mut self, ctx: &LateCtx) -> GeneratorOutput;
 }
 
 #[derive(Debug, Clone)]
@@ -48,10 +48,9 @@ macro_rules! define_generator {
 }
 pub(crate) use define_generator;
 
-/// Similar to how `insert` macro works in the context of `quote` macro family,
-/// But this one can be used outside and accepts expressions.
-/// Wraps the result of the given expression in `insert!({value here});` and
-/// outputs it as `TokenStream`.
+/// Similar to how `insert` macro works in the context of `quote` macro family, But this one can be
+/// used outside and accepts expressions.
+/// Wraps the result of the given expression in `insert!({value here});` and outputs it as `TokenStream`.
 #[expect(unused)]
 macro_rules! insert {
     ($fmt:literal $(, $args:expr)*) => {{

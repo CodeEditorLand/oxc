@@ -7,22 +7,22 @@ use oxc_ast::ast::*;
 use oxc_traverse::{Traverse, TraverseCtx};
 
 pub struct ES2019 {
-	options:ES2019Options,
+    options: ES2019Options,
 
-	// Plugins
-	optional_catch_binding:OptionalCatchBinding,
+    // Plugins
+    optional_catch_binding: OptionalCatchBinding,
 }
 
 impl ES2019 {
-	pub fn new(options:ES2019Options) -> Self {
-		Self { optional_catch_binding:OptionalCatchBinding::new(), options }
-	}
+    pub fn new(options: ES2019Options) -> Self {
+        Self { optional_catch_binding: OptionalCatchBinding::new(), options }
+    }
 }
 
 impl<'a> Traverse<'a> for ES2019 {
-	fn enter_catch_clause(&mut self, clause:&mut CatchClause<'a>, ctx:&mut TraverseCtx<'a>) {
-		if self.options.optional_catch_binding {
-			self.optional_catch_binding.enter_catch_clause(clause, ctx);
-		}
-	}
+    fn enter_catch_clause(&mut self, clause: &mut CatchClause<'a>, ctx: &mut TraverseCtx<'a>) {
+        if self.options.optional_catch_binding {
+            self.optional_catch_binding.enter_catch_clause(clause, ctx);
+        }
+    }
 }

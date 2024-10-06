@@ -3,210 +3,206 @@ use oxc_ast::{ast::Argument, AstKind};
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_regular_expression::{
-	ast::{Character, Pattern},
-	visit::Visit,
-	Parser,
-	ParserOptions,
+    ast::{Character, Pattern},
+    visit::Visit,
+    Parser, ParserOptions,
 };
 use oxc_span::{GetSpan, Span};
 
 use crate::{ast_util::extract_regex_flags, context::LintContext, rule::Rule, AstNode};
 
-fn no_control_regex_diagnostic(regex:&str, span:Span) -> OxcDiagnostic {
-	OxcDiagnostic::warn("Unexpected control character(s)")
-		.with_help(format!("Unexpected control character(s) in regular expression: \"{regex}\""))
-		.with_label(span)
+fn no_control_regex_diagnostic(regex: &str, span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::warn("Unexpected control character(s)")
+        .with_help(format!("Unexpected control character(s) in regular expression: \"{regex}\""))
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct NoControlRegex;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Disallows control characters and some escape sequences that match
-	/// control characters in regular expressions.
-	///
-	/// ### Why is this bad?
-	///
-	/// Control characters are special, invisible characters in the ASCII range
-	/// 0-31. These characters are rarely used in JavaScript strings so a
-	/// regular expression containing elements that explicitly match these
-	/// characters is most likely a mistake.
-	///
-	/// ### Example
-	///
-	/// Examples of **incorrect** code for this rule:
-	///
-	/// ```javascript
-	/// var pattern1 = /\x00/;
-	/// var pattern2 = /\x0C/;
-	/// var pattern3 = /\x1F/;
-	/// var pattern4 = /\u000C/;
-	/// var pattern5 = /\u{C}/u;
-	/// var pattern6 = new RegExp("\x0C"); // raw U+000C character in the pattern
-	/// var pattern7 = new RegExp("\\x0C"); // \x0C pattern
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	///
-	/// ```javascript
-	/// var pattern1 = /\x20/;
-	/// var pattern2 = /\u0020/;
-	/// var pattern3 = /\u{20}/u;
-	/// var pattern4 = /\t/;
-	/// var pattern5 = /\n/;
-	/// var pattern6 = new RegExp("\x20");
-	/// var pattern7 = new RegExp("\\t");
-	/// var pattern8 = new RegExp("\\n");
-	/// ```
-	NoControlRegex,
-	correctness
+    /// ### What it does
+    ///
+    /// Disallows control characters and some escape sequences that match
+    /// control characters in regular expressions.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// Control characters are special, invisible characters in the ASCII range
+    /// 0-31. These characters are rarely used in JavaScript strings so a
+    /// regular expression containing elements that explicitly match these
+    /// characters is most likely a mistake.
+    ///
+    /// ### Example
+    ///
+    /// Examples of **incorrect** code for this rule:
+    ///
+    /// ```javascript
+    /// var pattern1 = /\x00/;
+    /// var pattern2 = /\x0C/;
+    /// var pattern3 = /\x1F/;
+    /// var pattern4 = /\u000C/;
+    /// var pattern5 = /\u{C}/u;
+    /// var pattern6 = new RegExp("\x0C"); // raw U+000C character in the pattern
+    /// var pattern7 = new RegExp("\\x0C"); // \x0C pattern
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    ///
+    /// ```javascript
+    /// var pattern1 = /\x20/;
+    /// var pattern2 = /\u0020/;
+    /// var pattern3 = /\u{20}/u;
+    /// var pattern4 = /\t/;
+    /// var pattern5 = /\n/;
+    /// var pattern6 = new RegExp("\x20");
+    /// var pattern7 = new RegExp("\\t");
+    /// var pattern8 = new RegExp("\\n");
+    /// ```
+    NoControlRegex,
+    correctness
 );
 
 impl Rule for NoControlRegex {
-	fn run<'a>(&self, node:&AstNode<'a>, context:&LintContext<'a>) {
-		match node.kind() {
-			// regex literal
-			AstKind::RegExpLiteral(reg) => {
-				let Some(pattern) = reg.regex.pattern.as_pattern() else {
-					return;
-				};
+    fn run<'a>(&self, node: &AstNode<'a>, context: &LintContext<'a>) {
+        match node.kind() {
+            // regex literal
+            AstKind::RegExpLiteral(reg) => {
+                let Some(pattern) = reg.regex.pattern.as_pattern() else {
+                    return;
+                };
 
-				check_pattern(context, pattern, reg.span);
-			},
+                check_pattern(context, pattern, reg.span);
+            }
 
-			// new RegExp()
-			AstKind::NewExpression(expr) => {
-				// constructor is RegExp,
-				if expr.callee.is_specific_id("RegExp")
+            // new RegExp()
+            AstKind::NewExpression(expr) => {
+                // constructor is RegExp,
+                if expr.callee.is_specific_id("RegExp")
                 // which is provided at least 1 parameter,
                     && expr.arguments.len() > 0
-				{
-					// where the first one is a string literal
-					// note: improvements required for strings used via
-					// identifier references
-					if let Argument::StringLiteral(pattern) = &expr.arguments[0] {
-						// get pattern from arguments. Missing or non-string
-						// arguments will be runtime errors, but are not
-						// covered by this rule.
-						let alloc = Allocator::default();
-						let flags = extract_regex_flags(&expr.arguments);
-						let flags_text = flags.map_or(String::new(), |f| f.to_string());
-						let parser = Parser::new(
-							&alloc,
-							pattern.value.as_str(),
-							ParserOptions::default()
-								.with_span_offset(
-									expr.arguments.first().map_or(0, |arg| arg.span().start),
-								)
-								.with_flags(&flags_text),
-						);
+                {
+                    // where the first one is a string literal
+                    // note: improvements required for strings used via identifier
+                    // references
+                    if let Argument::StringLiteral(pattern) = &expr.arguments[0] {
+                        // get pattern from arguments. Missing or non-string arguments
+                        // will be runtime errors, but are not covered by this rule.
+                        let alloc = Allocator::default();
+                        let flags = extract_regex_flags(&expr.arguments);
+                        let flags_text = flags.map_or(String::new(), |f| f.to_string());
+                        let parser = Parser::new(
+                            &alloc,
+                            pattern.value.as_str(),
+                            ParserOptions::default()
+                                .with_span_offset(
+                                    expr.arguments.first().map_or(0, |arg| arg.span().start),
+                                )
+                                .with_flags(&flags_text),
+                        );
 
-						let Ok(pattern) = parser.parse() else {
-							return;
-						};
+                        let Ok(pattern) = parser.parse() else {
+                            return;
+                        };
 
-						check_pattern(context, &pattern, expr.span);
-					}
-				}
-			},
+                        check_pattern(context, &pattern, expr.span);
+                    }
+                }
+            }
 
-			// RegExp()
-			AstKind::CallExpression(expr) => {
-				// constructor is RegExp,
-				if expr.callee.is_specific_id("RegExp")
+            // RegExp()
+            AstKind::CallExpression(expr) => {
+                // constructor is RegExp,
+                if expr.callee.is_specific_id("RegExp")
                     // which is provided at least 1 parameter,
                     && expr.arguments.len() > 0
-				{
-					// where the first one is a string literal
-					// note: improvements required for strings used via
-					// identifier references
-					if let Argument::StringLiteral(pattern) = &expr.arguments[0] {
-						// get pattern from arguments. Missing or non-string
-						// arguments will be runtime errors, but are not
-						// covered by this rule.
-						let alloc = Allocator::default();
-						let flags = extract_regex_flags(&expr.arguments);
-						let flags_text = flags.map_or(String::new(), |f| f.to_string());
-						let parser = Parser::new(
-							&alloc,
-							pattern.value.as_str(),
-							ParserOptions::default()
-								.with_span_offset(
-									expr.arguments.first().map_or(0, |arg| arg.span().start),
-								)
-								.with_flags(&flags_text),
-						);
+                {
+                    // where the first one is a string literal
+                    // note: improvements required for strings used via identifier
+                    // references
+                    if let Argument::StringLiteral(pattern) = &expr.arguments[0] {
+                        // get pattern from arguments. Missing or non-string arguments
+                        // will be runtime errors, but are not covered by this rule.
+                        let alloc = Allocator::default();
+                        let flags = extract_regex_flags(&expr.arguments);
+                        let flags_text = flags.map_or(String::new(), |f| f.to_string());
+                        let parser = Parser::new(
+                            &alloc,
+                            pattern.value.as_str(),
+                            ParserOptions::default()
+                                .with_span_offset(
+                                    expr.arguments.first().map_or(0, |arg| arg.span().start),
+                                )
+                                .with_flags(&flags_text),
+                        );
 
-						let Ok(pattern) = parser.parse() else {
-							return;
-						};
+                        let Ok(pattern) = parser.parse() else {
+                            return;
+                        };
 
-						check_pattern(context, &pattern, expr.span);
-					}
-				}
-			},
-			_ => {},
-		};
-	}
+                        check_pattern(context, &pattern, expr.span);
+                    }
+                }
+            }
+            _ => {}
+        };
+    }
 }
 
-fn check_pattern(context:&LintContext, pattern:&Pattern, span:Span) {
-	let mut finder = ControlCharacterFinder { control_chars:Vec::new() };
-	finder.visit_pattern(pattern);
+fn check_pattern(context: &LintContext, pattern: &Pattern, span: Span) {
+    let mut finder = ControlCharacterFinder { control_chars: Vec::new() };
+    finder.visit_pattern(pattern);
 
-	if !finder.control_chars.is_empty() {
-		let violations = finder.control_chars.join(", ");
-		context.diagnostic(no_control_regex_diagnostic(&violations, span));
-	}
+    if !finder.control_chars.is_empty() {
+        let violations = finder.control_chars.join(", ");
+        context.diagnostic(no_control_regex_diagnostic(&violations, span));
+    }
 }
 
 struct ControlCharacterFinder {
-	control_chars:Vec<String>,
+    control_chars: Vec<String>,
 }
 
 impl<'a> Visit<'a> for ControlCharacterFinder {
-	fn visit_character(&mut self, ch:&Character) {
-		// Control characters are in the range 0x00 to 0x1F
-		if ch.value <= 0x1F &&
+    fn visit_character(&mut self, ch: &Character) {
+        // Control characters are in the range 0x00 to 0x1F
+        if ch.value <= 0x1F &&
             // tab
             ch.value != 0x09 &&
             // line feed
             ch.value != 0x0A &&
             // carriage return
             ch.value != 0x0D
-		{
-			// TODO: check if starts with \x or \u when char spans work
-			// correctly
-			self.control_chars.push(ch.to_string());
-		}
-	}
+        {
+            // TODO: check if starts with \x or \u when char spans work correctly
+            self.control_chars.push(ch.to_string());
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use crate::tester::Tester;
+    use super::*;
+    use crate::tester::Tester;
 
-	#[test]
-	fn test_hex_literals() {
-		Tester::new(
-			NoControlRegex::NAME,
-			vec![
-				"x1f",                 // not a control sequence
-				r"new RegExp('\x20')", // control sequence in valid range
-				r"new RegExp('\xff')",
-				r"let r = /\xff/",
-			],
-			vec![r"new RegExp('\x00')", r"/\x00/", r"new RegExp('\x1f')", r"/\x1f/"],
-		)
-		.test();
-	}
+    #[test]
+    fn test_hex_literals() {
+        Tester::new(
+            NoControlRegex::NAME,
+            vec![
+                "x1f",                 // not a control sequence
+                r"new RegExp('\x20')", // control sequence in valid range
+                r"new RegExp('\xff')",
+                r"let r = /\xff/",
+            ],
+            vec![r"new RegExp('\x00')", r"/\x00/", r"new RegExp('\x1f')", r"/\x1f/"],
+        )
+        .test();
+    }
 
-	#[test]
-	fn test_unicode_literals() {
-		Tester::new(
+    #[test]
+    fn test_unicode_literals() {
+        Tester::new(
             NoControlRegex::NAME,
             vec![
                 r"u00",    // not a control sequence
@@ -233,34 +229,33 @@ mod tests {
             ],
         )
         .test();
-	}
+    }
 
-	#[test]
-	fn test_unicode_brackets() {
-		Tester::new(
-			NoControlRegex::NAME,
-			vec![
-				r"let r = /\u{0}/", // no unicode flag, this is valid
-				r"let r = /\u{ff}/u",
-				r"let r = /\u{00ff}/u",
-				r"let r = new RegExp('\\u{1F}', flags);", // flags are unknown
-			],
-			vec![
-				r"let r = /\u{0}/u",
-				r"let r = /\u{c}/u",
-				r"let r = /\u{1F}/u",
-				r"let r = new RegExp('\\u{1F}', 'u');", /* flags are known &
-				                                         * contain u */
-			],
-		)
-		.test();
-	}
+    #[test]
+    fn test_unicode_brackets() {
+        Tester::new(
+            NoControlRegex::NAME,
+            vec![
+                r"let r = /\u{0}/", // no unicode flag, this is valid
+                r"let r = /\u{ff}/u",
+                r"let r = /\u{00ff}/u",
+                r"let r = new RegExp('\\u{1F}', flags);", // flags are unknown
+            ],
+            vec![
+                r"let r = /\u{0}/u",
+                r"let r = /\u{c}/u",
+                r"let r = /\u{1F}/u",
+                r"let r = new RegExp('\\u{1F}', 'u');", // flags are known & contain u
+            ],
+        )
+        .test();
+    }
 
-	#[test]
-	fn test() {
-		// test cases taken from eslint. See:
-		// https://github.com/eslint/eslint/blob/main/tests/lib/rules/no-control-regex.js
-		Tester::new(
+    #[test]
+    fn test() {
+        // test cases taken from eslint. See:
+        // https://github.com/eslint/eslint/blob/main/tests/lib/rules/no-control-regex.js
+        Tester::new(
             NoControlRegex::NAME,
             vec![
                 "var regex = /x1f/;",
@@ -314,5 +309,5 @@ mod tests {
             ],
         )
         .test_and_snapshot();
-	}
+    }
 }

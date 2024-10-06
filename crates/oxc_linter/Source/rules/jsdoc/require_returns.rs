@@ -1,6 +1,6 @@
 use oxc_ast::{
-	ast::{BindingPatternKind, Expression, MethodDefinitionKind},
-	AstKind,
+    ast::{BindingPatternKind, Expression, MethodDefinitionKind},
+    AstKind,
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
@@ -11,275 +11,273 @@ use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
 use crate::{
-	context::LintContext,
-	rule::Rule,
-	utils::{
-		default_true,
-		get_function_nearest_jsdoc_node,
-		should_ignore_as_avoid,
-		should_ignore_as_internal,
-		should_ignore_as_private,
-	},
+    context::LintContext,
+    rule::Rule,
+    utils::{
+        default_true, get_function_nearest_jsdoc_node, should_ignore_as_avoid,
+        should_ignore_as_internal, should_ignore_as_private,
+    },
 };
 
-fn missing_returns_diagnostic(span:Span) -> OxcDiagnostic {
-	OxcDiagnostic::warn("Missing JSDoc `@returns` declaration for function.")
-		.with_help("Add `@returns` tag to the JSDoc comment.")
-		.with_label(span)
+fn missing_returns_diagnostic(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::warn("Missing JSDoc `@returns` declaration for function.")
+        .with_help("Add `@returns` tag to the JSDoc comment.")
+        .with_label(span)
 }
-fn duplicate_returns_diagnostic(span:Span) -> OxcDiagnostic {
-	OxcDiagnostic::warn("Duplicate `@returns` tags.")
-		.with_help("Remove redundunt `@returns` tag.")
-		.with_label(span)
+fn duplicate_returns_diagnostic(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::warn("Duplicate `@returns` tags.")
+        .with_help("Remove redundunt `@returns` tag.")
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct RequireReturns(Box<RequireReturnsConfig>);
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Requires that return statements are documented.
-	/// Will also report if multiple `@returns` tags are present.
-	///
-	/// ### Why is this bad?
-	///
-	/// The rule is intended to prevent the omission of `@returns` tag when necessary.
-	///
-	/// ### Examples
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```javascript
-	/// /** Foo. */
-	/// function quux () { return foo; }
-	///
-	/// /**
-	///  * @returns Foo!
-	///  * @returns Foo?
-	///  */
-	/// function quux () { return foo; }
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```javascript
-	/// /** @returns Foo. */
-	/// function quux () { return foo; }
-	/// ```
-	RequireReturns,
-	pedantic,
+    /// ### What it does
+    ///
+    /// Requires that return statements are documented.
+    /// Will also report if multiple `@returns` tags are present.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// The rule is intended to prevent the omission of `@returns` tag when necessary.
+    ///
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```javascript
+    /// /** Foo. */
+    /// function quux () { return foo; }
+    ///
+    /// /**
+    ///  * @returns Foo!
+    ///  * @returns Foo?
+    ///  */
+    /// function quux () { return foo; }
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
+    /// /** @returns Foo. */
+    /// function quux () { return foo; }
+    /// ```
+    RequireReturns,
+    pedantic,
 );
 
 #[derive(Debug, Clone, Deserialize)]
 struct RequireReturnsConfig {
-	#[serde(default = "default_exempted_by", rename = "exemptedBy")]
-	exempted_by:Vec<String>,
-	#[serde(default, rename = "checkConstructors")]
-	check_constructors:bool,
-	#[serde(default = "default_true", rename = "checkGetters")]
-	check_getters:bool,
-	#[serde(default, rename = "forceRequireReturn")]
-	force_require_return:bool,
-	#[serde(default, rename = "forceReturnsWithAsync")]
-	force_returns_with_async:bool,
+    #[serde(default = "default_exempted_by", rename = "exemptedBy")]
+    exempted_by: Vec<String>,
+    #[serde(default, rename = "checkConstructors")]
+    check_constructors: bool,
+    #[serde(default = "default_true", rename = "checkGetters")]
+    check_getters: bool,
+    #[serde(default, rename = "forceRequireReturn")]
+    force_require_return: bool,
+    #[serde(default, rename = "forceReturnsWithAsync")]
+    force_returns_with_async: bool,
 }
 impl Default for RequireReturnsConfig {
-	fn default() -> Self {
-		Self {
-			exempted_by:default_exempted_by(),
-			check_constructors:false,
-			check_getters:true,
-			force_require_return:false,
-			force_returns_with_async:false,
-		}
-	}
+    fn default() -> Self {
+        Self {
+            exempted_by: default_exempted_by(),
+            check_constructors: false,
+            check_getters: true,
+            force_require_return: false,
+            force_returns_with_async: false,
+        }
+    }
 }
-fn default_exempted_by() -> Vec<String> { vec!["inheritdoc".to_string()] }
+fn default_exempted_by() -> Vec<String> {
+    vec!["inheritdoc".to_string()]
+}
 
 impl Rule for RequireReturns {
-	fn from_configuration(value:serde_json::Value) -> Self {
-		value
-			.as_array()
-			.and_then(|arr| arr.first())
-			.and_then(|value| serde_json::from_value(value.clone()).ok())
-			.map_or_else(Self::default, |value| Self(Box::new(value)))
-	}
+    fn from_configuration(value: serde_json::Value) -> Self {
+        value
+            .as_array()
+            .and_then(|arr| arr.first())
+            .and_then(|value| serde_json::from_value(value.clone()).ok())
+            .map_or_else(Self::default, |value| Self(Box::new(value)))
+    }
 
-	fn run_once(&self, ctx:&LintContext) {
-		// Step 1. Collect functions to check
-		// In this rule, existence of `return` statement differs the behavior.
-		// Search `ReturnStatement` when visiting `Function` requires a lot of
-		// work. Instead, we collect all functions and their attributes first.
+    fn run_once(&self, ctx: &LintContext) {
+        // Step 1. Collect functions to check
+        // In this rule, existence of `return` statement differs the behavior.
+        // Search `ReturnStatement` when visiting `Function` requires a lot of work.
+        // Instead, we collect all functions and their attributes first.
 
-		// Value of map: (AstNode, Span, Attrs: (isAsync, hasReturnValue))
-		let mut functions_to_check = FxHashMap::default();
-		'visit_node: for node in ctx.nodes() {
-			match node.kind() {
-				AstKind::Function(func) => {
-					functions_to_check.insert(node.id(), (node, func.span, (func.r#async, false)));
-				},
-				AstKind::ArrowFunctionExpression(arrow_func) => {
-					functions_to_check.insert(
-						node.id(),
-						(
-							node,
-							arrow_func.span,
-							if let Some(expr) = arrow_func.get_expression() {
-								is_promise_resolve_with_value(expr, ctx)
-									.map_or((arrow_func.r#async, true), |v| (true, v))
-							} else {
-								(arrow_func.r#async, false)
-							},
-						),
-					);
-				},
-				// Update function attrs entry with checking `return` value.
-				// If syntax is valid, parent function node should be found by
-				// looking up the tree.
-				//
-				// It may not be accurate if there are multiple `return` in a
-				// function like: ```js
-				// function foo(x) {
-				//   if (x) return Promise.resolve(1);
-				//   return 2;
-				// }
-				// ```
-				// IMO: This is a fault of the original rule design...
-				AstKind::ReturnStatement(return_stmt) => {
-					let mut current_node = node;
-					while let Some(parent_node) = ctx.nodes().parent_node(current_node.id()) {
-						match parent_node.kind() {
-							AstKind::Function(_) | AstKind::ArrowFunctionExpression(_) => {
-								// Ignore `return;`
-								let Some(ref argument) = return_stmt.argument else {
-									continue 'visit_node;
-								};
+        // Value of map: (AstNode, Span, Attrs: (isAsync, hasReturnValue))
+        let mut functions_to_check = FxHashMap::default();
+        'visit_node: for node in ctx.nodes() {
+            match node.kind() {
+                AstKind::Function(func) => {
+                    functions_to_check.insert(node.id(), (node, func.span, (func.r#async, false)));
+                }
+                AstKind::ArrowFunctionExpression(arrow_func) => {
+                    functions_to_check.insert(
+                        node.id(),
+                        (
+                            node,
+                            arrow_func.span,
+                            if let Some(expr) = arrow_func.get_expression() {
+                                is_promise_resolve_with_value(expr, ctx)
+                                    .map_or((arrow_func.r#async, true), |v| (true, v))
+                            } else {
+                                (arrow_func.r#async, false)
+                            },
+                        ),
+                    );
+                }
+                // Update function attrs entry with checking `return` value.
+                // If syntax is valid, parent function node should be found by looking up the tree.
+                //
+                // It may not be accurate if there are multiple `return` in a function like:
+                // ```js
+                // function foo(x) {
+                //   if (x) return Promise.resolve(1);
+                //   return 2;
+                // }
+                // ```
+                // IMO: This is a fault of the original rule design...
+                AstKind::ReturnStatement(return_stmt) => {
+                    let mut current_node = node;
+                    while let Some(parent_node) = ctx.nodes().parent_node(current_node.id()) {
+                        match parent_node.kind() {
+                            AstKind::Function(_) | AstKind::ArrowFunctionExpression(_) => {
+                                // Ignore `return;`
+                                let Some(ref argument) = return_stmt.argument else {
+                                    continue 'visit_node;
+                                };
 
-								functions_to_check.entry(parent_node.id()).and_modify(|e| {
-									// If `return somePromise` is found,
-									// treat this function as async
-									match is_promise_resolve_with_value(argument, ctx) {
-										Some(v) => e.2 = (true, v),
-										None => e.2 = (e.2.0, true),
-									}
-								});
-								continue 'visit_node;
-							},
-							_ => {
-								current_node = parent_node;
-							},
-						}
-					}
-				},
-				_ => continue,
-			}
-		}
+                                functions_to_check.entry(parent_node.id()).and_modify(|e| {
+                                    // If `return somePromise` is found, treat this function as async
+                                    match is_promise_resolve_with_value(argument, ctx) {
+                                        Some(v) => e.2 = (true, v),
+                                        None => e.2 = (e.2 .0, true),
+                                    }
+                                });
+                                continue 'visit_node;
+                            }
+                            _ => {
+                                current_node = parent_node;
+                            }
+                        }
+                    }
+                }
+                _ => continue,
+            }
+        }
 
-		// Step 2. Check collected functions
-		for (node, func_span, (is_async, has_return_value)) in functions_to_check.values() {
-			let Some(func_def_node) = get_function_nearest_jsdoc_node(node, ctx) else {
-				continue;
-			};
-			// If no JSDoc is found, skip
-			let Some(jsdocs) = ctx.jsdoc().get_all_by_node(func_def_node) else {
-				continue;
-			};
+        // Step 2. Check collected functions
+        for (node, func_span, (is_async, has_return_value)) in functions_to_check.values() {
+            let Some(func_def_node) = get_function_nearest_jsdoc_node(node, ctx) else {
+                continue;
+            };
+            // If no JSDoc is found, skip
+            let Some(jsdocs) = ctx.jsdoc().get_all_by_node(func_def_node) else {
+                continue;
+            };
 
-			let config = &self.0;
-			let settings = &ctx.settings().jsdoc;
-			// If JSDoc is found but safely ignored, skip
-			if jsdocs
-				.iter()
-				.filter(|jsdoc| !should_ignore_as_custom_skip(jsdoc))
-				.filter(|jsdoc| !should_ignore_as_avoid(jsdoc, settings, &config.exempted_by))
-				.filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
-				.filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
-				.count() == 0
-			{
-				continue;
-			}
+            let config = &self.0;
+            let settings = &ctx.settings().jsdoc;
+            // If JSDoc is found but safely ignored, skip
+            if jsdocs
+                .iter()
+                .filter(|jsdoc| !should_ignore_as_custom_skip(jsdoc))
+                .filter(|jsdoc| !should_ignore_as_avoid(jsdoc, settings, &config.exempted_by))
+                .filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
+                .filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
+                .count()
+                == 0
+            {
+                continue;
+            }
 
-			// If config disabled checking, skip
-			if let AstKind::MethodDefinition(method_def) = func_def_node.kind() {
-				match method_def.kind {
-					MethodDefinitionKind::Get => {
-						if !config.check_getters {
-							continue;
-						}
-					},
-					MethodDefinitionKind::Constructor => {
-						if !config.check_constructors {
-							continue;
-						}
-					},
-					_ => {},
-				}
-			}
+            // If config disabled checking, skip
+            if let AstKind::MethodDefinition(method_def) = func_def_node.kind() {
+                match method_def.kind {
+                    MethodDefinitionKind::Get => {
+                        if !config.check_getters {
+                            continue;
+                        }
+                    }
+                    MethodDefinitionKind::Constructor => {
+                        if !config.check_constructors {
+                            continue;
+                        }
+                    }
+                    _ => {}
+                }
+            }
 
-			if !config.force_require_return &&
+            if !config.force_require_return &&
             // If sync, no return value, skip
             (!has_return_value && !is_async)
-			{
-				continue;
-			}
-			if !config.force_require_return && !config.force_returns_with_async &&
+            {
+                continue;
+            }
+            if !config.force_require_return && !config.force_returns_with_async &&
                 // If async, no resolve value, skip
                 (!has_return_value && *is_async)
-			{
-				continue;
-			}
+            {
+                continue;
+            }
 
-			let jsdoc_tags = jsdocs.iter().flat_map(JSDoc::tags).collect::<Vec<_>>();
-			let resolved_returns_tag_name = settings.resolve_tag_name("returns");
+            let jsdoc_tags = jsdocs.iter().flat_map(JSDoc::tags).collect::<Vec<_>>();
+            let resolved_returns_tag_name = settings.resolve_tag_name("returns");
 
-			if is_missing_returns_tag(&jsdoc_tags, resolved_returns_tag_name) {
-				ctx.diagnostic(missing_returns_diagnostic(*func_span));
-				continue;
-			}
+            if is_missing_returns_tag(&jsdoc_tags, resolved_returns_tag_name) {
+                ctx.diagnostic(missing_returns_diagnostic(*func_span));
+                continue;
+            }
 
-			if let Some(span) = is_duplicated_returns_tag(&jsdoc_tags, resolved_returns_tag_name) {
-				ctx.diagnostic(duplicate_returns_diagnostic(span));
-			}
-		}
-	}
+            if let Some(span) = is_duplicated_returns_tag(&jsdoc_tags, resolved_returns_tag_name) {
+                ctx.diagnostic(duplicate_returns_diagnostic(span));
+            }
+        }
+    }
 }
 
-const CUSTOM_SKIP_TAG_NAMES:phf::Set<&'static str> = phf_set! {
-	"abstract", "virtual", "class", "constructor", "type", "interface"
+const CUSTOM_SKIP_TAG_NAMES: phf::Set<&'static str> = phf_set! {
+    "abstract", "virtual", "class", "constructor", "type", "interface"
 };
-fn should_ignore_as_custom_skip(jsdoc:&JSDoc) -> bool {
-	jsdoc.tags().iter().any(|tag| CUSTOM_SKIP_TAG_NAMES.contains(tag.kind.parsed()))
+fn should_ignore_as_custom_skip(jsdoc: &JSDoc) -> bool {
+    jsdoc.tags().iter().any(|tag| CUSTOM_SKIP_TAG_NAMES.contains(tag.kind.parsed()))
 }
 
-fn is_missing_returns_tag(jsdoc_tags:&[&JSDocTag], resolved_returns_tag_name:&str) -> bool {
-	jsdoc_tags.iter().all(|tag| tag.kind.parsed() != resolved_returns_tag_name)
+fn is_missing_returns_tag(jsdoc_tags: &[&JSDocTag], resolved_returns_tag_name: &str) -> bool {
+    jsdoc_tags.iter().all(|tag| tag.kind.parsed() != resolved_returns_tag_name)
 }
 
 fn is_duplicated_returns_tag(
-	jsdoc_tags:&Vec<&JSDocTag>,
-	resolved_returns_tag_name:&str,
+    jsdoc_tags: &Vec<&JSDocTag>,
+    resolved_returns_tag_name: &str,
 ) -> Option<Span> {
-	let mut returns_found = false;
-	for tag in jsdoc_tags {
-		if tag.kind.parsed() == resolved_returns_tag_name {
-			if returns_found {
-				return Some(tag.kind.span);
-			}
+    let mut returns_found = false;
+    for tag in jsdoc_tags {
+        if tag.kind.parsed() == resolved_returns_tag_name {
+            if returns_found {
+                return Some(tag.kind.span);
+            }
 
-			returns_found = true;
-		}
-	}
+            returns_found = true;
+        }
+    }
 
-	None
+    None
 }
 
 /// - Some(true): `Promise` with value
 /// - Some(false): `Promise` without value
 /// - None: Not a `Promise` but some other expression
-fn is_promise_resolve_with_value(expr:&Expression, ctx:&LintContext) -> Option<bool> {
-	// `return new Promise(...)`
-	if let Expression::NewExpression(new_expr) = expr {
-		if new_expr.callee.is_specific_id("Promise") {
-			return new_expr
+fn is_promise_resolve_with_value(expr: &Expression, ctx: &LintContext) -> Option<bool> {
+    // `return new Promise(...)`
+    if let Expression::NewExpression(new_expr) = expr {
+        if new_expr.callee.is_specific_id("Promise") {
+            return new_expr
                 .arguments
                 // Get `new Promise(HERE, ...)`
                 .first()
@@ -326,21 +324,21 @@ fn is_promise_resolve_with_value(expr:&Expression, ctx:&LintContext) -> Option<b
                     None
                 })
                 .or(Some(false));
-		}
-	}
+        }
+    }
 
-	// Tests do not cover `return Promise.xxx()`, but should be...?
+    // Tests do not cover `return Promise.xxx()`, but should be...?
 
-	None
+    None
 }
 
 #[test]
 fn test() {
-	use crate::tester::Tester;
+    use crate::tester::Tester;
 
-	let pass = vec![
-		(
-			"
+    let pass = vec![
+        (
+            "
 			          /**
 			           * @returns Foo.
 			           */
@@ -349,22 +347,22 @@ fn test() {
 			            return foo;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          function quux () {
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -374,11 +372,11 @@ fn test() {
 			            })
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns Array
 			           */
@@ -388,43 +386,43 @@ fn test() {
 			            })
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns Array
 			           */
 			          const quux = (bar) => bar.filter(({ corge }) => corge())
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @inheritdoc
 			           */
 			          function quux (foo) {
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @override
 			           */
 			          function quux (foo) {
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @constructor
 			           */
@@ -432,11 +430,11 @@ fn test() {
 			            return true;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @override
 			           */
@@ -445,11 +443,11 @@ fn test() {
 			            return foo;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @class
 			           */
@@ -457,11 +455,11 @@ fn test() {
 			            return true;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @constructor
 			           */
@@ -469,11 +467,11 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {object}
 			           */
@@ -482,21 +480,21 @@ fn test() {
 			            return {a: foo};
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {object}
 			           */
 			          const quux = () => ({a: foo});
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {object}
 			           */
@@ -504,22 +502,22 @@ fn test() {
 			            return {a: foo}
 			          };
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {void}
 			           */
 			          function quux () {
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {void}
 			           */
@@ -527,22 +525,22 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {undefined}
 			           */
 			          function quux () {
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {undefined}
 			           */
@@ -550,11 +548,11 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -562,11 +560,11 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      class Foo {
 			        /**
 			         *
@@ -575,15 +573,15 @@ fn test() {
 			        }
 			      }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      const language = {
 			        /**
 			         * @param {string} name
@@ -593,38 +591,26 @@ fn test() {
 			        }
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {void}
 			           */
 			          function quux () {
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
-			          /**
-			           * @returns {void}
-			           */
-			          function quux () {
-			            return undefined;
-			          }
-			      ",
-			None,
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {void}
 			           */
@@ -632,15 +618,27 @@ fn test() {
 			            return undefined;
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
+			          /**
+			           * @returns {void}
+			           */
+			          function quux () {
+			            return undefined;
+			          }
+			      ",
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {void}
 			           */
@@ -648,11 +646,11 @@ fn test() {
 			            return;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {void}
 			           */
@@ -660,85 +658,85 @@ fn test() {
 			            return;
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /** @type {RequestHandler} */
 			          function quux (req, res , next) {
 			            return;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {Promise}
 			           */
 			          async function quux () {
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {Promise}
 			           */
 			          async function quux () {
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          async function quux () {}
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          const quux = async function () {}
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          const quux = async () => {}
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /** foo class */
 			      class foo {
 			        /** foo constructor */
@@ -750,26 +748,26 @@ fn test() {
 
 			      export default foo;
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          function quux () {
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @type {MyCallback}
 			           */
@@ -777,17 +775,17 @@ fn test() {
 
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"exemptedBy": [
-				  "type",
-				],
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "exemptedBy": [
+                  "type",
+                ],
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      /**
 			       * @param {array} a
 			       */
@@ -795,80 +793,80 @@ fn test() {
 			        return;
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @function
 			           */
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @callback
 			           */
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @function
 			           * @async
 			           */
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @callback
 			           * @async
 			           */
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          class foo {
 			            get bar() {
 			              return 0;
 			            }
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"checkGetters": false,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "checkGetters": false,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          class foo {
 			            /** @returns zero */
 			            get bar() {
@@ -876,15 +874,15 @@ fn test() {
 			            }
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"checkGetters": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "checkGetters": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          class foo {
 			            /** @returns zero */
 			            get bar() {
@@ -892,15 +890,15 @@ fn test() {
 			            }
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"checkGetters": false,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "checkGetters": false,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			        class TestClass {
 			          /**
 			           *
@@ -908,11 +906,11 @@ fn test() {
 			          constructor() { }
 			        }
 			        ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			        class TestClass {
 			          /**
 			           * @returns A map.
@@ -922,11 +920,11 @@ fn test() {
 			          }
 			        }
 			        ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			        class TestClass {
 			          /**
 			           *
@@ -934,15 +932,15 @@ fn test() {
 			          constructor() { }
 			        }
 			        ",
-			Some(serde_json::json!([
-			  {
-				"checkConstructors": false,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "checkConstructors": false,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      class TestClass {
 			        /**
 			         *
@@ -950,11 +948,11 @@ fn test() {
 			        get Test() { }
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      class TestClass {
 			        /**
 			         * @returns A number.
@@ -964,11 +962,11 @@ fn test() {
 			        }
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      class TestClass {
 			        /**
 			         * pass(getter but config.checkGetters is false)
@@ -978,15 +976,15 @@ fn test() {
 			        }
 			      }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"checkGetters": false,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "checkGetters": false,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -997,11 +995,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1014,11 +1012,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1029,11 +1027,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1046,11 +1044,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1063,11 +1061,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1080,11 +1078,11 @@ fn test() {
 			            return;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1092,11 +1090,11 @@ fn test() {
 			            return new Promise();
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			        /**
 			         * Description.
 			         */
@@ -1104,11 +1102,11 @@ fn test() {
 			          return new Promise(resolve => resolve());
 			        }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /**
 			       * Reads a test fixture.
 			       *
@@ -1116,34 +1114,34 @@ fn test() {
 			       */
 			      export function readFixture(path: string): void;
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /**
 			       * Reads a test fixture.
 			       */
 			      export function readFixture(path: string): void;
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /**
 			       * Reads a test fixture.
 			       */
 			      export function readFixture(path: string);
 			      ",
-			None,
-			None,
-		),
-	];
+            None,
+            None,
+        ),
+    ];
 
-	let fail = vec![
-		(
-			"
+    let fail = vec![
+        (
+            "
 			          /**
 			           * fail(no @returns)
 			           */
@@ -1152,11 +1150,11 @@ fn test() {
 			            return foo;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1166,11 +1164,11 @@ fn test() {
 			            }
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1178,31 +1176,31 @@ fn test() {
 			            bar: 'baz'
 			          })
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          const foo = bar=>({ bar })
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          const foo = bar => bar.baz()
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1211,89 +1209,89 @@ fn test() {
 			            return foo;
 			          }
 			      ",
-			None,
-			Some(serde_json::json!({ "settings": {
+            None,
+            Some(serde_json::json!({ "settings": {
         "jsdoc": {
           "tagNamePreference": {
             "returns": "return",
           },
         },
       } })),
-		),
-		(
-			"
+        ),
+        (
+            "
 			          /**
 			           * fail(forceRequireReturn: true)
 			           */
 			          async function quux() {
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          const quux = async function () {}
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * fail(forceRequireReturn: true)
 			           */
 			          const quux = async () => {}
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			           /**
 			            * fail(forceRequireReturn: true)
 			            */
 			           async function quux () {}
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
 			          function quux () {
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      const language = {
 			        /**
 			         * @param {string} name
@@ -1303,26 +1301,26 @@ fn test() {
 			        }
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * fail(forceReturnsWithAsync: true)
 			           */
 			          async function quux () {
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {undefined}
 			           * @returns {void}
@@ -1332,11 +1330,11 @@ fn test() {
 			            return foo;
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @param foo
 			           */
@@ -1344,17 +1342,17 @@ fn test() {
 			            return 'bar';
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"exemptedBy": [
-				  "notPresent",
-				],
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "exemptedBy": [
+                  "notPresent",
+                ],
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      /**
 			       * @param {array} a
 			       */
@@ -1362,15 +1360,15 @@ fn test() {
 			        return;
 			      }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      /**
 			       * @param {array} a
 			       */
@@ -1378,15 +1376,15 @@ fn test() {
 			        return Promise.all(a);
 			      }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      class foo {
 			        /** gets bar */
 			        get bar() {
@@ -1394,15 +1392,15 @@ fn test() {
 			        }
 			      }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"checkGetters": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "checkGetters": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			        class TestClass {
 			          /**
 			           *
@@ -1412,15 +1410,15 @@ fn test() {
 			          }
 			        }
 			        ",
-			Some(serde_json::json!([
-			  {
-				"checkConstructors": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "checkConstructors": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      class TestClass {
 			        /**
 			         *
@@ -1430,15 +1428,15 @@ fn test() {
 			        }
 			      }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"checkGetters": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "checkGetters": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1449,11 +1447,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1466,11 +1464,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1481,11 +1479,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1497,11 +1495,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1514,11 +1512,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1531,11 +1529,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1548,11 +1546,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1564,11 +1562,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1579,11 +1577,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1596,11 +1594,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1613,11 +1611,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1631,11 +1629,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1650,11 +1648,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1668,11 +1666,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1686,11 +1684,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1702,11 +1700,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1718,11 +1716,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1734,11 +1732,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1752,11 +1750,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1769,11 +1767,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1786,11 +1784,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1800,11 +1798,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1814,11 +1812,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1828,11 +1826,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1842,11 +1840,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1858,11 +1856,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1872,11 +1870,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1886,11 +1884,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1902,11 +1900,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1919,11 +1917,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1935,11 +1933,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1949,11 +1947,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1963,11 +1961,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1977,11 +1975,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -1991,11 +1989,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2005,11 +2003,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2019,11 +2017,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2033,11 +2031,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2057,11 +2055,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2079,11 +2077,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2101,11 +2099,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2119,11 +2117,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2133,11 +2131,11 @@ fn test() {
 			            });
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2145,15 +2143,15 @@ fn test() {
 			            return new Promise();
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2161,15 +2159,15 @@ fn test() {
 			            return new Promise();
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -2177,43 +2175,43 @@ fn test() {
 			            return new Promise((resolve, reject) => {});
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceReturnsWithAsync": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceReturnsWithAsync": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      /**
 			       * Reads a test fixture.
 			       */
 			      export function readFixture(path: string): void;
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      /**
 			       * Reads a test fixture.
 			       */
 			      export function readFixture(path: string);
 			      ",
-			Some(serde_json::json!([
-			  {
-				"forceRequireReturn": true,
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "forceRequireReturn": true,
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      /**
 			       * @param {array} a
 			       */
@@ -2221,11 +2219,11 @@ fn test() {
 			        return Promise.all(a);
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /**
 			       * Description.
 			       */
@@ -2233,10 +2231,10 @@ fn test() {
 			        return true;
 			      }
 			      ",
-			None,
-			None,
-		),
-	];
+            None,
+            None,
+        ),
+    ];
 
-	Tester::new(RequireReturns::NAME, pass, fail).test_and_snapshot();
+    Tester::new(RequireReturns::NAME, pass, fail).test_and_snapshot();
 }

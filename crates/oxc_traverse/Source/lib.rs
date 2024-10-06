@@ -65,13 +65,13 @@ use oxc_ast::ast::Program;
 use oxc_semantic::{ScopeTree, SymbolTable};
 
 mod context;
-pub use context::{TraverseAncestry, TraverseCtx, TraverseScoping};
+pub use context::{BoundIdentifier, TraverseAncestry, TraverseCtx, TraverseScoping};
 
 mod generated {
-	pub mod ancestor;
-	pub(super) mod scopes_collector;
-	pub mod traverse;
-	pub(super) mod walk;
+    pub mod ancestor;
+    pub(super) mod scopes_collector;
+    pub mod traverse;
+    pub(super) mod walk;
 }
 pub use generated::{ancestor, ancestor::Ancestor, traverse::Traverse};
 use generated::{scopes_collector, walk};
@@ -143,23 +143,23 @@ mod compile_fail_tests;
 /// ```
 
 pub fn traverse_mut<'a, Tr: Traverse<'a>>(
-	traverser: &mut Tr,
-	allocator: &'a Allocator,
-	program: &mut Program<'a>,
-	symbols: SymbolTable,
-	scopes: ScopeTree,
+    traverser: &mut Tr,
+    allocator: &'a Allocator,
+    program: &mut Program<'a>,
+    symbols: SymbolTable,
+    scopes: ScopeTree,
 ) -> (SymbolTable, ScopeTree) {
-	let mut ctx = TraverseCtx::new(scopes, symbols, allocator);
-	walk_program(traverser, program, &mut ctx);
-	debug_assert!(ctx.ancestors_depth() == 1);
-	ctx.scoping.into_symbol_table_and_scope_tree()
+    let mut ctx = TraverseCtx::new(scopes, symbols, allocator);
+    walk_program(traverser, program, &mut ctx);
+    debug_assert!(ctx.ancestors_depth() == 1);
+    ctx.scoping.into_symbol_table_and_scope_tree()
 }
 
 pub fn walk_program<'a, Tr: Traverse<'a>>(
-	traverser: &mut Tr,
-	program: &mut Program<'a>,
-	ctx: &mut TraverseCtx<'a>,
+    traverser: &mut Tr,
+    program: &mut Program<'a>,
+    ctx: &mut TraverseCtx<'a>,
 ) {
-	// SAFETY: Walk functions are constructed to avoid unsoundness
-	unsafe { walk::walk_program(traverser, std::ptr::from_mut(program), ctx) };
+    // SAFETY: Walk functions are constructed to avoid unsoundness
+    unsafe { walk::walk_program(traverser, std::ptr::from_mut(program), ctx) };
 }

@@ -1,7 +1,6 @@
 //! ES2018 object spread transformation.
 //!
-//! This plugin transforms rest properties for object destructuring assignment
-//! and spread properties for object literals.
+//! This plugin transforms rest properties for object destructuring assignment and spread properties for object literals.
 //!
 //! > This plugin is included in `preset-env`, in ES2018
 //!
@@ -39,33 +38,33 @@ mod object_spread;
 #[derive(Debug, Default, Clone, Copy, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ObjectRestSpreadOptions {
-	#[serde(alias = "loose")]
-	pub(crate) set_spread_properties:bool,
-	pub(crate) use_built_ins:bool,
+    #[serde(alias = "loose")]
+    pub(crate) set_spread_properties: bool,
+    pub(crate) use_built_ins: bool,
 }
 
 pub struct ObjectRestSpread {
-	#[allow(dead_code)]
-	options:ObjectRestSpreadOptions,
+    #[allow(dead_code)]
+    options: ObjectRestSpreadOptions,
 
-	// Plugins
-	object_spread:ObjectSpread,
-	#[allow(dead_code)]
-	object_rest:ObjectRest,
+    // Plugins
+    object_spread: ObjectSpread,
+    #[allow(dead_code)]
+    object_rest: ObjectRest,
 }
 
 impl ObjectRestSpread {
-	pub fn new(options:ObjectRestSpreadOptions) -> Self {
-		Self {
-			object_spread:ObjectSpread::new(options),
-			object_rest:ObjectRest::new(options),
-			options,
-		}
-	}
+    pub fn new(options: ObjectRestSpreadOptions) -> Self {
+        Self {
+            object_spread: ObjectSpread::new(options),
+            object_rest: ObjectRest::new(options),
+            options,
+        }
+    }
 }
 
 impl<'a> Traverse<'a> for ObjectRestSpread {
-	fn enter_expression(&mut self, expr:&mut Expression<'a>, ctx:&mut TraverseCtx<'a>) {
-		self.object_spread.enter_expression(expr, ctx);
-	}
+    fn enter_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
+        self.object_spread.enter_expression(expr, ctx);
+    }
 }

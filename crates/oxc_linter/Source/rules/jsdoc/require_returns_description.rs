@@ -3,104 +3,104 @@ use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
 use crate::{
-	ast_util::is_function_node,
-	context::LintContext,
-	rule::Rule,
-	utils::{get_function_nearest_jsdoc_node, should_ignore_as_internal, should_ignore_as_private},
-	AstNode,
+    ast_util::is_function_node,
+    context::LintContext,
+    rule::Rule,
+    utils::{get_function_nearest_jsdoc_node, should_ignore_as_internal, should_ignore_as_private},
+    AstNode,
 };
 
-fn missing_description_diagnostic(span:Span) -> OxcDiagnostic {
-	OxcDiagnostic::warn("Missing JSDoc `@returns` description.")
-		.with_help("Add description comment to `@returns` tag.")
-		.with_label(span)
+fn missing_description_diagnostic(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::warn("Missing JSDoc `@returns` description.")
+        .with_help("Add description comment to `@returns` tag.")
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct RequireReturnsDescription;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Requires that the `@returns` tag has a description value.
-	/// The error will not be reported if the return value is `void `or `undefined` or if it is `Promise<void>` or `Promise<undefined>`.
-	///
-	/// ### Why is this bad?
-	///
-	/// A `@returns` tag should have a description value.
-	///
-	/// ### Examples
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```javascript
-	/// /** @returns */
-	/// function quux (foo) {}
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```javascript
-	/// /** @returns Foo. */
-	/// function quux (foo) {}
-	/// ```
-	RequireReturnsDescription,
-	pedantic,
+    /// ### What it does
+    ///
+    /// Requires that the `@returns` tag has a description value.
+    /// The error will not be reported if the return value is `void `or `undefined` or if it is `Promise<void>` or `Promise<undefined>`.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// A `@returns` tag should have a description value.
+    ///
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```javascript
+    /// /** @returns */
+    /// function quux (foo) {}
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
+    /// /** @returns Foo. */
+    /// function quux (foo) {}
+    /// ```
+    RequireReturnsDescription,
+    pedantic,
 );
 
 impl Rule for RequireReturnsDescription {
-	fn run<'a>(&self, node:&AstNode<'a>, ctx:&LintContext<'a>) {
-		if !is_function_node(node) {
-			return;
-		}
+    fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
+        if !is_function_node(node) {
+            return;
+        }
 
-		// If no JSDoc is found, skip
-		let Some(jsdocs) = get_function_nearest_jsdoc_node(node, ctx)
-			.and_then(|node| ctx.jsdoc().get_all_by_node(node))
-		else {
-			return;
-		};
+        // If no JSDoc is found, skip
+        let Some(jsdocs) = get_function_nearest_jsdoc_node(node, ctx)
+            .and_then(|node| ctx.jsdoc().get_all_by_node(node))
+        else {
+            return;
+        };
 
-		let settings = &ctx.settings().jsdoc;
-		let resolved_returns_tag_name = settings.resolve_tag_name("returns");
-		for jsdoc in jsdocs
-			.iter()
-			.filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
-			.filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
-		{
-			for tag in jsdoc.tags() {
-				if tag.kind.parsed() != resolved_returns_tag_name {
-					continue;
-				}
+        let settings = &ctx.settings().jsdoc;
+        let resolved_returns_tag_name = settings.resolve_tag_name("returns");
+        for jsdoc in jsdocs
+            .iter()
+            .filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
+            .filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
+        {
+            for tag in jsdoc.tags() {
+                if tag.kind.parsed() != resolved_returns_tag_name {
+                    continue;
+                }
 
-				let (type_part, comment_part) = tag.type_comment();
+                let (type_part, comment_part) = tag.type_comment();
 
-				// If returns type is marked as nothing, skip
-				if let Some(type_part) = type_part {
-					if matches!(
-						type_part.parsed(),
-						"void" | "undefined" | "Promise<void>" | "Promise<undefined>"
-					) {
-						continue;
-					}
-				}
+                // If returns type is marked as nothing, skip
+                if let Some(type_part) = type_part {
+                    if matches!(
+                        type_part.parsed(),
+                        "void" | "undefined" | "Promise<void>" | "Promise<undefined>"
+                    ) {
+                        continue;
+                    }
+                }
 
-				// If description exists, skip
-				if !comment_part.parsed().is_empty() {
-					continue;
-				}
+                // If description exists, skip
+                if !comment_part.parsed().is_empty() {
+                    continue;
+                }
 
-				ctx.diagnostic(missing_description_diagnostic(tag.kind.span));
-			}
-		}
-	}
+                ctx.diagnostic(missing_description_diagnostic(tag.kind.span));
+            }
+        }
+    }
 }
 
 #[test]
 fn test() {
-	use crate::tester::Tester;
+    use crate::tester::Tester;
 
-	let pass = vec![
-		(
-			"
+    let pass = vec![
+        (
+            "
 			          /**
 			           *
 			           */
@@ -108,11 +108,11 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns Foo.
 			           */
@@ -120,11 +120,11 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns Foo.
 			           */
@@ -132,17 +132,17 @@ fn test() {
 			
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"contexts": [
-				  "any",
-				],
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "contexts": [
+                  "any",
+                ],
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {undefined}
 			           */
@@ -150,11 +150,11 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {void}
 			           */
@@ -162,11 +162,11 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {Promise<void>}
 			           */
@@ -174,11 +174,11 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {Promise<undefined>}
 			           */
@@ -186,34 +186,34 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @function
 			           * @returns
 			           */
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @callback
 			           * @returns
 			           */
 			      ",
-			None,
-			None,
-		),
-	];
+            None,
+            None,
+        ),
+    ];
 
-	let fail = vec![
-		(
-			"
+    let fail = vec![
+        (
+            "
 			          /**
 			           * @returns
 			           */
@@ -221,11 +221,11 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @returns {string}
 			           */
@@ -233,11 +233,11 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @return
 			           */
@@ -245,16 +245,16 @@ fn test() {
 			
 			          }
 			      ",
-			None,
-			Some(serde_json::json!({ "settings": {
+            None,
+            Some(serde_json::json!({ "settings": {
         "jsdoc": {
           "tagNamePreference": {
             "returns": "return",
           },
         },
       } })),
-		),
-	];
+        ),
+    ];
 
-	Tester::new(RequireReturnsDescription::NAME, pass, fail).test_and_snapshot();
+    Tester::new(RequireReturnsDescription::NAME, pass, fail).test_and_snapshot();
 }

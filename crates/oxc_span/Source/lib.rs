@@ -11,17 +11,16 @@ pub mod cmp;
 pub mod hash;
 
 pub use crate::{
-	atom::Atom,
-	compact_str::{CompactStr, MAX_INLINE_LEN as ATOM_MAX_INLINE_LEN},
-	source_type::{
-		Language, LanguageVariant, ModuleKind, SourceType, UnknownExtension,
-		VALID_EXTENSIONS,
-	},
-	span::{GetSpan, GetSpanMut, Span, SPAN},
+    atom::Atom,
+    compact_str::{CompactStr, MAX_INLINE_LEN as ATOM_MAX_INLINE_LEN},
+    source_type::{
+        Language, LanguageVariant, ModuleKind, SourceType, UnknownExtension, VALID_EXTENSIONS,
+    },
+    span::{GetSpan, GetSpanMut, Span, SPAN},
 };
 
 #[doc(hidden)]
 pub mod __internal {
-	// Used by `format_compact_str!` macro defined in `compact_str.rs`
-	pub use compact_str::format_compact;
+    // Used by `format_compact_str!` macro defined in `compact_str.rs`
+    pub use compact_str::format_compact;
 }
