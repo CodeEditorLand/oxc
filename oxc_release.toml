@@ -4,18 +4,18 @@
 [[releases]]
 name = "crates"
 versioned_files = [
-  "Cargo.toml",
-  "npm/oxc-parser/package.json",
-  "npm/oxc-transform/package.json",
-  "wasm/parser/package.json",
+	"Cargo.toml",
+	"npm/oxc-parser/package.json",
+	"npm/oxc-transform/package.json",
+	"wasm/parser/package.json",
 ]
 
 [[releases]]
 name = "oxlint"
 scopes_for_breaking_change = ["lint"]
 versioned_files = [
-  "apps/oxlint/Cargo.toml",
-  "crates/oxc_linter/Cargo.toml",
-  "editors/vscode/package.json",
-  "npm/oxlint/package.json",
+	"apps/oxlint/Cargo.toml",
+	"crates/oxc_linter/Cargo.toml",
+	"editors/vscode/package.json",
+	"npm/oxlint/package.json",
 ]
