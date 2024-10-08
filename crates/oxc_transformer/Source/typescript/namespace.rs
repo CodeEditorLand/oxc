@@ -1,12 +1,14 @@
 use oxc_allocator::{Box, Vec};
-use oxc_ast::{ast::*, syntax_directed_operations::BoundNames, NONE};
+use oxc_ast::{ast::*, NONE};
 use oxc_span::{Atom, CompactStr, SPAN};
 use oxc_syntax::{
     operator::{AssignmentOperator, LogicalOperator},
     scope::{ScopeFlags, ScopeId},
     symbol::SymbolFlags,
 };
+use oxc_syntax_operations::BoundNames;
 use oxc_traverse::{Traverse, TraverseCtx};
+
 use rustc_hash::FxHashSet;
 
 use super::{
@@ -151,7 +153,8 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
 
         let mut names: FxHashSet<Atom<'a>> = FxHashSet::default();
 
-        let TSModuleDeclarationName::Identifier(IdentifierName { name: real_name, .. }) = decl.id
+        let TSModuleDeclarationName::Identifier(BindingIdentifier { name: real_name, .. }) =
+            decl.id
         else {
             return None;
         };

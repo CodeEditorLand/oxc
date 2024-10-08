@@ -86,10 +86,9 @@ fn main() -> std::io::Result<()> {
 
     let basic_blocks_printed = cfg
         .basic_blocks
-        .iter()
-        .map(DisplayDot::display_dot)
-        .enumerate()
+        .iter_enumerated()
         .map(|(i, it)| {
+            let it = it.display_dot();
             format!(
                 "bb{i}: {{\n{}\n---\n{}\n}}",
                 it.lines().map(|x| format!("\t{}", x.trim())).join("\n"),
@@ -115,7 +114,7 @@ fn main() -> std::io::Result<()> {
                 let weight = edge.weight();
                 let label = format!("label = \"{weight:?}\"");
                 if matches!(weight, EdgeType::Unreachable)
-                    || cfg.basic_block(edge.source()).unreachable
+                    || cfg.basic_block(edge.source()).is_unreachable()
                 {
                     format!("{label}, style = \"dotted\" ")
                 } else {
