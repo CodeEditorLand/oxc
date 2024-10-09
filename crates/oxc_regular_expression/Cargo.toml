@@ -1,6 +1,6 @@
 [package]
 name = "oxc_regular_expression"
-version = "0.30.5"
+version = "0.31.0"
 authors.workspace = true
 categories.workspace = true
 edition.workspace = true
@@ -35,13 +35,7 @@ wasm-bindgen = { workspace = true, optional = true }
 
 [features]
 default = []
-serialize = [
-	"dep:serde",
-	"dep:tsify",
-	"dep:wasm-bindgen",
-	"oxc_allocator/serialize",
-	"oxc_span/serialize",
-]
+serialize = ["dep:serde", "dep:tsify", "dep:wasm-bindgen", "oxc_allocator/serialize", "oxc_span/serialize"]
 
 [package.metadata.cargo-shear]
 ignored = ["wasm-bindgen"] # wasm-bindgen used by tsify

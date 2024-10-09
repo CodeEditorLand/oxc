@@ -1,6 +1,6 @@
 [package]
 name = "oxc"
-version = "0.30.5"
+version = "0.31.0"
 authors.workspace = true
 categories.workspace = true
 edition.workspace = true
@@ -51,17 +51,17 @@ rustc-hash = { workspace = true, optional = true }
 
 [features]
 full = [
-	"codegen",
-	"mangler",
-	"minifier",
-	"semantic",
-	"transformer",
-	"isolated_declarations",
-	"sourcemap",
-	"cfg",
+  "codegen",
+  "mangler",
+  "minifier",
+  "semantic",
+  "transformer",
+  "isolated_declarations",
+  "sourcemap",
+  "cfg",
 ]
 
-parser = []                                           # for napi
+parser = [] # for napi
 semantic = ["oxc_semantic"]
 transformer = ["oxc_transformer"]
 minifier = ["oxc_mangler", "oxc_minifier"]
@@ -71,10 +71,10 @@ cfg = ["oxc_cfg"]
 isolated_declarations = ["oxc_isolated_declarations"]
 
 serialize = [
-	"oxc_ast/serialize",
-	"oxc_semantic?/serialize",
-	"oxc_span/serialize",
-	"oxc_syntax/serialize",
+  "oxc_ast/serialize",
+  "oxc_semantic?/serialize",
+  "oxc_span/serialize",
+  "oxc_syntax/serialize",
 ]
 
 sourcemap = ["oxc_sourcemap"]
