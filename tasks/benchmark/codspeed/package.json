@@ -6,8 +6,8 @@
     "start": "node capture.mjs"
   },
   "devDependencies": {
-    "axios": "^1.7.2",
-    "express": "^4.19.2",
-    "tar": "^7.2.0"
+    "axios": "^1.7.7",
+    "express": "^4.21.1",
+    "tar": "^7.4.3"
   }
 }
