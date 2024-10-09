@@ -1,9 +1,10 @@
 # Oxc transformer
 
-We mostly model Oxc's transforms on [Babel](https://babeljs.io/)'s implementations.
+We mostly model Oxc's transforms on [Babel](https://babeljs.io/)'s
+implementations.
 
-First iteration of a transform will usually be as straight a port from Babel as possible. We may then
-iterate from there to gain better performance.
+First iteration of a transform will usually be as straight a port from Babel as
+possible. We may then iterate from there to gain better performance.
 
 We import Babel's transformer tests, and aim to pass them all.
 
@@ -13,48 +14,51 @@ All transforms are implementations of the `Traverse` trait.
 
 We aim to run all transforms together **in a single AST visitation pass**.
 
-This will be the most performant method, though it causes some complexity, especially due to interactions
-between different transforms acting on the same code. It is unclear at present if this methodology will
-be viable, but it is our initial aim, and we will only fall back to multiple passes if single-pass proves
+This will be the most performant method, though it causes some complexity,
+especially due to interactions between different transforms acting on the same
+code. It is unclear at present if this methodology will be viable, but it is our
+initial aim, and we will only fall back to multiple passes if single-pass proves
 unworkable.
 
 ## Style guide for implementing transforms
 
-Transforms are complex. Please try to make the code as clear and easy to follow as possible.
+Transforms are complex. Please try to make the code as clear and easy to follow
+as possible.
 
-NB: Not all the "rules" in this style guide are currently followed in transforms we've written so far.
-We will update those transforms to follow this guide when we have time. But all new transforms should
-follow this style guide closely.
+NB: Not all the "rules" in this style guide are currently followed in transforms
+we've written so far. We will update those transforms to follow this guide when
+we have time. But all new transforms should follow this style guide closely.
 
 ### Structure
 
 Each transform should be in its own file.
 
-Some transforms just delegate work to sub-transforms. e.g. `React` transform delegates to the `ReactJsx`
-and `ReactDisplayName` transforms.
+Some transforms just delegate work to sub-transforms. e.g. `React` transform
+delegates to the `ReactJsx` and `ReactDisplayName` transforms.
 
 ### Comments
 
-For a maintainable and understandable codebase, please go big on code comments. The more, the merrier!
+For a maintainable and understandable codebase, please go big on code comments.
+The more, the merrier!
 
 #### Top of file
 
 Each transform should include a comment at top of file including:
 
-- High level explanation of what transform does.
-- One "before / after" example.
-- Link to Babel plugin.
-- Note of any ways in which our implementation diverges from Babel's, and why.
+-   High level explanation of what transform does.
+-   One "before / after" example.
+-   Link to Babel plugin.
+-   Note of any ways in which our implementation diverges from Babel's, and why.
 
 #### Methods
 
-If it's a complicated transform with multiple visitors which interact with each other, add comments
-explaining how the pieces fit together.
+If it's a complicated transform with multiple visitors which interact with each
+other, add comments explaining how the pieces fit together.
 
 #### Code snippets
 
-`AstBuilder` calls are often very verbose. Preface each chunk of `AstBuilder` calls with a short comment
-showing what this code produces. e.g.:
+`AstBuilder` calls are often very verbose. Preface each chunk of `AstBuilder`
+calls with a short comment showing what this code produces. e.g.:
 
 ```rs
 // `let Foo;`
@@ -75,30 +79,36 @@ let var_decl = Declaration::VariableDeclaration(self.ast.variable_declaration(
 
 #### Where we can improve on Babel
 
-Babel has less of an emphasis on performance than Oxc has. For this reason Babel's implementations are
-often not as efficient as they could be.
+Babel has less of an emphasis on performance than Oxc has. For this reason
+Babel's implementations are often not as efficient as they could be.
 
-In some cases, we could do better, but we are unable to at present because a more efficient
-implementation would result in cosmetic differences between Oxc's output and Babel's (e.g. different
-variable names) which causes Babel's tests to fail when run on Oxc's output.
+In some cases, we could do better, but we are unable to at present because a
+more efficient implementation would result in cosmetic differences between Oxc's
+output and Babel's (e.g. different variable names) which causes Babel's tests to
+fail when run on Oxc's output.
 
 In future we may find a way to work around this problem.
 
-So where we feel Babel's implementation is inefficient, but we have to follow it at present to pass their
-tests, make a `// TODO(improve-on-babel): Babel's impl is inefficient because X, we could do better by Y`
+So where we feel Babel's implementation is inefficient, but we have to follow it
+at present to pass their tests, make a
+`// TODO(improve-on-babel): Babel's impl is inefficient because X, we could do better by Y`
 comment, so we can return to it later.
 
 ### Clear "entry points"
 
 "Entry points" are where the visitor calls into the transform.
 
-- Entry points of transform should be implemented as `impl Traverse for MyTransform`.
-- Those methods have to be called `enter_*` and `exit_*`.
-- Parent transform will only interface with child transform via these entry points.
-- Only other method exposed externally should be `new`. That should be at top of the file.
-- Entry points go directly below `new` method definition.
-- Internal methods implemented lower down in an `impl MyTransform` block.
-- Internal methods named descriptively - `add_id_to_function` not `transform_function`.
+-   Entry points of transform should be implemented as
+    `impl Traverse for MyTransform`.
+-   Those methods have to be called `enter_*` and `exit_*`.
+-   Parent transform will only interface with child transform via these entry
+    points.
+-   Only other method exposed externally should be `new`. That should be at top
+    of the file.
+-   Entry points go directly below `new` method definition.
+-   Internal methods implemented lower down in an `impl MyTransform` block.
+-   Internal methods named descriptively - `add_id_to_function` not
+    `transform_function`.
 
 i.e. File is laid out so logic flows from top of file to bottom.
 
@@ -144,8 +154,9 @@ impl FunctionRenamer {
 
 ### Encapsulate logic
 
-All logic for each transform should live in that specific file, with no "leaking" into the parent
-transform. Each transform is only called into via the standard `enter_*`/`exit_*` entry points.
+All logic for each transform should live in that specific file, with no
+"leaking" into the parent transform. Each transform is only called into via the
+standard `enter_*`/`exit_*` entry points.
 
 Only exception is that parent can check if child transform is enabled or not.
 

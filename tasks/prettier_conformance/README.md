@@ -10,5 +10,5 @@ just watch "run -p oxc_prettier_conformance"
 
 Test case results are listed in:
 
-- [prettier.js.snap.md](./snapshots/prettier.js.snap.md)
-- [prettier.ts.snap.md](./snapshots/prettier.ts.snap.md)
+-   [prettier.js.snap.md](./snapshots/prettier.js.snap.md)
+-   [prettier.ts.snap.md](./snapshots/prettier.ts.snap.md)

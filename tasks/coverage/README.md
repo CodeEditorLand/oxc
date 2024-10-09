@@ -13,9 +13,9 @@ just submodules
 ```bash
 # full run
 cargo coverage
-cargo coverage js # for test262
+cargo coverage js    # for test262
 cargo coverage babel # for babel
-cargo coverage ts # for typescript
+cargo coverage ts    # for typescript
 
 # run in watch
 cargo watch -x 'coverage js'

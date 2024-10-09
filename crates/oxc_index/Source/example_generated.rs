@@ -7,18 +7,18 @@
 //! be easier/better to look at.
 
 define_index_type! {
-	/// I'm a doc comment on the type.
-	pub struct CoolIndex = u32;
+    /// I'm a doc comment on the type.
+    pub struct CoolIndex = u32;
 
-	DEFAULT = CoolIndex::new(0);
+    DEFAULT = CoolIndex::new(0);
 
-	MAX_INDEX = i32::MAX as usize;
+    MAX_INDEX = i32::MAX as usize;
 
-	DISABLE_MAX_INDEX_CHECK = cfg!(not(debug_assertions));
+    DISABLE_MAX_INDEX_CHECK = cfg!(not(debug_assertions));
 
-	DISPLAY_FORMAT = "{} is a ~Cool Index~";
+    DISPLAY_FORMAT = "{} is a ~Cool Index~";
 
-	DEBUG_FORMAT = "CI({:?})";
+    DEBUG_FORMAT = "CI({:?})";
 
-	IMPL_RAW_CONVERSIONS = true;
+    IMPL_RAW_CONVERSIONS = true;
 }
