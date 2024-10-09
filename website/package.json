@@ -26,7 +26,7 @@
 	"devDependencies": {
 		"@lezer/common": "1.2.2",
 		"@oxc/oxc_wasm": "link:../npm/oxc-wasm",
-		"@playform/build": "",
+		"@playform/build": "0.1.7",
 		"@types/lodash.throttle": "4.1.9",
 		"@types/lzma": "2.3.0",
 		"concurrently": "9.0.1",
