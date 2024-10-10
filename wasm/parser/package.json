@@ -1,30 +1,41 @@
 {
-	"name": "@oxc-parser/wasm",
-	"version": "0.31.0",
-	"description": "Wasm target for the oxc parser.",
-	"keywords": [
-		"JavaScript",
-		"TypeScript",
-		"parser"
-	],
-	"homepage": "https://oxc.rs",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/oxc-project/oxc",
-		"directory": "wasm/parser"
+	"author": {
+		"email": "Source/Open@Editor.Land",
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"url": "HTTPS://Editor.Land"
 	},
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
-	},
-	"license": "MIT",
-	"author": "Boshen and oxc contributors",
-	"main": "./node/oxc_parser_wasm.js",
 	"browser": "./web/oxc_parser_wasm.js",
-	"types": "./node/oxc_parser_wasm.d.ts",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
+	"description": "Wasm target for the oxc parser.",
+	"devDependencies": {
+		"@playform/build": "0.1.7"
+	},
 	"files": [
 		"node",
 		"web"
 	],
+	"funding": {
+		"url": "https://github.com/sponsors/Boshen"
+	},
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"keywords": [
+		"codeeditorland",
+		"land",
+		"playform"
+	],
+	"license": "SEE LICENSE IN LICENSE",
+	"main": "./node/oxc_parser_wasm.js",
+	"name": "@oxc-parser/wasm",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
 	"scripts": {
 		"build": "pnpm run build-node && pnpm run build-web && pnpm run copy-files && pnpm run clean-files",
 		"build-base": "wasm-pack build --release --no-pack",
@@ -32,7 +43,9 @@
 		"build-web": "pnpm run build-base --target web --out-dir ../../npm/parser-wasm/web .",
 		"clean-files": "rm ../../npm/parser-wasm/*/.gitignore",
 		"copy-files": "cp ./package.json ../../npm/parser-wasm/package.json && cp ./README.md ../../npm/parser-wasm/README.md",
-		"test": "node ./test-node.mjs"
+		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
-	"packageManager": "pnpm@9.12.1"
+	"type": "module",
+	"types": "./node/oxc_parser_wasm.d.ts",
+	"version": "0.0.1"
 }

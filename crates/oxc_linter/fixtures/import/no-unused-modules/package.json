@@ -1,5 +1,0 @@
-{
-	"main": "./main/index.js",
-	"browser": "./browser.js",
-	"bin": "./bin.js"
-}
