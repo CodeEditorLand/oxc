@@ -1,7 +1,7 @@
 use std::{mem, ops::ControlFlow, path::Path};
 
 use oxc::{
-    ast::{ast::Program, Trivias},
+    ast::ast::Program,
     codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
     diagnostics::OxcDiagnostic,
     mangler::Mangler,
@@ -57,12 +57,10 @@ impl CompilerInterface for Driver {
     }
 
     // Disable comments
-    fn codegen<'a>(
+    fn codegen(
         &self,
-        program: &Program<'a>,
-        _source_text: &'a str,
+        program: &Program<'_>,
         _source_path: &Path,
-        _trivias: &Trivias,
         mangler: Option<Mangler>,
         options: CodegenOptions,
     ) -> CodegenReturn {
