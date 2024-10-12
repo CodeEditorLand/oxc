@@ -2,7 +2,7 @@ use std::{mem, ops::ControlFlow, path::Path};
 
 use oxc_allocator::Allocator;
 use oxc_ast::ast::Program;
-use oxc_codegen::{CodeGenerator, CodegenOptions, CodegenReturn, CommentOptions};
+use oxc_codegen::{CodeGenerator, CodegenOptions, CodegenReturn};
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_isolated_declarations::{IsolatedDeclarations, IsolatedDeclarationsOptions};
 use oxc_mangler::{MangleOptions, Mangler};
@@ -283,15 +283,10 @@ pub trait CompilerInterface {
         mangler: Option<Mangler>,
         options: CodegenOptions,
     ) -> CodegenReturn {
-        let comment_options = CommentOptions { preserve_annotate_comments: true };
-        let mut codegen = CodeGenerator::new()
-            .with_options(options)
-            .with_mangler(mangler)
-            .enable_comment(program, comment_options);
+        let mut options = options;
         if self.enable_sourcemap() {
-            codegen = codegen
-                .enable_source_map(source_path.to_string_lossy().as_ref(), program.source_text);
+            options.source_map_path = Some(source_path.to_path_buf());
         }
-        codegen.build(program)
+        CodeGenerator::new().with_options(options).with_mangler(mangler).build(program)
     }
 }

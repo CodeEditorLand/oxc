@@ -10,7 +10,7 @@ mod gen;
 mod operator;
 mod sourcemap_builder;
 
-use std::borrow::Cow;
+use std::{borrow::Cow, path::PathBuf};
 
 use oxc_ast::ast::{
     BindingIdentifier, BlockStatement, Expression, IdentifierReference, Program, Statement,
@@ -35,7 +35,7 @@ pub use crate::{
 /// Code generator without whitespace removal.
 pub type CodeGenerator<'a> = Codegen<'a>;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct CodegenOptions {
     /// Use single quotes instead of double quotes.
     ///
@@ -46,46 +46,58 @@ pub struct CodegenOptions {
     ///
     /// Default is `false`.
     pub minify: bool,
+
+    /// Print comments?
+    ///
+    /// Default is `true`.
+    pub comments: bool,
+
+    /// Print annotation comments, e.g. `/* #__PURE__ */` and `/* #__NO_SIDE_EFFECTS__ */`.
+    ///
+    /// Only takes into effect when `comments` is false.
+    ///
+    /// Default is `false`.
+    pub annotation_comments: bool,
+
+    pub source_map_path: Option<PathBuf>,
 }
 
-#[derive(Default, Clone, Copy)]
-pub struct CommentOptions {
-    /// Enable preserve annotate comments, like `/* #__PURE__ */` and `/* #__NO_SIDE_EFFECTS__ */`.
-    pub preserve_annotate_comments: bool,
+impl Default for CodegenOptions {
+    fn default() -> Self {
+        Self {
+            single_quote: false,
+            minify: false,
+            comments: true,
+            annotation_comments: false,
+            source_map_path: None,
+        }
+    }
+}
+
+impl CodegenOptions {
+    fn print_annotation_comments(&self) -> bool {
+        !self.minify && (self.comments || self.annotation_comments)
+    }
 }
 
 /// Output from [`Codegen::build`]
 pub struct CodegenReturn {
     /// The generated source code.
     pub code: String,
+
     /// The source map from the input source code to the generated source code.
     ///
-    /// You must use [`Codegen::enable_source_map`] for this to be [`Some`].
+    /// You must set [`CodegenOptions::source_map_path`] for this to be [`Some`].
     pub map: Option<oxc_sourcemap::SourceMap>,
 }
 
 pub struct Codegen<'a> {
-    options: CodegenOptions,
-    comment_options: CommentOptions,
+    pub(crate) options: CodegenOptions,
 
     /// Original source code of the AST
-    source_text: Option<&'a str>,
+    source_text: &'a str,
 
     comments: CommentsMap,
-
-    /// Start of comment that needs to be moved to the before VariableDeclarator
-    ///
-    /// For example:
-    /// ```js
-    ///  /* @__NO_SIDE_EFFECTS__ */ export const a = function() {
-    ///  }, b = 10000;
-    /// ```
-    /// Should be generated as:
-    /// ```js
-    ///   export const /* @__NO_SIDE_EFFECTS__ */ a = function() {
-    ///  }, b = 10000;
-    /// ```
-    start_of_annotation_comment: Option<u32>,
 
     mangler: Option<Mangler>,
 
@@ -107,6 +119,19 @@ pub struct Codegen<'a> {
     start_of_stmt: usize,
     start_of_arrow_expr: usize,
     start_of_default_export: usize,
+    /// Start of comment that needs to be moved to the before VariableDeclarator
+    ///
+    /// For example:
+    /// ```js
+    ///  /* @__NO_SIDE_EFFECTS__ */ export const a = function() {
+    ///  }, b = 10000;
+    /// ```
+    /// Should be generated as:
+    /// ```js
+    ///   export const /* @__NO_SIDE_EFFECTS__ */ a = function() {
+    ///  }, b = 10000;
+    /// ```
+    start_of_annotation_comment: Option<u32>,
 
     /// Track the current indentation level
     indent: u32,
@@ -142,8 +167,7 @@ impl<'a> Codegen<'a> {
     pub fn new() -> Self {
         Self {
             options: CodegenOptions::default(),
-            comment_options: CommentOptions::default(),
-            source_text: None,
+            source_text: "",
             comments: CommentsMap::default(),
             start_of_annotation_comment: None,
             mangler: None,
@@ -164,49 +188,10 @@ impl<'a> Codegen<'a> {
         }
     }
 
-    /// Initialize the output code buffer to reduce memory reallocation.
-    /// Minification will reduce by at least half of the original size.
-    #[must_use]
-    pub fn with_capacity(mut self, source_text_len: usize) -> Self {
-        let capacity = if self.options.minify { source_text_len / 2 } else { source_text_len };
-        // ensure space for at least `capacity` additional bytes without clobbering existing
-        // allocations.
-        self.code.reserve(capacity);
-        self
-    }
-
     #[must_use]
     pub fn with_options(mut self, options: CodegenOptions) -> Self {
-        self.options = options;
         self.quote = if options.single_quote { b'\'' } else { b'"' };
-        self
-    }
-
-    /// Adds the source text of the original AST.
-    ///
-    /// The source code will be used with comments or for improving the generated output. It also
-    /// pre-allocates memory for the output code using [`Codegen::with_capacity`]. Note that if you
-    /// use this method alongside your own call to [`Codegen::with_capacity`], the larger of the
-    /// two will be used.
-    #[must_use]
-    pub fn with_source_text(mut self, source_text: &'a str) -> Self {
-        self.source_text = Some(source_text);
-        self.with_capacity(source_text.len())
-    }
-
-    /// Also sets the [Self::with_source_text]
-    #[must_use]
-    pub fn enable_comment(mut self, program: &Program<'a>, options: CommentOptions) -> Self {
-        self.comment_options = options;
-        self.build_comments(&program.comments);
-        self.with_source_text(program.source_text)
-    }
-
-    #[must_use]
-    pub fn enable_source_map(mut self, source_name: &str, source_text: &str) -> Self {
-        let mut sourcemap_builder = SourcemapBuilder::default();
-        sourcemap_builder.with_name_and_source(source_name, source_text);
-        self.sourcemap_builder = Some(sourcemap_builder);
+        self.options = options;
         self
     }
 
@@ -217,7 +202,17 @@ impl<'a> Codegen<'a> {
     }
 
     #[must_use]
-    pub fn build(mut self, program: &Program<'_>) -> CodegenReturn {
+    pub fn build(mut self, program: &Program<'a>) -> CodegenReturn {
+        self.quote = if self.options.single_quote { b'\'' } else { b'"' };
+        self.source_text = program.source_text;
+        self.code.reserve(program.source_text.len());
+        if self.options.print_annotation_comments() {
+            self.build_comments(&program.comments);
+        }
+        if let Some(path) = &self.options.source_map_path {
+            self.sourcemap_builder = Some(SourcemapBuilder::new(path, program.source_text));
+        }
+
         program.print(&mut self, Context::default());
         let code = self.into_source_text();
         let map = self.sourcemap_builder.map(SourcemapBuilder::into_sourcemap);
@@ -227,7 +222,6 @@ impl<'a> Codegen<'a> {
     #[must_use]
     pub fn into_source_text(&mut self) -> String {
         // SAFETY: criteria of `from_utf8_unchecked` are met.
-
         unsafe { String::from_utf8_unchecked(std::mem::take(&mut self.code)) }
     }
 
