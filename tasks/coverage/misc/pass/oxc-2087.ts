@@ -1,3 +1,3 @@
 interface Helpers {
-  inspect(): `~~~~\n${string}\n~~~~`;
+	inspect(): `~~~~\n${string}\n~~~~`;
 }

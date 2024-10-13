@@ -1,4 +1,3 @@
-export type Foo = (
-    // comment
-    "bar"
-)
+export type Foo =
+	// comment
+	"bar";
