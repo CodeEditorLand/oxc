@@ -1,13 +1,23 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2021",
-    "lib": ["ES2021"],
-    "outDir": "dist",
-    "rootDir": "client",
-    "sourceMap": true,
-    "strict": true
-  },
-  "include": ["./client"],
-  "exclude": ["node_modules", ".vscode-test"]
+	"compilerOptions": {
+		"baseUrl": "./",
+		"lib": [
+			"ES2021"
+		],
+		"module": "commonjs",
+		"outDir": "Target",
+		"rootDir": "src",
+		"sourceMap": true,
+		"strict": true,
+		"target": "es2021"
+	},
+	"exclude": [
+		"node_modules",
+		".vscode-test"
+	],
+	"extends": "@playform/build/tsconfig",
+	"include": [
+		"./client",
+		"src"
+	]
 }
