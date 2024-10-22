@@ -9,7 +9,7 @@
 	},
 	"description": "Oxc Parser Node API",
 	"devDependencies": {
-		"@playform/build": "0.1.7"
+		"@playform/build": "0.1.8"
 	},
 	"files": [
 		"index.d.ts",

@@ -13,7 +13,7 @@
 	},
 	"description": "Linter for the JavaScript Oxidation Compiler",
 	"devDependencies": {
-		"@playform/build": "0.1.7"
+		"@playform/build": "0.1.8"
 	},
 	"files": [
 		"bin/oxlint",
