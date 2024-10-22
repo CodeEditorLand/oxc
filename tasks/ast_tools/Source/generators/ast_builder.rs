@@ -34,9 +34,10 @@ impl Generator for AstBuilderGenerator {
 
         let header = generated_header!();
 
-        GeneratorOutput(
-            output(crate::AST_CRATE, "ast_builder.rs"),
-            quote! {
+        GeneratorOutput::Rust {
+            path: output(crate::AST_CRATE, "ast_builder.rs"),
+            tokens: quote! {
+                //! AST node factories
                 #header
 
                 #![allow(
@@ -44,6 +45,7 @@ impl Generator for AstBuilderGenerator {
                     clippy::too_many_arguments,
                     clippy::fn_params_excessive_bools,
                 )]
+                #![warn(missing_docs)]
 
                 ///@@line_break
                 use oxc_allocator::{Allocator, Box, IntoIn, Vec};
@@ -56,6 +58,7 @@ impl Generator for AstBuilderGenerator {
                 /// AST builder for creating AST nodes
                 #[derive(Clone, Copy)]
                 pub struct AstBuilder<'a> {
+                    /// The memory allocator used to allocate AST nodes in the arena.
                     pub allocator: &'a Allocator,
                 }
 
@@ -64,7 +67,7 @@ impl Generator for AstBuilderGenerator {
                     #(#fns)*
                 }
             },
-        )
+        }
     }
 }
 
@@ -121,8 +124,14 @@ fn generate_enum_inherit_builder_fn(
     let fn_name =
         enum_builder_name(enum_ident.to_string(), inherit.super_.name().inner_name().to_string());
 
+    let docs = DocComment::new(format!(
+        "Convert a [`{}`] into the corresponding variant of [`{}`] without copying or re-allocating memory.",
+        inherit.super_.name(),
+        enum_ident
+    ));
     quote! {
         ///@@line_break
+        #docs
         #[inline]
         pub fn #fn_name(self, inner: #super_type) -> #enum_as_type {
             #enum_ident::from(inner)
@@ -231,13 +240,12 @@ fn default_init_field(field: &FieldDef) -> bool {
             field!(scope_id: Cell<Option<ScopeId>>),
             field!(symbol_id: Cell<Option<SymbolId>>),
             field!(reference_id: Cell<Option<ReferenceId>>),
-            field!(reference_flags: ReferenceFlags),
         ]);
     }
 
     let ident = field.ident().expect("expected named field");
-    if let Some(default_type) = DEFAULT_FIELDS.get(ident.to_string().as_str()) {
-        *default_type == field.typ.raw()
+    if let Some(&default_type) = DEFAULT_FIELDS.get(ident.to_string().as_str()) {
+        default_type == field.typ.raw()
     } else {
         false
     }
@@ -276,12 +284,12 @@ fn generate_struct_builder_fn(ty: &StructDef, ctx: &LateCtx) -> TokenStream {
     let alloc_fn_name = format_ident!("alloc_{fn_name}");
 
     let article = article_for(ident.to_string());
-    let fn_docs = DocComment::new(format!("Build {article} [`{ident}`]"))
+    let fn_docs = DocComment::new(format!("Build {article} [`{ident}`]."))
         .with_description(format!("If you want the built node to be allocated in the memory arena, use [`AstBuilder::{alloc_fn_name}`] instead."))
         .with_params(&params);
 
     let alloc_docs =
-        DocComment::new(format!("Build {article} [`{ident}`] and stores it in the memory arena."))
+        DocComment::new(format!("Build {article} [`{ident}`], and store it in the memory arena."))
             .with_description(format!("Returns a [`Box`] containing the newly-allocated node. If you want a stack-allocated node, use [`AstBuilder::{fn_name}`] instead."))
             .with_params(&params);
 

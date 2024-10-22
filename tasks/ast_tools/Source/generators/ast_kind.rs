@@ -84,11 +84,6 @@ pub fn blacklist((ident, _): &(Ident, Type)) -> bool {
     !BLACK_LIST.contains(&ident.to_string().as_str())
 }
 
-pub fn aliased_nodes() -> [(Ident, Type); 1] {
-    use syn::parse_quote as pq;
-    [(pq!(ExpressionArrayElement), pq!(Expression<'a>))]
-}
-
 pub fn process_types(def: &TypeDef, _: &LateCtx) -> Vec<(Ident, Type)> {
     let aliases = match def {
         TypeDef::Enum(enum_) => enum_
@@ -140,7 +135,6 @@ impl Generator for AstKindGenerator {
             )
             .flat_map(|it| process_types(it, ctx))
             .filter(blacklist)
-            .chain(aliased_nodes())
             .collect();
 
         let types: Vec<Variant> =
@@ -175,9 +169,9 @@ impl Generator for AstKindGenerator {
 
         let header = generated_header!();
 
-        GeneratorOutput(
-            output(crate::AST_CRATE, "ast_kind.rs"),
-            quote! {
+        GeneratorOutput::Rust {
+            path: output(crate::AST_CRATE, "ast_kind.rs"),
+            tokens: quote! {
                 #header
 
                 use oxc_span::{GetSpan, Span};
@@ -214,6 +208,6 @@ impl Generator for AstKindGenerator {
                     #(#as_ast_kind_impls)*
                 }
             },
-        )
+        }
     }
 }
