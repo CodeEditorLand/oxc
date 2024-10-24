@@ -1,8 +1,9 @@
 commit: d20b314c
 
-Passed: 61/70
+Passed: 67/76
 
 # All Passed:
+* babel-plugin-transform-class-static-block
 * babel-plugin-transform-nullish-coalescing-operator
 * babel-plugin-transform-optional-catch-binding
 * babel-plugin-transform-exponentiation-operator
@@ -12,7 +13,7 @@ Passed: 61/70
 * regexp
 
 
-# babel-plugin-transform-typescript (1/8)
+# babel-plugin-transform-typescript (2/9)
 * class-property-definition/input.ts
 Unresolved references mismatch:
 after transform: ["const"]

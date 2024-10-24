@@ -26,9 +26,4 @@ convert_case = { workspace = true }
 itertools = { workspace = true }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
-syn = { workspace = true, features = [
-	"derive",
-	"parsing",
-	"printing",
-	"proc-macro",
-] }
+syn = { workspace = true, features = ["derive", "parsing", "printing", "proc-macro"] }
