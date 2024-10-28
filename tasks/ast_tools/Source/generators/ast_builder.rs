@@ -2,29 +2,28 @@ use std::{borrow::Cow, stringify};
 
 use convert_case::{Case, Casing};
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
-use rustc_hash::FxHashMap;
 use syn::{parse_quote, Ident, Type};
 
-use super::define_generator;
 use crate::{
-    codegen::{generated_header, LateCtx},
-    output,
+    codegen::LateCtx,
+    output::{output_path, Output},
     schema::{
         EnumDef, FieldDef, GetIdent, InheritDef, StructDef, ToType, TypeDef, TypeName, VariantDef,
     },
     util::{TypeAnalysis, TypeWrapper},
-    Generator, GeneratorOutput,
+    Generator,
 };
 
-define_generator! {
-    pub struct AstBuilderGenerator;
-}
+use super::define_generator;
+
+pub struct AstBuilderGenerator;
+
+define_generator!(AstBuilderGenerator);
 
 impl Generator for AstBuilderGenerator {
-    fn generate(&mut self, ctx: &LateCtx) -> GeneratorOutput {
+    fn generate(&mut self, ctx: &LateCtx) -> Output {
         let fns = ctx
             .schema()
             .into_iter()
@@ -32,14 +31,12 @@ impl Generator for AstBuilderGenerator {
             .map(|it| generate_builder_fn(it, ctx))
             .collect_vec();
 
-        let header = generated_header!();
-
-        GeneratorOutput::Rust {
-            path: output(crate::AST_CRATE, "ast_builder.rs"),
+        Output::Rust {
+            path: output_path(crate::AST_CRATE, "ast_builder.rs"),
             tokens: quote! {
                 //! AST node factories
-                #header
 
+                //!@@line_break
                 #![allow(
                     clippy::default_trait_access,
                     clippy::too_many_arguments,
@@ -232,25 +229,13 @@ fn generate_enum_from_variant_builder_fn(
 }
 
 fn default_init_field(field: &FieldDef) -> bool {
-    macro_rules! field {
-        ($ident:ident: $ty:ty) => {
-            (stringify!($ident), stringify!($ty))
-        };
-    }
-    lazy_static! {
-        static ref DEFAULT_FIELDS: FxHashMap<&'static str, &'static str> = FxHashMap::from_iter([
-            field!(scope_id: Cell<Option<ScopeId>>),
-            field!(symbol_id: Cell<Option<SymbolId>>),
-            field!(reference_id: Cell<Option<ReferenceId>>),
-        ]);
-    }
-
     let ident = field.ident().expect("expected named field");
-    if let Some(&default_type) = DEFAULT_FIELDS.get(ident.to_string().as_str()) {
-        default_type == field.typ.raw()
-    } else {
-        false
-    }
+    matches!(
+        (ident.to_string().as_str(), field.typ.raw()),
+        ("scope_id", "Cell<Option<ScopeId>>")
+            | ("symbol_id", "Cell<Option<SymbolId>>")
+            | ("reference_id", "Cell<Option<ReferenceId>>")
+    )
 }
 
 /// Generate builder function for struct.
@@ -544,25 +529,19 @@ fn article_for<S: AsRef<str>>(word: S) -> &'static str {
 
 impl ToTokens for DocComment<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        macro_rules! newline {
-            () => {
-                tokens.extend(quote!( #[doc = ""]));
-            };
-        }
-
         let summary = &self.summary;
         tokens.extend(quote!( #[doc = #summary]));
 
         // print description
         for line in &self.description {
             // extra newline needed to create a new paragraph
-            newline!();
+            tokens.extend(quote!( #[doc = ""]));
             tokens.extend(quote!( #[doc = #line]));
         }
 
         // print docs for function parameters
         if !self.params.is_empty() {
-            newline!();
+            tokens.extend(quote!( #[doc = ""]));
             tokens.extend(quote!( #[doc = " ## Parameters"]));
             for param in self.params {
                 let docs = param.docs.first();

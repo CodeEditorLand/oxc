@@ -7,54 +7,53 @@ use quote::{format_ident, quote, ToTokens};
 use rustc_hash::FxHashMap;
 use syn::{parse_quote, Ident};
 
-use super::define_generator;
 use crate::{
-    codegen::{generated_header, LateCtx},
+    codegen::LateCtx,
     generators::ast_kind::BLACK_LIST as KIND_BLACK_LIST,
     markers::VisitArg,
-    output,
+    output::{output_path, Output},
     schema::{EnumDef, GetIdent, StructDef, ToType, TypeDef},
     util::{StrExt, TokenStreamExt, TypeWrapper},
-    Generator, GeneratorOutput,
+    Generator,
 };
 
-define_generator! {
-    pub struct VisitGenerator;
-}
+use super::define_generator;
 
-define_generator! {
-    pub struct VisitMutGenerator;
-}
+pub struct VisitGenerator;
+
+define_generator!(VisitGenerator);
 
 impl Generator for VisitGenerator {
-    fn generate(&mut self, ctx: &LateCtx) -> GeneratorOutput {
-        GeneratorOutput::Rust {
-            path: output(crate::AST_CRATE, "visit.rs"),
-            tokens: generate_visit::<false>(ctx),
+    fn generate(&mut self, ctx: &LateCtx) -> Output {
+        Output::Rust {
+            path: output_path(crate::AST_CRATE, "visit.rs"),
+            tokens: generate_visit(false, ctx),
         }
     }
 }
+
+pub struct VisitMutGenerator;
+
+define_generator!(VisitMutGenerator);
 
 impl Generator for VisitMutGenerator {
-    fn generate(&mut self, ctx: &LateCtx) -> GeneratorOutput {
-        GeneratorOutput::Rust {
-            path: output(crate::AST_CRATE, "visit_mut.rs"),
-            tokens: generate_visit::<true>(ctx),
+    fn generate(&mut self, ctx: &LateCtx) -> Output {
+        Output::Rust {
+            path: output_path(crate::AST_CRATE, "visit_mut.rs"),
+            tokens: generate_visit(true, ctx),
         }
     }
 }
 
-fn generate_visit<const MUT: bool>(ctx: &LateCtx) -> TokenStream {
-    let header = generated_header!();
+fn generate_visit(is_mut: bool, ctx: &LateCtx) -> TokenStream {
+    let (visits, walks) = VisitBuilder::new(ctx, is_mut).build();
 
-    let (visits, walks) = VisitBuilder::new(ctx, MUT).build();
+    let walk_mod = if is_mut { quote!(walk_mut) } else { quote!(walk) };
+    let trait_name = if is_mut { quote!(VisitMut) } else { quote!(Visit) };
+    let ast_kind_type = if is_mut { quote!(AstType) } else { quote!(AstKind) };
+    let ast_kind_life = if is_mut { TokenStream::default() } else { quote!(<'a>) };
 
-    let walk_mod = if MUT { quote!(walk_mut) } else { quote!(walk) };
-    let trait_name = if MUT { quote!(VisitMut) } else { quote!(Visit) };
-    let ast_kind_type = if MUT { quote!(AstType) } else { quote!(AstKind) };
-    let ast_kind_life = if MUT { TokenStream::default() } else { quote!(<'a>) };
-
-    let may_alloc = if MUT {
+    let may_alloc = if is_mut {
         TokenStream::default()
     } else {
         quote! {
@@ -72,8 +71,6 @@ fn generate_visit<const MUT: bool>(ctx: &LateCtx) -> TokenStream {
     };
 
     quote! {
-        #header
-
         //! Visitor Pattern
         //!
         //! See:
@@ -118,7 +115,6 @@ fn generate_visit<const MUT: bool>(ctx: &LateCtx) -> TokenStream {
             #[inline]
             fn leave_scope(&mut self) {}
 
-            ///@@line_break
             #may_alloc
 
             #(#visits)*

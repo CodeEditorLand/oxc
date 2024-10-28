@@ -279,6 +279,11 @@ impl<'a> Expression<'a> {
             false
         }
     }
+
+    /// Returns `true` if this is an [assignment expression](AssignmentExpression).
+    pub fn is_assignment(&self) -> bool {
+        matches!(self, Expression::AssignmentExpression(_))
+    }
 }
 
 impl<'a> fmt::Display for IdentifierName<'a> {
@@ -313,6 +318,14 @@ impl<'a> ArrayExpressionElement<'a> {
     #[allow(missing_docs)]
     pub fn is_elision(&self) -> bool {
         matches!(self, Self::Elision(_))
+    }
+}
+
+impl<'a> ObjectPropertyKind<'a> {
+    /// Returns `true` if this object property is a [spread](SpreadElement).
+    #[inline]
+    pub fn is_spread(&self) -> bool {
+        matches!(self, Self::SpreadProperty(_))
     }
 }
 
@@ -1004,6 +1017,16 @@ impl<'a> Function<'a> {
     /// `true` if this function's body has a `"use strict"` directive.
     pub fn is_strict(&self) -> bool {
         self.body.as_ref().is_some_and(|body| body.has_use_strict_directive())
+    }
+}
+
+// FIXME: This is a workaround for we can't get current address by `TraverseCtx`,
+// we will remove this once we support `TraverseCtx::current_address`.
+// See: <https://github.com/oxc-project/oxc/pull/6881#discussion_r1816560516>
+impl GetAddress for Function<'_> {
+    #[inline]
+    fn address(&self) -> Address {
+        Address::from_ptr(self)
     }
 }
 

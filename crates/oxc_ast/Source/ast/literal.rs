@@ -22,7 +22,6 @@ use oxc_syntax::number::{BigintBase, NumberBase};
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct BooleanLiteral {
     /// Node location in source code
-    #[estree(flatten)]
     pub span: Span,
     /// The boolean value itself
     pub value: bool,
@@ -36,7 +35,6 @@ pub struct BooleanLiteral {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ESTree)]
 pub struct NullLiteral {
     /// Node location in source code
-    #[estree(flatten)]
     pub span: Span,
 }
 
@@ -48,7 +46,6 @@ pub struct NullLiteral {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ESTree)]
 pub struct NumericLiteral<'a> {
     /// Node location in source code
-    #[estree(flatten)]
     pub span: Span,
     /// The value of the number, converted into base 10
     pub value: f64,
@@ -65,7 +62,6 @@ pub struct NumericLiteral<'a> {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct BigIntLiteral<'a> {
     /// Node location in source code
-    #[estree(flatten)]
     pub span: Span,
     /// The bigint as it appears in source code
     pub raw: Atom<'a>,
@@ -82,7 +78,6 @@ pub struct BigIntLiteral<'a> {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct RegExpLiteral<'a> {
     /// Node location in source code
-    #[estree(flatten)]
     pub span: Span,
     /// Placeholder for printing.
     ///
@@ -115,7 +110,6 @@ pub struct RegExp<'a> {
 #[ast]
 #[derive(Debug)]
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
-#[estree(untagged)]
 pub enum RegExpPattern<'a> {
     /// Unparsed pattern. Contains string slice of the pattern.
     /// Pattern was not parsed, so may be valid or invalid.
@@ -143,7 +137,6 @@ pub struct EmptyObject;
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct StringLiteral<'a> {
     /// Node location in source code
-    #[estree(flatten)]
     pub span: Span,
     /// The string as it appears in source code
     pub value: Atom<'a>,
