@@ -31,7 +31,7 @@
 		"@types/lzma": "2.3.0",
 		"concurrently": "9.0.1",
 		"oxlint": "link:../apps/oxlint",
-		"wasm-pack": "0.13.0"
+		"wasm-pack": "0.13.1"
 	},
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"keywords": [
