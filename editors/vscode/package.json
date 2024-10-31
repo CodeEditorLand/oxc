@@ -115,7 +115,7 @@
 	"description": "oxc vscode extension",
 	"devDependencies": {
 		"@playform/build": "0.1.8",
-		"@types/node": "22.8.4",
+		"@types/node": "22.8.6",
 		"cross-env": "7.0.3",
 		"esbuild": "0.24.0",
 		"ovsx": "0.10.0"

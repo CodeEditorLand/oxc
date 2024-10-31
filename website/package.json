@@ -8,7 +8,7 @@
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
 	},
 	"dependencies": {
-		"@codemirror/autocomplete": "6.18.1",
+		"@codemirror/autocomplete": "6.18.2",
 		"@codemirror/commands": "6.7.1",
 		"@codemirror/lang-javascript": "6.2.2",
 		"@codemirror/lang-json": "6.0.1",
