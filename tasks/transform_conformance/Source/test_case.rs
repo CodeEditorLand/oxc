@@ -11,14 +11,14 @@ use oxc::{
     diagnostics::{Error, NamedSource, OxcDiagnostic},
     parser::Parser,
     span::{SourceType, VALID_EXTENSIONS},
-    transformer::{BabelOptions, TransformOptions},
+    transformer::{BabelOptions, HelperLoaderMode, TransformOptions},
 };
 use oxc_tasks_common::{normalize_path, print_diff_in_terminal, project_root};
 
 use crate::{
     constants::{PLUGINS_NOT_SUPPORTED_YET, SKIP_TESTS},
     driver::Driver,
-    fixture_root, oxc_test_root, packages_root, TestRunnerEnv,
+    fixture_root, oxc_test_root, packages_root,
 };
 
 #[derive(Debug)]
@@ -132,13 +132,21 @@ pub trait TestCase {
             return true;
         }
 
-        // babel skip test cases that in a directory starting with a dot
-        // https://github.com/babel/babel/blob/0effd92d886b7135469d23612ceba6414c721673/packages/babel-helper-fixtures/src/index.ts#L223
-        let dir = self.path().parent().unwrap();
-        if dir.file_name().is_some_and(|n| n.to_string_lossy().starts_with('.')) {
-            return true;
+        // Skip some Babel tests.
+        if let Ok(path) = self.path().strip_prefix(packages_root()) {
+            // babel skip test cases that in a directory starting with a dot
+            // https://github.com/babel/babel/blob/0effd92d886b7135469d23612ceba6414c721673/packages/babel-helper-fixtures/src/index.ts#L223
+            if path.components().any(|c| c.as_os_str().to_str().unwrap().starts_with('.')) {
+                return true;
+            }
+            // Skip tests that are known to fail
+            let full_path = path.to_string_lossy();
+            if SKIP_TESTS.iter().any(|path| full_path.starts_with(path)) {
+                return true;
+            }
         }
 
+        let dir = self.path().parent().unwrap();
         // Skip custom plugin.js
         if dir.join("plugin.js").exists() {
             return true;
@@ -146,12 +154,6 @@ pub trait TestCase {
 
         // Skip custom preset and flow
         if options.presets.unsupported.iter().any(|s| s.starts_with("./") || s == "flow") {
-            return true;
-        }
-
-        // Skip tests that are known to fail
-        let full_path = self.path().to_string_lossy();
-        if SKIP_TESTS.iter().any(|path| full_path.ends_with(path)) {
             return true;
         }
 
@@ -175,8 +177,9 @@ pub trait TestCase {
                 || self.options().plugins.typescript.is_some(),
         );
 
-        let driver =
-            Driver::new(false, transform_options.clone()).execute(&source_text, source_type, path);
+        let mut options = transform_options.clone();
+        options.helper_loader.mode = HelperLoaderMode::Runtime;
+        let driver = Driver::new(false, options).execute(&source_text, source_type, path);
         Ok(driver)
     }
 }
@@ -380,13 +383,7 @@ pub struct ExecTestCase {
 }
 
 impl ExecTestCase {
-    fn run_test(path: &Path) -> bool {
-        TestRunnerEnv::run_test(path)
-    }
-
-    fn write_to_test_files(&self, content: &str) -> PathBuf {
-        let allocator = Allocator::default();
-
+    fn write_to_test_files(&self, content: &str) {
         let unprefixed_path = self
             .path
             .strip_prefix(packages_root())
@@ -397,17 +394,33 @@ impl ExecTestCase {
 
         let mut target_path = fixture_root().join(new_file_name);
         target_path.set_extension("test.js");
-        let content = TestRunnerEnv::template(content);
+        let content = Self::template(content);
         fs::write(&target_path, content).unwrap();
-        let source_text = fs::read_to_string(&target_path).unwrap();
-        let source_type = SourceType::from_path(&target_path).unwrap();
-        let transformed_ret = Parser::new(&allocator, &source_text, source_type).parse();
-        let result = CodeGenerator::new()
-            .with_options(CodegenOptions { comments: false, ..CodegenOptions::default() })
-            .build(&transformed_ret.program)
-            .code;
-        fs::write(&target_path, result).unwrap();
-        target_path
+    }
+
+    fn template(code: &str) -> String {
+        // Move all the import statements to top level.
+        let mut codes = vec![];
+        let mut imports = vec![];
+
+        for line in code.lines() {
+            if line.trim_start().starts_with("import ") {
+                imports.push(line);
+            } else {
+                codes.push(String::from("\t") + line);
+            }
+        }
+
+        let code = codes.join("\n");
+        let imports = imports.join("\n");
+
+        format!(
+            r#"import {{expect, test}} from 'vitest';
+{imports}
+test("exec", () => {{
+{code}
+}})"#
+        )
     }
 }
 
@@ -450,17 +463,7 @@ impl TestCase for ExecTestCase {
                 return;
             }
         };
-        let target_path = self.write_to_test_files(&result);
-        let passed = Self::run_test(&target_path);
-
-        if filtered {
-            println!("Transformed:\n{result}\n");
-            println!("Test Result:\n{}\n", TestRunnerEnv::get_test_result(&target_path));
-        }
-
-        if !passed {
-            self.errors.push(OxcDiagnostic::error("exec failed"));
-        }
+        self.write_to_test_files(&result);
     }
 }
 

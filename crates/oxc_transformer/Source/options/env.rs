@@ -1,14 +1,24 @@
+use std::str::FromStr;
+
+use oxc_diagnostics::Error;
 use serde::Deserialize;
 
 use crate::{
-    es2015::ES2015Options, es2016::ES2016Options, es2017::ES2017Options, es2018::ES2018Options,
-    es2019::ES2019Options, es2020::ES2020Options, es2021::ES2021Options, es2022::ES2022Options,
+    es2015::{ArrowFunctionsOptions, ES2015Options},
+    es2016::ES2016Options,
+    es2017::ES2017Options,
+    es2018::{ES2018Options, ObjectRestSpreadOptions},
+    es2019::ES2019Options,
+    es2020::ES2020Options,
+    es2021::ES2021Options,
+    es2022::{ClassPropertiesOptions, ES2022Options},
     regexp::RegExpOptions,
+    EngineTargets,
 };
 
-use super::babel::BabelEnvOptions;
+use super::{babel::BabelEnvOptions, ESFeature, ESTarget, Engine};
 
-#[derive(Debug, Default, Clone, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, Deserialize)]
 #[serde(try_from = "BabelEnvOptions")]
 pub struct EnvOptions {
     pub regexp: RegExpOptions,
@@ -32,92 +42,148 @@ pub struct EnvOptions {
 
 impl EnvOptions {
     /// Explicitly enable all plugins that are ready, mainly for testing purposes.
-    pub fn enable_all() -> Self {
+    ///
+    /// NOTE: for internal use only
+    #[doc(hidden)]
+    pub fn enable_all(include_unfinished_plugins: bool) -> Self {
         Self {
             regexp: RegExpOptions {
                 sticky_flag: true,
                 unicode_flag: true,
-                dot_all_flag: true,
-                look_behind_assertions: true,
-                named_capture_groups: true,
                 unicode_property_escapes: true,
+                dot_all_flag: true,
+                named_capture_groups: true,
+                look_behind_assertions: true,
                 match_indices: true,
                 set_notation: true,
             },
             es2015: ES2015Options {
                 // Turned off because it is not ready.
-                arrow_function: None,
+                arrow_function: if include_unfinished_plugins {
+                    Some(ArrowFunctionsOptions::default())
+                } else {
+                    None
+                },
             },
             es2016: ES2016Options { exponentiation_operator: true },
-            es2017: ES2017Options {
-                // Turned off because it is not ready.
-                async_to_generator: false,
-            },
+            es2017: ES2017Options { async_to_generator: true },
             es2018: ES2018Options {
                 // Turned off because it is not ready.
-                object_rest_spread: None,
-                // Turned off because it is not ready.
-                async_generator_functions: false,
+                object_rest_spread: if include_unfinished_plugins {
+                    Some(ObjectRestSpreadOptions::default())
+                } else {
+                    None
+                },
+                async_generator_functions: true,
             },
             es2019: ES2019Options { optional_catch_binding: true },
-            es2020: ES2020Options { nullish_coalescing_operator: true },
+            es2020: ES2020Options {
+                nullish_coalescing_operator: true,
+                // Turn this on would throw error for all bigints.
+                big_int: false,
+            },
             es2021: ES2021Options { logical_assignment_operators: true },
-            es2022: ES2022Options { class_static_block: true, class_properties: None },
+            es2022: ES2022Options {
+                class_static_block: true,
+                class_properties: if include_unfinished_plugins {
+                    Some(ClassPropertiesOptions::default())
+                } else {
+                    None
+                },
+            },
         }
+    }
+
+    /// Initialize from a [browserslist] query.
+    ///
+    /// # Errors
+    ///
+    /// * When the query failed to parse.
+    ///
+    /// [browserslist]: <https://github.com/browserslist/browserslist>
+    pub fn from_browserslist_query(query: &str) -> Result<Self, Error> {
+        EngineTargets::try_from_query(query).map(Self::from)
+    }
+
+    pub(crate) fn from_target(s: &str) -> Result<Self, Error> {
+        if s.contains(',') {
+            Self::from_target_list(&s.split(',').collect::<Vec<_>>())
+        } else {
+            Self::from_target_list(&[s])
+        }
+    }
+
+    pub(crate) fn from_target_list<S: AsRef<str>>(list: &[S]) -> Result<Self, Error> {
+        let mut es_target = None;
+        let mut engine_targets = EngineTargets::default();
+
+        for s in list {
+            let s = s.as_ref();
+            // Parse `esXXXX`.
+            if let Ok(target) = ESTarget::from_str(s) {
+                if let Some(target) = es_target {
+                    return Err(Error::msg(format!("'{target}' is already specified.")));
+                }
+                es_target = Some(target);
+            } else {
+                // Parse `chromeXX`, `edgeXX` etc.
+                let (engine, version) = Engine::parse_name_and_version(s)?;
+                if engine_targets.insert(engine, version).is_some() {
+                    return Err(Error::msg(format!("'{s}' is already specified.")));
+                }
+            }
+        }
+        engine_targets.insert(Engine::Es, es_target.unwrap_or(ESTarget::default()).version());
+        Ok(EnvOptions::from(engine_targets))
     }
 }
 
-impl TryFrom<BabelEnvOptions> for EnvOptions {
-    type Error = String;
+impl From<BabelEnvOptions> for EnvOptions {
+    fn from(o: BabelEnvOptions) -> Self {
+        Self::from(o.targets)
+    }
+}
 
-    /// If there are any errors in the `options.targets``, they will be returned as a list of errors.
-    fn try_from(o: BabelEnvOptions) -> Result<Self, Self::Error> {
-        Ok(Self {
+impl From<EngineTargets> for EnvOptions {
+    #[allow(clippy::enum_glob_use)]
+    fn from(o: EngineTargets) -> Self {
+        use ESFeature::*;
+        Self {
             regexp: RegExpOptions {
-                sticky_flag: o.can_enable_plugin("transform-sticky-regex"),
-                unicode_flag: o.can_enable_plugin("transform-unicode-regex"),
-                dot_all_flag: o.can_enable_plugin("transform-dotall-regex"),
-                look_behind_assertions: o.can_enable_plugin("esbuild-regexp-lookbehind-assertions"),
-                named_capture_groups: o.can_enable_plugin("transform-named-capturing-groups-regex"),
-                unicode_property_escapes: o.can_enable_plugin("transform-unicode-property-regex"),
-                match_indices: o.can_enable_plugin("esbuild-regexp-match-indices"),
-                set_notation: o.can_enable_plugin("transform-unicode-sets-regex"),
+                sticky_flag: o.has_feature(ES2015StickyRegex),
+                unicode_flag: o.has_feature(ES2015UnicodeRegex),
+                unicode_property_escapes: o.has_feature(ES2018UnicodePropertyRegex),
+                dot_all_flag: o.has_feature(ES2018DotallRegex),
+                named_capture_groups: o.has_feature(ES2018NamedCapturingGroupsRegex),
+                look_behind_assertions: o.has_feature(ES2018LookbehindRegex),
+                match_indices: o.has_feature(ES2022MatchIndicesRegex),
+                set_notation: o.has_feature(ES2024UnicodeSetsRegex),
             },
             es2015: ES2015Options {
-                arrow_function: o
-                    .can_enable_plugin("transform-arrow-functions")
-                    .then(Default::default),
+                arrow_function: o.has_feature(ES2015ArrowFunctions).then(Default::default),
             },
             es2016: ES2016Options {
-                exponentiation_operator: o.can_enable_plugin("transform-exponentiation-operator"),
+                exponentiation_operator: o.has_feature(ES2016ExponentiationOperator),
             },
-            es2017: ES2017Options {
-                async_to_generator: o.can_enable_plugin("transform-async-to-generator"),
-            },
+            es2017: ES2017Options { async_to_generator: o.has_feature(ES2017AsyncToGenerator) },
             es2018: ES2018Options {
-                object_rest_spread: o
-                    .can_enable_plugin("transform-object-rest-spread")
-                    .then(Default::default),
-                async_generator_functions: o
-                    .can_enable_plugin("transform-async-generator-functions"),
+                object_rest_spread: o.has_feature(ES2018ObjectRestSpread).then(Default::default),
+                async_generator_functions: o.has_feature(ES2018AsyncGeneratorFunctions),
             },
             es2019: ES2019Options {
-                optional_catch_binding: o.can_enable_plugin("transform-optional-catch-binding"),
+                optional_catch_binding: o.has_feature(ES2018OptionalCatchBinding),
             },
             es2020: ES2020Options {
-                nullish_coalescing_operator: o
-                    .can_enable_plugin("transform-nullish-coalescing-operator"),
+                nullish_coalescing_operator: o.has_feature(ES2020NullishCoalescingOperator),
+                big_int: o.has_feature(ES2020BigInt),
             },
             es2021: ES2021Options {
-                logical_assignment_operators: o
-                    .can_enable_plugin("transform-logical-assignment-operators"),
+                logical_assignment_operators: o.has_feature(ES2020LogicalAssignmentOperators),
             },
             es2022: ES2022Options {
-                class_static_block: o.can_enable_plugin("transform-class-static-block"),
-                class_properties: o
-                    .can_enable_plugin("transform-class-properties")
-                    .then(Default::default),
+                class_static_block: o.has_feature(ES2022ClassStaticBlock),
+                class_properties: o.has_feature(ES2022ClassProperties).then(Default::default),
             },
-        })
+        }
     }
 }

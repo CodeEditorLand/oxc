@@ -1,11 +1,10 @@
-mod data;
-mod query;
 mod targets;
 
-pub use data::{bugfix_features, features};
-pub use targets::{Targets, Version};
-
 use serde::Deserialize;
+
+pub use self::targets::BabelTargets;
+
+use crate::options::EngineTargets;
 
 fn default_as_true() -> bool {
     true
@@ -15,8 +14,9 @@ fn default_as_true() -> bool {
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct BabelEnvOptions {
     #[serde(default)]
-    pub targets: Targets,
+    pub targets: EngineTargets,
 
+    #[deprecated = "Not Implemented"]
     #[serde(default = "default_as_true")]
     pub bugfixes: bool,
 
@@ -55,15 +55,4 @@ pub struct BabelEnvOptions {
 
     #[deprecated = "Not Implemented"]
     pub shipped_proposals: bool,
-}
-
-impl BabelEnvOptions {
-    pub fn can_enable_plugin(&self, plugin_name: &str) -> bool {
-        let versions = if self.bugfixes {
-            bugfix_features().get(plugin_name).unwrap_or_else(|| &features()[plugin_name])
-        } else {
-            &features()[plugin_name]
-        };
-        self.targets.should_enable(versions)
-    }
 }
