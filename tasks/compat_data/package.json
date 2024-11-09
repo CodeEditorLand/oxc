@@ -1,10 +1,37 @@
 {
-  "name": "compat-data",
-  "scripts": {
-    "init": "degit compat-table/compat-table#4fd1acb5bdd34846cb18887310f7a8000989c34e compat-table",
-    "build": "node build.js"
-  },
-  "devDependencies": {
-    "degit": "2.8.4"
-  }
+	"author": {
+		"email": "Source/Open@Editor.Land",
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"url": "HTTPS://Editor.Land"
+	},
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
+	"devDependencies": {
+		"@playform/build": "0.1.8",
+		"degit": "2.8.4"
+	},
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"keywords": [
+		"codeeditorland",
+		"land",
+		"playform"
+	],
+	"license": "SEE LICENSE IN LICENSE",
+	"name": "compat-data",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
+	"scripts": {
+		"build": "node build.js",
+		"init": "degit compat-table/compat-table#4fd1acb5bdd34846cb18887310f7a8000989c34e compat-table",
+		"prepublishOnly": "Build 'Source/**/*.ts'"
+	},
+	"type": "module",
+	"version": "0.0.1"
 }
