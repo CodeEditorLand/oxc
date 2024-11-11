@@ -8,8 +8,8 @@ use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::CompilerAssumptions;
 
-pub use self::env::{BabelEnvOptions, BabelTargets};
-use self::{plugins::BabelPlugins, presets::BabelPresets};
+pub use self::env::{BabelEnvOptions, BabelModule, BabelTargets};
+pub(crate) use self::{plugins::BabelPlugins, presets::BabelPresets};
 
 /// Babel options
 ///

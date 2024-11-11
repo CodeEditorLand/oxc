@@ -1,6 +1,6 @@
 commit: d20b314c
 
-Passed: 316/626
+Passed: 319/633
 
 # All Passed:
 * babel-plugin-transform-class-static-block
@@ -18,31 +18,31 @@ Passed: 316/626
 x Output mismatch
 
 * dynamic-import/modules-amd/input.js
-x Output mismatch
+env: Amd module is not implemented.
 
 * dynamic-import/modules-cjs/input.mjs
 x Output mismatch
 
 * dynamic-import/modules-systemjs/input.mjs
-x Output mismatch
+env: Systemjs module is not implemented.
 
 * dynamic-import/modules-umd/input.mjs
-x Output mismatch
+env: Umd module is not implemented.
 
 * dynamic-import-babel-7/auto-esm-unsupported-import-unsupported/input.mjs
 x Output mismatch
 
 * dynamic-import-babel-7/modules-amd/input.js
-x Output mismatch
+env: Amd module is not implemented.
 
 * dynamic-import-babel-7/modules-cjs/input.mjs
 x Output mismatch
 
 * dynamic-import-babel-7/modules-systemjs/input.mjs
-x Output mismatch
+env: Systemjs module is not implemented.
 
 * dynamic-import-babel-7/modules-umd/input.mjs
-x Output mismatch
+env: Umd module is not implemented.
 
 * export-namespace-from/auto-esm-not-supported/input.mjs
 x Output mismatch
@@ -69,10 +69,10 @@ x Output mismatch
 x Output mismatch
 
 * modules/modules-systemjs/input.mjs
-x Output mismatch
+env: Systemjs module is not implemented.
 
 * modules/modules-umd/input.mjs
-x Output mismatch
+env: Umd module is not implemented.
 
 * plugins-integration/block-scoping-inside-generator/input.js
 x Output mismatch
@@ -90,7 +90,7 @@ x Output mismatch
 x Output mismatch
 
 * plugins-integration/issue-10662/input.mjs
-x Output mismatch
+env: Umd module is not implemented.
 
 * plugins-integration/issue-11278/input.mjs
 x Output mismatch
@@ -460,7 +460,7 @@ x Output mismatch
 x Output mismatch
 
 
-# babel-plugin-transform-async-to-generator (11/24)
+# babel-plugin-transform-async-to-generator (11/28)
 * assumption-ignoreFunctionLength-true/basic/input.mjs
 x Output mismatch
 
@@ -486,6 +486,18 @@ x Output mismatch
 x Output mismatch
 
 * bluebird-coroutines/statement/input.js
+x Output mismatch
+
+* export-async/default-arrow-export/input.mjs
+x Output mismatch
+
+* export-async/default-export/input.mjs
+x Output mismatch
+
+* export-async/import-and-export/input.mjs
+x Output mismatch
+
+* export-async/lone-export/input.mjs
 x Output mismatch
 
 * regression/15978/input.js
@@ -560,7 +572,7 @@ rebuilt        : ScopeId(1): []
 x Output mismatch
 
 
-# babel-plugin-transform-typescript (40/153)
+# babel-plugin-transform-typescript (43/155)
 * cast/as-expression/input.ts
 Unresolved references mismatch:
 after transform: ["T", "x"]
@@ -931,17 +943,6 @@ Scope children mismatch:
 after transform: ScopeId(0): [ScopeId(1)]
 rebuilt        : ScopeId(0): []
 
-* exports/export=/input.ts
-
-  ! `export = <value>;` is only supported when compiling modules to CommonJS.
-  | Please consider using `export default <value>;`, or add @babel/plugin-
-  | transform-modules-commonjs to your Babel config.
-   ,-[tasks/coverage/babel/packages/babel-plugin-transform-typescript/test/fixtures/exports/export=/input.ts:1:1]
- 1 | export = 0;
-   : ^^^^^^^^^^^
-   `----
-
-
 * exports/imported-types/input.ts
 Bindings mismatch:
 after transform: ScopeId(0): ["A", "B", "C"]
@@ -1128,19 +1129,18 @@ Bindings mismatch:
 after transform: ScopeId(0): ["A", "B"]
 rebuilt        : ScopeId(0): []
 
-* imports/import=-module/input.ts
-
-  ! `import lib = require(...);` is only supported when compiling modules
-  | to CommonJS.
-  | Please consider using `import lib from '...';` alongside Typescript's
-  | --allowSyntheticDefaultImports option, or add @babel/plugin-transform-
-  | modules-commonjs to your Babel config.
-   ,-[tasks/coverage/babel/packages/babel-plugin-transform-typescript/test/fixtures/imports/import=-module/input.ts:1:1]
- 1 | import lib = require("lib");
-   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
- 2 | lib();
-   `----
-
+* imports/import=-module-to-cjs/input.ts
+Missing SymbolId: "lib"
+Missing ReferenceId: "require"
+Binding symbols mismatch:
+after transform: ScopeId(0): [SymbolId(0)]
+rebuilt        : ScopeId(0): [SymbolId(0)]
+Reference symbol mismatch for "lib":
+after transform: SymbolId(0) "lib"
+rebuilt        : SymbolId(0) "lib"
+Unresolved references mismatch:
+after transform: []
+rebuilt        : ["require"]
 
 * imports/only-remove-type-imports/input.ts
 x Output mismatch
@@ -2167,7 +2167,10 @@ after transform: ["T", "f"]
 rebuilt        : ["f"]
 
 
-# babel-plugin-transform-react-jsx (124/144)
+# babel-plugin-transform-react-jsx (124/145)
+* autoImport/after-polyfills-compiled-to-cjs/input.mjs
+x Output mismatch
+
 * pure/false-pragma-comment-automatic-runtime/input.js
 pragma and pragmaFrag cannot be set when runtime is automatic.
 

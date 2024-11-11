@@ -1602,7 +1602,6 @@ impl<'a> AstBuilder<'a> {
     /// - kind
     /// - key
     /// - value
-    /// - init
     /// - method
     /// - shorthand
     /// - computed
@@ -1613,15 +1612,12 @@ impl<'a> AstBuilder<'a> {
         kind: PropertyKind,
         key: PropertyKey<'a>,
         value: Expression<'a>,
-        init: Option<Expression<'a>>,
         method: bool,
         shorthand: bool,
         computed: bool,
     ) -> ObjectPropertyKind<'a> {
         ObjectPropertyKind::ObjectProperty(
-            self.alloc(
-                self.object_property(span, kind, key, value, init, method, shorthand, computed),
-            ),
+            self.alloc(self.object_property(span, kind, key, value, method, shorthand, computed)),
         )
     }
 
@@ -1650,7 +1646,6 @@ impl<'a> AstBuilder<'a> {
     /// - kind
     /// - key
     /// - value
-    /// - init
     /// - method
     /// - shorthand
     /// - computed
@@ -1661,12 +1656,11 @@ impl<'a> AstBuilder<'a> {
         kind: PropertyKind,
         key: PropertyKey<'a>,
         value: Expression<'a>,
-        init: Option<Expression<'a>>,
         method: bool,
         shorthand: bool,
         computed: bool,
     ) -> ObjectProperty<'a> {
-        ObjectProperty { span, kind, key, value, init, method, shorthand, computed }
+        ObjectProperty { span, kind, key, value, method, shorthand, computed }
     }
 
     /// Build an [`ObjectProperty`], and store it in the memory arena.
@@ -1678,7 +1672,6 @@ impl<'a> AstBuilder<'a> {
     /// - kind
     /// - key
     /// - value
-    /// - init
     /// - method
     /// - shorthand
     /// - computed
@@ -1689,13 +1682,12 @@ impl<'a> AstBuilder<'a> {
         kind: PropertyKind,
         key: PropertyKey<'a>,
         value: Expression<'a>,
-        init: Option<Expression<'a>>,
         method: bool,
         shorthand: bool,
         computed: bool,
     ) -> Box<'a, ObjectProperty<'a>> {
         Box::new_in(
-            self.object_property(span, kind, key, value, init, method, shorthand, computed),
+            self.object_property(span, kind, key, value, method, shorthand, computed),
             self.allocator,
         )
     }
@@ -7781,53 +7773,6 @@ impl<'a> AstBuilder<'a> {
         A: IntoIn<'a, Atom<'a>>,
     {
         TSEnumMemberName::StaticStringLiteral(self.alloc(self.string_literal(span, value)))
-    }
-
-    /// Build a [`TSEnumMemberName::StaticTemplateLiteral`]
-    ///
-    /// This node contains a [`TemplateLiteral`] that will be stored in the memory arena.
-    ///
-    /// ## Parameters
-    /// - span: The [`Span`] covering this node
-    /// - quasis
-    /// - expressions
-    #[inline]
-    pub fn ts_enum_member_name_template_literal(
-        self,
-        span: Span,
-        quasis: Vec<'a, TemplateElement<'a>>,
-        expressions: Vec<'a, Expression<'a>>,
-    ) -> TSEnumMemberName<'a> {
-        TSEnumMemberName::StaticTemplateLiteral(self.alloc(self.template_literal(
-            span,
-            quasis,
-            expressions,
-        )))
-    }
-
-    /// Build a [`TSEnumMemberName::StaticNumericLiteral`]
-    ///
-    /// This node contains a [`NumericLiteral`] that will be stored in the memory arena.
-    ///
-    /// ## Parameters
-    /// - span: Node location in source code
-    /// - value: The value of the number, converted into base 10
-    /// - raw: The number as it appears in source code
-    /// - base: The base representation used by the literal in source code
-    #[inline]
-    pub fn ts_enum_member_name_numeric_literal<S>(
-        self,
-        span: Span,
-        value: f64,
-        raw: S,
-        base: NumberBase,
-    ) -> TSEnumMemberName<'a>
-    where
-        S: IntoIn<'a, &'a str>,
-    {
-        TSEnumMemberName::StaticNumericLiteral(
-            self.alloc(self.numeric_literal(span, value, raw, base)),
-        )
     }
 
     /// Build a [`TSTypeAnnotation`].

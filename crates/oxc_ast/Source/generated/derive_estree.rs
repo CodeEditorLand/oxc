@@ -285,7 +285,6 @@ impl<'a> Serialize for ObjectProperty<'a> {
         map.serialize_entry("kind", &self.kind)?;
         map.serialize_entry("key", &self.key)?;
         map.serialize_entry("value", &self.value)?;
-        map.serialize_entry("init", &self.init)?;
         map.serialize_entry("method", &self.method)?;
         map.serialize_entry("shorthand", &self.shorthand)?;
         map.serialize_entry("computed", &self.computed)?;
@@ -1978,50 +1977,6 @@ impl<'a> Serialize for TSEnumMemberName<'a> {
         match self {
             TSEnumMemberName::StaticIdentifier(x) => Serialize::serialize(x, serializer),
             TSEnumMemberName::StaticStringLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::StaticTemplateLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::StaticNumericLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::BooleanLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::NullLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::NumericLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::BigIntLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::RegExpLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::StringLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::TemplateLiteral(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::Identifier(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::MetaProperty(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::Super(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ArrayExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ArrowFunctionExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::AssignmentExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::AwaitExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::BinaryExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::CallExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ChainExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ClassExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ConditionalExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::FunctionExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ImportExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::LogicalExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::NewExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ObjectExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ParenthesizedExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::SequenceExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::TaggedTemplateExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ThisExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::UnaryExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::UpdateExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::YieldExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::PrivateInExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::JSXElement(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::JSXFragment(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::TSAsExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::TSSatisfiesExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::TSTypeAssertion(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::TSNonNullExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::TSInstantiationExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::ComputedMemberExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::StaticMemberExpression(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::PrivateFieldExpression(x) => Serialize::serialize(x, serializer),
         }
     }
 }
