@@ -138,13 +138,13 @@
     "server:build:release": "cross-env CARGO_TARGET_DIR=./target cargo build -p oxc_language_server --release"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.9.0",
     "@types/vscode": "1.95.0",
-    "@vscode/vsce": "^3.0.0",
+    "@vscode/vsce": "^3.2.1",
     "cross-env": "^7.0.3",
     "esbuild": "^0.24.0",
     "ovsx": "^0.10.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
