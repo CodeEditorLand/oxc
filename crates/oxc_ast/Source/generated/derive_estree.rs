@@ -31,6 +31,12 @@ impl<'a> Serialize for NumericLiteral<'a> {
     }
 }
 
+impl<'a> Serialize for StringLiteral<'a> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        crate::serialize::ESTreeLiteral::from(self).serialize(serializer)
+    }
+}
+
 impl<'a> Serialize for BigIntLiteral<'a> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         crate::serialize::ESTreeLiteral::from(self).serialize(serializer)
@@ -59,16 +65,6 @@ impl<'a> Serialize for RegExpPattern<'a> {
             RegExpPattern::Invalid(x) => Serialize::serialize(x, serializer),
             RegExpPattern::Pattern(x) => Serialize::serialize(x, serializer),
         }
-    }
-}
-
-impl<'a> Serialize for StringLiteral<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serializer.serialize_map(None)?;
-        map.serialize_entry("type", "StringLiteral")?;
-        self.span.serialize(serde::__private::ser::FlatMapSerializer(&mut map))?;
-        map.serialize_entry("value", &self.value)?;
-        map.end()
     }
 }
 
@@ -1975,8 +1971,8 @@ impl<'a> Serialize for TSEnumMember<'a> {
 impl<'a> Serialize for TSEnumMemberName<'a> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
-            TSEnumMemberName::StaticIdentifier(x) => Serialize::serialize(x, serializer),
-            TSEnumMemberName::StaticStringLiteral(x) => Serialize::serialize(x, serializer),
+            TSEnumMemberName::Identifier(x) => Serialize::serialize(x, serializer),
+            TSEnumMemberName::String(x) => Serialize::serialize(x, serializer),
         }
     }
 }

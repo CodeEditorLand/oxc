@@ -44,6 +44,16 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for NumericLiteral<'old_alloc> 
     }
 }
 
+impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for StringLiteral<'old_alloc> {
+    type Cloned = StringLiteral<'new_alloc>;
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        StringLiteral {
+            span: CloneIn::clone_in(&self.span, allocator),
+            value: CloneIn::clone_in(&self.value, allocator),
+        }
+    }
+}
+
 impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BigIntLiteral<'old_alloc> {
     type Cloned = BigIntLiteral<'new_alloc>;
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -83,16 +93,6 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExpPattern<'old_alloc> {
             Self::Raw(it) => RegExpPattern::Raw(CloneIn::clone_in(it, allocator)),
             Self::Invalid(it) => RegExpPattern::Invalid(CloneIn::clone_in(it, allocator)),
             Self::Pattern(it) => RegExpPattern::Pattern(CloneIn::clone_in(it, allocator)),
-        }
-    }
-}
-
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for StringLiteral<'old_alloc> {
-    type Cloned = StringLiteral<'new_alloc>;
-    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        StringLiteral {
-            span: CloneIn::clone_in(&self.span, allocator),
-            value: CloneIn::clone_in(&self.value, allocator),
         }
     }
 }
@@ -2593,12 +2593,8 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSEnumMemberName<'old_alloc
     type Cloned = TSEnumMemberName<'new_alloc>;
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         match self {
-            Self::StaticIdentifier(it) => {
-                TSEnumMemberName::StaticIdentifier(CloneIn::clone_in(it, allocator))
-            }
-            Self::StaticStringLiteral(it) => {
-                TSEnumMemberName::StaticStringLiteral(CloneIn::clone_in(it, allocator))
-            }
+            Self::Identifier(it) => TSEnumMemberName::Identifier(CloneIn::clone_in(it, allocator)),
+            Self::String(it) => TSEnumMemberName::String(CloneIn::clone_in(it, allocator)),
         }
     }
 }

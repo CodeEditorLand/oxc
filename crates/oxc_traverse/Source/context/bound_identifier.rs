@@ -10,6 +10,8 @@ use oxc_syntax::{reference::ReferenceFlags, symbol::SymbolId};
 
 use crate::TraverseCtx;
 
+use super::MaybeBoundIdentifier;
+
 /// Info about a binding, from which one can create a `BindingIdentifier` or `IdentifierReference`s.
 ///
 /// Typical usage:
@@ -52,6 +54,11 @@ impl<'a> BoundIdentifier<'a> {
     /// Create `BoundIdentifier` from a `BindingIdentifier`
     pub fn from_binding_ident(ident: &BindingIdentifier<'a>) -> Self {
         Self { name: ident.name.clone(), symbol_id: ident.symbol_id() }
+    }
+
+    /// Convert `BoundIdentifier` to `MaybeBoundIdentifier`
+    pub fn to_maybe_bound_identifier(&self) -> MaybeBoundIdentifier<'a> {
+        MaybeBoundIdentifier::new(self.name.clone(), Some(self.symbol_id))
     }
 
     /// Create `BindingIdentifier` for this binding

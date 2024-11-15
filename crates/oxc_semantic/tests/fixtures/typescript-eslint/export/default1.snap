@@ -1,0 +1,30 @@
+---
+source: crates/oxc_semantic/tests/main.rs
+input_file: crates/oxc_semantic/tests/fixtures/typescript-eslint/export/default1.ts
+snapshot_kind: text
+---
+[
+  {
+    "children": [
+      {
+        "children": [],
+        "flags": "ScopeFlags(StrictMode | Function)",
+        "id": 1,
+        "node": "Function(f)",
+        "symbols": []
+      }
+    ],
+    "flags": "ScopeFlags(StrictMode | Top)",
+    "id": 0,
+    "node": "Program",
+    "symbols": [
+      {
+        "flags": "SymbolFlags(BlockScopedVariable | Export | Function)",
+        "id": 0,
+        "name": "f",
+        "node": "Function(f)",
+        "references": []
+      }
+    ]
+  }
+]
