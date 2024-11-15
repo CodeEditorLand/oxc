@@ -1,7 +1,14 @@
 {
-  "compilerOptions": {
-    "module": "Preserve",
-    "moduleResolution": "Bundler",
-    "target": "ESNext"
-  }
+	"compilerOptions": {
+		"baseUrl": "./",
+		"module": "Preserve",
+		"moduleResolution": "Bundler",
+		"outDir": "Target",
+		"rootDir": "src",
+		"target": "ESNext"
+	},
+	"extends": "@playform/build/tsconfig",
+	"include": [
+		"src"
+	]
 }
