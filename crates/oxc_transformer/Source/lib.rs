@@ -3,7 +3,7 @@
 //! References:
 //! * <https://www.typescriptlang.org/tsconfig#target>
 //! * <https://babel.dev/docs/presets>
-//! * <https://github.com/microsoft/TypeScript/blob/main/src/compiler/transformer.ts>
+//! * <https://github.com/microsoft/TypeScript/blob/v5.6.3/src/compiler/transformer.ts>
 
 use std::path::Path;
 
@@ -171,6 +171,7 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         arrow: &mut ArrowFunctionExpression<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) {
+        self.common.enter_arrow_function_expression(arrow, ctx);
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_arrow_function_expression(arrow, ctx);
         }
@@ -188,6 +189,22 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
 
     fn enter_big_int_literal(&mut self, node: &mut BigIntLiteral<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x2_es2020.enter_big_int_literal(node, ctx);
+    }
+
+    fn enter_binding_identifier(
+        &mut self,
+        node: &mut BindingIdentifier<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+        self.common.enter_binding_identifier(node, ctx);
+    }
+
+    fn enter_identifier_reference(
+        &mut self,
+        node: &mut IdentifierReference<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+        self.common.enter_identifier_reference(node, ctx);
     }
 
     fn enter_binding_pattern(&mut self, pat: &mut BindingPattern<'a>, ctx: &mut TraverseCtx<'a>) {
@@ -296,6 +313,14 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         self.x2_es2018.exit_function(func, ctx);
         self.x2_es2017.exit_function(func, ctx);
         self.common.exit_function(func, ctx);
+    }
+
+    fn enter_function_body(&mut self, body: &mut FunctionBody<'a>, ctx: &mut TraverseCtx<'a>) {
+        self.common.enter_function_body(body, ctx);
+    }
+
+    fn exit_function_body(&mut self, body: &mut FunctionBody<'a>, ctx: &mut TraverseCtx<'a>) {
+        self.common.exit_function_body(body, ctx);
     }
 
     fn enter_jsx_element(&mut self, node: &mut JSXElement<'a>, ctx: &mut TraverseCtx<'a>) {

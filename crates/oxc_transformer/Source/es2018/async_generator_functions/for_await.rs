@@ -150,6 +150,7 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
         let iterator = ctx.ast.move_expression(&mut stmt.right);
         let iterator = self.ctx.helper_call_expr(
             Helper::AsyncIterator,
+            SPAN,
             ctx.ast.vec1(Argument::from(iterator)),
             ctx,
         );
@@ -260,24 +261,22 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                 Some(ctx.ast.for_statement_init_variable_declaration(
                     SPAN,
                     VariableDeclarationKind::Var,
-                    {
-                        let mut items = ctx.ast.vec_with_capacity(2);
-                        items.push(ctx.ast.variable_declarator(
+                    ctx.ast.vec_from_array([
+                        ctx.ast.variable_declarator(
                             SPAN,
                             VariableDeclarationKind::Var,
                             iterator_key.create_binding_pattern(ctx),
                             Some(iterator),
                             false,
-                        ));
-                        items.push(ctx.ast.variable_declarator(
+                        ),
+                        ctx.ast.variable_declarator(
                             SPAN,
                             VariableDeclarationKind::Var,
                             step_key.create_binding_pattern(ctx),
                             None,
                             false,
-                        ));
-                        items
-                    },
+                        ),
+                    ]),
                     false,
                 )),
                 Some(ctx.ast.expression_assignment(
@@ -370,9 +369,8 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                 {
                     ctx.ast.block_statement_with_scope_id(
                         SPAN,
-                        {
-                            let mut items = ctx.ast.vec_with_capacity(2);
-                            items.push(ctx.ast.statement_expression(
+                        ctx.ast.vec_from_array([
+                            ctx.ast.statement_expression(
                                 SPAN,
                                 ctx.ast.expression_assignment(
                                     SPAN,
@@ -380,8 +378,8 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                                     iterator_had_error_key.create_write_target(ctx),
                                     ctx.ast.expression_boolean_literal(SPAN, true),
                                 ),
-                            ));
-                            items.push(ctx.ast.statement_expression(
+                            ),
+                            ctx.ast.statement_expression(
                                 SPAN,
                                 ctx.ast.expression_assignment(
                                     SPAN,
@@ -389,9 +387,8 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                                     iterator_error_key.create_write_target(ctx),
                                     err_ident.create_read_expression(ctx),
                                 ),
-                            ));
-                            items
-                        },
+                            ),
+                        ]),
                         block_scope_id,
                     )
                 },

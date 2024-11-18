@@ -99,7 +99,7 @@ impl<'a> RefreshIdentifierResolver<'a> {
 /// References:
 ///
 /// * <https://github.com/facebook/react/issues/16604#issuecomment-528663101>
-/// * <https://github.com/facebook/react/blob/main/packages/react-refresh/src/ReactFreshBabelPlugin.js>
+/// * <https://github.com/facebook/react/blob/v18.3.1/packages/react-refresh/src/ReactFreshBabelPlugin.js>
 pub struct ReactRefresh<'a, 'ctx> {
     refresh_reg: RefreshIdentifierResolver<'a>,
     refresh_sig: RefreshIdentifierResolver<'a>,
@@ -164,11 +164,12 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
             ));
 
             let callee = self.refresh_reg.to_expression(ctx);
-            let mut arguments = ctx.ast.vec_with_capacity(2);
-            arguments.push(Argument::from(binding.create_read_expression(ctx)));
-            arguments.push(Argument::from(
-                ctx.ast.expression_string_literal(SPAN, ctx.ast.atom(&persistent_id)),
-            ));
+            let arguments = ctx.ast.vec_from_array([
+                Argument::from(binding.create_read_expression(ctx)),
+                Argument::from(
+                    ctx.ast.expression_string_literal(SPAN, ctx.ast.atom(&persistent_id)),
+                ),
+            ]);
             new_statements.push(ctx.ast.statement_expression(
                 SPAN,
                 ctx.ast.expression_call(SPAN, callee, NONE, arguments, false),
@@ -336,13 +337,12 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
                             binding_name.as_str(),
                         )
                         .map(|symbol_id| {
-                            let ident = ctx.create_bound_reference_id(
+                            let mut expr = ctx.create_bound_ident_expr(
                                 SPAN,
                                 binding_name,
                                 symbol_id,
                                 ReferenceFlags::Read,
                             );
-                            let mut expr = Expression::Identifier(ctx.alloc(ident));
 
                             if is_member_expression {
                                 // binding_name.hook_name
@@ -496,13 +496,12 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Statement<'a> {
         let left = self.create_registration(id.name.clone(), ReferenceFlags::Write, ctx);
-        let right = ctx.create_bound_reference_id(
+        let right = ctx.create_bound_ident_expr(
             SPAN,
             id.name.clone(),
             id.symbol_id(),
             ReferenceFlags::Read,
         );
-        let right = Expression::Identifier(ctx.alloc(right));
         let expr = ctx.ast.expression_assignment(SPAN, AssignmentOperator::Assign, left, right);
         ctx.ast.statement_expression(SPAN, expr)
     }
