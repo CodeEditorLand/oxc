@@ -10,7 +10,7 @@
 	},
 	"description": "The JavaScript Oxidation Compiler",
 	"devDependencies": {
-		"@playform/build": "0.1.8"
+		"@playform/build": "0.1.9"
 	},
 	"files": [
 		"bin/oxc"
