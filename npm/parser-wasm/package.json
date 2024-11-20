@@ -1,38 +1,44 @@
 {
-	"name": "@oxc-parser/wasm",
-	"version": "0.0.1",
-	"private": false,
+	"author": {
+		"email": "Source/Open@Editor.Land",
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"url": "HTTPS://Editor.Land"
+	},
+	"browser": "./web/oxc_parser_wasm.js",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
+	"dependencies": {
+		"@oxc-project/types": "workspace:^"
+	},
 	"description": "Wasm target for the oxc parser.",
+	"devDependencies": {
+		"@playform/build": "0.1.9"
+	},
+	"files": [
+		"node",
+		"web"
+	],
+	"funding": {
+		"url": "https://github.com/sponsors/Boshen"
+	},
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"keywords": [
 		"codeeditorland",
 		"land",
 		"playform"
 	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	"license": "SEE LICENSE IN LICENSE",
+	"main": "./node/oxc_parser_wasm.js",
+	"name": "@oxc-parser/wasm",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
 	},
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"type": "module",
-	"main": "./node/oxc_parser_wasm.js",
-	"browser": "./web/oxc_parser_wasm.js",
-	"types": "./node/oxc_parser_wasm.d.ts",
-	"files": [
-		"node",
-		"web"
-	],
 	"scripts": {
 		"build": "pnpm run build-node && pnpm run build-web && pnpm run copy-files && pnpm run clean-files",
 		"build-base": "wasm-pack build --release --no-pack",
@@ -42,13 +48,7 @@
 		"copy-files": "cp ./package.json ../../npm/parser-wasm/package.json && cp ./README.md ../../npm/parser-wasm/README.md",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
-	"dependencies": {
-		"@oxc-project/types": "workspace:^"
-	},
-	"devDependencies": {
-		"@playform/build": "0.1.9"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+	"type": "module",
+	"types": "./node/oxc_parser_wasm.d.ts",
+	"version": "0.0.1"
 }

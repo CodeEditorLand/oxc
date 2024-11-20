@@ -1,51 +1,51 @@
 {
-	"name": "oxc_wasm",
-	"version": "0.0.1",
-	"private": false,
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"author": {
+		"email": "Source/Open@Editor.Land",
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"url": "HTTPS://Editor.Land"
+	},
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
 	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"sideEffects": [
-		"./snippets/*"
+	"collaborators": [
+		"Boshen <boshenc@gmail.com>",
+		"Oxc contributors"
 	],
-	"type": "module",
-	"main": "oxc_wasm.js",
-	"types": "oxc_wasm.d.ts",
-	"files": [
-		"oxc_wasm_bg.wasm",
-		"oxc_wasm.js",
-		"oxc_wasm.d.ts"
-	],
-	"scripts": {
-		"prepublishOnly": "Build 'Source/**/*.ts'"
-	},
 	"dependencies": {
 		"@oxc-project/types": "workspace:^"
 	},
 	"devDependencies": {
 		"@playform/build": "0.1.9"
 	},
+	"files": [
+		"oxc_wasm_bg.wasm",
+		"oxc_wasm.js",
+		"oxc_wasm.d.ts"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"keywords": [
+		"codeeditorland",
+		"land",
+		"playform"
+	],
+	"license": "SEE LICENSE IN LICENSE",
+	"main": "oxc_wasm.js",
+	"name": "oxc_wasm",
+	"private": false,
 	"publishConfig": {
 		"access": "public"
 	},
-	"collaborators": [
-		"Boshen <boshenc@gmail.com>",
-		"Oxc contributors"
-	]
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
+	"scripts": {
+		"prepublishOnly": "Build 'Source/**/*.ts'"
+	},
+	"sideEffects": [
+		"./snippets/*"
+	],
+	"type": "module",
+	"types": "oxc_wasm.d.ts",
+	"version": "0.0.1"
 }

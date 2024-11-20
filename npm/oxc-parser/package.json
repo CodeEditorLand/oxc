@@ -1,47 +1,47 @@
 {
-	"name": "oxc-parser",
-	"version": "0.0.1",
-	"private": false,
-	"description": "Oxc Parser Node API",
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"author": {
+		"email": "Source/Open@Editor.Land",
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"url": "HTTPS://Editor.Land"
+	},
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
 	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	"dependencies": {
+		"@oxc-project/types": "workspace:^"
 	},
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
+	"description": "Oxc Parser Node API",
+	"devDependencies": {
+		"@playform/build": "0.1.9"
 	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"type": "module",
-	"main": "index.js",
 	"files": [
 		"index.d.ts",
 		"index.js",
 		"bindings.js"
 	],
+	"funding": {
+		"url": "https://github.com/sponsors/Boshen"
+	},
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
+	"keywords": [
+		"codeeditorland",
+		"land",
+		"playform"
+	],
+	"license": "SEE LICENSE IN LICENSE",
+	"main": "index.js",
+	"name": "oxc-parser",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
 	"scripts": {
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
-	"dependencies": {
-		"@oxc-project/types": "workspace:^"
-	},
-	"devDependencies": {
-		"@playform/build": "0.1.9"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+	"type": "module",
+	"version": "0.0.1"
 }

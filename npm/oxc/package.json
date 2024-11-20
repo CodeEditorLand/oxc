@@ -1,43 +1,43 @@
 {
-	"name": "oxidation-compiler",
-	"version": "0.0.1",
-	"private": false,
+	"author": {
+		"email": "Source/Open@Editor.Land",
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"url": "HTTPS://Editor.Land"
+	},
+	"bin": "bin/oxc",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
 	"description": "The JavaScript Oxidation Compiler",
+	"devDependencies": {
+		"@playform/build": "0.1.9"
+	},
+	"files": [
+		"bin/oxc"
+	],
+	"funding": {
+		"url": "https://github.com/sponsors/Boshen"
+	},
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"keywords": [
 		"codeeditorland",
 		"land",
 		"playform"
 	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	"license": "SEE LICENSE IN LICENSE",
+	"name": "oxidation-compiler",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
 	},
-	"funding": {
-		"url": "https://github.com/sponsors/Boshen"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"type": "module",
-	"bin": "bin/oxc",
-	"files": [
-		"bin/oxc"
-	],
 	"scripts": {
 		"Run": "Build 'Source/**/*.ts' --Watch",
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
-	"devDependencies": {
-		"@playform/build": "0.1.9"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+	"type": "module",
+	"version": "0.0.1"
 }
