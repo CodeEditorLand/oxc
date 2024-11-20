@@ -37,12 +37,12 @@ serde_json = { workspace = true, optional = true }
 [features]
 default = []
 serialize = [
-  "dep:serde",
-  "dep:serde_json",
-  "oxc_allocator/serialize",
-  "oxc_regular_expression/serialize",
-  "oxc_span/serialize",
-  "oxc_syntax/serialize",
-  "oxc_syntax/to_js_string",
-  "oxc_estree/serialize",
+	"dep:serde",
+	"dep:serde_json",
+	"oxc_allocator/serialize",
+	"oxc_regular_expression/serialize",
+	"oxc_span/serialize",
+	"oxc_syntax/serialize",
+	"oxc_syntax/to_js_string",
+	"oxc_estree/serialize",
 ]
