@@ -1,39 +1,17 @@
 {
-	"name": "oxc",
-	"version": "0.0.1",
-	"private": false,
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"type": "module",
-	"scripts": {
-		"build": "pnpm --workspace-concurrency=1 --filter './napi/*' build",
-		"prepublishOnly": "Build 'Source/**/*.ts'"
-	},
-	"devDependencies": {
-		"@napi-rs/cli": "catalog:",
-		"@playform/build": "0.1.9"
-	},
-	"volta": {
-		"node": "22.11.0"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+  "name": "oxc",
+  "private": true,
+  "packageManager": "pnpm@9.14.1",
+  "volta": {
+    "node": "22.11.0"
+  },
+  "scripts": {
+    "build": "pnpm --workspace-concurrency=1 --filter './napi/*' build",
+    "test": "pnpm --workspace-concurrency=1 --filter './napi/*' test"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
 }
