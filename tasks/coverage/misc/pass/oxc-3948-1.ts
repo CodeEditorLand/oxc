@@ -34,6 +34,7 @@ import { Schemas } from 'vs/base/common/network';
 
 suite('WorkingCopyBackupTracker (browser)', function () {
 	let accessor: TestServiceAccessor;
+
 	const disposables = new DisposableStore();
 
 	setup(() => {
@@ -89,6 +90,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 
 	async function createTracker(): Promise<{ accessor: TestServiceAccessor; part: EditorPart; tracker: TestWorkingCopyBackupTracker; workingCopyBackupService: InMemoryTestWorkingCopyBackupService; instantiationService: IInstantiationService }> {
 		const workingCopyBackupService = disposables.add(new InMemoryTestWorkingCopyBackupService());
+
 		const instantiationService = workbenchInstantiationService(undefined, disposables);
 		instantiationService.stub(IWorkingCopyBackupService, workingCopyBackupService);
 
@@ -111,6 +113,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 		const { accessor, workingCopyBackupService } = await createTracker();
 
 		const untitledTextEditor = disposables.add((await accessor.editorService.openEditor(untitled))?.input as UntitledTextEditorInput);
+
 		const untitledTextModel = disposables.add(await untitledTextEditor.resolve());
 
 		if (!untitled?.contents) {
@@ -157,6 +160,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 		}
 
 		const resource: URI = toResource.call(this, '/path/custom.txt');
+
 		const customWorkingCopy = disposables.add(new TestBackupWorkingCopy(resource));
 
 		// Normal
@@ -187,11 +191,15 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 
 	async function restoreBackupsInit(): Promise<[TestWorkingCopyBackupTracker, TestServiceAccessor]> {
 		const fooFile = URI.file(isWindows ? 'c:\\Foo' : '/Foo');
+
 		const barFile = URI.file(isWindows ? 'c:\\Bar' : '/Bar');
+
 		const untitledFile1 = URI.from({ scheme: Schemas.untitled, path: 'Untitled-1' });
+
 		const untitledFile2 = URI.from({ scheme: Schemas.untitled, path: 'Untitled-2' });
 
 		const workingCopyBackupService = disposables.add(new InMemoryTestWorkingCopyBackupService());
+
 		const instantiationService = workbenchInstantiationService(undefined, disposables);
 		instantiationService.stub(IWorkingCopyBackupService, workingCopyBackupService);
 
@@ -205,11 +213,13 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 
 		// Backup 2 normal files and 2 untitled files
 		const untitledFile1WorkingCopyId = toUntypedWorkingCopyId(untitledFile1);
+
 		const untitledFile2WorkingCopyId = toTypedWorkingCopyId(untitledFile2);
 		await workingCopyBackupService.backup(untitledFile1WorkingCopyId, bufferToReadable(VSBuffer.fromString('untitled-1')));
 		await workingCopyBackupService.backup(untitledFile2WorkingCopyId, bufferToReadable(VSBuffer.fromString('untitled-2')));
 
 		const fooFileWorkingCopyId = toUntypedWorkingCopyId(fooFile);
+
 		const barFileWorkingCopyId = toTypedWorkingCopyId(barFile);
 		await workingCopyBackupService.backup(fooFileWorkingCopyId, bufferToReadable(VSBuffer.fromString('fooFile')));
 		await workingCopyBackupService.backup(barFileWorkingCopyId, bufferToReadable(VSBuffer.fromString('barFile')));
@@ -227,7 +237,9 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 		assert.strictEqual(tracker.getUnrestoredBackups().size, 0);
 
 		let handlesCounter = 0;
+
 		let isOpenCounter = 0;
+
 		let createEditorCounter = 0;
 
 		await tracker.testRestoreBackups({
@@ -336,9 +348,11 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 		assert.strictEqual(tracker.getUnrestoredBackups().size, 0);
 
 		let handlesCounter = 0;
+
 		let isOpenCounter = 0;
 
 		const editor1 = disposables.add(accessor.instantiationService.createInstance(TestUntitledTextEditorInput, accessor.untitledTextEditorService.create({ initialValue: 'foo' })));
+
 		const editor2 = disposables.add(accessor.instantiationService.createInstance(TestUntitledTextEditorInput, accessor.untitledTextEditorService.create({ initialValue: 'foo' })));
 
 		await accessor.editorService.openEditors([{ editor: editor1 }, { editor: editor2 }]);

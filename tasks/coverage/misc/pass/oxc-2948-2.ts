@@ -1,5 +1,6 @@
 const readonly = 1;
 export const override = 2;
+
 const accessor = 'foo'
 
 function foo(accessor, readonly, y: readonly number[]) {}
@@ -16,6 +17,7 @@ class Bar extends Foo {
 }
 
 const x = { readonly, override };
+
 const y = { readonly: readonly, override: override };
 export { readonly };
 export default readonly;
