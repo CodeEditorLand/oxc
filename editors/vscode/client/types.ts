@@ -5,5 +5,5 @@
  * VSCode uses this in its APIs.
  */
 export interface IDisposable {
-  dispose(): void | Promise<void>;
+	dispose(): void | Promise<void>;
 }
