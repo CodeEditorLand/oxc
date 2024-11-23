@@ -8,7 +8,7 @@ use oxc::parser::ParseOptions;
 use oxc::{
     allocator::Allocator,
     codegen::{CodeGenerator, CodegenOptions},
-    diagnostics::{Error, NamedSource, OxcDiagnostic},
+    diagnostics::{NamedSource, OxcDiagnostic},
     parser::Parser,
     span::{SourceType, VALID_EXTENSIONS},
     transformer::{BabelOptions, HelperLoaderMode, TransformOptions},
@@ -27,7 +27,7 @@ pub struct TestCase {
     pub path: PathBuf,
     options: BabelOptions,
     source_type: SourceType,
-    transform_options: Result<TransformOptions, Vec<Error>>,
+    transform_options: Result<TransformOptions, Vec<String>>,
     pub errors: Vec<OxcDiagnostic>,
 }
 
@@ -191,6 +191,10 @@ impl TestCase {
     }
 
     pub fn test(&mut self, options: &TestRunnerOptions) {
+        if options.debug {
+            println!("{}", self.path.to_string_lossy());
+        }
+
         let filtered = options.filter.is_some();
         match self.kind {
             TestCaseKind::Conformance => self.test_conformance(filtered),
@@ -383,7 +387,12 @@ test("exec", () => {{
             Ok(code) => code,
             Err(error) => error,
         };
-        let path = snap_root().join(self.path.strip_prefix(packages_root()).unwrap());
+        let mut path = snap_root().join(self.path.strip_prefix(packages_root()).unwrap());
+        path.set_file_name("output");
+        let input_extension = self.path.extension().unwrap().to_str().unwrap();
+        let extension =
+            input_extension.chars().map(|c| if c == 't' { 'j' } else { c }).collect::<String>();
+        path.set_extension(extension);
         if filtered {
             println!("Input path: {:?}", &self.path);
             println!("Output path: {path:?}");

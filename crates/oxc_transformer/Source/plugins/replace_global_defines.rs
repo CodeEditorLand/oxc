@@ -137,7 +137,9 @@ impl ReplaceGlobalDefinesConfig {
 
         if parts.len() == 1 {
             if !is_identifier_name(parts[0]) {
-                return Err(vec![OxcDiagnostic::error(format!("`{key}` is not an identifier."))]);
+                return Err(vec![OxcDiagnostic::error(format!(
+                    "The define key `{key}` is not an identifier."
+                ))]);
             }
             return Ok(IdentifierType::Identifier);
         }
@@ -148,7 +150,9 @@ impl ReplaceGlobalDefinesConfig {
 
         for part in &parts[0..normalized_parts_len] {
             if !is_identifier_name(part) {
-                return Err(vec![OxcDiagnostic::error(format!("`{key}` is not an identifier."))]);
+                return Err(vec![OxcDiagnostic::error(format!(
+                    "The define key `{key}` contains an invalid identifier `{part}`."
+                ))]);
             }
         }
         if is_import_meta {
@@ -167,7 +171,7 @@ impl ReplaceGlobalDefinesConfig {
         // StaticMemberExpression with postfix wildcard
         } else if normalized_parts_len != parts.len() {
             Err(vec![OxcDiagnostic::error(
-                "postfix wildcard is only allowed for `import.meta`.".to_string(),
+                "The postfix wildcard is only allowed for `import.meta`.".to_string(),
             )])
         } else {
             Ok(IdentifierType::DotDefines {
@@ -250,20 +254,30 @@ impl<'a> ReplaceGlobalDefines<'a> {
 
     fn replace_dot_defines(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         match expr {
+            Expression::ChainExpression(chain) => {
+                let Some(new_expr) =
+                    chain.expression.as_member_expression_mut().and_then(|item| match item {
+                        MemberExpression::ComputedMemberExpression(
+                            ref mut computed_member_expr,
+                        ) => self.replace_dot_computed_member_expr(ctx, computed_member_expr),
+                        MemberExpression::StaticMemberExpression(ref mut member) => {
+                            self.replace_dot_static_member_expr(ctx, member)
+                        }
+                        MemberExpression::PrivateFieldExpression(_) => None,
+                    })
+                else {
+                    return;
+                };
+                *expr = new_expr;
+            }
             Expression::StaticMemberExpression(member) => {
-                for dot_define in &self.config.0.dot {
-                    if Self::is_dot_define(ctx.symbols(), dot_define, member) {
-                        let value = self.parse_value(&dot_define.value);
-                        *expr = value;
-                        return;
-                    }
+                if let Some(new_expr) = self.replace_dot_static_member_expr(ctx, member) {
+                    *expr = new_expr;
                 }
-                for meta_property_define in &self.config.0.meta_property {
-                    if Self::is_meta_property_define(meta_property_define, member) {
-                        let value = self.parse_value(&meta_property_define.value);
-                        *expr = value;
-                        return;
-                    }
+            }
+            Expression::ComputedMemberExpression(member) => {
+                if let Some(new_expr) = self.replace_dot_computed_member_expr(ctx, member) {
+                    *expr = new_expr;
                 }
             }
             Expression::MetaProperty(meta_property) => {
@@ -277,6 +291,49 @@ impl<'a> ReplaceGlobalDefines<'a> {
             }
             _ => {}
         }
+    }
+
+    fn replace_dot_computed_member_expr(
+        &mut self,
+        ctx: &mut TraverseCtx<'a>,
+        member: &mut ComputedMemberExpression<'a>,
+    ) -> Option<Expression<'a>> {
+        for dot_define in &self.config.0.dot {
+            if Self::is_dot_define(
+                ctx.symbols(),
+                dot_define,
+                DotDefineMemberExpression::ComputedMemberExpression(member),
+            ) {
+                let value = self.parse_value(&dot_define.value);
+                return Some(value);
+            }
+        }
+        // TODO: meta_property_define
+        None
+    }
+
+    fn replace_dot_static_member_expr(
+        &mut self,
+        ctx: &mut TraverseCtx<'a>,
+        member: &mut StaticMemberExpression<'a>,
+    ) -> Option<Expression<'a>> {
+        for dot_define in &self.config.0.dot {
+            if Self::is_dot_define(
+                ctx.symbols(),
+                dot_define,
+                DotDefineMemberExpression::StaticMemberExpression(member),
+            ) {
+                let value = self.parse_value(&dot_define.value);
+                return Some(value);
+            }
+        }
+        for meta_property_define in &self.config.0.meta_property {
+            if Self::is_meta_property_define(meta_property_define, member) {
+                let value = self.parse_value(&meta_property_define.value);
+                return Some(value);
+            }
+        }
+        None
     }
 
     pub fn is_meta_property_define(
@@ -356,30 +413,37 @@ impl<'a> ReplaceGlobalDefines<'a> {
         false
     }
 
-    pub fn is_dot_define(
+    pub fn is_dot_define<'b>(
         symbols: &SymbolTable,
         dot_define: &DotDefine,
-        member: &StaticMemberExpression<'a>,
+        member: DotDefineMemberExpression<'b, 'a>,
     ) -> bool {
         debug_assert!(dot_define.parts.len() > 1);
 
+        let Some(mut cur_part_name) = member.name() else {
+            return false;
+        };
         let mut current_part_member_expression = Some(member);
-        let mut cur_part_name = &member.property.name;
 
         for (i, part) in dot_define.parts.iter().enumerate().rev() {
             if cur_part_name.as_str() != part {
                 return false;
             }
-
             if i == 0 {
                 break;
             }
 
             current_part_member_expression = if let Some(member) = current_part_member_expression {
-                match &member.object {
+                match &member.object() {
                     Expression::StaticMemberExpression(member) => {
                         cur_part_name = &member.property.name;
-                        Some(member)
+                        Some(DotDefineMemberExpression::StaticMemberExpression(member))
+                    }
+                    Expression::ComputedMemberExpression(computed_member) => {
+                        static_property_name_of_computed_expr(computed_member).map(|name| {
+                            cur_part_name = name;
+                            DotDefineMemberExpression::ComputedMemberExpression(computed_member)
+                        })
                     }
                     Expression::Identifier(ident) => {
                         if !ident.is_global_reference(symbols) {
@@ -396,5 +460,41 @@ impl<'a> ReplaceGlobalDefines<'a> {
         }
 
         true
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum DotDefineMemberExpression<'b, 'ast: 'b> {
+    StaticMemberExpression(&'b StaticMemberExpression<'ast>),
+    ComputedMemberExpression(&'b ComputedMemberExpression<'ast>),
+}
+
+impl<'b, 'a> DotDefineMemberExpression<'b, 'a> {
+    fn name(&self) -> Option<&'b Atom<'a>> {
+        match self {
+            DotDefineMemberExpression::StaticMemberExpression(expr) => Some(&expr.property.name),
+            DotDefineMemberExpression::ComputedMemberExpression(expr) => {
+                static_property_name_of_computed_expr(expr)
+            }
+        }
+    }
+
+    fn object(&self) -> &'b Expression<'a> {
+        match self {
+            DotDefineMemberExpression::StaticMemberExpression(expr) => &expr.object,
+            DotDefineMemberExpression::ComputedMemberExpression(expr) => &expr.object,
+        }
+    }
+}
+
+fn static_property_name_of_computed_expr<'b, 'a: 'b>(
+    expr: &'b ComputedMemberExpression<'a>,
+) -> Option<&'b Atom<'a>> {
+    match &expr.expression {
+        Expression::StringLiteral(lit) => Some(&lit.value),
+        Expression::TemplateLiteral(lit) if lit.expressions.is_empty() && lit.quasis.len() == 1 => {
+            Some(&lit.quasis[0].value.raw)
+        }
+        _ => None,
     }
 }

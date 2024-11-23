@@ -96,6 +96,7 @@ mod eslint {
     pub mod no_new_wrappers;
     pub mod no_nonoctal_decimal_escape;
     pub mod no_obj_calls;
+    pub mod no_object_constructor;
     pub mod no_plusplus;
     pub mod no_proto;
     pub mod no_prototype_builtins;
@@ -170,6 +171,7 @@ mod typescript {
     pub mod no_non_null_asserted_nullish_coalescing;
     pub mod no_non_null_asserted_optional_chain;
     pub mod no_non_null_assertion;
+    pub mod no_require_imports;
     pub mod no_this_alias;
     pub mod no_unnecessary_type_constraint;
     pub mod no_unsafe_declaration_merging;
@@ -252,6 +254,7 @@ mod react {
     pub mod jsx_no_undef;
     pub mod jsx_no_useless_fragment;
     pub mod jsx_props_no_spread_multi;
+    pub mod no_array_index_key;
     pub mod no_children_prop;
     pub mod no_danger;
     pub mod no_danger_with_children;
@@ -483,6 +486,7 @@ mod promise {
     pub mod catch_or_return;
     pub mod no_callback_in_promise;
     pub mod no_new_statics;
+    pub mod no_promise_in_callback;
     pub mod no_return_in_finally;
     pub mod param_names;
     pub mod prefer_await_to_callbacks;
@@ -522,6 +526,7 @@ oxc_macros::declare_all_lint_rules! {
     eslint::max_classes_per_file,
     eslint::max_lines,
     eslint::max_params,
+    eslint::no_object_constructor,
     eslint::no_alert,
     eslint::no_array_constructor,
     eslint::no_async_promise_executor,
@@ -782,6 +787,7 @@ oxc_macros::declare_all_lint_rules! {
     oxc::uninvoked_array_callback,
     promise::avoid_new,
     promise::catch_or_return,
+    promise::no_promise_in_callback,
     promise::no_callback_in_promise,
     promise::no_new_statics,
     promise::no_return_in_finally,
@@ -803,6 +809,7 @@ oxc_macros::declare_all_lint_rules! {
     react::jsx_no_undef,
     react::jsx_no_useless_fragment,
     react::jsx_props_no_spread_multi,
+    react::no_array_index_key,
     react::no_children_prop,
     react::no_danger_with_children,
     react::no_danger,
@@ -849,6 +856,7 @@ oxc_macros::declare_all_lint_rules! {
     typescript::no_non_null_asserted_nullish_coalescing,
     typescript::no_non_null_asserted_optional_chain,
     typescript::no_non_null_assertion,
+    typescript::no_require_imports,
     typescript::no_this_alias,
     typescript::no_unnecessary_type_constraint,
     typescript::no_unsafe_declaration_merging,
