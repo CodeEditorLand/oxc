@@ -198,7 +198,7 @@ impl<'a> InjectGlobalVariables<'a> {
     fn inject_imports(&self, injects: &[InjectImport], program: &mut Program<'a>) {
         let imports = injects.iter().map(|inject| {
             let specifiers = Some(self.ast.vec1(self.inject_import_to_specifier(inject)));
-            let source = self.ast.string_literal(SPAN, inject.source.as_str());
+            let source = self.ast.string_literal(SPAN, inject.source.as_str(), None);
             let kind = ImportOrExportKind::Value;
             let import_decl = self
                 .ast
@@ -237,7 +237,7 @@ impl<'a> InjectGlobalVariables<'a> {
         if let Expression::StaticMemberExpression(member) = expr {
             for DotDefineState { dot_define, value_atom } in &mut self.dot_defines {
                 if ReplaceGlobalDefines::is_dot_define(
-                    ctx.symbols(),
+                    ctx,
                     dot_define,
                     DotDefineMemberExpression::StaticMemberExpression(member),
                 ) {

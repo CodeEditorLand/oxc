@@ -326,7 +326,7 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
                 match e {
                     AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(ident) => {
                         let name = ident.binding.name.clone();
-                        let expr = ctx.ast.expression_string_literal(SPAN, name);
+                        let expr = ctx.ast.expression_string_literal(SPAN, name, None);
                         Some(ArrayExpressionElement::from(expr))
                     }
                     AssignmentTargetProperty::AssignmentTargetPropertyProperty(p) => {
@@ -571,7 +571,7 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
         }
     }
 
-    // Transform `try {} catch (...x) {}`.
+    // Transform `try {} catch ({...x}) {}`.
     fn transform_catch_clause(clause: &mut CatchClause<'a>, ctx: &mut TraverseCtx<'a>) {
         let Some(param) = &mut clause.param else { unreachable!() };
         if Self::has_nested_object_rest(&param.pattern) {
@@ -589,12 +589,6 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
                 scope_id,
                 ctx,
             );
-            // Add `SymbolFlags::CatchVariable`.
-            param.pattern.bound_names(&mut |ident| {
-                ctx.symbols_mut()
-                    .get_flags_mut(ident.symbol_id())
-                    .insert(SymbolFlags::CatchVariable);
-            });
         }
     }
 
@@ -617,7 +611,7 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
                     declarator.kind,
                     &mut declarator.id,
                     &mut block.body,
-                    scope_id,
+                    if decl.kind.is_var() { ctx.current_hoist_scope_id() } else { scope_id },
                     ctx,
                 );
                 // Move the bindings from the for init scope to scope of the loop body.
@@ -755,7 +749,13 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
         scope_id: ScopeId,
         ctx: &mut TraverseCtx<'a>,
     ) -> VariableDeclaration<'a> {
-        let bound_identifier = ctx.generate_uid("ref", scope_id, kind_to_symbol_flags(kind));
+        let mut flags = kind_to_symbol_flags(kind);
+        if matches!(ctx.parent(), Ancestor::TryStatementHandler(_)) {
+            // try {} catch (ref) {}
+            //               ^^^
+            flags |= SymbolFlags::CatchVariable;
+        }
+        let bound_identifier = ctx.generate_uid("ref", scope_id, flags);
         let kind = VariableDeclarationKind::Let;
         let id = mem::replace(pat, bound_identifier.create_binding_pattern(ctx));
         let init = bound_identifier.create_read_expression(ctx);
@@ -968,14 +968,14 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
             // `let { a, ... rest }`
             PropertyKey::StaticIdentifier(ident) => {
                 let name = ident.name.clone();
-                let expr = ctx.ast.expression_string_literal(ident.span, name);
+                let expr = ctx.ast.expression_string_literal(ident.span, name, None);
                 Some(ArrayExpressionElement::from(expr))
             }
             // `let { 'a', ... rest }`
             // `let { ['a'], ... rest }`
             PropertyKey::StringLiteral(lit) => {
                 let name = lit.value.clone();
-                let expr = ctx.ast.expression_string_literal(lit.span, name.clone());
+                let expr = ctx.ast.expression_string_literal(lit.span, name.clone(), None);
                 Some(ArrayExpressionElement::from(expr))
             }
             // `let { [`a`], ... rest }`
@@ -993,7 +993,7 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
                 if expr.is_literal() {
                     let span = expr.span();
                     let s = expr.to_js_string().unwrap();
-                    let expr = ctx.ast.expression_string_literal(span, s);
+                    let expr = ctx.ast.expression_string_literal(span, s, None);
                     return Some(ArrayExpressionElement::from(expr));
                 }
                 *all_primitives = false;
