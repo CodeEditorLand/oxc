@@ -108,11 +108,11 @@
 	"description": "oxc vscode extension",
 	"devDependencies": {
 		"@playform/build": "0.1.9",
-		"@types/node": "^22.0.0",
+		"@types/node": "^22.10.0",
 		"cross-env": "^7.0.3",
 		"esbuild": "^0.24.0",
-		"ovsx": "^0.10.0",
-		"oxlint": "^0.11.1"
+		"ovsx": "^0.10.1",
+		"oxlint": "^0.13.2"
 	},
 	"displayName": "Oxc",
 	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
