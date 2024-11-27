@@ -189,47 +189,47 @@ export declare function transform(
  * @see {@link transform}
  */
 export interface TransformOptions {
-  sourceType?: 'script' | 'module' | 'unambiguous' | undefined
-  /** Treat the source text as `js`, `jsx`, `ts`, or `tsx`. */
-  lang?: 'js' | 'jsx' | 'ts' | 'tsx'
-  /**
-   * The current working directory. Used to resolve relative paths in other
-   * options.
-   */
-  cwd?: string
-  /**
-   * Enable source map generation.
-   *
-   * When `true`, the `sourceMap` field of transform result objects will be populated.
-   *
-   * @default false
-   *
-   * @see {@link SourceMap}
-   */
-  sourcemap?: boolean
-  /** Configure how TypeScript is transformed. */
-  typescript?: TypeScriptOptions
-  /** Configure how TSX and JSX are transformed. */
-  jsx?: JsxOptions
-  /**
-   * Sets the target environment for the generated JavaScript.
-   *
-   * The lowest target is `es2015`.
-   *
-   * Example:
-   *
-   * * 'es2015'
-   * * ['es2020', 'chrome58', 'edge16', 'firefox57', 'node12', 'safari11']
-   *
-   * @default `esnext` (No transformation)
-   *
-   * @see [esbuild#target](<https://esbuild.github.io/api/#target)
-   */
-  target?: string | Array<string>
-  /** Define Plugin */
-  define?: Record<string, string>
-  /** Inject Plugin */
-  inject?: Record<string, string | [string, string]>
+	sourceType?: "script" | "module" | "unambiguous" | undefined;
+	/** Treat the source text as `js`, `jsx`, `ts`, or `tsx`. */
+	lang?: "js" | "jsx" | "ts" | "tsx";
+	/**
+	 * The current working directory. Used to resolve relative paths in other
+	 * options.
+	 */
+	cwd?: string;
+	/**
+	 * Enable source map generation.
+	 *
+	 * When `true`, the `sourceMap` field of transform result objects will be populated.
+	 *
+	 * @default false
+	 *
+	 * @see {@link SourceMap}
+	 */
+	sourcemap?: boolean;
+	/** Configure how TypeScript is transformed. */
+	typescript?: TypeScriptOptions;
+	/** Configure how TSX and JSX are transformed. */
+	jsx?: JsxOptions;
+	/**
+	 * Sets the target environment for the generated JavaScript.
+	 *
+	 * The lowest target is `es2015`.
+	 *
+	 * Example:
+	 *
+	 * * 'es2015'
+	 * * ['es2020', 'chrome58', 'edge16', 'firefox57', 'node12', 'safari11']
+	 *
+	 * @default `esnext` (No transformation)
+	 *
+	 * @see [esbuild#target](<https://esbuild.github.io/api/#target)
+	 */
+	target?: string | Array<string>;
+	/** Define Plugin */
+	define?: Record<string, string>;
+	/** Inject Plugin */
+	inject?: Record<string, string | [string, string]>;
 }
 
 export interface TransformResult {
