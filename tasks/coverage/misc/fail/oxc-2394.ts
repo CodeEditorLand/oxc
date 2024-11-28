@@ -12,6 +12,7 @@ export type LocalInterface =
     & import("pkg", { with: {"resolution-mode": "import"} }).ImportInterface;
 
 export const a = (null as any as import("pkg", { with: {"resolution-mode": "foobar"} }).RequireInterface);
+
 export const b = (null as any as import("pkg", { with: {"resolution-mode": "import"} }).ImportInterface);
 
 // @filename: /other.ts
@@ -21,6 +22,7 @@ export type LocalInterface =
     & import("pkg", {"resolution-mode": "import"}).ImportInterface;
 
 export const a = (null as any as import("pkg", {"resolution-mode": "require"}).RequireInterface);
+
 export const b = (null as any as import("pkg", {"resolution-mode": "import"}).ImportInterface);
 
 // @filename: /other2.ts
@@ -30,6 +32,7 @@ export type LocalInterface =
     & import("pkg", { with: {"bad": "import"} }).ImportInterface;
 
 export const a = (null as any as import("pkg", { with: {"bad": "require"} }).RequireInterface);
+
 export const b = (null as any as import("pkg", { with: {"bad": "import"} }).ImportInterface);
 
 // @filename: /other3.ts
@@ -39,6 +42,7 @@ export type LocalInterface =
     & import("pkg", [ {"resolution-mode": "import"} ]).ImportInterface;
 
 export const a = (null as any as import("pkg", [ {"resolution-mode": "require"} ]).RequireInterface);
+
 export const b = (null as any as import("pkg", [ {"resolution-mode": "import"} ]).ImportInterface);
 
 // @filename: /other4.ts
@@ -51,6 +55,7 @@ export type LocalInterface =
     & import("pkg", Attribute2).ImportInterface;
 
 export const a = (null as any as import("pkg", Attribute1).RequireInterface);
+
 export const b = (null as any as import("pkg", Attribute2).ImportInterface);
 
 // @filename: /other5.ts
@@ -59,4 +64,5 @@ export type LocalInterface =
     & import("pkg", { with: {} }).ImportInterface;
 
 export const a = (null as any as import("pkg", { with: {} }).RequireInterface);
+
 export const b = (null as any as import("pkg", { with: {} }).ImportInterface);

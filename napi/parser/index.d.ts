@@ -2,6 +2,7 @@
 /* eslint-disable */
 
 export * from "@oxc-project/types";
+
 export interface Comment {
 	type: "Line" | "Block";
 	value: string;

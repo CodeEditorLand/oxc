@@ -8,6 +8,7 @@ import type { Program, Span } from "@oxc-project/types";
  * @returns {any}
  */
 export function browserslist(query: string, opts: any): any;
+
 export interface OxcOptions {
 	run?: OxcRunOptions;
 	parser?: OxcParserOptions;
@@ -93,6 +94,7 @@ export interface Comment {
 export type CommentType = "Line" | "Block";
 
 export type IndexVec<I, T> = Array<T>;
+
 export type CompactStr = string;
 
 export interface SymbolTable {
@@ -114,6 +116,7 @@ export interface Reference {
 }
 
 export type NodeId = number;
+
 export type NodeFlags = {
 	JSDoc: 1;
 	Class: 2;
@@ -122,10 +125,13 @@ export type NodeFlags = {
 };
 
 export type SymbolId = number;
+
 export type SymbolFlags = unknown;
+
 export type RedeclarationId = unknown;
 
 export type ReferenceId = number;
+
 export type ReferenceFlags = {
 	None: 0;
 	Read: 0b1;
