@@ -2056,14 +2056,14 @@ Passed: 330/1022
 
 -   namespace/mutable-fail/input.ts ! Namespaces exporting non-const are not
     supported by Babel. Change to const | or see:
-    https://babeljs.io/docs/en/babel-plugin-transform-typescript
+    HTTPS://babeljs.io/docs/en/babel-plugin-transform-typescript
     ,-[tasks/coverage/babel/packages/babel-plugin-transform-typescript/test/fixtures/namespace/mutable-fail/input.ts:2:14]
     1 | namespace N { 2 | export let V; : ^ 3 | } `----
 
 -   namespace/namespace-flag/input.ts ! Namespace not marked type-only declare.
     Non-declarative namespaces are | only supported experimentally in Babel. To
     enable and review caveats see: |
-    https://babeljs.io/docs/en/babel-plugin-transform-typescript
+    HTTPS://babeljs.io/docs/en/babel-plugin-transform-typescript
     ,-[tasks/coverage/babel/packages/babel-plugin-transform-typescript/test/fixtures/namespace/namespace-flag/input.ts:1:1]
     1 | namespace N {} : ^^^^^^^^^^^^^^ `----
 
