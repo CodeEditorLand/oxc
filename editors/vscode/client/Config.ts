@@ -4,9 +4,13 @@ export class Config implements ConfigInterface {
 	private static readonly _namespace = "oxc";
 
 	private _runTrigger!: Trigger;
+
 	private _enable!: boolean;
+
 	private _trace!: TraceLevel;
+
 	private _configPath!: string;
+
 	private _binPath: string | undefined;
 
 	constructor() {
@@ -17,9 +21,13 @@ export class Config implements ConfigInterface {
 		const conf = workspace.getConfiguration(Config._namespace);
 
 		this._runTrigger = conf.get<Trigger>("lint.run") || "onType";
+
 		this._enable = conf.get<boolean>("enable") ?? true;
+
 		this._trace = conf.get<TraceLevel>("trace.server") || "off";
+
 		this._configPath = conf.get<string>("configPath") || ".oxlintrc.json";
+
 		this._binPath = conf.get<string>("path.server");
 	}
 
@@ -29,6 +37,7 @@ export class Config implements ConfigInterface {
 
 	updateRunTrigger(value: Trigger): PromiseLike<void> {
 		this._runTrigger = value;
+
 		return workspace
 			.getConfiguration(Config._namespace)
 			.update("lint.run", value);
@@ -40,6 +49,7 @@ export class Config implements ConfigInterface {
 
 	updateEnable(value: boolean): PromiseLike<void> {
 		this._enable = value;
+
 		return workspace
 			.getConfiguration(Config._namespace)
 			.update("enable", value);
@@ -51,6 +61,7 @@ export class Config implements ConfigInterface {
 
 	updateTrace(value: TraceLevel): PromiseLike<void> {
 		this._trace = value;
+
 		return workspace
 			.getConfiguration(Config._namespace)
 			.update("trace.server", value);
@@ -62,6 +73,7 @@ export class Config implements ConfigInterface {
 
 	updateConfigPath(value: string): PromiseLike<void> {
 		this._configPath = value;
+
 		return workspace
 			.getConfiguration(Config._namespace)
 			.update("configPath", value);
@@ -73,6 +85,7 @@ export class Config implements ConfigInterface {
 
 	updateBinPath(value: string | undefined): PromiseLike<void> {
 		this._binPath = value;
+
 		return workspace
 			.getConfiguration(Config._namespace)
 			.update("path.server", value);
@@ -89,7 +102,9 @@ export class Config implements ConfigInterface {
 
 interface LanguageServerConfig {
 	configPath: string;
+
 	enable: boolean;
+
 	run: Trigger;
 }
 

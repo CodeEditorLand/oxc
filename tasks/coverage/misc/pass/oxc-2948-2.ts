@@ -8,7 +8,9 @@ function foo(accessor, readonly, y: readonly number[]) {}
 
 class Foo {
     public accessor accessor;
+
     public override: number;
+
     public readonly readonly: number = 1;
 }
 class Bar extends Foo {

@@ -5,13 +5,17 @@ export * from "@oxc-project/types";
 
 export interface Comment {
 	type: "Line" | "Block";
+
 	value: string;
+
 	start: number;
+
 	end: number;
 }
 
 export interface ModuleLexer {
 	imports: Array<ModuleLexerImportSpecifier>;
+
 	exports: Array<ModuleLexerExportSpecifier>;
 	/**
 	 * ESM syntax detection
@@ -105,7 +109,9 @@ export declare function parseAsync(
 
 export interface ParseResult {
 	program: import("@oxc-project/types").Program;
+
 	comments: Array<Comment>;
+
 	errors: Array<string>;
 }
 
@@ -116,6 +122,7 @@ export interface ParseResult {
  */
 export interface ParserOptions {
 	sourceType?: "script" | "module" | "unambiguous" | undefined;
+
 	sourceFilename?: string;
 	/**
 	 * Emit `ParenthesizedExpression` in AST.

@@ -122,9 +122,13 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 
 	async function createTracker(): Promise<{
 		accessor: TestServiceAccessor;
+
 		part: EditorPart;
+
 		tracker: TestWorkingCopyBackupTracker;
+
 		workingCopyBackupService: InMemoryTestWorkingCopyBackupService;
+
 		instantiationService: IInstantiationService;
 	}> {
 		const workingCopyBackupService = disposables.add(
@@ -135,12 +139,14 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 			undefined,
 			disposables,
 		);
+
 		instantiationService.stub(
 			IWorkingCopyBackupService,
 			workingCopyBackupService,
 		);
 
 		const part = await createEditorPart(instantiationService, disposables);
+
 		instantiationService.stub(IEditorGroupsService, part);
 
 		disposables.add(registerTestResourceEditor());
@@ -148,6 +154,7 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 		const editorService: EditorService = disposables.add(
 			instantiationService.createInstance(EditorService, undefined),
 		);
+
 		instantiationService.stub(IEditorService, editorService);
 
 		accessor = instantiationService.createInstance(TestServiceAccessor);
@@ -240,25 +247,35 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 
 		// Normal
 		customWorkingCopy.setDirty(true);
+
 		assert.strictEqual(tracker.pendingBackupOperationCount, 1);
+
 		await workingCopyBackupService.joinBackupResource();
+
 		assert.strictEqual(
 			workingCopyBackupService.hasBackupSync(customWorkingCopy),
 			true,
 		);
 
 		customWorkingCopy.setDirty(false);
+
 		customWorkingCopy.setDirty(true);
+
 		assert.strictEqual(tracker.pendingBackupOperationCount, 1);
+
 		await workingCopyBackupService.joinBackupResource();
+
 		assert.strictEqual(
 			workingCopyBackupService.hasBackupSync(customWorkingCopy),
 			true,
 		);
 
 		customWorkingCopy.setDirty(false);
+
 		assert.strictEqual(tracker.pendingBackupOperationCount, 1);
+
 		await workingCopyBackupService.joinDiscardBackup();
+
 		assert.strictEqual(
 			workingCopyBackupService.hasBackupSync(customWorkingCopy),
 			false,
@@ -266,10 +283,15 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 
 		// Cancellation
 		customWorkingCopy.setDirty(true);
+
 		await timeout(0);
+
 		customWorkingCopy.setDirty(false);
+
 		assert.strictEqual(tracker.pendingBackupOperationCount, 1);
+
 		await workingCopyBackupService.joinDiscardBackup();
+
 		assert.strictEqual(
 			workingCopyBackupService.hasBackupSync(customWorkingCopy),
 			false,
@@ -301,17 +323,20 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 			undefined,
 			disposables,
 		);
+
 		instantiationService.stub(
 			IWorkingCopyBackupService,
 			workingCopyBackupService,
 		);
 
 		const part = await createEditorPart(instantiationService, disposables);
+
 		instantiationService.stub(IEditorGroupsService, part);
 
 		const editorService: EditorService = disposables.add(
 			instantiationService.createInstance(EditorService, undefined),
 		);
+
 		instantiationService.stub(IEditorService, editorService);
 
 		accessor = instantiationService.createInstance(TestServiceAccessor);
@@ -321,10 +346,12 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 			toUntypedWorkingCopyId(untitledFile1);
 
 		const untitledFile2WorkingCopyId = toTypedWorkingCopyId(untitledFile2);
+
 		await workingCopyBackupService.backup(
 			untitledFile1WorkingCopyId,
 			bufferToReadable(VSBuffer.fromString("untitled-1")),
 		);
+
 		await workingCopyBackupService.backup(
 			untitledFile2WorkingCopyId,
 			bufferToReadable(VSBuffer.fromString("untitled-2")),
@@ -333,10 +360,12 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 		const fooFileWorkingCopyId = toUntypedWorkingCopyId(fooFile);
 
 		const barFileWorkingCopyId = toTypedWorkingCopyId(barFile);
+
 		await workingCopyBackupService.backup(
 			fooFileWorkingCopyId,
 			bufferToReadable(VSBuffer.fromString("fooFile")),
 		);
+
 		await workingCopyBackupService.backup(
 			barFileWorkingCopyId,
 			bufferToReadable(VSBuffer.fromString("barFile")),
@@ -388,17 +417,22 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 		});
 
 		assert.strictEqual(handlesCounter, 4);
+
 		assert.strictEqual(isOpenCounter, 0);
+
 		assert.strictEqual(createEditorCounter, 2);
 
 		assert.strictEqual(accessor.editorService.count, 2);
+
 		assert.ok(
 			accessor.editorService.editors.every((editor) => editor.isDirty()),
 		);
+
 		assert.strictEqual(tracker.getUnrestoredBackups().size, 2);
 
 		for (const editor of accessor.editorService.editors) {
 			assert.ok(editor instanceof TestUntitledTextEditorInput);
+
 			assert.strictEqual(editor.resolved, true);
 		}
 	});
@@ -417,6 +451,7 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 		});
 
 		assert.strictEqual(accessor.editorService.count, 0);
+
 		assert.strictEqual(tracker.getUnrestoredBackups().size, 4);
 	});
 
@@ -484,13 +519,16 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 		await Promise.all([firstHandler, secondHandler]);
 
 		assert.strictEqual(accessor.editorService.count, 4);
+
 		assert.ok(
 			accessor.editorService.editors.every((editor) => editor.isDirty()),
 		);
+
 		assert.strictEqual(tracker.getUnrestoredBackups().size, 0);
 
 		for (const editor of accessor.editorService.editors) {
 			assert.ok(editor instanceof TestUntitledTextEditorInput);
+
 			assert.strictEqual(editor.resolved, true);
 		}
 	});
@@ -528,6 +566,7 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 		]);
 
 		editor1.resolved = false;
+
 		editor2.resolved = false;
 
 		await tracker.testRestoreBackups({
@@ -547,9 +586,11 @@ suite("WorkingCopyBackupTracker (browser)", function () {
 		});
 
 		assert.strictEqual(handlesCounter, 4);
+
 		assert.strictEqual(isOpenCounter, 4);
 
 		assert.strictEqual(accessor.editorService.count, 2);
+
 		assert.strictEqual(tracker.getUnrestoredBackups().size, 2);
 
 		for (const editor of accessor.editorService.editors) {

@@ -1,7 +1,10 @@
 export interface FormalParameterRest extends Span {
 	type: "RestElement";
+
 	argument: BindingPatternKind;
+
 	typeAnnotation: TSTypeAnnotation | null;
+
 	optional: boolean;
 }
 

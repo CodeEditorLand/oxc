@@ -48,6 +48,7 @@ export async function activate(context: ExtensionContext) {
     async () => {
       if (!client) {
         window.showErrorMessage('oxc client not found');
+
         return;
       }
 
@@ -91,9 +92,11 @@ export async function activate(context: ExtensionContext) {
 
   async function findBinary(): Promise<string> {
     let bin = configService.config.binPath;
+
     if (bin) {
       try {
         await fsPromises.access(bin);
+
         return bin;
       } catch {}
     }
@@ -170,7 +173,9 @@ export async function activate(context: ExtensionContext) {
 
   configService.onConfigChange = function onConfigChange() {
     let settings = this.config.toLanguageServerConfig();
+
     updateStatsBar(settings.enable);
+
     client.sendNotification('workspace/didChangeConfiguration', { settings });
   };
 
@@ -195,5 +200,6 @@ export function deactivate(): Thenable<void> | undefined {
 	if (!client) {
 		return undefined;
 	}
+
 	return client.stop();
 }

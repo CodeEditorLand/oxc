@@ -34,12 +34,15 @@ export interface IsolatedDeclarationsOptions {
 	 * See <https://www.typescriptlang.org/tsconfig/#stripInternal>
 	 */
 	stripInternal?: boolean;
+
 	sourcemap?: boolean;
 }
 
 export interface IsolatedDeclarationsResult {
 	code: string;
+
 	map?: SourceMap;
+
 	errors: Array<string>;
 }
 
@@ -151,17 +154,25 @@ export interface ReactRefreshOptions {
 	 * @default `$RefreshSig$`.
 	 */
 	refreshSig?: string;
+
 	emitFullSignatures?: boolean;
 }
 
 export interface SourceMap {
 	file?: string;
+
 	mappings: string;
+
 	names: Array<string>;
+
 	sourceRoot?: string;
+
 	sources: Array<string>;
+
 	sourcesContent?: Array<string>;
+
 	version: number;
+
 	x_google_ignoreList?: Array<number>;
 }
 
@@ -274,9 +285,13 @@ export interface TransformResult {
 
 export interface TypeScriptOptions {
 	jsxPragma?: string;
+
 	jsxPragmaFrag?: string;
+
 	onlyRemoveTypeImports?: boolean;
+
 	allowNamespaces?: boolean;
+
 	allowDeclareFields?: boolean;
 	/**
 	 * Also generate a `.d.ts` declaration file for TypeScript files.
