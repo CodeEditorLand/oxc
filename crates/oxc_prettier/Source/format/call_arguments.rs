@@ -20,10 +20,13 @@ pub fn print_call_arguments<'a>(
     expression: &CallExpressionLike<'a, '_>,
 ) -> Doc<'a> {
     let mut parts = p.vec();
+
     parts.push(text!("("));
 
     let callee = expression.callee();
+
     let arguments = expression.arguments();
+
     let should_break = if matches!(expression, CallExpressionLike::CallExpression(_)) {
         !is_commons_js_or_amd_call(expression.callee(), arguments)
     } else {
@@ -32,68 +35,90 @@ pub fn print_call_arguments<'a>(
 
     if arguments.is_empty() {
         parts.extend(p.print_inner_comment(Span::new(callee.span().end, expression.span().end)));
+
         parts.push(text!(")"));
+
         return Doc::Array(parts);
     }
 
     #[allow(clippy::cast_sign_loss)]
     let get_printed_arguments = |p: &mut Prettier<'a>, skip_index: isize| {
         let mut printed_arguments = p.vec();
+
         let mut len = arguments.len();
+
         let arguments: Box<dyn Iterator<Item = (usize, &Argument)>> = match skip_index {
             _ if skip_index > 0 => {
                 len -= skip_index as usize;
+
                 Box::new(arguments.iter().skip(skip_index as usize).enumerate())
             }
+
             _ if skip_index < 0 => {
                 len -= (-skip_index) as usize;
+
                 Box::new(
                     arguments.iter().take(arguments.len() - (-skip_index) as usize).enumerate(),
                 )
             }
+
             _ => Box::new(arguments.iter().enumerate()),
         };
 
         for (i, element) in arguments {
             let doc = element.format(p);
+
             let mut arg = p.vec();
+
             arg.push(doc);
 
             if i < len - 1 {
                 arg.push(text!(","));
+
                 if p.is_next_line_empty(element.span()) {
                     arg.extend(hardline!());
+
                     arg.extend(hardline!());
                 } else {
                     arg.push(line!());
                 }
             }
+
             printed_arguments.push(Doc::Array(arg));
         }
+
         printed_arguments
     };
 
     let all_args_broken_out = |p: &mut Prettier<'a>| {
         let mut parts = p.vec();
+
         parts.push(text!("("));
+
         parts.push(indent!(
             p,
             line!(),
             Doc::Array(get_printed_arguments(p, 0)),
             if p.should_print_all_comma() { text!(",") } else { text!("") }
         ));
+
         parts.push(line!());
+
         parts.push(text!(")"));
+
         Doc::Group(Group::new(parts).with_break(true))
     };
 
     if should_expand_first_arg(arguments) {
         p.args.expand_first_arg = true;
+
         let mut first_doc = arguments[0].format(p);
+
         p.args.expand_first_arg = false;
 
         if will_break(&mut first_doc) {
             let last_doc = get_printed_arguments(p, 1).pop().unwrap();
+
             return array![
                 p,
                 Doc::BreakParent,
@@ -115,19 +140,24 @@ pub fn print_call_arguments<'a>(
 
     if should_expand_last_arg(arguments) {
         let mut printed_arguments = get_printed_arguments(p, -1);
+
         if printed_arguments.iter_mut().any(will_break) {
             return all_args_broken_out(p);
         }
 
         if !printed_arguments.is_empty() {
             printed_arguments.push(text!(","));
+
             printed_arguments.push(line!());
         }
 
         let get_last_doc = |p: &mut Prettier<'a>| {
             p.args.expand_last_arg = true;
+
             let last_doc = arguments.last().unwrap().format(p);
+
             p.args.expand_last_arg = false;
+
             last_doc
         };
 
@@ -169,12 +199,16 @@ pub fn print_call_arguments<'a>(
 
     if should_break {
         printed_arguments.insert(0, softline!());
+
         parts.push(Doc::Indent(printed_arguments));
+
         parts.push(if_break!(p, ",", "", None));
+
         parts.push(softline!());
     } else {
         parts.extend(printed_arguments);
     }
+
     parts.push(text!(")"));
 
     let should_break = should_break
@@ -193,7 +227,9 @@ fn should_expand_first_arg<'a>(arguments: &Vec<'a, Argument<'a>>) -> bool {
 
     match &arguments[0] {
         Argument::FunctionExpression(_) => {}
+
         Argument::ArrowFunctionExpression(arrow) if !arrow.expression => {}
+
         _ => return false,
     }
 
@@ -203,14 +239,17 @@ fn should_expand_first_arg<'a>(arguments: &Vec<'a, Argument<'a>>) -> bool {
         | Argument::ConditionalExpression(_) => false,
         second_arg if second_arg.is_expression() => {
             let second_arg = second_arg.to_expression();
+
             is_hopefully_short_call_argument(second_arg) && !could_expand_arg(second_arg, false)
         }
+
         _ => false,
     }
 }
 
 fn should_expand_last_arg(args: &Vec<'_, Argument<'_>>) -> bool {
     let Some(last_arg) = args.last() else { return false };
+
     let Some(last_arg) = last_arg.as_expression() else { return false };
 
     let penultimate_arg = if args.len() >= 2 { Some(&args[args.len() - 2]) } else { None };
@@ -256,6 +295,7 @@ fn is_simple_call_argument(node: &Expression, depth: usize) -> bool {
         if depth <= 1 {
             return false;
         }
+
         is_simple_call_argument(node, depth - 1)
     };
 
@@ -304,6 +344,7 @@ fn is_simple_call_argument(node: &Expression, depth: usize) -> bool {
                     });
             }
         }
+
         return false;
     }
 
@@ -311,13 +352,16 @@ fn is_simple_call_argument(node: &Expression, depth: usize) -> bool {
         if let MemberExpression::StaticMemberExpression(expr) = expr {
             return is_simple_call_argument(&expr.object, depth);
         }
+
         if let MemberExpression::ComputedMemberExpression(expr) = expr {
             return is_simple_call_argument(&expr.object, depth)
                 && is_simple_call_argument(&expr.expression, depth);
         }
+
         if let MemberExpression::PrivateFieldExpression(expr) = expr {
             return is_simple_call_argument(&expr.object, depth);
         }
+
         false
     };
 
@@ -341,6 +385,7 @@ fn is_simple_call_argument(node: &Expression, depth: usize) -> bool {
             target @ match_member_expression!(SimpleAssignmentTarget) => {
                 check_member_expression(target.to_member_expression())
             }
+
             _ => return false,
         };
     }
@@ -358,6 +403,7 @@ fn could_expand_arg(arg: &Expression, arrow_chain_recursion: bool) -> bool {
             if !expr.expression {
                 return true;
             }
+
             let Statement::ExpressionStatement(statement) = &expr.body.statements[0] else {
                 return false;
             };
@@ -368,9 +414,11 @@ fn could_expand_arg(arg: &Expression, arrow_chain_recursion: bool) -> bool {
                 Expression::CallExpression(_) | Expression::ConditionalExpression(_) => {
                     !arrow_chain_recursion
                 }
+
                 _ => false,
             }
         }
+
         _ => false,
     }
 }

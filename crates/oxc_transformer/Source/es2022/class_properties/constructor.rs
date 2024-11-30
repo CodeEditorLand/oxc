@@ -129,6 +129,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
         // Create statements to go in function body.
         let has_super_class = class.super_class.is_some();
+
         let mut stmts = ctx.ast.vec_with_capacity(inits.len() + usize::from(has_super_class));
 
         // Add `super(...args);` statement and `...args` param if class has a super class.
@@ -136,14 +137,17 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         // TODO: One of initializers could access a var called `args` from outer scope.
         // Use a UID `_args` instead of `args` here.
         let mut params_rest = None;
+
         if has_super_class {
             let binding = ctx.generate_binding(
                 Atom::from("args"),
                 scope_id,
                 SymbolFlags::FunctionScopedVariable,
             );
+
             params_rest =
                 Some(ctx.ast.alloc_binding_rest_element(SPAN, binding.create_binding_pattern(ctx)));
+
             stmts.push(create_super_call_stmt(&binding, ctx));
         }
         // TODO: Should these have the span of the original `PropertyDefinition`s?
@@ -202,10 +206,13 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             ClassElement::MethodDefinition(constructor) => constructor.as_mut(),
             _ => unreachable!(),
         };
+
         debug_assert!(constructor.kind == MethodDefinitionKind::Constructor);
 
         let constructor_scope_id = constructor.value.scope_id();
+
         let func = constructor.value.as_mut();
+
         let body_stmts = &mut func.body.as_mut().unwrap().statements;
 
         if class.super_class.is_some() {
@@ -250,6 +257,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         // TODO: Check if any references to class name and swap them for reference to local binding.
         // TODO: Add tests for `super()` in constructor params.
         let mut replacer = ConstructorParamsSuperReplacer::new(ctx);
+
         replacer.visit_formal_parameters(params);
 
         if replacer.super_binding.is_some() {
@@ -279,13 +287,16 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 let assignment = create_assignment(super_binding, super_func, ctx);
                 // TODO: Why does this end up before class, not after?
                 self.insert_after_exprs.push(assignment);
+
                 None
             };
+
             self.ctx.var_declarations.insert_let(super_binding, init, ctx);
         } else {
             // No `super()` in constructor params.
             // Insert property initializers after `super()` statement, or in a `_super` function.
             let mut inserter = ConstructorBodyInitsInserter::new(constructor_scope_id, ctx);
+
             inserter.insert(body_stmts, inits);
         }
     }
@@ -317,7 +328,9 @@ impl<'a, 'c> VisitMut<'a> for ConstructorParamsSuperReplacer<'a, 'c> {
                 self.visit_arguments(&mut call_expr.arguments);
 
                 let span = call_expr.span;
+
                 self.wrap_super(expr, span);
+
                 return;
             }
         }
@@ -353,6 +366,7 @@ impl<'a, 'c> VisitMut<'a> for ConstructorParamsSuperReplacer<'a, 'c> {
         // Don't visit `type_annotation` field because can't contain `super()`.
         // TODO: Are decorators in scope?
         self.visit_decorators(&mut prop.decorators);
+
         if prop.computed {
             self.visit_property_key(&mut prop.key);
         }
@@ -363,6 +377,7 @@ impl<'a, 'c> VisitMut<'a> for ConstructorParamsSuperReplacer<'a, 'c> {
         // Visit computed `key` but not `value`, for same reasons as `visit_property_definition` above.
         // TODO: Are decorators in scope?
         self.visit_decorators(&mut prop.decorators);
+
         if prop.computed {
             self.visit_property_key(&mut prop.key);
         }
@@ -381,6 +396,7 @@ impl<'a, 'c> ConstructorParamsSuperReplacer<'a, 'c> {
         });
 
         let ctx = &mut *self.ctx;
+
         let super_call = ctx.ast.move_expression(expr);
         *expr = ctx.ast.expression_call(
             span,
@@ -400,6 +416,7 @@ impl<'a, 'c> ConstructorParamsSuperReplacer<'a, 'c> {
     /// `function() { <inits>; return this; }`
     fn create_super_func(inits: Vec<Expression<'a>>, ctx: &mut TraverseCtx<'a>) -> Expression<'a> {
         let outer_scope_id = ctx.current_scope_id();
+
         let super_func_scope_id = ctx.scopes_mut().add_scope(
             Some(outer_scope_id),
             NodeId::DUMMY,
@@ -451,6 +468,7 @@ impl<'a, 'c> ConstructorBodyInitsInserter<'a, 'c> {
     fn insert(&mut self, body_stmts: &mut ArenaVec<'a, Statement<'a>>, inits: Vec<Expression<'a>>) {
         // TODO: Re-parent child scopes of `init`s
         let mut body_stmts_iter = body_stmts.iter_mut();
+
         let mut insert_index = 1; // 1 because want to insert after `super()`, not before
 
         // It's a runtime error (not a syntax error) for constructor of a class with a super class
@@ -470,6 +488,7 @@ impl<'a, 'c> ConstructorBodyInitsInserter<'a, 'c> {
                     if let Expression::Super(_) = &call_expr.callee {
                         body_stmts
                             .splice(insert_index..insert_index, exprs_into_stmts(inits, self.ctx));
+
                         return;
                     }
                 }
@@ -477,6 +496,7 @@ impl<'a, 'c> ConstructorBodyInitsInserter<'a, 'c> {
 
             // Traverse statement looking for `super()` deeper in the statement
             self.visit_statement(stmt);
+
             if self.super_binding.is_some() {
                 break;
             }
@@ -514,12 +534,15 @@ impl<'a, 'c> ConstructorBodyInitsInserter<'a, 'c> {
             NodeId::DUMMY,
             ScopeFlags::Function | ScopeFlags::Arrow | ScopeFlags::StrictMode,
         );
+
         let args_binding =
             ctx.generate_uid("args", super_func_scope_id, SymbolFlags::FunctionScopedVariable);
 
         // `super(..._args); <inits>; return this;`
         let super_call = create_super_call_stmt(&args_binding, ctx);
+
         let return_stmt = ctx.ast.statement_return(SPAN, Some(ctx.ast.expression_this(SPAN)));
+
         let body_stmts = ctx.ast.vec_from_iter(
             [super_call].into_iter().chain(exprs_into_stmts(inits, ctx)).chain([return_stmt]),
         );
@@ -552,6 +575,7 @@ impl<'a, 'c> ConstructorBodyInitsInserter<'a, 'c> {
         let super_binding = self
             .super_binding
             .get_or_insert_with(|| Self::generate_super_binding(self.constructor_scope_id, ctx));
+
         let super_func_decl = Statement::from(ctx.ast.declaration_variable(
             SPAN,
             VariableDeclarationKind::Var,
@@ -576,6 +600,7 @@ impl<'a, 'c> VisitMut<'a> for ConstructorBodyInitsInserter<'a, 'c> {
     fn visit_call_expression(&mut self, call_expr: &mut CallExpression<'a>) {
         if let Expression::Super(super_) = &call_expr.callee {
             let span = super_.span;
+
             self.replace_super(call_expr, span);
         }
 
@@ -610,6 +635,7 @@ impl<'a, 'c> VisitMut<'a> for ConstructorBodyInitsInserter<'a, 'c> {
         // Don't visit `type_annotation` field because can't contain `super()`.
         // TODO: Are decorators in scope?
         self.visit_decorators(&mut prop.decorators);
+
         if prop.computed {
             self.visit_property_key(&mut prop.key);
         }
@@ -620,6 +646,7 @@ impl<'a, 'c> VisitMut<'a> for ConstructorBodyInitsInserter<'a, 'c> {
         // Visit computed `key` but not `value`, for same reasons as `visit_property_definition` above.
         // TODO: Are decorators in scope?
         self.visit_decorators(&mut prop.decorators);
+
         if prop.computed {
             self.visit_property_key(&mut prop.key);
         }
@@ -631,6 +658,7 @@ impl<'a, 'c> ConstructorBodyInitsInserter<'a, 'c> {
         let super_binding = self.super_binding.get_or_insert_with(|| {
             Self::generate_super_binding(self.constructor_scope_id, self.ctx)
         });
+
         call_expr.callee = super_binding.create_spanned_read_expression(span, self.ctx);
     }
 

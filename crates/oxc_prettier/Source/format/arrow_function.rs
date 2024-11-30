@@ -25,10 +25,12 @@ pub(super) fn print_arrow_function<'a>(
     }
 
     let parameters = expr.params.format(p);
+
     parts.push(group!(p, parameters));
 
     if let Some(return_type) = &expr.return_type {
         parts.push(text!(": "));
+
         parts.push(return_type.type_annotation.format(p));
     }
 
@@ -36,6 +38,7 @@ pub(super) fn print_arrow_function<'a>(
 
     if expr.expression {
         let stmt = &expr.body.statements[0];
+
         match stmt {
             // ExpressionStatement will add a semicolon and Hardline, But we don't need it
             // So we only need to format the expression of the ExpressionStatement

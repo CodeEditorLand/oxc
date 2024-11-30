@@ -68,33 +68,44 @@ impl Rule for NoNestedTernary {
         }
 
         let mut nested_level = 0;
+
         let mut current_node = node;
+
         while let Some(parent_node) = ctx.nodes().parent_node(current_node.id()) {
             match parent_node.kind() {
                 AstKind::ConditionalExpression(_) => {
                     nested_level += 1;
                 }
+
                 AstKind::ParenthesizedExpression(_) => {}
+
                 _ => break,
             }
+
             if nested_level == 2 {
                 break;
             }
+
             current_node = parent_node;
         }
 
         match nested_level {
             0 => {}
+
             1 => {
                 let Some(parent_node) = ctx.nodes().parent_node(node.id()) else { unreachable!() };
+
                 if let AstKind::ParenthesizedExpression(_) = parent_node.kind() {
                     return;
                 }
+
                 ctx.diagnostic_with_fix(unparenthesized_nested_ternary(cond_expr.span), |fixer| {
                     let content = format!("({})", fixer.source_range(cond_expr.span));
+
                     fixer.replace(cond_expr.span, content)
                 });
             }
+
             _ => {
                 ctx.diagnostic(deeply_nested_ternary(cond_expr.span));
             }

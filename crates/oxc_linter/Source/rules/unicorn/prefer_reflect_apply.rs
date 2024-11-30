@@ -48,6 +48,7 @@ fn is_apply_signature(first_arg: &Argument, second_arg: &Argument) -> bool {
             matches!(second_arg, Argument::ArrayExpression(_))
                 || matches!(second_arg, Argument::Identifier(ident) if ident.name == "arguments")
         }
+
         _ => false,
     }
 }
@@ -80,6 +81,7 @@ impl Rule for PreferReflectApply {
             && matches!(call_expr.arguments.as_slice(), [first, second] if is_apply_signature(first, second))
         {
             ctx.diagnostic(prefer_reflect_apply_diagnostic(call_expr.span));
+
             return;
         }
 
@@ -87,6 +89,7 @@ impl Rule for PreferReflectApply {
             let Some(member_expr_obj) = member_expr.object().as_member_expression() else {
                 return;
             };
+
             if is_static_property_name_equal(member_expr_obj, "apply") {
                 let Some(member_expr_obj_obj) = member_expr_obj.object().as_member_expression()
                 else {
@@ -97,6 +100,7 @@ impl Rule for PreferReflectApply {
                     let Expression::Identifier(iden) = member_expr_obj_obj.object() else {
                         return;
                     };
+
                     if iden.name == "Function"
                         && matches!(call_expr.arguments.as_slice(), [_, second, third] if is_apply_signature(second, third))
                     {

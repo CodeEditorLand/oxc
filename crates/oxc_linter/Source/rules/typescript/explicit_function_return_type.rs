@@ -118,6 +118,7 @@ fn explicit_function_return_type_diagnostic(span: Span) -> OxcDiagnostic {
 impl Rule for ExplicitFunctionReturnType {
     fn from_configuration(value: serde_json::Value) -> Self {
         let options: Option<&serde_json::Value> = value.get(0);
+
         Self(Box::new(ExplicitFunctionReturnTypeConfig {
             allow_expressions: options
                 .and_then(|x| x.get("allowExpressions"))
@@ -167,13 +168,16 @@ impl Rule for ExplicitFunctionReturnType {
                 if func.return_type.is_some() || is_constructor_or_setter(node, ctx) {
                     return;
                 }
+
                 if self.is_allowed_function(node, ctx) {
                     return;
                 }
+
                 if matches!(func.r#type, FunctionType::FunctionDeclaration) {
                     if self.allow_typed_function_expressions && func.return_type.is_some() {
                         return;
                     }
+
                     if self.does_immediately_return_function_expression(node) {
                         return;
                     }
@@ -197,8 +201,10 @@ impl Rule for ExplicitFunctionReturnType {
                                 def.span.start,
                                 def.value.params.span.start,
                             )));
+
                             return;
                         }
+
                         AstKind::PropertyDefinition(def) => {
                             ctx.diagnostic(explicit_function_return_type_diagnostic(Span::new(
                                 def.span.start,
@@ -207,6 +213,7 @@ impl Rule for ExplicitFunctionReturnType {
 
                             return;
                         }
+
                         AstKind::ObjectProperty(prop) => {
                             ctx.diagnostic(explicit_function_return_type_diagnostic(Span::new(
                                 prop.span.start,
@@ -215,9 +222,11 @@ impl Rule for ExplicitFunctionReturnType {
 
                             return;
                         }
+
                         _ => {}
                     }
                 }
+
                 if func.is_expression() {
                     ctx.diagnostic(explicit_function_return_type_diagnostic(Span::new(
                         func.span.start,
@@ -235,22 +244,27 @@ impl Rule for ExplicitFunctionReturnType {
                     )));
                 }
             }
+
             AstKind::ArrowFunctionExpression(func) => {
                 if func.return_type.is_some() {
                     return;
                 }
+
                 if self.check_arrow_function_with_void(func) {
                     return;
                 }
+
                 if self.is_allowed_function(node, ctx) {
                     return;
                 }
+
                 if self.allow_typed_function_expressions
                     && (self.is_valid_function_expression_return_type(node, ctx)
                         || ancestor_has_return_type(node, ctx))
                 {
                     return;
                 }
+
                 if self.returns_const_assertion_directly(node) {
                     return;
                 }
@@ -266,8 +280,10 @@ impl Rule for ExplicitFunctionReturnType {
                                 def.span.start,
                                 def.value.params.span.start,
                             )));
+
                             return;
                         }
+
                         AstKind::PropertyDefinition(def) => {
                             ctx.diagnostic(explicit_function_return_type_diagnostic(Span::new(
                                 def.span.start,
@@ -276,6 +292,7 @@ impl Rule for ExplicitFunctionReturnType {
 
                             return;
                         }
+
                         AstKind::ObjectProperty(prop) => {
                             ctx.diagnostic(explicit_function_return_type_diagnostic(Span::new(
                                 prop.span.start,
@@ -284,14 +301,17 @@ impl Rule for ExplicitFunctionReturnType {
 
                             return;
                         }
+
                         _ => {}
                     }
                 }
+
                 ctx.diagnostic(explicit_function_return_type_diagnostic(Span::new(
                     func.params.span.end + 1,
                     func.params.span.end + 3,
                 )));
             }
+
             _ => {}
         }
     }
@@ -306,11 +326,15 @@ impl ExplicitFunctionReturnType {
         if !self.allow_concise_arrow_function_expressions_starting_with_void {
             return false;
         }
+
         if !func.expression {
             return false;
         }
+
         let Some(expr) = func.get_expression() else { return false };
+
         let Expression::UnaryExpression(unary_expr) = expr else { return false };
+
         matches!(unary_expr.operator, UnaryOperator::Void)
     }
 
@@ -320,30 +344,38 @@ impl ExplicitFunctionReturnType {
                 if self.allow_functions_without_type_parameters && func.type_parameters.is_none() {
                     return true;
                 }
+
                 if self.allow_iifes && is_iife(node, ctx) {
                     return true;
                 }
+
                 if self.allowed_names.is_empty() {
                     return false;
                 }
+
                 if let Some(id) = &func.id {
                     return self.allowed_names.contains(id.name.as_str());
                 }
+
                 self.check_parent_for_is_allowed_function(node, ctx)
             }
+
             AstKind::ArrowFunctionExpression(func) => {
                 if self.allow_functions_without_type_parameters && func.type_parameters.is_none() {
                     return true;
                 }
+
                 if self.allow_iifes && is_iife(node, ctx) {
                     return true;
                 }
+
                 if self.allowed_names.is_empty() {
                     return false;
                 }
 
                 self.check_parent_for_is_allowed_function(node, ctx)
             }
+
             _ => false,
         }
     }
@@ -354,6 +386,7 @@ impl ExplicitFunctionReturnType {
         ctx: &LintContext<'a>,
     ) -> bool {
         let Some(parent) = get_parent_node(node, ctx) else { return false };
+
         match parent.kind() {
             AstKind::VariableDeclarator(decl) => {
                 let BindingPatternKind::BindingIdentifier(id) = &decl.id.kind else {
@@ -362,24 +395,31 @@ impl ExplicitFunctionReturnType {
 
                 self.allowed_names.contains(id.name.as_str())
             }
+
             AstKind::MethodDefinition(def) => {
                 let Some(name) = def.key.name() else { return false };
+
                 def.key.is_identifier()
                     && !def.computed
                     && self.allowed_names.contains(name.as_ref())
             }
+
             AstKind::PropertyDefinition(def) => {
                 let Some(name) = def.key.name() else { return false };
+
                 def.key.is_identifier()
                     && !def.computed
                     && self.allowed_names.contains(name.as_ref())
             }
+
             AstKind::ObjectProperty(prop) => {
                 let Some(name) = prop.key.name() else { return false };
+
                 prop.key.is_identifier()
                     && !prop.computed
                     && self.allowed_names.contains(name.as_ref())
             }
+
             _ => false,
         }
     }
@@ -392,6 +432,7 @@ impl ExplicitFunctionReturnType {
         if check_typed_function_expression(node, ctx) {
             return true;
         }
+
         self.check_allow_expressions(node, ctx)
     }
 
@@ -399,6 +440,7 @@ impl ExplicitFunctionReturnType {
         let Some(parent) = ctx.nodes().parent_node(node.id()) else {
             return false;
         };
+
         self.allow_expressions
             && !matches!(
                 parent.kind(),
@@ -413,7 +455,9 @@ impl ExplicitFunctionReturnType {
         if !self.allow_direct_const_assertion_in_arrow_functions {
             return false;
         }
+
         let AstKind::ArrowFunctionExpression(func) = node.kind() else { return false };
+
         let Some(expr) = func.get_expression() else { return false };
 
         match expr {
@@ -421,22 +465,26 @@ impl ExplicitFunctionReturnType {
                 let TSType::TSTypeReference(ts_type) = &ts_expr.type_annotation else {
                     return false;
                 };
+
                 let TSTypeName::IdentifierReference(id_ref) = &ts_type.type_name else {
                     return false;
                 };
 
                 id_ref.name == "const"
             }
+
             Expression::TSTypeAssertion(ts_expr) => {
                 let TSType::TSTypeReference(ts_type) = &ts_expr.type_annotation else {
                     return false;
                 };
+
                 let TSTypeName::IdentifierReference(id_ref) = &ts_type.type_name else {
                     return false;
                 };
 
                 id_ref.name == "const"
             }
+
             _ => false,
         }
     }
@@ -456,11 +504,13 @@ impl ExplicitFunctionReturnType {
         if !self.allow_higher_order_functions {
             return false;
         }
+
         if let AstKind::ArrowFunctionExpression(arrow_func_expr) = node.kind() {
             if let Some(func_body_expr) = arrow_func_expr.get_expression() {
                 return is_function(func_body_expr);
             };
         }
+
         all_return_statements_are_functions(node)
     }
 }
@@ -470,6 +520,7 @@ fn is_iife<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> bool {
     let Some(parent) = get_parent_node(node, ctx) else {
         return false;
     };
+
     matches!(parent.kind(), AstKind::CallExpression(_))
 }
 /**
@@ -487,11 +538,13 @@ fn is_constructor_or_setter(node: &AstNode, ctx: &LintContext) -> bool {
     let Some(parent) = ctx.nodes().parent_node(node.id()) else {
         return false;
     };
+
     is_constructor(parent) || is_setter(parent)
 }
 
 fn is_constructor(node: &AstNode) -> bool {
     let AstKind::MethodDefinition(method_def) = node.kind() else { return false };
+
     method_def.kind.is_constructor()
 }
 
@@ -501,6 +554,7 @@ fn is_setter(node: &AstNode) -> bool {
         AstKind::ObjectProperty(obj_prop) => {
             matches!(obj_prop.kind, PropertyKind::Set)
         }
+
         _ => false,
     }
 }
@@ -510,6 +564,7 @@ fn get_parent_node<'a, 'b>(
     ctx: &'b LintContext<'a>,
 ) -> Option<&'b AstNode<'a>> {
     let parent = outermost_paren_parent(node, ctx)?;
+
     match parent.kind() {
         AstKind::Argument(_) => outermost_paren_parent(parent, ctx),
         _ => Some(parent),
@@ -518,6 +573,7 @@ fn get_parent_node<'a, 'b>(
 
 fn check_typed_function_expression<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> bool {
     let Some(parent) = get_parent_node(node, ctx) else { return false };
+
     is_typed_parent(parent, Some(node))
         || is_property_of_object_with_type(parent, ctx)
         || is_constructor_argument(parent)
@@ -548,15 +604,19 @@ fn is_function_argument(parent: &AstNode, callee: Option<&AstNode>) -> bool {
     match call_expr.callee.without_parentheses() {
         Expression::FunctionExpression(func_expr) => {
             let AstKind::Function(callee_func_expr) = callee.unwrap().kind() else { return false };
+
             func_expr.span != callee_func_expr.span
         }
+
         Expression::ArrowFunctionExpression(arrow_func_expr) => {
             let AstKind::ArrowFunctionExpression(callee_arrow_func_expr) = callee.unwrap().kind()
             else {
                 return false;
             };
+
             arrow_func_expr.span != callee_arrow_func_expr.span
         }
+
         _ => true,
     }
 }
@@ -578,6 +638,7 @@ fn is_default_function_parameter_with_type_annotation(node: &AstNode) -> bool {
  */
 fn is_property_definition_with_type_annotation(node: &AstNode) -> bool {
     let AstKind::PropertyDefinition(prop_def) = node.kind() else { return false };
+
     prop_def.type_annotation.is_some()
 }
 
@@ -595,6 +656,7 @@ fn is_typed_jsx(node: &AstNode) -> bool {
     }
 
     let AstKind::JSXAttributeItem(jsx_attr_item) = node.kind() else { return false };
+
     matches!(jsx_attr_item, JSXAttributeItem::SpreadAttribute(_))
 }
 
@@ -610,6 +672,7 @@ fn ancestor_has_return_type<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> bo
             if func.body.statements.is_empty() {
                 return false;
             }
+
             if func.return_type.is_some() {
                 return true;
             }
@@ -625,22 +688,27 @@ fn ancestor_has_return_type<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> bo
                     return true;
                 }
             }
+
             AstKind::Function(func) => {
                 if func.return_type.is_some() {
                     return true;
                 }
             }
+
             AstKind::VariableDeclarator(decl) => {
                 return decl.id.type_annotation.is_some();
             }
+
             AstKind::PropertyDefinition(def) => {
                 return def.type_annotation.is_some();
             }
+
             AstKind::ExpressionStatement(expr) => {
                 if !matches!(expr.expression, Expression::ArrowFunctionExpression(_)) {
                     return false;
                 }
             }
+
             _ => {}
         }
     }
@@ -653,6 +721,7 @@ fn all_return_statements_are_functions(node: &AstNode) -> bool {
         AstKind::ArrowFunctionExpression(arrow_func_expr) => {
             check_return_statements(&arrow_func_expr.body.statements)
         }
+
         AstKind::Function(func) => {
             if let Some(func_body) = &func.body {
                 check_return_statements(&func_body.statements)
@@ -660,6 +729,7 @@ fn all_return_statements_are_functions(node: &AstNode) -> bool {
                 false
             }
         }
+
         _ => false,
     }
 }
@@ -683,14 +753,18 @@ fn check_return_statements<'a>(statements: &'a [Statement<'a>]) -> bool {
         if let Statement::ReturnStatement(return_stmt) = stmt {
             if let Some(arg) = &return_stmt.argument {
                 has_return = true;
+
                 return is_function(arg);
             }
+
             false
         } else {
             let status = check_statement(stmt);
+
             if status == StatementReturnStatus::AlwaysExplicit {
                 has_return = true;
             }
+
             matches!(
                 status,
                 StatementReturnStatus::NotReturn | StatementReturnStatus::AlwaysExplicit
@@ -714,18 +788,23 @@ fn is_property_of_object_with_type(node: &AstNode, ctx: &LintContext) -> bool {
     if !matches!(node.kind(), AstKind::ObjectProperty(_)) {
         return false;
     }
+
     if !matches!(node.kind(), AstKind::ObjectProperty(_)) {
         return false;
     }
+
     let Some(parent) = ctx.nodes().parent_node(node.id()) else {
         return false;
     };
+
     if !matches!(parent.kind(), AstKind::ObjectExpression(_)) {
         return false;
     }
+
     let Some(obj_expr_parent) = get_parent_node(parent, ctx) else {
         return false;
     };
+
     is_typed_parent(obj_expr_parent, None) || is_property_of_object_with_type(obj_expr_parent, ctx)
 }
 
@@ -1100,10 +1179,15 @@ fn test() {
         (
             "
         	declare function foo(arg: () => void): void;
+
         	foo(() => 1);
+
         	foo(() => {});
+
         	foo(() => null);
+
         	foo(() => true);
+
         	foo(() => '');
         	      ",
             Some(
@@ -1115,10 +1199,15 @@ fn test() {
         (
             "
         	declare function foo(arg: () => void): void;
+
         	foo?.(() => 1);
+
         	foo?.bar(() => {});
+
         	foo?.bar?.(() => null);
+
         	foo.bar?.(() => true);
+
         	foo?.(() => '');
         	      ",
             Some(
@@ -1148,16 +1237,19 @@ fn test() {
         (
             "
         	declare function foo(arg: { meth: () => number }): void;
+
         	foo({
         	  meth() {
         	    return 1;
         	  },
         	});
+
         	foo({
         	  meth: function () {
         	    return 1;
         	  },
         	});
+
         	foo({
         	  meth: () => {
         	    return 1;
@@ -1173,8 +1265,11 @@ fn test() {
         (
             "
         	const func1 = (value: number) => ({ type: 'X', value }) as const;
+
         	const func2 = (value: number) => ({ type: 'X', value }) as const;
+
         	const func3 = (value: number) => x as const;
+
         	const func4 = (value: number) => x as const;
         	      ",
             Some(
@@ -1186,6 +1281,7 @@ fn test() {
         (
             "
         	new Promise(resolve => {});
+
         	new Foo(1, () => {});
         	      ",
             Some(
@@ -1275,6 +1371,7 @@ fn test() {
         	const test1 = function () {
         	  return;
         	};
+
         	const foo = function () {
         	  return function test2() {};
         	};
@@ -1290,6 +1387,7 @@ fn test() {
         	const test1 = () => {
         	  return;
         	};
+
         	export const foo = {
         	  test2() {
         	    return 0;
@@ -1345,6 +1443,7 @@ fn test() {
         (
             "
         	type HigherOrderType = () => (arg1: string) => (arg2: number) => string;
+
         	const x: HigherOrderType = () => arg1 => arg2 => 'foo';
         	      ",
             Some(
@@ -1356,6 +1455,7 @@ fn test() {
         (
             "
         	type HigherOrderType = () => (arg1: string) => (arg2: number) => string;
+
         	const x: HigherOrderType = () => arg1 => arg2 => 'foo';
         	      ",
             Some(
@@ -1387,7 +1487,9 @@ fn test() {
         (
             "
         	type Foo = (arg1: string) => string;
+
         	type Bar<T> = (arg2: string) => T;
+
         	const x: Bar<Foo> = arg1 => arg2 => arg1 + arg2;
         	      ",
             Some(
@@ -1682,6 +1784,7 @@ fn test() {
         (
             "
         	let anyValue: any;
+
         	function foo(): any {
         	  anyValue = () => () => console.log('aa');
         	}
@@ -1727,6 +1830,7 @@ fn test() {
         (
             "
         	interface Foo {}
+
         	const x = {
         	  foo: () => {},
         	} as Foo;
@@ -1738,6 +1842,7 @@ fn test() {
         (
             "
         	interface Foo {}
+
         	const x: Foo = {
         	  foo: () => {},
         	};
@@ -1902,10 +2007,15 @@ fn test() {
         (
             "
         	declare function foo(arg: () => void): void;
+
         	foo(() => 1);
+
         	foo(() => {});
+
         	foo(() => null);
+
         	foo(() => true);
+
         	foo(() => '');
         	      ",
             Some(
@@ -1943,16 +2053,19 @@ fn test() {
         (
             "
         	declare function foo(arg: { meth: () => number }): void;
+
         	foo({
         	  meth() {
         	    return 1;
         	  },
         	});
+
         	foo({
         	  meth: function () {
         	    return 1;
         	  },
         	});
+
         	foo({
         	  meth: () => {
         	    return 1;
@@ -1968,6 +2081,7 @@ fn test() {
         (
             "
         	type HigherOrderType = () => (arg1: string) => (arg2: number) => string;
+
         	const x: HigherOrderType = () => arg1 => arg2 => 'foo';
         	      ",
             Some(
@@ -1979,6 +2093,7 @@ fn test() {
         (
             "
         	type HigherOrderType = () => (arg1: string) => (arg2: number) => string;
+
         	const x: HigherOrderType = () => arg1 => arg2 => 'foo';
         	      ",
             Some(
@@ -1990,6 +2105,7 @@ fn test() {
         (
             "
         	const func1 = (value: number) => ({ type: 'X', value }) as any;
+
         	const func2 = (value: number) => ({ type: 'X', value }) as Action;
         	      ",
             Some(
@@ -2059,20 +2175,25 @@ fn test() {
         	function hoge() {
         	  return;
         	}
+
         	const foo = () => {
         	  return;
         	};
+
         	const baz = function () {
         	  return;
         	};
+
         	let [test, test2] = function () {
         	  return;
         	};
+
         	class X {
         	  [test] = function () {
         	    return;
         	  };
         	}
+
         	const x = {
         	  1: function () {
         	    return;
@@ -2088,6 +2209,7 @@ fn test() {
         (
             "
         	const ignoredName = 'notIgnoredName';
+
         	class Foo {
         	  [ignoredName]() {}
         	}

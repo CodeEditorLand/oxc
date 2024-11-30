@@ -9,6 +9,7 @@ pub use parser_impl::{ConstructorParser, LiteralParser};
 #[cfg(test)]
 mod test {
     use crate::{ConstructorParser, LiteralParser, Options};
+
     use oxc_allocator::Allocator;
 
     #[test]
@@ -126,6 +127,7 @@ mod test {
             let res =
                 LiteralParser::new(&allocator, pattern_text, Some(flags_text), Options::default())
                     .parse();
+
             if let Err(err) = res {
                 panic!("Failed to parse /{pattern_text}/{flags_text}\n💥 {err}");
             }
@@ -291,18 +293,22 @@ mod test {
     #[test]
     fn should_handle_empty() {
         let allocator = Allocator::default();
+
         let pattern1 =
             LiteralParser::new(&allocator, "", None, Options::default()).parse().unwrap();
+
         let pattern2 =
             ConstructorParser::new(&allocator, "''", None, Options::default()).parse().unwrap();
 
         assert_eq!(pattern1.body.body[0].body.len(), 1);
+
         assert_eq!(pattern2.body.body[0].body.len(), 1);
     }
 
     #[test]
     fn should_handle_unicode() {
         let allocator = Allocator::default();
+
         let source_text = "このEmoji🥹の数が変わる";
 
         for (flags_text, expected) in [(None, 15), (Some("u"), 14), (Some("v"), 14)] {
@@ -310,6 +316,7 @@ mod test {
                 LiteralParser::new(&allocator, source_text, flags_text, Options::default())
                     .parse()
                     .unwrap();
+
             assert_eq!(pattern.body.body[0].body.len(), expected);
         }
     }
@@ -319,6 +326,7 @@ mod test {
         let allocator = Allocator::default();
 
         let pattern_text = "Adjust span but should have no side effect for parsing";
+
         let ret1 = LiteralParser::new(
             &allocator,
             pattern_text,
@@ -327,6 +335,7 @@ mod test {
         )
         .parse()
         .unwrap();
+
         let ret2 = LiteralParser::new(
             &allocator,
             pattern_text,
@@ -337,6 +346,7 @@ mod test {
         .unwrap();
 
         assert_ne!(ret1.span, ret2.span);
+
         assert_eq!(ret1.to_string(), ret2.to_string());
     }
 
@@ -345,6 +355,7 @@ mod test {
         let allocator = Allocator::default();
 
         let source_text = r"RegExp('Invalid! -> \u{1234568} <-')";
+
         let err = ConstructorParser::new(
             &allocator,
             &source_text[7..35],
@@ -352,6 +363,7 @@ mod test {
             Options { pattern_span_offset: 7, ..Options::default() },
         )
         .parse();
+
         assert!(err.is_err());
         // println!("{:?}", err.unwrap_err().with_source_code(source_text));
 
@@ -359,6 +371,7 @@ mod test {
             LiteralParser::new(&allocator, r"\d{4}-\d{2}-\d{2}", Some("vi"), Options::default())
                 .parse()
                 .unwrap();
+
         let ret2 = ConstructorParser::new(
             &allocator,
             r"'\\d{4}-\\d{2}-\\d{2}'",
@@ -367,6 +380,7 @@ mod test {
         )
         .parse()
         .unwrap();
+
         assert_eq!(ret1.to_string(), ret2.to_string());
     }
 }

@@ -39,5 +39,6 @@ pub fn is_non_escape_character(ch: char) -> bool {
     if is_escape_character(ch) || is_line_terminator(ch) {
         return false;
     }
+
     true
 }

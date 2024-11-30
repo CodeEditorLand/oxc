@@ -67,6 +67,7 @@ impl Rule for NoAbusiveEslintDisable {
 
 fn is_valid_rule_name(rule_name: &str) -> bool {
     let segment_count = rule_name.split('/').count();
+
     if rule_name.starts_with('@') {
         segment_count == 2 || segment_count == 3
     } else {
@@ -123,6 +124,7 @@ fn test() {
         "eval(); // eslint-disable-line",
         r"
         foo();
+
         eval(); // eslint-disable-line
         ",
         "/* eslint-disable */",

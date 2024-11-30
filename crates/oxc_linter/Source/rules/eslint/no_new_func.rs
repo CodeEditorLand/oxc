@@ -54,6 +54,7 @@ impl Rule for NoNewFunc {
 
                 Some((id, new_expr.span))
             }
+
             AstKind::CallExpression(call_expr) => {
                 let Some(obj_id) = call_expr.callee.get_identifier_reference() else {
                     return;
@@ -61,6 +62,7 @@ impl Rule for NoNewFunc {
 
                 Some((obj_id, call_expr.span))
             }
+
             AstKind::MemberExpression(mem_expr) => {
                 let parent: Option<AstKind<'a>> =
                     ctx.nodes().ancestor_kinds(node.id()).skip(1).find(|node| {
@@ -88,6 +90,7 @@ impl Rule for NoNewFunc {
 
                 Some((obj_id, parent_call_expr.span))
             }
+
             _ => None,
         };
 

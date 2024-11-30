@@ -4,6 +4,7 @@ use rayon::ThreadPoolBuilder;
 
 fn main() {
     let mut args = Arguments::from_env();
+
     let command = args.subcommand().expect("subcommands");
 
     let args = AppArgs {
@@ -18,6 +19,7 @@ fn main() {
     }
 
     let task = command.as_deref().unwrap_or("default");
+
     match task {
         "parser" => args.run_parser(),
         "semantic" => args.run_semantic(),
@@ -29,8 +31,10 @@ fn main() {
         "runtime" => args.run_runtime(),
         "all" => {
             args.run_default();
+
             args.run_runtime();
         }
+
         _ => args.run_default(),
     };
 }

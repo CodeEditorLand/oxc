@@ -40,6 +40,7 @@ impl Rule for NoLossOfPrecision {
             AstKind::NumericLiteral(node) if Self::lose_precision(node) => {
                 ctx.diagnostic(no_loss_of_precision_diagnostic(node.span));
             }
+
             _ => {}
         }
     }
@@ -66,8 +67,10 @@ impl PartialEq for ScientificNotation<'_> {
             if self.int == "0" && self.frac == "" {
                 return true;
             }
+
             return self.exp == other.exp;
         }
+
         false
     }
 }
@@ -106,6 +109,7 @@ impl<'a> RawNum<'a> {
 
                 // slice the fractional part and the rest of the string
                 let frac = &num_without_dot[..frac_end];
+
                 let num_without_frac = &num_without_dot[frac_end..];
 
                 (frac, num_without_frac)
@@ -124,11 +128,14 @@ impl<'a> RawNum<'a> {
 
     fn normalize(&mut self) -> ScientificNotation<'a> {
         let scientific = self.exp != 0;
+
         let precision = self.frac.len();
+
         if self.int.starts_with('0') {
             let frac_zeros = self.frac.chars().take_while(|&ch| ch == '0').count();
             #[allow(clippy::cast_possible_wrap)]
             let exp = self.exp - 1 - frac_zeros as isize;
+
             self.frac = &self.frac[frac_zeros..];
 
             match self.frac.len() {
@@ -157,6 +164,7 @@ impl<'a> RawNum<'a> {
         } else {
             #[allow(clippy::cast_possible_wrap)]
             let exp = self.exp + self.int.len() as isize - 1;
+
             if self.int.len() == 1 {
                 ScientificNotation {
                     int: self.int,
@@ -185,10 +193,12 @@ impl<'a> RawNum<'a> {
 impl NoLossOfPrecision {
     fn not_base_ten_loses_precision(node: &'_ NumericLiteral) -> bool {
         let raw = node.raw.cow_replace('_', "");
+
         let raw = raw.cow_to_uppercase();
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         // AST always store number as f64, need a cast to format in bin/oct/hex
         let value = node.value as u64;
+
         let suffix = if raw.starts_with("0B") {
             format!("{value:b}")
         } else if raw.starts_with("0X") {
@@ -201,6 +211,7 @@ impl NoLossOfPrecision {
 
     fn base_ten_loses_precision(node: &'_ NumericLiteral) -> bool {
         let raw = node.raw.cow_replace('_', "");
+
         let Some(raw) = Self::normalize(&raw) else {
             return true;
         };
@@ -208,14 +219,17 @@ impl NoLossOfPrecision {
         if raw.frac.len() >= 100 {
             return true;
         }
+
         let stored = match (raw.scientific, raw.precision) {
             (true, _) => format!("{:.1$e}", node.value, raw.frac.len()),
             (false, 0) => node.value.to_string(),
             (false, precision) => format!("{:.1$}", node.value, precision),
         };
+
         let Some(stored) = Self::normalize(&stored) else {
             return true;
         };
+
         raw != stored
     }
 

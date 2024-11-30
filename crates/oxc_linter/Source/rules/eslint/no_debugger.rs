@@ -72,6 +72,7 @@ fn test() {
     let pass = vec![("var test = { debugger: 1 }; test.debugger;", None)];
 
     let fail = vec![("if (foo) debugger", None)];
+
     let fix = vec![
         ("let x; debugger; let y;", "let x;  let y;", None),
         ("if (foo) debugger", "if (foo) {}", None),

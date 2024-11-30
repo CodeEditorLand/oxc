@@ -59,23 +59,29 @@ impl<T: Case> Suite<T> for SourcemapSuite<T> {
 
     fn run_coverage(&self, name: &str, _args: &crate::AppArgs) {
         let path = workspace_root().join(format!("{name}.snap"));
+
         let mut file = File::create(path).unwrap();
 
         let mut tests = self.get_test_cases().iter().collect::<Vec<_>>();
+
         tests.sort_by_key(|case| case.path());
 
         for case in tests {
             let result = case.test_result();
+
             let path = case.path().to_string_lossy();
+
             let result = match result {
                 TestResult::Snapshot(snapshot) => snapshot.to_string(),
                 TestResult::ParseError(error, _) => {
                     format!("./{path}\n{error}")
                 }
+
                 _ => {
                     unreachable!()
                 }
             };
+
             writeln!(file, "{result}\n").unwrap();
         }
     }
@@ -97,6 +103,7 @@ impl SourcemapCase {
 impl Case for SourcemapCase {
     fn new(path: PathBuf, code: String) -> Self {
         let source_type = SourceType::from_path(&path).unwrap();
+
         Self { path, code, source_type, result: TestResult::ToBeRun }
     }
 
@@ -114,17 +121,21 @@ impl Case for SourcemapCase {
 
     fn run(&mut self) {
         let source_type = self.source_type();
+
         self.result = self.execute(source_type);
     }
 
     fn execute(&mut self, source_type: SourceType) -> TestResult {
         let source_text = self.code();
+
         let allocator = Allocator::default();
+
         let ret = Parser::new(&allocator, source_text, source_type).parse();
 
         if !ret.errors.is_empty() {
             if let Some(error) = ret.errors.into_iter().next() {
                 let error = error.with_source_code(source_text.to_string());
+
                 return TestResult::ParseError(error.to_string(), false);
             }
         }

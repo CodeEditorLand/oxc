@@ -61,6 +61,7 @@ impl Rule for NoRedundantRoles {
         let AstKind::JSXOpeningElement(jsx_el) = node.kind() else {
             return;
         };
+
         let Some(component) = get_element_type(ctx, jsx_el) else {
             return;
         };
@@ -68,8 +69,10 @@ impl Rule for NoRedundantRoles {
         if let Some(JSXAttributeItem::Attribute(attr)) = has_jsx_prop_ignore_case(jsx_el, "role") {
             if let Some(JSXAttributeValue::StringLiteral(role_values)) = &attr.value {
                 let roles = role_values.value.split_whitespace().collect::<Vec<_>>();
+
                 for role in &roles {
                     let exceptions = DEFAULT_ROLE_EXCEPTIONS.get(&component);
+
                     if exceptions.map_or(false, |set| set.contains(role)) {
                         ctx.diagnostic_with_fix(
                             no_redundant_roles_diagnostic(attr.span, &component, role),

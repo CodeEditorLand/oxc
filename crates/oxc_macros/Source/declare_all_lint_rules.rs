@@ -15,10 +15,12 @@ pub struct LintRuleMeta {
 impl Parse for LintRuleMeta {
     fn parse(input: ParseStream<'_>) -> Result<Self> {
         let path = input.parse::<syn::Path>()?;
+
         let name = syn::parse_str(
             &path.segments.iter().last().unwrap().ident.to_string().to_case(Case::Pascal),
         )
         .unwrap();
+
         Ok(Self { name, path })
     }
 }
@@ -31,6 +33,7 @@ impl Parse for AllLintRulesMeta {
     fn parse(input: ParseStream<'_>) -> Result<Self> {
         let rules =
             input.parse_terminated(LintRuleMeta::parse, syn::Token![,])?.into_iter().collect();
+
         Ok(Self { rules })
     }
 }
@@ -40,13 +43,18 @@ pub fn declare_all_lint_rules(metadata: AllLintRulesMeta) -> TokenStream {
     let AllLintRulesMeta { rules } = metadata;
 
     let mut use_stmts = Vec::with_capacity(rules.len());
+
     let mut struct_names = Vec::with_capacity(rules.len());
+
     let mut plugin_names = Vec::with_capacity(rules.len());
+
     let mut ids = Vec::with_capacity(rules.len());
 
     for (i, rule) in rules.iter().enumerate() {
         use_stmts.push(&rule.path);
+
         struct_names.push(&rule.name);
+
         plugin_names.push(
             rule.path
                 .segments
@@ -55,6 +63,7 @@ pub fn declare_all_lint_rules(metadata: AllLintRulesMeta) -> TokenStream {
                 .map(|s| format!("{}", s.ident))
                 .join("/"),
         );
+
         ids.push(i);
     }
 
@@ -67,6 +76,7 @@ pub fn declare_all_lint_rules(metadata: AllLintRulesMeta) -> TokenStream {
             utils::PossibleJestNode,
             AstNode
         };
+
         use oxc_semantic::SymbolId;
 
         #[derive(Debug, Clone)]

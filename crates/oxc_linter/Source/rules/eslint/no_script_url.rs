@@ -47,6 +47,7 @@ impl Rule for NoScriptUrl {
             {
                 emit_diagnostic(ctx, literal.span);
             }
+
             AstKind::TemplateLiteral(literal)
                 if !is_tagged_template_expression(ctx, node, literal.span) =>
             {
@@ -63,6 +64,7 @@ impl Rule for NoScriptUrl {
                     emit_diagnostic(ctx, literal.span);
                 }
             }
+
             _ => {}
         }
     }

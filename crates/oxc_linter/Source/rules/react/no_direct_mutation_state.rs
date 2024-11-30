@@ -140,6 +140,7 @@ fn get_outer_member_expression<'a, 'b>(
     match assignment {
         SimpleAssignmentTarget::StaticMemberExpression(expr) => {
             let mut node = &**expr;
+
             loop {
                 if node.object.is_null() {
                     return Some(node);
@@ -156,6 +157,7 @@ fn get_outer_member_expression<'a, 'b>(
                 return Some(node);
             }
         }
+
         _ => None,
     }
 }
@@ -173,7 +175,9 @@ fn get_static_member_expression_obj<'a, 'b>(
 
 fn should_ignore_component<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> bool {
     let mut is_constructor = false;
+
     let mut is_call_expression = false;
+
     let mut is_component = false;
 
     for parent in ctx.nodes().ancestors(node.id()) {
@@ -330,6 +334,7 @@ fn test() {
             constructor() {
               someFn()
             }
+
             someFn() {
               this.state.foo = "bar"
             }

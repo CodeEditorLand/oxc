@@ -24,6 +24,7 @@ use crate::{
 #[cfg(any(coverage, coverage_nightly))]
 fn test() {
     TestRunner::new(TestLanguage::Js, TestRunnerOptions::default()).run();
+
     TestRunner::new(TestLanguage::Ts, TestRunnerOptions::default()).run();
 }
 
@@ -78,10 +79,12 @@ impl TestRunner {
             TestLanguage::Js => "js",
             TestLanguage::Ts => "typescript",
         });
+
         let ignore_tests = match language {
             TestLanguage::Js => JS_IGNORE_TESTS,
             TestLanguage::Ts => TS_IGNORE_TESTS,
         };
+
         Self { language, fixtures_root, ignore_tests, options, spec: SpecParser::default() }
     }
 
@@ -103,27 +106,32 @@ impl TestRunner {
             .filter(|e| !self.ignore_tests.iter().any(|s| e.path().to_string_lossy().contains(s)))
             .map(|e| {
                 let mut path = e.into_path();
+
                 if path.is_file() {
                     if let Some(parent_path) = path.parent() {
                         path = parent_path.into();
                     }
                 }
+
                 path
             })
             .filter(|path| path.join("__snapshots__").exists())
             .collect::<Vec<_>>();
 
         let dir_set: FxHashSet<_> = dirs.iter().cloned().collect();
+
         dirs = dir_set.into_iter().collect();
 
         dirs.sort_unstable();
 
         let mut total = 0;
+
         let mut failed = vec![];
 
         for dir in &dirs {
             // Get jsfmt.spec.js
             let mut spec_path = dir.join(SNAP_NAME);
+
             while !spec_path.exists() {
                 spec_path = dir.parent().unwrap().join(SNAP_NAME);
             }
@@ -156,26 +164,37 @@ impl TestRunner {
                 .collect();
 
             self.spec.parse(&spec_path);
+
             debug_assert!(
                 !self.spec.calls.is_empty(),
                 "There is no `runFormatTest()` in {}, please check if it is correct?",
                 spec_path.to_string_lossy()
             );
+
             total += inputs.len();
+
             inputs.sort_unstable();
+
             self.test_snapshot(dir, &spec_path, &inputs, &mut failed);
         }
 
         let language = self.language.as_str();
+
         let passed = total - failed.len();
+
         let percentage = (passed as f64 / total as f64) * 100.0;
+
         let heading = format!("{language} compatibility: {passed}/{total} ({percentage:.2}%)");
+
         println!("{heading}");
 
         if self.options.filter.is_none() {
             let failed = failed.join("\n");
+
             let snapshot = format!("{heading}\n\n# Failed\n{failed}");
+
             let filename = format!("prettier.{language}.snap.md");
+
             fs::write(snap_root().join(filename), snapshot).unwrap();
         }
     }
@@ -188,13 +207,17 @@ impl TestRunner {
         failed: &mut Vec<String>,
     ) {
         let mut write_dir_info = true;
+
         for path in inputs {
             let input = fs::read_to_string(path).unwrap();
 
             let result = self.spec.calls.iter().all(|spec| {
                 let expected_file = spec_path.parent().unwrap().join(SNAP_RELATIVE_PATH);
+
                 let expected = fs::read_to_string(expected_file).unwrap();
+
                 let snapshot = self.get_single_snapshot(path, &input, spec.0, &spec.1, &expected);
+
                 if snapshot.trim().is_empty() {
                     return false;
                 }
@@ -208,6 +231,7 @@ impl TestRunner {
 
             if self.spec.calls.is_empty() || !result {
                 let mut dir_info = String::new();
+
                 if write_dir_info {
                     dir_info.push_str(
                         format!(
@@ -216,6 +240,7 @@ impl TestRunner {
                         )
                         .as_str(),
                     );
+
                     write_dir_info = false;
                 }
 
@@ -229,10 +254,12 @@ impl TestRunner {
 
     fn visualize_end_of_line(content: &str) -> String {
         let mut chars = content.chars();
+
         let mut result = String::new();
 
         loop {
             let current = chars.next();
+
             let Some(char) = current else {
                 break;
             };
@@ -241,18 +268,22 @@ impl TestRunner {
                 LF => result.push_str("<LF>\n"),
                 CR => {
                     let next = chars.clone().next();
+
                     if next == Some(LF) {
                         result.push_str("<CRLF>\n");
+
                         chars.next();
                     } else {
                         result.push_str("<CR>\n");
                     }
                 }
+
                 _ => {
                     result.push(char);
                 }
             }
         }
+
         result
     }
 
@@ -289,9 +320,13 @@ impl TestRunner {
         );
 
         let need_eol_visualized = snap_content.contains("<LF>");
+
         let output = Self::prettier(path, input, prettier_options);
+
         let output = Self::escape_and_convert_snap_string(&output, need_eol_visualized);
+
         let input = Self::escape_and_convert_snap_string(input, need_eol_visualized);
+
         let snapshot_options = snapshot_options
             .iter()
             .map(|(k, v)| format!("{k}: {v}"))
@@ -299,6 +334,7 @@ impl TestRunner {
             .join("\n");
 
         let space_line = " ".repeat(prettier_options.print_width);
+
         let snapshot_without_output = format!(
             r#"
 {title}
@@ -323,14 +359,21 @@ impl TestRunner {
 
         if self.options.filter.is_some() {
             println!("Input path: {}", path.to_string_lossy());
+
             if !snapshot_line.is_empty() {
                 println!("Options: \n{snapshot_line}\n");
             }
+
             println!("Input:");
+
             println!("{input}");
+
             println!("Output:");
+
             println!("{output}");
+
             println!("Diff:");
+
             println!("{}", Self::get_diff(&output, &expected));
         }
 
@@ -339,27 +382,38 @@ impl TestRunner {
 
     fn get_expect(expected: &str, input: &str) -> Option<String> {
         let input_started = expected.find(input)?;
+
         let expected = &expected[input_started..];
+
         let output_start_line =
             "=====================================output=====================================\n";
+
         let output_end_line =
             "================================================================================";
+
         let output_started = expected.find(output_start_line)?;
+
         let output_ended = expected.find(output_end_line)?;
+
         let output = expected[output_started..output_ended]
             .trim_start_matches(output_start_line)
             .trim_end_matches(output_end_line);
+
         Some(output.to_string())
     }
 
     fn get_diff(output: &str, expect: &str) -> String {
         let output = output.trim().lines().collect::<Vec<_>>();
+
         let expect = expect.trim().lines().collect::<Vec<_>>();
+
         let length = output.len().max(expect.len());
+
         let mut result = String::new();
 
         for i in 0..length {
             let left = output.get(i).unwrap_or(&"");
+
             let right = expect.get(i).unwrap_or(&"");
 
             let s = if left == right {
@@ -376,6 +430,7 @@ impl TestRunner {
 
     fn escape_and_convert_snap_string(input: &str, need_eol_visualized: bool) -> String {
         let input = input.replace('\\', "\\\\").replace('`', "\\`").replace("${", "\\${");
+
         if need_eol_visualized {
             Self::visualize_end_of_line(&input)
         } else {
@@ -385,10 +440,13 @@ impl TestRunner {
 
     fn prettier(path: &Path, source_text: &str, prettier_options: PrettierOptions) -> String {
         let allocator = Allocator::default();
+
         let source_type = SourceType::from_path(path).unwrap();
+
         let ret = Parser::new(&allocator, source_text, source_type)
             .with_options(ParseOptions { preserve_parens: false, ..ParseOptions::default() })
             .parse();
+
         Prettier::new(&allocator, prettier_options).build(&ret.program)
     }
 }
@@ -401,8 +459,11 @@ mod tests {
 
     fn get_expect_in_arrays(input_name: &str) -> String {
         let base = fixtures_root().join("js/arrays");
+
         let expect_file = fs::read_to_string(base.join(SNAP_RELATIVE_PATH)).unwrap();
+
         let input = fs::read_to_string(base.join(input_name)).unwrap();
+
         TestRunner::get_expect(&expect_file, &input).unwrap()
     }
 
@@ -410,6 +471,7 @@ mod tests {
     #[test]
     fn test_get_expect() {
         let expected = get_expect_in_arrays("empty.js");
+
         assert_eq!(
             expected,
             "const a =
@@ -425,6 +487,7 @@ const b =
     #[test]
     fn test_get_diff() {
         let expected = get_expect_in_arrays("empty.js");
+
         let output = "
 const a =
   someVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeLong.Expression ||
@@ -434,7 +497,9 @@ const b =
   someVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeLong.Expression ||
   {}
 ;";
+
         let diff = TestRunner::get_diff(output, &expected);
+
         let expected_diff = "
 const a =                                                                        | const a =
   someVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeLong.Expression ||           X   someVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeLong.Expression || [];

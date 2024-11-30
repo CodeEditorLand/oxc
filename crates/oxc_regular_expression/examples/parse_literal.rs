@@ -50,19 +50,25 @@ fn main() {
             // +1 for added `/` in error reports
             Options { pattern_span_offset: 1, ..Options::default() },
         );
+
         let ret = parser.parse();
 
         let literal = format!("/{pattern_text}/{flags_text}");
+
         println!("Parse: {literal}");
+
         match ret {
             Ok(pattern) => {
                 println!("✨ {pattern:#?}");
             }
+
             Err(error) => {
                 let error = error.with_source_code(literal);
+
                 println!("💥 {error:?}");
             }
         }
+
         println!();
     }
 }

@@ -17,15 +17,21 @@ use oxc_span::{SourceType, Span};
 
 fn main() -> std::io::Result<()> {
     let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
+
     let path = Path::new(&name);
+
     let source_text = std::fs::read_to_string(path)?;
+
     let allocator = Allocator::default();
+
     let source_type = SourceType::from_path(path).unwrap();
+
     let ret = Parser::new(&allocator, &source_text, source_type).parse();
 
     // Handle parser errors
     if !ret.errors.is_empty() {
         print_errors(&source_text, ret.errors);
+
         return Ok(());
     }
 
@@ -38,12 +44,15 @@ fn main() -> std::io::Result<()> {
             AstKind::DebuggerStatement(stmt) => {
                 errors.push(no_debugger(stmt.span));
             }
+
             AstKind::ArrayPattern(array) if array.elements.is_empty() => {
                 errors.push(no_empty_pattern("array", array.span));
             }
+
             AstKind::ObjectPattern(object) if object.properties.is_empty() => {
                 errors.push(no_empty_pattern("object", object.span));
             }
+
             _ => {}
         }
     }
@@ -60,6 +69,7 @@ fn main() -> std::io::Result<()> {
 fn print_errors(source_text: &str, errors: Vec<OxcDiagnostic>) {
     for error in errors {
         let error = error.with_source_code(source_text.to_string());
+
         println!("{error:?}");
     }
 }

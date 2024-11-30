@@ -1,7 +1,9 @@
 // For now, just returns the most outer braces
 pub fn find_type_range(s: &str) -> Option<(usize, usize)> {
     let mut start = None;
+
     let mut brace_count = 0;
+
     for (idx, ch) in s.char_indices() {
         match ch {
             '{' => {
@@ -20,9 +22,11 @@ pub fn find_type_range(s: &str) -> Option<(usize, usize)> {
                     }
                 }
             }
+
             _ => {}
         }
     }
+
     None
 }
 
@@ -35,7 +39,9 @@ pub fn find_type_name_range(s: &str) -> Option<(usize, usize)> {
     }
 
     let mut bracket = 0;
+
     let mut start = None;
+
     for (idx, ch) in s.char_indices() {
         if ch.is_whitespace() {
             if bracket != 0 {
@@ -49,6 +55,7 @@ pub fn find_type_name_range(s: &str) -> Option<(usize, usize)> {
             if ch == '[' {
                 bracket += 1;
             }
+
             if ch == ']' {
                 bracket -= 1;
             }
@@ -70,6 +77,7 @@ pub fn find_type_name_range(s: &str) -> Option<(usize, usize)> {
 // Find inline token string as range
 pub fn find_token_range(s: &str) -> Option<(usize, usize)> {
     let mut start = None;
+
     for (idx, ch) in s.char_indices() {
         // `{` may appear just after `@kind{type}`
         // Other syntax characters also can be splitter...?

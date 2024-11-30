@@ -53,6 +53,7 @@ declare_oxc_lint!(
 impl Rule for MaxLines {
     fn from_configuration(value: Value) -> Self {
         let config = value.get(0);
+
         if let Some(max) = config
             .and_then(Value::as_number)
             .and_then(serde_json::Number::as_u64)
@@ -65,10 +66,12 @@ impl Rule for MaxLines {
                 .and_then(Value::as_number)
                 .and_then(serde_json::Number::as_u64)
                 .map_or(300, |v| usize::try_from(v).unwrap_or(300));
+
             let skip_comments = config
                 .and_then(|config| config.get("skipComments"))
                 .and_then(Value::as_bool)
                 .unwrap_or(false);
+
             let skip_blank_lines = config
                 .and_then(|config| config.get("skipBlankLines"))
                 .and_then(Value::as_bool)
@@ -82,36 +85,46 @@ impl Rule for MaxLines {
     fn run_once(&self, ctx: &LintContext) {
         let comment_lines = if self.skip_comments {
             let mut comment_lines: usize = 0;
+
             for comment in ctx.semantic().comments() {
                 let comment_span = comment.content_span();
+
                 if comment.is_line() {
                     let comment_line = ctx.source_text()[..comment_span.start as usize]
                         .lines()
                         .next_back()
                         .unwrap_or("");
+
                     if line_has_just_comment(comment_line, "//") {
                         comment_lines += 1;
                     }
                 } else {
                     let mut start_line =
                         ctx.source_text()[..comment_span.start as usize].lines().count();
+
                     let comment_start_line = ctx.source_text()[..comment_span.start as usize]
                         .lines()
                         .next_back()
                         .unwrap_or("");
+
                     if !line_has_just_comment(comment_start_line, "/*") {
                         start_line += 1;
                     }
+
                     let mut end_line =
                         ctx.source_text()[..=comment_span.end as usize].lines().count();
+
                     let comment_end_line =
                         ctx.source_text()[comment_span.end as usize..].lines().next().unwrap_or("");
+
                     if line_has_just_comment(comment_end_line, "*/") {
                         end_line += 1;
                     }
+
                     comment_lines += end_line - start_line;
                 }
             }
+
             comment_lines
         } else {
             0
@@ -129,6 +142,7 @@ impl Rule for MaxLines {
         if lines_in_file.saturating_sub(blank_lines).saturating_sub(comment_lines) > self.max {
             // Point to end of the file for `eslint-disable max-lines` to work.
             let end = ctx.source_text().len().saturating_sub(1) as u32;
+
             ctx.diagnostic(max_lines_diagnostic(lines_in_file, self.max, Span::new(end, end)));
         }
     }
@@ -161,6 +175,7 @@ fn test() {
         (
             "//a single line comment
 			var xy;
+
 			var xy;
 			 /* a multiline
 			 really really
@@ -234,6 +249,7 @@ fn test() {
         (
             "var x; // inline comment
 			var y;
+
 			var z;",
             Some(serde_json::json!([{ "max": 2, "skipComments": true }])),
         ),
@@ -241,6 +257,7 @@ fn test() {
             "var x; /* inline comment
 			 spanning multiple lines */
 			var y;
+
 			var z;",
             Some(serde_json::json!([{ "max": 2, "skipComments": true }])),
         ),
@@ -286,8 +303,10 @@ fn test() {
         ),
         (
             "var a = 'a';
+
 			var x
 			var c;
+
 			console.log",
             Some(serde_json::json!([{ "max": 2 }])),
         ),
@@ -316,8 +335,10 @@ fn test() {
         ),
         (
             "var a = 'a';
+
 			var x
 			var c;
+
 			console.log
 			// some block
 			// comments",
@@ -325,16 +346,20 @@ fn test() {
         ),
         (
             "var a = 'a';
+
 			var x
 			var c;
+
 			console.log
 			/* block comments */",
             Some(serde_json::json!([{ "max": 2, "skipComments": true }])),
         ),
         (
             "var a = 'a';
+
 			var x
 			var c;
+
 			console.log
 			/* block comments */
 			",
@@ -342,8 +367,10 @@ fn test() {
         ),
         (
             "var a = 'a';
+
 			var x
 			var c;
+
 			console.log
 			/** block
 
@@ -359,10 +386,12 @@ fn test() {
         ),
         (
             "var a = 'a';
+
 			var x
 
 
 			var c;
+
 			console.log
 
 			",
@@ -374,6 +403,7 @@ fn test() {
 
 			var x
 			var c;
+
 			console.log
 
 			",
@@ -384,6 +414,7 @@ fn test() {
 			//
 			var x
 			var c;
+
 			console.log
 			//",
             Some(serde_json::json!([{ "max": 2, "skipComments": true }])),

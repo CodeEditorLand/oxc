@@ -32,8 +32,10 @@ pub fn is_empty_stmt(stmt: &Statement) -> bool {
             {
                 return true;
             }
+
             false
         }
+
         Statement::EmptyStatement(_) => true,
         _ => false,
     }
@@ -76,6 +78,7 @@ pub fn is_prototype_property(
                 false
             }
         }
+
         _ => false,
     }
 }
@@ -109,10 +112,12 @@ pub fn is_logical_expression(node: &AstNode) -> bool {
 // gets the name of the first parameter of a function
 pub fn get_first_parameter_name<'a>(arg: &'a FormalParameters) -> Option<&'a str> {
     let first_func_param = arg.items.first()?;
+
     let BindingPatternKind::BindingIdentifier(first_func_param) = &first_func_param.pattern.kind
     else {
         return None;
     };
+
     Some(first_func_param.name.as_str())
 }
 
@@ -129,13 +134,16 @@ pub fn get_return_identifier_name<'a>(body: &'a FunctionBody<'_>) -> Option<&'a 
 
             Some(ident.name.as_str())
         }
+
         Statement::ReturnStatement(return_stmt) => {
             let return_expr = return_stmt.argument.as_ref()?;
+
             match return_expr {
                 Expression::Identifier(ident) => Some(ident.name.as_str()),
                 _ => None,
             }
         }
+
         Statement::ExpressionStatement(expr_stmt) => {
             let Expression::Identifier(ident) = &expr_stmt.expression else {
                 return None;
@@ -143,6 +151,7 @@ pub fn get_return_identifier_name<'a>(body: &'a FunctionBody<'_>) -> Option<&'a 
 
             Some(ident.name.as_str())
         }
+
         _ => None,
     }
 }
@@ -200,6 +209,7 @@ pub fn is_same_reference(left: &Expression, right: &Expression, ctx: &LintContex
                 }
             }
         }
+
         _ => {}
     }
 
@@ -218,6 +228,7 @@ pub fn is_same_member_expression(
     ctx: &LintContext,
 ) -> bool {
     let left_static_property_name = left.static_property_name();
+
     let right_static_property_name = right.static_property_name();
 
     match (left_static_property_name, right_static_property_name) {
@@ -229,6 +240,7 @@ pub fn is_same_member_expression(
         (Some(_), None) | (None, Some(_)) => {
             return false;
         }
+
         _ => {}
     }
 

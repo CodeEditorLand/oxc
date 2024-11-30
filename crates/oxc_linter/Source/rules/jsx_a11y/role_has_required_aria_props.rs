@@ -60,13 +60,17 @@ impl Rule for RoleHasRequiredAriaProps {
             let Some(role_prop) = has_jsx_prop_ignore_case(jsx_el, "role") else {
                 return;
             };
+
             let JSXAttributeItem::Attribute(attr) = role_prop else {
                 return;
             };
+
             let Some(JSXAttributeValue::StringLiteral(role_values)) = &attr.value else {
                 return;
             };
+
             let roles = role_values.value.split_whitespace();
+
             for role in roles {
                 if let Some(props) = ROLE_TO_REQUIRED_ARIA_PROPS.get(role) {
                     for prop in props {

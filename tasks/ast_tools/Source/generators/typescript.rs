@@ -29,13 +29,16 @@ impl Generator for TypescriptGenerator {
             if !def.generates_derive("ESTree") {
                 continue;
             }
+
             let ts_type_def = match def {
                 TypeDef::Struct(it) => Some(typescript_struct(it, &always_flatten_structs)),
                 TypeDef::Enum(it) => typescript_enum(it),
             };
+
             let Some(ts_type_def) = ts_type_def else { continue };
 
             code.push_str(&ts_type_def);
+
             code.push_str("\n\n");
         }
 
@@ -59,13 +62,17 @@ fn typescript_enum(def: &EnumDef) -> Option<String> {
     } else {
         def.all_variants().map(|var| format!("'{}'", enum_variant_name(var, def))).join(" | ")
     };
+
     let ident = def.ident();
+
     Some(format!("export type {ident} = {union};"))
 }
 
 fn typescript_struct(def: &StructDef, always_flatten_structs: &FxHashSet<TypeId>) -> String {
     let ident = def.ident();
+
     let mut fields = String::new();
+
     let mut extends = vec![];
 
     if let Some(type_tag) = get_type_tag(def) {
@@ -79,6 +86,7 @@ fn typescript_struct(def: &StructDef, always_flatten_structs: &FxHashSet<TypeId>
         let Some(parent) = field.markers.derive_attributes.estree.append_to.as_ref() else {
             continue;
         };
+
         assert!(
             append_to.insert(parent.clone(), field).is_none(),
             "Duplicate append_to target (on {ident})"
@@ -91,6 +99,7 @@ fn typescript_struct(def: &StructDef, always_flatten_structs: &FxHashSet<TypeId>
         {
             continue;
         }
+
         let mut ty = match &field.markers.derive_attributes.estree.typescript_type {
             Some(ty) => ty.clone(),
             None => type_to_string(field.typ.name()),
@@ -103,16 +112,20 @@ fn typescript_struct(def: &StructDef, always_flatten_structs: &FxHashSet<TypeId>
 
         if always_flatten || field.markers.derive_attributes.estree.flatten {
             extends.push(ty);
+
             continue;
         }
 
         let ident = field.ident().unwrap();
+
         if let Some(append_after) = append_to.get(&ident.to_string()) {
             let ts_type = &append_after.markers.derive_attributes.estree.typescript_type;
+
             let after_type = if let Some(ty) = ts_type {
                 ty.clone()
             } else {
                 let typ = append_after.typ.name();
+
                 if let TypeName::Opt(inner) = typ {
                     type_to_string(inner)
                 } else {
@@ -148,6 +161,7 @@ fn typescript_struct(def: &StructDef, always_flatten_structs: &FxHashSet<TypeId>
     if extends_union {
         let extends =
             if extends.is_empty() { String::new() } else { format!(" & {}", extends.join(" & ")) };
+
         format!("export type {ident} = ({body}){extends};")
     } else {
         let extends = if extends.is_empty() {
@@ -155,6 +169,7 @@ fn typescript_struct(def: &StructDef, always_flatten_structs: &FxHashSet<TypeId>
         } else {
             format!(" extends {}", extends.join(", "))
         };
+
         format!("export interface {ident}{extends} {body}")
     }
 }
@@ -173,6 +188,7 @@ fn type_to_string(ty: &TypeName) -> String {
         TypeName::Box(type_name) | TypeName::Ref(type_name) | TypeName::Complex(type_name) => {
             type_to_string(type_name)
         }
+
         TypeName::Opt(type_name) => format!("{} | null", type_to_string(type_name)),
     }
 }

@@ -78,9 +78,11 @@ impl<'a, 'ctx> Traverse<'a> for ExponentiationOperator<'a, 'ctx> {
                     AssignmentTarget::AssignmentTargetIdentifier(_) => {
                         self.convert_identifier_assignment(expr, ctx);
                     }
+
                     AssignmentTarget::StaticMemberExpression(_) => {
                         self.convert_static_member_expression_assignment(expr, ctx);
                     }
+
                     AssignmentTarget::ComputedMemberExpression(_) => {
                         self.convert_computed_member_expression_assignment(expr, ctx);
                     }
@@ -90,9 +92,11 @@ impl<'a, 'ctx> Traverse<'a> for ExponentiationOperator<'a, 'ctx> {
                     AssignmentTarget::PrivateFieldExpression(_) => {
                         self.convert_private_field_assignment(expr, ctx);
                     }
+
                     _ => {}
                 }
             }
+
             _ => {}
         }
     }
@@ -131,12 +135,15 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let Expression::AssignmentExpression(assign_expr) = expr else { unreachable!() };
+
         let AssignmentTarget::AssignmentTargetIdentifier(ident) = &mut assign_expr.left else {
             unreachable!()
         };
 
         let (pow_left, temp_var_inits) = self.get_pow_left_identifier(ident, ctx);
+
         Self::convert_assignment(assign_expr, pow_left, ctx);
+
         Self::revise_expression(expr, temp_var_inits, ctx);
     }
 
@@ -169,7 +176,9 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
             // Assign to a temp var.
             let reference =
                 ctx.create_unbound_ident_expr(SPAN, ident.name.clone(), ReferenceFlags::Read);
+
             let binding = self.create_temp_var(reference, &mut temp_var_inits, ctx);
+
             binding.create_read_expression(ctx)
         };
 
@@ -202,14 +211,18 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let Expression::AssignmentExpression(assign_expr) = expr else { unreachable!() };
+
         let AssignmentTarget::StaticMemberExpression(member_expr) = &mut assign_expr.left else {
             unreachable!()
         };
 
         let (replacement_left, pow_left, temp_var_inits) =
             self.get_pow_left_static_member(member_expr, ctx);
+
         assign_expr.left = replacement_left;
+
         Self::convert_assignment(assign_expr, pow_left, ctx);
+
         Self::revise_expression(expr, temp_var_inits, ctx);
     }
 
@@ -233,6 +246,7 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         //                        ^^^
         // ```
         let mut temp_var_inits = ctx.ast.vec();
+
         let obj = self.get_second_member_expression_object(
             &mut member_expr.object,
             &mut temp_var_inits,
@@ -245,7 +259,9 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         //                            ^^^^^^
         // ```
         let prop_span = member_expr.property.span;
+
         let prop_name = member_expr.property.name.clone();
+
         let prop = ctx.ast.expression_string_literal(prop_span, prop_name.clone(), None);
 
         // Complete 2nd member expression
@@ -301,12 +317,15 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let Expression::AssignmentExpression(assign_expr) = expr else { unreachable!() };
+
         let AssignmentTarget::ComputedMemberExpression(member_expr) = &mut assign_expr.left else {
             unreachable!()
         };
 
         let (pow_left, temp_var_inits) = self.get_pow_left_computed_member(member_expr, ctx);
+
         Self::convert_assignment(assign_expr, pow_left, ctx);
+
         Self::revise_expression(expr, temp_var_inits, ctx);
     }
 
@@ -327,6 +346,7 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         //                       ^^^
         // ```
         let mut temp_var_inits = ctx.ast.vec();
+
         let obj = self.get_second_member_expression_object(
             &mut member_expr.object,
             &mut temp_var_inits,
@@ -339,12 +359,15 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         //     ^^^^^ replaced        ^^^^^ prop
         // ```
         let prop = &mut member_expr.expression;
+
         let prop = if prop.is_literal() {
             prop.clone_in(ctx.ast.allocator)
         } else {
             let owned_prop = ctx.ast.move_expression(prop);
+
             let binding = self.create_temp_var(owned_prop, &mut temp_var_inits, ctx);
             *prop = binding.create_read_expression(ctx);
+
             binding.create_read_expression(ctx)
         };
 
@@ -382,12 +405,15 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let Expression::AssignmentExpression(assign_expr) = expr else { unreachable!() };
+
         let AssignmentTarget::PrivateFieldExpression(member_expr) = &mut assign_expr.left else {
             unreachable!()
         };
 
         let (pow_left, temp_var_inits) = self.get_pow_left_private_field(member_expr, ctx);
+
         Self::convert_assignment(assign_expr, pow_left, ctx);
+
         Self::revise_expression(expr, temp_var_inits, ctx);
     }
 
@@ -409,6 +435,7 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         //                      ^^^
         // ```
         let mut temp_var_inits = ctx.ast.vec();
+
         let obj = self.get_second_member_expression_object(
             &mut field_expr.object,
             &mut temp_var_inits,
@@ -485,6 +512,7 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
             Expression::Super(super_) => return ctx.ast.expression_super(super_.span),
             Expression::Identifier(ident) => {
                 let symbol_id = ctx.symbols().get_reference(ident.reference_id()).symbol_id();
+
                 if let Some(symbol_id) = symbol_id {
                     // This variable is declared in scope so evaluating it multiple times can't trigger a getter.
                     // No need for a temp var.
@@ -498,6 +526,7 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
                 // Unbound reference. Could possibly trigger a getter so we need to only evaluate it once.
                 // Assign to a temp var.
             }
+
             _ => {
                 // Other expression. Assign to a temp var.
             }
@@ -505,6 +534,7 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
 
         let binding = self.create_temp_var(ctx.ast.move_expression(obj), temp_var_inits, ctx);
         *obj = binding.create_read_expression(ctx);
+
         binding.create_read_expression(ctx)
     }
 
@@ -515,7 +545,9 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let pow_right = ctx.ast.move_expression(&mut assign_expr.right);
+
         assign_expr.right = Self::math_pow(pow_left, pow_right, ctx);
+
         assign_expr.operator = AssignmentOperator::Assign;
     }
 
@@ -527,6 +559,7 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
     ) {
         if !temp_var_inits.is_empty() {
             temp_var_inits.reserve_exact(1);
+
             temp_var_inits.push(ctx.ast.move_expression(expr));
             *expr = ctx.ast.expression_sequence(SPAN, temp_var_inits);
         }
@@ -539,12 +572,17 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let math_symbol_id = ctx.scopes().find_binding(ctx.current_scope_id(), "Math");
+
         let object =
             ctx.create_ident_expr(SPAN, Atom::from("Math"), math_symbol_id, ReferenceFlags::Read);
+
         let property = ctx.ast.identifier_name(SPAN, "pow");
+
         let callee =
             Expression::from(ctx.ast.member_expression_static(SPAN, object, property, false));
+
         let arguments = ctx.ast.vec_from_array([Argument::from(left), Argument::from(right)]);
+
         ctx.ast.expression_call(SPAN, callee, NONE, arguments, false)
     }
 
@@ -564,6 +602,7 @@ impl<'a, 'ctx> ExponentiationOperator<'a, 'ctx> {
         );
 
         // var _name;
+
         self.ctx.var_declarations.insert_var(&binding, None, ctx);
 
         // Add new reference `_name = name` to `temp_var_inits`

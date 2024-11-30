@@ -29,6 +29,7 @@ pub struct JSONSourceMap {
 
 pub fn decode(json: JSONSourceMap) -> Result<SourceMap> {
     let tokens = decode_mapping(&json.mappings, json.names.len(), json.sources.len())?;
+
     Ok(SourceMap {
         file: json.file.map(Arc::from),
         names: json.names.into_iter().map(Arc::from).collect(),
@@ -53,10 +54,15 @@ fn decode_mapping(mapping: &str, names_len: usize, sources_len: usize) -> Result
     let mut tokens = vec![];
 
     let mut dst_col;
+
     let mut src_id = 0;
+
     let mut src_line = 0;
+
     let mut src_col = 0;
+
     let mut name_id = 0;
+
     let mut nums = Vec::with_capacity(6);
 
     for (dst_line, line) in mapping.split(';').enumerate() {
@@ -72,30 +78,39 @@ fn decode_mapping(mapping: &str, names_len: usize, sources_len: usize) -> Result
             }
 
             nums.clear();
+
             parse_vlq_segment_into(segment, &mut nums)?;
+
             dst_col = (i64::from(dst_col) + nums[0]) as u32;
 
             let mut src = !0;
+
             let mut name = !0;
 
             if nums.len() > 1 {
                 if nums.len() != 4 && nums.len() != 5 {
                     return Err(Error::BadSegmentSize(nums.len() as u32));
                 }
+
                 src_id = (i64::from(src_id) + nums[1]) as u32;
+
                 if src_id >= sources_len as u32 {
                     return Err(Error::BadSourceReference(src_id));
                 }
 
                 src = src_id;
+
                 src_line = (i64::from(src_line) + nums[2]) as u32;
+
                 src_col = (i64::from(src_col) + nums[3]) as u32;
 
                 if nums.len() > 4 {
                     name_id = (i64::from(name_id) + nums[4]) as u32;
+
                     if name_id >= names_len as u32 {
                         return Err(Error::BadNameReference(name_id));
                     }
+
                     name = name_id;
                 }
             }
@@ -119,23 +134,33 @@ const B64: [i8; 256] = [ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 
 fn parse_vlq_segment_into(segment: &str, rv: &mut Vec<i64>) -> Result<()> {
     let mut cur = 0;
+
     let mut shift = 0;
 
     for c in segment.bytes() {
         let enc = i64::from(B64[c as usize]);
+
         let val = enc & 0b11111;
+
         let cont = enc >> 5;
+
         cur += val.checked_shl(shift).ok_or(Error::VlqOverflow)?;
+
         shift += 5;
 
         if cont == 0 {
             let sign = cur & 1;
+
             cur >>= 1;
+
             if sign != 0 {
                 cur = -cur;
             }
+
             rv.push(cur);
+
             cur = 0;
+
             shift = 0;
         }
     }
@@ -158,12 +183,19 @@ fn test_decode_sourcemap() {
         "names": ["x","alert"],
         "mappings": "AAAA,GAAIA,GAAI,EACR,IAAIA,GAAK,EAAG,CACVC,MAAM"
     }"#;
+
     let sm = SourceMap::from_json_string(input).unwrap();
+
     assert_eq!(sm.get_source_root(), Some("x"));
+
     let mut iter = sm.get_source_view_tokens().filter(|token| token.get_name_id().is_some());
+
     assert_eq!(iter.next().unwrap().to_tuple(), (Some("coolstuff.js"), 0, 4, Some("x")));
+
     assert_eq!(iter.next().unwrap().to_tuple(), (Some("coolstuff.js"), 1, 4, Some("x")));
+
     assert_eq!(iter.next().unwrap().to_tuple(), (Some("coolstuff.js"), 2, 2, Some("alert")));
+
     assert!(iter.next().is_none());
 }
 
@@ -175,5 +207,6 @@ fn test_decode_sourcemap_optional_filed() {
         "sourcesContent": [null],
         "mappings": ""
     }"#;
+
     SourceMap::from_json_string(input).expect("should success");
 }

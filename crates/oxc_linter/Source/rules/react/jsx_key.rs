@@ -62,8 +62,10 @@ impl Rule for JsxKey {
         match node.kind() {
             AstKind::JSXElement(jsx_elem) => {
                 check_jsx_element(node, jsx_elem, ctx);
+
                 check_jsx_element_is_key_before_spread(jsx_elem, ctx);
             }
+
             AstKind::JSXFragment(jsx_frag) => {
                 check_jsx_fragment(node, jsx_frag, ctx);
             }
@@ -97,6 +99,7 @@ pub fn import_matcher<'a>(
     expected_module_name: &'a str,
 ) -> bool {
     let expected_module_name = expected_module_name.cow_to_lowercase();
+
     ctx.semantic().module_record().import_entries.iter().any(|import| {
         import.module_request.name().as_str() == expected_module_name
             && import.local_name.name().as_str() == actual_local_name
@@ -120,6 +123,7 @@ pub fn is_import<'a>(
 
 pub fn is_children<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> bool {
     const REACT: &str = "React";
+
     const CHILDREN: &str = "Children";
 
     let AstKind::CallExpression(call) = node.kind() else { return false };
@@ -142,6 +146,7 @@ pub fn is_children<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> b
 }
 fn is_within_children_to_array<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> bool {
     let parents_iter = ctx.nodes().ancestors(node.id()).skip(2);
+
     parents_iter
         .filter(|parent_node| matches!(parent_node.kind(), AstKind::CallExpression(_)))
         .any(|parent_node| is_children(parent_node, ctx) && is_to_array(parent_node))
@@ -159,16 +164,19 @@ fn is_in_array_or_iter<'a, 'b>(
     let mut node = node;
 
     let mut is_outside_containing_function = false;
+
     let mut is_explicit_return = false;
 
     loop {
         let parent = ctx.nodes().parent_node(node.id())?;
+
         match parent.kind() {
             AstKind::ArrowFunctionExpression(arrow_expr) => {
                 let is_arrow_expr_statement = matches!(
                     arrow_expr.body.statements.first(),
                     Some(Statement::ExpressionStatement(_))
                 );
+
                 if !is_explicit_return && !is_arrow_expr_statement {
                     return None;
                 }
@@ -178,22 +186,28 @@ fn is_in_array_or_iter<'a, 'b>(
                 if let AstKind::ObjectProperty(_) = parent.kind() {
                     return None;
                 }
+
                 if is_outside_containing_function {
                     return None;
                 }
+
                 is_outside_containing_function = true;
             }
+
             AstKind::Function(_) => {
                 let parent = ctx.nodes().parent_node(parent.id())?;
 
                 if let AstKind::ObjectProperty(_) = parent.kind() {
                     return None;
                 }
+
                 if is_outside_containing_function {
                     return None;
                 }
+
                 is_outside_containing_function = true;
             }
+
             AstKind::ArrayExpression(_) => {
                 if is_outside_containing_function {
                     return None;
@@ -201,6 +215,7 @@ fn is_in_array_or_iter<'a, 'b>(
 
                 return Some(InsideArrayOrIterator::Array);
             }
+
             AstKind::CallExpression(v) => {
                 let callee = &v.callee.without_parentheses();
 
@@ -214,6 +229,7 @@ fn is_in_array_or_iter<'a, 'b>(
 
                 return None;
             }
+
             AstKind::JSXElement(_)
             | AstKind::JSXOpeningElement(_)
             | AstKind::ObjectProperty(_)
@@ -221,8 +237,10 @@ fn is_in_array_or_iter<'a, 'b>(
             AstKind::ReturnStatement(_) => {
                 is_explicit_return = true;
             }
+
             _ => {}
         }
+
         node = parent;
     }
 }
@@ -232,6 +250,7 @@ fn check_jsx_element<'a>(node: &AstNode<'a>, jsx_elem: &JSXElement<'a>, ctx: &Li
         if is_within_children_to_array(node, ctx) {
             return;
         }
+
         if !jsx_elem.opening_element.attributes.iter().any(|attr| {
             let JSXAttributeItem::Attribute(attr) = attr else {
                 return false;
@@ -240,6 +259,7 @@ fn check_jsx_element<'a>(node: &AstNode<'a>, jsx_elem: &JSXElement<'a>, ctx: &Li
             let JSXAttributeName::Identifier(attr_ident) = &attr.name else {
                 return false;
             };
+
             attr_ident.name == "key"
         }) {
             ctx.diagnostic(gen_diagnostic(jsx_elem.opening_element.name.span(), &outer));
@@ -249,6 +269,7 @@ fn check_jsx_element<'a>(node: &AstNode<'a>, jsx_elem: &JSXElement<'a>, ctx: &Li
 
 fn check_jsx_element_is_key_before_spread<'a>(jsx_elem: &JSXElement<'a>, ctx: &LintContext<'a>) {
     let mut key_idx_span: Option<(usize, Span)> = None;
+
     let mut spread_idx: Option<usize> = None;
 
     for (i, attr) in jsx_elem.opening_element.attributes.iter().enumerate() {
@@ -257,12 +278,15 @@ fn check_jsx_element_is_key_before_spread<'a>(jsx_elem: &JSXElement<'a>, ctx: &L
                 let JSXAttributeName::Identifier(ident) = &attr.name else {
                     continue;
                 };
+
                 if ident.name == "key" {
                     key_idx_span = Some((i, attr.name.span()));
                 }
             }
+
             JSXAttributeItem::SpreadAttribute(_) => spread_idx = Some(i),
         }
+
         if key_idx_span.map(|x| x.0).is_some() && spread_idx.is_some() {
             break;
         }
@@ -280,6 +304,7 @@ fn check_jsx_fragment<'a>(node: &AstNode<'a>, fragment: &JSXFragment<'a>, ctx: &
         if is_within_children_to_array(node, ctx) {
             return;
         }
+
         ctx.diagnostic(gen_diagnostic(fragment.opening_fragment.span, &outer));
     }
 }
@@ -345,6 +370,7 @@ fn test() {
             import React, { FC, useRef, useState } from 'react';
 
             import './ResourceVideo.sass';
+
             import VimeoVideoPlayInModal from '../vimeoVideoPlayInModal/VimeoVideoPlayInModal';
 
             type Props = {
@@ -369,6 +395,7 @@ fn test() {
         r"
             // testrule.jsx
             const trackLink = () => {};
+
             const getAnalyticsUiElement = () => {};
 
             const onTextButtonClick = (e, item) => trackLink([, getAnalyticsUiElement(item), item.name], e);
@@ -455,6 +482,7 @@ fn test() {
             <div className="App">
               {[1, 2, 3, 4, 5].map((val) => {
                 const text = () => <strong>{val}</strong>;
+
                 return null
               })}
             </div>
@@ -466,6 +494,7 @@ fn test() {
             <div className="App">
               {[1, 2, 3, 4, 5].map((val) => {
                 const text = <strong>{val}</strong>;
+
                 return <button key={val}>{text}</button>;
               })}
             </div>
@@ -480,6 +509,7 @@ fn test() {
         MyStory.decorators = [
           (Component) => {
             const store = useMyStore();
+
             return <Provider store={store}><Component /></Provider>;
           }
         ];
@@ -492,9 +522,11 @@ fn test() {
               );}))}
         ",
         r#"import { Children } from "react";
+
         Children.toArray([1, 2 ,3].map(x => <App />));
         "#,
         r#"import React from "react";
+
         React.Children.toArray([1, 2 ,3].map(x => <App />));
         "#,
         r"React.Children.toArray([1, 2 ,3].map(x => <App />));",
@@ -574,7 +606,9 @@ fn test() {
                     <div>
                       {list.map(item => {
                         if (item < 2) return <div>{item}</div>;
+
                         else if (item < 5) return <div />;
+
                         else return <div />;
                       })}
                     </div>
@@ -609,14 +643,19 @@ fn test() {
         r"foo.Children.toArray([1, 2 ,3].map(x => <App />));",
         r"
         import Act from 'react';
+
         import { Children as ReactChildren } from 'react';
 
         const { Children } = Act;
+
         const { toArray } = Children;
 
         Act.Children.toArray([1, 2 ,3].map(x => <App />));
+
         Act.Children.toArray(Array.from([1, 2 ,3], x => <App />));
+
         Children.toArray([1, 2 ,3].map(x => <App />));
+
         Children.toArray(Array.from([1, 2 ,3], x => <App />));
         ",
     ];

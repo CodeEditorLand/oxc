@@ -11,13 +11,18 @@ impl ToInt32 for f64 {
     #[allow(clippy::float_cmp, clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     fn to_int_32(&self) -> i32 {
         const SIGN_MASK: u64 = 0x8000_0000_0000_0000;
+
         const EXPONENT_MASK: u64 = 0x7FF0_0000_0000_0000;
+
         const SIGNIFICAND_MASK: u64 = 0x000F_FFFF_FFFF_FFFF;
+
         const HIDDEN_BIT: u64 = 0x0010_0000_0000_0000;
+
         const PHYSICAL_SIGNIFICAND_SIZE: i32 = 52; // Excludes the hidden bit.
         const SIGNIFICAND_SIZE: i32 = 53;
 
         const EXPONENT_BIAS: i32 = 0x3FF + PHYSICAL_SIGNIFICAND_SIZE;
+
         const DENORMAL_EXPONENT: i32 = -EXPONENT_BIAS + 1;
 
         fn is_denormal(number: f64) -> bool {
@@ -30,6 +35,7 @@ impl ToInt32 for f64 {
             }
 
             let d64 = number.to_bits();
+
             let biased_e = ((d64 & EXPONENT_MASK) >> PHYSICAL_SIGNIFICAND_SIZE) as i32;
 
             biased_e - EXPONENT_BIAS
@@ -37,6 +43,7 @@ impl ToInt32 for f64 {
 
         fn significand(number: f64) -> u64 {
             let d64 = number.to_bits();
+
             let significand = d64 & SIGNIFICAND_MASK;
 
             if is_denormal(number) {
@@ -58,12 +65,14 @@ impl ToInt32 for f64 {
 
         if number.is_finite() && number <= f64::from(i32::MAX) && number >= f64::from(i32::MIN) {
             let i = number as i32;
+
             if f64::from(i) == number {
                 return i;
             }
         }
 
         let exponent = exponent(number);
+
         let bits = if exponent < 0 {
             if exponent <= -SIGNIFICAND_SIZE {
                 return 0;

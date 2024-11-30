@@ -120,6 +120,7 @@ impl Rule for ArrayType {
 
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         let default_config = &self.default;
+
         let readonly_config: &ArrayOption =
             &self.readonly.clone().unwrap_or_else(|| default_config.clone());
 
@@ -128,13 +129,16 @@ impl Rule for ArrayType {
                 check(&ts_type_annotation.type_annotation, default_config, readonly_config, ctx);
             }
             // for example: type barUnion = (string | number | boolean)[];
+
             AstKind::TSTypeAliasDeclaration(ts_alias_annotation) => {
                 check(&ts_alias_annotation.type_annotation, default_config, readonly_config, ctx);
             }
             // for example: let ya = [[1, '2']] as [number, string][];
+
             AstKind::TSAsExpression(ts_as_expression) => {
                 check(&ts_as_expression.type_annotation, default_config, readonly_config, ctx);
             }
+
             _ => {}
         }
     }
@@ -185,8 +189,10 @@ fn type_needs_parentheses(type_param: &TSType) -> bool {
             if let TSTypeName::IdentifierReference(identifier_reference) = &node.type_name {
                 return identifier_reference.name.as_str() == "ReadonlyArray";
             }
+
             true
         }
+
         TSType::TSUnionType(_)
         | TSType::TSFunctionType(_)
         | TSType::TSIntersectionType(_)
@@ -207,23 +213,31 @@ fn check_and_report_error_generic(
     if matches!(config, ArrayOption::Array) {
         return;
     }
+
     let type_param = type_param.without_parenthesized();
+
     if matches!(config, ArrayOption::ArraySimple) && is_simple_type(type_param) {
         return;
     }
+
     let source_text = ctx.source_text().to_string();
 
     let readonly_prefix = if is_readonly { "readonly " } else { "" };
+
     let class_name = if is_readonly { "ReadonlyArray" } else { "Array" };
+
     let message_type = get_message_type(type_param, &source_text);
 
     let diagnostic = match config {
         ArrayOption::Generic => {
             generic(readonly_prefix, class_name, message_type, type_reference_span)
         }
+
         _ => generic_simple(readonly_prefix, class_name, message_type, type_reference_span),
     };
+
     let element_type_span = get_ts_element_type_span(type_param);
+
     let Some(element_type_span) = element_type_span else {
         return;
     };
@@ -231,6 +245,7 @@ fn check_and_report_error_generic(
     ctx.diagnostic_with_fix(diagnostic, |fixer| {
         let type_text =
             &source_text[element_type_span.start as usize..element_type_span.end as usize];
+
         let array_type_identifier = if is_readonly { "ReadonlyArray" } else { "Array" };
 
         fixer.replace(type_reference_span, format!("{array_type_identifier}<{type_text}>"))
@@ -252,13 +267,19 @@ fn check_and_report_error_array(
     {
         return;
     }
+
     let is_readonly_array_type = ident_ref_type_name.name == "ReadonlyArray";
+
     let config = if is_readonly_array_type { readonly_config } else { default_config };
+
     if matches!(config, ArrayOption::Generic) {
         return;
     }
+
     let readonly_prefix: &'static str = if is_readonly_array_type { "readonly " } else { "" };
+
     let class_name = if is_readonly_array_type { "ReadonlyArray" } else { "Array" };
+
     let type_params = &ts_type_reference.type_parameters;
 
     if type_params.is_none() || type_params.as_ref().unwrap().params.len() == 0 {
@@ -271,15 +292,20 @@ fn check_and_report_error_array(
                 ts_type_reference.span,
             ),
         };
+
         ctx.diagnostic_with_fix(diagnostic, |fixer| {
             fixer.replace(ts_type_reference.span, readonly_prefix.to_string() + "any[]")
         });
+
         return;
     }
+
     if type_params.as_ref().unwrap().params.len() != 1 {
         return;
     }
+
     let first_type_param = type_params.as_ref().unwrap().params.first().unwrap();
+
     if matches!(config, ArrayOption::ArraySimple) && !is_simple_type(first_type_param) {
         return;
     }
@@ -292,18 +318,22 @@ fn check_and_report_error_array(
     // } else {
     //     parent_parens = false
     // };
+
     let parent_parens = false;
 
     let element_type_span = get_ts_element_type_span(first_type_param);
+
     let Some(element_type_span) = element_type_span else {
         return;
     };
 
     let message_type = get_message_type(first_type_param, ctx.source_text());
+
     let diagnostic = match config {
         ArrayOption::Array => {
             array(readonly_prefix, class_name, message_type, ts_type_reference.span)
         }
+
         _ => array_simple(
             readonly_prefix,
             &ident_ref_type_name.name,
@@ -311,16 +341,22 @@ fn check_and_report_error_array(
             ts_type_reference.span,
         ),
     };
+
     ctx.diagnostic_with_fix(diagnostic, |fixer| {
         let mut start = String::from(if parent_parens { "(" } else { "" });
+
         start.push_str(readonly_prefix);
+
         start.push_str(if type_parens { "(" } else { "" });
 
         let mut end = String::from(if type_parens { ")" } else { "" });
+
         end.push_str("[]");
+
         end.push_str(if parent_parens { ")" } else { "" });
 
         let type_text = fixer.source_range(element_type_span);
+
         fixer.replace(ts_type_reference.span, start + type_text + end.as_str())
     });
 }
@@ -345,10 +381,12 @@ fn is_simple_type(ts_type: &TSType) -> bool {
         | TSType::TSThisType(_) => true,
         TSType::TSTypeReference(node) => {
             let type_name = TSTypeName::get_first_name(&node.type_name);
+
             if type_name.name.as_str() == "Array" {
                 if node.type_parameters.is_none() {
                     return true;
                 }
+
                 if node.type_parameters.as_ref().unwrap().params.len() == 1 {
                     return is_simple_type(
                         node.type_parameters.as_ref().unwrap().params.first().unwrap(),
@@ -358,13 +396,17 @@ fn is_simple_type(ts_type: &TSType) -> bool {
                 if node.type_parameters.is_some() {
                     return false;
                 }
+
                 if let TSTypeName::IdentifierReference(_) = &node.type_name {
                     return true;
                 }
+
                 return false;
             }
+
             false
         }
+
         _ => false,
     }
 }
@@ -373,9 +415,11 @@ fn is_simple_type(ts_type: &TSType) -> bool {
 fn get_message_type<'a>(type_param: &'a TSType, source_text: &'a str) -> &'a str {
     if is_simple_type(type_param) {
         let element_type_span = get_ts_element_type_span(type_param);
+
         let Some(element_type_span) = element_type_span else {
             return "T";
         };
+
         return &source_text[element_type_span.start as usize..element_type_span.end as usize];
     }
     "T"
@@ -663,6 +707,7 @@ fn test() {
             "
         namespace fooName {
         type BarType = { bar: string };
+
         type BazType<T> = Arr<T>;
         }
             ",
@@ -976,8 +1021,11 @@ fn test() {
             "
         interface ArrayClass<T> {
         foo: Array<T>;
+
         bar: T[];
+
         baz: Arr<T>;
+
         xyz: this[];
         }
             ",
@@ -1020,7 +1068,9 @@ fn test() {
             "
         interface ArrayClass<T> {
         foo: Array<T>;
+
         bar: T[];
+
         baz: Arr<T>;
         }
             ",
@@ -1070,7 +1120,9 @@ fn test() {
             "
         interface ArrayClass<T> {
         foo: Array<T>;
+
         bar: T[];
+
         baz: Arr<T>;
         }
             ",
@@ -1436,16 +1488,22 @@ fn test() {
             "
         interface ArrayClass<T> {
         foo: Array<T>;
+
         bar: T[];
+
         baz: Arr<T>;
+
         xyz: this[];
         }
             ",
             "
         interface ArrayClass<T> {
         foo: T[];
+
         bar: T[];
+
         baz: Arr<T>;
+
         xyz: this[];
         }
             ",
@@ -1508,14 +1566,18 @@ fn test() {
             "
         interface ArrayClass<T> {
         foo: Array<T>;
+
         bar: T[];
+
         baz: Arr<T>;
         }
             ",
             "
         interface ArrayClass<T> {
         foo: T[];
+
         bar: T[];
+
         baz: Arr<T>;
         }
             ",
@@ -1575,14 +1637,18 @@ fn test() {
             "
         interface ArrayClass<T> {
         foo: Array<T>;
+
         bar: T[];
+
         baz: Arr<T>;
         }
             ",
             "
         interface ArrayClass<T> {
         foo: Array<T>;
+
         bar: Array<T>;
+
         baz: Arr<T>;
         }
             ",

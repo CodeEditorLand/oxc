@@ -69,6 +69,7 @@ impl Rule for NoObjectAsDefaultParameter {
 
         if let BindingPatternKind::BindingIdentifier(binding_id) = &assignment_pat.left.kind {
             ctx.diagnostic(identifier(object_expr.span, &binding_id.name));
+
             return;
         }
 

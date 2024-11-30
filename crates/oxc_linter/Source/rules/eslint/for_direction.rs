@@ -98,6 +98,7 @@ impl Rule for ForDirection {
         };
 
         let test_operator = &test.operator;
+
         let wrong_direction = match (test_operator, counter_position) {
             (BinaryOperator::LessEqualThan | BinaryOperator::LessThan, RIGHT)
             | (BinaryOperator::GreaterEqualThan | BinaryOperator::GreaterThan, LEFT) => FORWARD,
@@ -111,6 +112,7 @@ impl Rule for ForDirection {
         };
 
         let update_direction = get_update_direction(update, counter);
+
         if update_direction == wrong_direction {
             ctx.diagnostic_with_dangerous_fix(
                 for_direction_diagnostic(test.span, get_update_span(update)),
@@ -123,9 +125,11 @@ impl Rule for ForDirection {
                         Expression::UpdateExpression(update) => {
                             if update.span().start == update.argument.span().start {
                                 span.start = update.argument.span().end;
+
                                 span.end = update.span().end;
                             } else {
                                 span.start = update.span().start;
+
                                 span.end = update.argument.span().start;
                             }
 
@@ -135,8 +139,10 @@ impl Rule for ForDirection {
                                 new_operator_str = "++";
                             }
                         }
+
                         Expression::AssignmentExpression(update) => {
                             span.start = update.left.span().end;
+
                             span.end = update.right.span().start;
 
                             if let AssignmentOperator::Addition = update.operator {
@@ -145,6 +151,7 @@ impl Rule for ForDirection {
                                 new_operator_str = "+=";
                             }
                         }
+
                         _ => {}
                     }
 
@@ -172,6 +179,7 @@ fn get_update_direction(update: &Expression, counter: &IdentifierReference) -> U
                 if id.name != counter.name {
                     return UNKNOWN;
                 }
+
                 match update.operator {
                     UpdateOperator::Increment => FORWARD,
                     UpdateOperator::Decrement => BACKWARD,
@@ -186,6 +194,7 @@ fn get_update_direction(update: &Expression, counter: &IdentifierReference) -> U
                 if id.name != counter.name {
                     return UNKNOWN;
                 }
+
                 get_assignment_direction(assign)
             } else {
                 UNKNOWN
@@ -206,7 +215,9 @@ fn get_update_span(update: &Expression) -> Span {
 
 fn get_assignment_direction(assign: &AssignmentExpression) -> UpdateDirection {
     let operator = &assign.operator;
+
     let right = &assign.right;
+
     let positive = match right {
         Expression::NumericLiteral(r) => match r.value {
             0.0 => return UNKNOWN,
@@ -225,6 +236,7 @@ fn get_assignment_direction(assign: &AssignmentExpression) -> UpdateDirection {
     if !positive {
         direction = -direction;
     }
+
     direction
 }
 

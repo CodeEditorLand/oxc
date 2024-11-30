@@ -52,6 +52,7 @@ impl Rule for PreferStringSlice {
             if !matches!(v.property.name.as_str(), "substr" | "substring") {
                 return;
             }
+
             ctx.diagnostic_with_fix(
                 prefer_string_slice_diagnostic(v.property.span, v.property.name.as_str()),
                 |fixer| fixer.replace(v.property.span, "slice"),

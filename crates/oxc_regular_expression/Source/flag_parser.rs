@@ -21,16 +21,25 @@ impl<'a> FlagsParser<'a> {
 
     pub fn parse(&mut self) -> Result<ast::Flags> {
         let span = self.span_factory.create(0, self.source_text.len());
+
         let mut global = false;
+
         let mut ignore_case = false;
+
         let mut multiline = false;
+
         let mut unicode = false;
+
         let mut sticky = false;
+
         let mut dot_all = false;
+
         let mut has_indices = false;
+
         let mut unicode_sets = false;
 
         let mut existing_flags = FxHashSet::default();
+
         for (idx, c) in self.source_text.char_indices() {
             if !existing_flags.insert(c) {
                 return Err(diagnostics::duplicated_flag(self.span_factory.create(idx, idx)));

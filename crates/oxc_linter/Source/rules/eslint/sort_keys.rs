@@ -111,11 +111,14 @@ impl Rule for SortKeys {
 
         let case_sensitive =
             config.get("caseSensitive").and_then(serde_json::Value::as_bool).unwrap_or(true);
+
         let natural = config.get("natural").and_then(serde_json::Value::as_bool).unwrap_or(false);
+
         let min_keys = config
             .get("minKeys")
             .and_then(serde_json::Value::as_u64)
             .map_or(2, |n| n.try_into().unwrap_or(2));
+
         let allow_line_separated_groups = config
             .get("allowLineSeparatedGroups")
             .and_then(serde_json::Value::as_bool)
@@ -129,6 +132,7 @@ impl Rule for SortKeys {
             allow_line_separated_groups,
         }))
     }
+
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         if let AstKind::ObjectExpression(dec) = node.kind() {
             if dec.properties.len() < self.min_keys {
@@ -143,23 +147,31 @@ impl Rule for SortKeys {
                 match prop {
                     ObjectPropertyKind::SpreadProperty(_) => {
                         property_groups.push(vec!["<ellipsis_group>".into()]);
+
                         property_groups.push(vec![]);
                     }
+
                     ObjectPropertyKind::ObjectProperty(obj) => {
                         let Some(key) = obj.key.static_name() else { continue };
+
                         if i != dec.properties.len() - 1 && self.allow_line_separated_groups {
                             let text_between = extract_text_between_spans(
                                 source_text,
                                 prop.span(),
                                 dec.properties[i + 1].span(),
                             );
+
                             if text_between.contains("\n\n") {
                                 property_groups.last_mut().unwrap().push(key.into());
+
                                 property_groups.push(vec!["<linebreak_group>".into()]);
+
                                 property_groups.push(vec![]);
+
                                 continue;
                             }
                         }
+
                         property_groups.last_mut().unwrap().push(key.into());
                     }
                 }
@@ -175,6 +187,7 @@ impl Rule for SortKeys {
             }
 
             let mut sorted_property_groups = property_groups.clone();
+
             for group in &mut sorted_property_groups {
                 if self.natural {
                     natural_sort(group);
@@ -204,6 +217,7 @@ fn alphanumeric_sort(arr: &mut [String]) {
 fn natural_sort(arr: &mut [String]) {
     arr.sort_by(|a, b| {
         let mut a_chars = a.chars();
+
         let mut b_chars = b.chars();
 
         loop {
@@ -211,7 +225,9 @@ fn natural_sort(arr: &mut [String]) {
                 (Some(a_char), Some(b_char)) if a_char == b_char => continue,
                 (Some(a_char), Some(b_char)) if a_char.is_numeric() && b_char.is_numeric() => {
                     let n1 = take_numeric(&mut a_chars, a_char);
+
                     let n2 = take_numeric(&mut b_chars, b_char);
+
                     match n1.cmp(&n2) {
                         Ordering::Equal => continue,
                         ord => return ord,
@@ -244,6 +260,7 @@ fn natural_sort(arr: &mut [String]) {
 
 fn take_numeric(iter: &mut Chars, first: char) -> u32 {
     let mut sum = first.to_digit(10).unwrap();
+
     for c in iter.by_ref() {
         if let Some(digit) = c.to_digit(10) {
             sum = sum * 10 + digit;
@@ -251,11 +268,13 @@ fn take_numeric(iter: &mut Chars, first: char) -> u32 {
             break;
         }
     }
+
     sum
 }
 
 fn extract_text_between_spans(source_text: &str, current_span: Span, next_span: Span) -> &str {
     let cur_span_end = current_span.end as usize;
+
     let next_span_start = next_span.start as usize;
     &source_text[cur_span_end..next_span_start]
 }

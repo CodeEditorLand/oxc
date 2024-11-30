@@ -77,9 +77,11 @@ fn only_constructor_no_extraneous_class_diagnostic(span: Span) -> OxcDiagnostic 
 impl Rule for NoExtraneousClass {
     fn from_configuration(value: serde_json::Value) -> Self {
         use serde_json::Value;
+
         let Some(config) = value.get(0).and_then(Value::as_object) else {
             return Self::default();
         };
+
         Self {
             allow_constructor_only: config
                 .get("allowConstructorOnly")
@@ -104,13 +106,17 @@ impl Rule for NoExtraneousClass {
         let AstKind::Class(class) = node.kind() else {
             return;
         };
+
         if class.super_class.is_some()
             || (self.allow_with_decorator && !class.decorators.is_empty())
         {
             return;
         }
+
         let span = class.id.as_ref().map_or(class.span, |id| id.span);
+
         let body = &class.body.body;
+
         match body.as_slice() {
             [] => {
                 if !self.allow_empty {
@@ -120,12 +126,15 @@ impl Rule for NoExtraneousClass {
             [ClassElement::MethodDefinition(constructor)] if constructor.kind.is_constructor() => {
                 let only_constructor =
                     !constructor.value.params.items.iter().any(FormalParameter::has_modifier);
+
                 if only_constructor && !self.allow_constructor_only {
                     ctx.diagnostic(only_constructor_no_extraneous_class_diagnostic(span));
                 }
             }
+
             _ => {
                 let only_static = body.iter().all(|prop| prop.r#static() && !prop.is_abstract());
+
                 if only_static && !self.allow_static_only {
                     ctx.diagnostic(only_static_no_extraneous_class_diagnostic(span));
                 }
@@ -248,6 +257,7 @@ fn test() {
 			    }
 			  }
 			}
+
 			export class Bar {
 			  public static helper(): void {}
 			  private static privateHelper(): boolean {

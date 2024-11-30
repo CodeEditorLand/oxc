@@ -64,6 +64,7 @@ impl Rule for NoDanger {
                     ctx.diagnostic(no_danger_diagnostic(prop.name.span()));
                 }
             }
+
             AstKind::CallExpression(call_expr) => {
                 if !is_create_element_call(call_expr) {
                     return;
@@ -87,6 +88,7 @@ impl Rule for NoDanger {
                     }
                 }
             }
+
             _ => {}
         }
     }

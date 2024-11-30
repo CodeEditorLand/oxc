@@ -68,6 +68,7 @@ declare_oxc_lint!(
 impl Rule for NoOptionalChaining {
     fn from_configuration(value: serde_json::Value) -> Self {
         let config = value.get(0);
+
         let message = config
             .and_then(|v| v.get("message"))
             .and_then(serde_json::Value::as_str)

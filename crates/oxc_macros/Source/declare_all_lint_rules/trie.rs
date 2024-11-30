@@ -27,15 +27,19 @@ impl RulePathTrieNode {
 	//   inner1::Rule1,
 	//   inner2::Rule2,
 	// };
+
 	pub fn use_stmt(&self, is_root:bool) -> TokenStream {
 		let name = &self.name;
+
 		let mut stmts = quote! { #name };
+
 		stmts = match &self.kind {
 			NodeKind::LeafNode(struct_name) => {
 				quote! { #stmts::#struct_name }
 			},
 			NodeKind::InternalNode(children) => {
 				let child_uses = children.iter().map(|node| node.use_stmt(false));
+
 				quote! {
 				  #stmts::{
 					#(#child_uses),*
@@ -49,6 +53,7 @@ impl RulePathTrieNode {
 			  pub use #stmts;
 			}
 		}
+
 		stmts
 	}
 }
@@ -64,20 +69,26 @@ impl RulePathTrieBuilder {
 
 	pub fn push(&mut self, rule_meta:&LintRuleMeta) {
 		let mut cur = &mut self.root;
+
 		let mut segments = rule_meta.path.segments.iter().peekable();
 		// Sanity check: We don't expect empty path
 		assert!(segments.peek().is_some());
 
 		for segment in segments {
 			let name = &segment.ident;
+
 			let NodeKind::InternalNode(children) = &mut cur.kind else {
 				unreachable!()
 			};
+
 			let contains_node = children.iter().any(|node| &node.name == name);
+
 			if !contains_node {
 				children.push(RulePathTrieNode::internal_node(name.clone()));
 			}
+
 			let child = children.iter_mut().find(|node| &node.name == name).unwrap();
+
 			cur = child;
 		}
 		// The last path is a leaf node
@@ -88,6 +99,7 @@ impl RulePathTrieBuilder {
 		let NodeKind::InternalNode(children) = self.root.kind else {
 			unreachable!()
 		};
+
 		children
 	}
 }

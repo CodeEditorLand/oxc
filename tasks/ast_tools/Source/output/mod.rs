@@ -50,16 +50,20 @@ impl Output {
                 let code = print_rust(tokens, &generator_path);
                 (path, code)
             }
+
             Self::Javascript { path, code } => {
                 let code = print_javascript(&code, &generator_path);
                 (path, code)
             }
+
             Self::Yaml { path, code } => {
                 let code = print_yaml(&code, &generator_path);
                 (path, code)
             }
+
             Self::Raw { path, code } => (path, code),
         };
+
         RawOutput { path, content: code.into_bytes() }
     }
 }
@@ -77,17 +81,23 @@ impl RawOutput {
     /// Write output to file
     pub fn write_to_file(&self) -> io::Result<()> {
         log!("Write {}... ", &self.path);
+
         let result = write_to_file_impl(&self.content, &self.path);
+
         log_result!(result);
+
         result
     }
 }
 
 fn write_to_file_impl(data: &[u8], path: &str) -> io::Result<()> {
     let path = Path::new(path);
+
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
+
     let mut file = fs::File::create(path)?;
+
     file.write_all(data)
 }

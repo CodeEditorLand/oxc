@@ -36,6 +36,7 @@ impl<'a> BoundNames<'a> for ArrayPattern<'a> {
         for elem in self.elements.iter().flatten() {
             elem.bound_names(f);
         }
+
         if let Some(rest) = &self.rest {
             rest.bound_names(f);
         }
@@ -47,6 +48,7 @@ impl<'a> BoundNames<'a> for ObjectPattern<'a> {
         for p in &self.properties {
             p.value.bound_names(f);
         }
+
         if let Some(rest) = &self.rest {
             rest.bound_names(f);
         }
@@ -70,6 +72,7 @@ impl<'a> BoundNames<'a> for FormalParameters<'a> {
         for item in &self.items {
             item.bound_names(f);
         }
+
         if let Some(rest) = &self.rest {
             rest.bound_names(f);
         }
@@ -147,9 +150,11 @@ impl<'a> BoundNames<'a> for ImportDeclaration<'a> {
                     ImportDeclarationSpecifier::ImportSpecifier(specifier) => {
                         f(&specifier.local);
                     }
+
                     ImportDeclarationSpecifier::ImportDefaultSpecifier(specifier) => {
                         f(&specifier.local);
                     }
+
                     ImportDeclarationSpecifier::ImportNamespaceSpecifier(specifier) => {
                         f(&specifier.local);
                     }

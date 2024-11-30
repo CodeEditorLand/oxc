@@ -50,9 +50,12 @@ impl Rule for PreferStrictEqual {
 impl PreferStrictEqual {
     fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) -> Option<()> {
         let call_expr = possible_jest_node.node.kind().as_call_expression()?;
+
         let parse_jest_expect_fn_call =
             parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)?;
+
         let matcher = parse_jest_expect_fn_call.matcher()?;
+
         let matcher_name = matcher.name()?;
 
         if matcher_name.eq("toEqual") {
@@ -63,9 +66,11 @@ impl PreferStrictEqual {
                     '`' => "`toStrictEqual`",
                     _ => "toStrictEqual",
                 };
+
                 fixer.replace(matcher.span, replacement)
             });
         }
+
         None
     }
 }

@@ -45,9 +45,11 @@ impl Rule for NoEmptyFile {
         {
             return;
         }
+
         let Some(root) = ctx.nodes().root_node() else {
             return;
         };
+
         let AstKind::Program(program) = root.kind() else { unreachable!() };
 
         if program.body.iter().any(|node| !is_empty_stmt(node)) {
@@ -64,6 +66,7 @@ impl Rule for NoEmptyFile {
         // NOTE: if the enable/disable directives come after the first 100 characters they won't be
         // respected by this diagnostic.
         span.end = std::cmp::min(span.end, 100);
+
         ctx.diagnostic(no_empty_file_diagnostic(span));
     }
 }
@@ -73,7 +76,9 @@ fn has_triple_slash_directive(ctx: &LintContext<'_>) -> bool {
         if !comment.is_line() {
             continue;
         }
+
         let text = ctx.source_range(comment.content_span());
+
         if text.starts_with("///") {
             return true;
         }
@@ -92,6 +97,7 @@ fn test() {
         r"{{{;;const x = 0;}}}",
         r"
             'use strict';
+
             const x = 0;
         ",
         ";;'use strict';",

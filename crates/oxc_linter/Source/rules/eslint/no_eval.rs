@@ -63,6 +63,7 @@ impl Rule for NoEval {
             if ident.name == "eval" {
                 ctx.diagnostic(no_eval_diagnostic(ident.span));
             }
+
             return;
         }
 
@@ -85,11 +86,13 @@ impl Rule for NoEval {
                         member_expr.static_property_name(),
                     )
                 }
+
                 Some(Expression::Identifier(ident)) => (None, Some(ident.name.as_str())),
                 Some(Expression::ThisExpression(_)) => (None, Some("this")),
                 None => break,
                 _ => return,
             };
+
             object = new_object;
 
             match name {
@@ -106,7 +109,9 @@ impl Rule for NoEval {
                     return;
                     // }
                 }
+
                 Some("window" | "global" | "globalThis") => {}
+
                 _ => return,
             };
         }

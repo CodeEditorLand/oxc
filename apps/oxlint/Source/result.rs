@@ -41,12 +41,16 @@ impl Termination for CliRunResult {
             Self::None => ExitCode::from(0),
             Self::InvalidOptions { message } => {
                 println!("Invalid Options: {message}");
+
                 ExitCode::from(1)
             }
+
             Self::PathNotFound { paths } => {
                 println!("Path {paths:?} does not exist.");
+
                 ExitCode::from(1)
             }
+
             Self::LintResult(LintResult {
                 duration,
                 number_of_rules,
@@ -59,6 +63,7 @@ impl Termination for CliRunResult {
             }) => {
                 if print_summary {
                     let threads = rayon::current_num_threads();
+
                     let number_of_diagnostics = number_of_warnings + number_of_errors;
 
                     if number_of_diagnostics > 0 {
@@ -66,7 +71,9 @@ impl Termination for CliRunResult {
                     }
 
                     let time = Self::get_execution_time(&duration);
+
                     let s = if number_of_files == 1 { "" } else { "s" };
+
                     println!(
                         "Finished in {time} on {number_of_files} file{s} with {number_of_rules} rules using {threads} threads."
                     );
@@ -75,6 +82,7 @@ impl Termination for CliRunResult {
                         println!(
                             "Exceeded maximum number of warnings. Found {number_of_warnings}."
                         );
+
                         return ExitCode::from(1);
                     }
 
@@ -87,10 +95,13 @@ impl Termination for CliRunResult {
 
                 let exit_code =
                     u8::from((number_of_warnings > 0 && deny_warnings) || number_of_errors > 0);
+
                 ExitCode::from(exit_code)
             }
+
             Self::PrintConfigResult { config_file } => {
                 println!("{config_file}");
+
                 ExitCode::from(0)
             }
         }
@@ -100,6 +111,7 @@ impl Termination for CliRunResult {
 impl CliRunResult {
     fn get_execution_time(duration: &Duration) -> String {
         let ms = duration.as_millis();
+
         if ms < 1000 {
             format!("{ms}ms")
         } else {

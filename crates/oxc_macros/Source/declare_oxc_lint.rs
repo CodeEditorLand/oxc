@@ -19,12 +19,15 @@ pub struct LintRuleMeta {
 impl Parse for LintRuleMeta {
     fn parse(input: ParseStream<'_>) -> Result<Self> {
         let mut documentation = String::new();
+
         for attr in input.call(Attribute::parse_outer)? {
             if let Some(lit) = parse_attr(["doc"], &attr) {
                 let value = lit.value();
+
                 let line = value.strip_prefix(' ').unwrap_or(&value);
 
                 documentation.push_str(line);
+
                 documentation.push('\n');
             } else {
                 return Err(Error::new_spanned(attr, "unexpected attribute"));
@@ -32,7 +35,9 @@ impl Parse for LintRuleMeta {
         }
 
         let struct_name = input.parse()?;
+
         input.parse::<Token!(,)>()?;
+
         let category = input.parse()?;
 
         // Parse FixMeta if it's specified. It will otherwise be excluded from
@@ -40,6 +45,7 @@ impl Parse for LintRuleMeta {
         // Do not provide a default value here so that it can be set there instead.
         let fix: Option<Ident> = if input.peek(Token!(,)) {
             input.parse::<Token!(,)>()?;
+
             input.parse()?
         } else {
             None
@@ -60,6 +66,7 @@ pub fn declare_oxc_lint(metadata: LintRuleMeta) -> TokenStream {
     let LintRuleMeta { name, category, fix, documentation, used_in_test } = metadata;
 
     let canonical_name = rule_name_converter().convert(name.to_string());
+
     let category = match category.to_string().as_str() {
         "correctness" => quote! { RuleCategory::Correctness },
         "suspicious" => quote! { RuleCategory::Suspicious },
@@ -70,8 +77,10 @@ pub fn declare_oxc_lint(metadata: LintRuleMeta) -> TokenStream {
         "nursery" => quote! { RuleCategory::Nursery },
         _ => panic!("invalid rule category"),
     };
+
     let fix = fix.as_ref().map(Ident::to_string).map(|fix| {
         let fix = parse_fix(&fix);
+
         quote! {
             const FIX: RuleFixMeta = #fix;
         }
@@ -108,6 +117,7 @@ fn parse_attr<'a, const LEN: usize>(
 ) -> Option<&'a LitStr> {
     if let Meta::NameValue(name_value) = &attr.meta {
         let path_idents = name_value.path.segments.iter().map(|segment| &segment.ident);
+
         if itertools::equal(path_idents, path) {
             if let Expr::Lit(expr_lit) = &name_value.value {
                 if let Lit::Str(s) = &expr_lit.lit {
@@ -116,6 +126,7 @@ fn parse_attr<'a, const LEN: usize>(
             }
         }
     }
+
     None
 }
 
@@ -150,10 +161,12 @@ fn parse_fix(s: &str) -> proc_macro2::TokenStream {
     assert!(s.contains(SEP));
 
     let mut is_conditional = false;
+
     let fix_kinds = s
         .split(SEP)
         .filter(|seg| {
             let conditional = *seg == "conditional";
+
             is_conditional = is_conditional || conditional;
             !conditional
         })

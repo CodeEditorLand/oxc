@@ -141,7 +141,9 @@ declare_oxc_lint!(
 impl Rule for PreferHooksOnTop {
     fn run_once(&self, ctx: &LintContext) {
         let mut hooks_contexts: FxHashMap<ScopeId, bool> = FxHashMap::default();
+
         let mut possibles_jest_nodes = collect_possible_jest_call_node(ctx);
+
         possibles_jest_nodes.sort_by_key(|n| n.node.id());
 
         for possible_jest_node in &possibles_jest_nodes {
@@ -157,6 +159,7 @@ impl PreferHooksOnTop {
         ctx: &LintContext<'a>,
     ) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
@@ -196,7 +199,9 @@ fn test() {
             "
                 describe('foo', () => {
                     beforeEach(() => {});
+
                     someSetupFn();
+
                     afterEach(() => {});
 
                     test('bar', () => {
@@ -210,7 +215,9 @@ fn test() {
             "
                 describe('foo', () => {
                     someSetupFn();
+
                     beforeEach(() => {});
+
                     afterEach(() => {});
 
                     test('bar', () => {
@@ -224,6 +231,7 @@ fn test() {
             "
                 describe.skip('foo', () => {
                     beforeEach(() => {});
+
                     beforeAll(() => {});
 
                     test('bar', () => {
@@ -245,12 +253,14 @@ fn test() {
             "
                 describe('foo', () => {
                     beforeEach(() => {});
+
                     test('bar', () => {
                         someFn();
                     });
 
                     describe('inner_foo', () => {
                         beforeEach(() => {});
+
                         test('inner bar', () => {
                             someFn();
                         });
@@ -266,11 +276,13 @@ fn test() {
             "
                 describe('foo', () => {
                     beforeEach(() => {});
+
                     test('bar', () => {
                         someFn();
                     });
 
                     beforeAll(() => {});
+
                     test('bar', () => {
                         someFn();
                     });
@@ -282,11 +294,13 @@ fn test() {
             "
                 describe('foo', () => {
                     beforeEach(() => {});
+
                     test.each``('bar', () => {
                         someFn();
                     });
 
                     beforeAll(() => {});
+
                     test.only('bar', () => {
                         someFn();
                     });
@@ -298,11 +312,13 @@ fn test() {
             "
                 describe('foo', () => {
                     beforeEach(() => {});
+
                     test.only.each``('bar', () => {
                         someFn();
                     });
 
                     beforeAll(() => {});
+
                     test.only('bar', () => {
                         someFn();
                     });
@@ -314,18 +330,11 @@ fn test() {
             "
                 describe.skip('foo', () => {
                     beforeEach(() => {});
+
                     test('bar', () => {
                         someFn();
                     });
 
-                    beforeAll(() => {});
-                    test('bar', () => {
-                        someFn();
-                    });
-                });
-                describe('foo', () => {
-                    beforeEach(() => {});
-                    beforeEach(() => {});
                     beforeAll(() => {});
 
                     test('bar', () => {
@@ -334,12 +343,26 @@ fn test() {
                 });
 
                 describe('foo', () => {
+                    beforeEach(() => {});
+
+                    beforeEach(() => {});
+
+                    beforeAll(() => {});
+
+                    test('bar', () => {
+                        someFn();
+                    });
+                });
+
+                describe('foo', () => {
                     test('bar', () => {
                         someFn();
                     });
 
                     beforeEach(() => {});
+
                     beforeEach(() => {});
+
                     beforeAll(() => {});
                 });
             ",
@@ -349,12 +372,14 @@ fn test() {
             "
                 describe('foo', () => {
                     beforeAll(() => {});
+
                     test('bar', () => {
                         someFn();
                     });
 
                     describe('inner_foo', () => {
                         beforeEach(() => {});
+
                         test('inner bar', () => {
                             someFn();
                         });
@@ -364,7 +389,9 @@ fn test() {
                         });
 
                         beforeAll(() => {});
+
                         afterAll(() => {});
+
                         test('inner bar', () => {
                             someFn();
                         });

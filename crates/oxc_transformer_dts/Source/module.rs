@@ -40,23 +40,29 @@ impl<'a> TransformerDts<'a> {
                     ExportDefaultDeclarationKind::TSInterfaceDeclaration(self.ctx.ast.copy(decl)),
                 ))
             }
+
             expr @ match_expression!(ExportDefaultDeclarationKind) => {
                 let expr = expr.to_expression();
+
                 if matches!(expr, Expression::Identifier(_)) {
                     None
                 } else {
                     // declare const _default: Type
                     let kind = VariableDeclarationKind::Const;
+
                     let name = self.ctx.ast.new_atom("_default");
+
                     let id = self
                         .ctx
                         .ast
                         .binding_pattern_identifier(BindingIdentifier::new(SPAN, name.clone()));
+
                     let type_annotation = self
                         .infer_type_from_expression(expr)
                         .map(|ts_type| self.ctx.ast.ts_type_annotation(SPAN, ts_type));
 
                     let id = BindingPattern { kind: id, type_annotation, optional: false };
+
                     let declarations = self.ctx.ast.new_vec_single(
                         self.ctx.ast.variable_declarator(SPAN, kind, id, None, true),
                     );
@@ -94,17 +100,21 @@ impl<'a> TransformerDts<'a> {
         let specifiers = decl.specifiers.as_ref()?;
 
         let mut specifiers = self.ctx.ast.copy(specifiers);
+
         specifiers.retain(|specifier| match specifier {
             ImportDeclarationSpecifier::ImportSpecifier(specifier) => {
                 self.scope.has_reference(&specifier.local.name)
             }
+
             ImportDeclarationSpecifier::ImportDefaultSpecifier(specifier) => {
                 self.scope.has_reference(&specifier.local.name)
             }
+
             ImportDeclarationSpecifier::ImportNamespaceSpecifier(_) => {
                 self.scope.has_reference(&self.ctx.ast.new_atom(&specifier.name()))
             }
         });
+
         if specifiers.is_empty() {
             // We don't need to print this import statement
             None

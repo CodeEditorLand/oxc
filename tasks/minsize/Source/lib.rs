@@ -59,6 +59,7 @@ pub fn run() -> Result<(), io::Error> {
     ]);
 
     let mut out = String::new();
+
     out.push_str(&format!(
         "{:width$} | {:width$} | {:width$} | {:width$} | {:width$}\n",
         "Original",
@@ -68,10 +69,12 @@ pub fn run() -> Result<(), io::Error> {
         "esbuild",
         width = 10
     ));
+
     out.push('\n');
 
     for file in files.files() {
         let minified = minify_twice(file);
+
         let s = format!(
             "{:width$} | {:width$} | {:width$} | {:width$} | {:width$} | {:width$}\n\n",
             format_size(file.source_text.len(), DECIMAL),
@@ -82,31 +85,44 @@ pub fn run() -> Result<(), io::Error> {
             &file.file_name,
             width = 10
         );
+
         out.push_str(&s);
     }
 
     println!("{out}");
 
     let mut snapshot = File::create(path)?;
+
     snapshot.write_all(out.as_bytes())?;
+
     snapshot.flush()?;
+
     Ok(())
 }
 
 fn minify_twice(file: &TestFile) -> String {
     let source_type = SourceType::from_path(&file.file_name).unwrap();
+
     let options = MinifierOptions { mangle: true, compress: CompressOptions::default() };
+
     let source_text1 = minify(&file.source_text, source_type, options);
+
     let source_text2 = minify(&source_text1, source_type, options);
+
     assert!(source_text1 == source_text2, "Minification failed for {}", &file.file_name);
+
     source_text2
 }
 
 fn minify(source_text: &str, source_type: SourceType, options: MinifierOptions) -> String {
     let allocator = Allocator::default();
+
     let ret = Parser::new(&allocator, source_text, source_type).parse();
+
     let mut program = ret.program;
+
     let ret = Minifier::new(options).build(&allocator, &mut program);
+
     CodeGenerator::new()
         .with_options(CodegenOptions { minify: true, ..CodegenOptions::default() })
         .with_mangler(ret.mangler)
@@ -116,7 +132,10 @@ fn minify(source_text: &str, source_type: SourceType, options: MinifierOptions) 
 
 fn gzip_size(s: &str) -> usize {
     let mut e = GzEncoder::new(Vec::new(), Compression::best());
+
     e.write_all(s.as_bytes()).unwrap();
+
     let s = e.finish().unwrap();
+
     s.len()
 }

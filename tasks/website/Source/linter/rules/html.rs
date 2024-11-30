@@ -76,11 +76,14 @@ impl HtmlWriter {
             // closing tag. 3 extra for '</' and '>'
             3 + tag.len()
         };
+
         let mut s = self.inner.borrow_mut();
+
         s.reserve(write_amt_guess);
 
         // Write the opening tag
         write!(s, "<{tag}")?;
+
         if attrs.is_empty() {
             writeln!(s, ">")?;
         } else {
@@ -89,6 +92,7 @@ impl HtmlWriter {
 
         // Callback produces the inner content
         drop(s);
+
         inner(self)?;
 
         // Write the closing tag
@@ -132,6 +136,7 @@ mod test {
     #[test]
     fn test_div() {
         let html = HtmlWriter::default();
+
         html.div("", |html| html.writeln("Hello, world!")).unwrap();
 
         assert_eq!(

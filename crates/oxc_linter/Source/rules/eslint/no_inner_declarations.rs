@@ -56,6 +56,7 @@ impl Rule for NoInnerDeclarations {
                 _ => NoInnerDeclarationsConfig::Both,
             },
         );
+
         Self { config }
     }
 
@@ -66,15 +67,19 @@ impl Rule for NoInnerDeclarations {
             {
                 Span::new(decl.span.start, decl.span.start + 3) // 3 for "var".len()
             }
+
             AstKind::Function(func) if func.is_function_declaration() => {
                 Span::new(func.span.start, func.span.start + 8) // 8 for "function".len()
             }
+
             _ => return,
         };
 
         let mut parent = ctx.nodes().parent_node(node.id());
+
         if let Some(parent_node) = parent {
             let parent_kind = parent_node.kind();
+
             if let AstKind::FunctionBody(_) = parent_kind {
                 if let Some(grandparent) = ctx.nodes().parent_node(parent_node.id()) {
                     if grandparent.kind().is_function_like() {
@@ -104,17 +109,23 @@ impl Rule for NoInnerDeclarations {
         };
 
         let mut body = "program";
+
         while let Some(parent_node) = parent {
             let parent_kind = parent_node.kind();
+
             match parent_kind {
                 AstKind::StaticBlock(_) => {
                     body = "class static block body";
+
                     break;
                 }
+
                 AstKind::Function(_) => {
                     body = "function body";
+
                     break;
                 }
+
                 _ => parent = ctx.nodes().parent_node(parent_node.id()),
             }
         }

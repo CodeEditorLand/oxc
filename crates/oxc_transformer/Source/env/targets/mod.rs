@@ -56,10 +56,14 @@ impl Versions {
         }
 
         let mut data: Versions = Versions::default();
+
         for dist in distribs {
             let browser = dist.name();
+
             let browser = remap(browser);
+
             let version = dist.version();
+
             match browser {
                 "and_qq" | "and_uc" | "baidu" | "bb" | "kaios" | "op_mini" => continue,
 
@@ -73,6 +77,7 @@ impl Versions {
 
             // lowest version
             let is_lowest = data.get(browser).map_or(true, |v| v > &version);
+
             if is_lowest {
                 data.insert(browser.to_string(), version);
             }
@@ -104,9 +109,13 @@ mod tests {
     #[test]
     fn should_enable_android_falls_back_to_chrome() {
         let mut targets = Versions::default();
+
         targets.insert("android".to_string(), "51.0.0".parse::<Version>().unwrap());
+
         let mut feature = Versions::default();
+
         feature.insert("chrome".to_string(), "51.0.0".parse::<Version>().unwrap());
+
         assert!(!targets.should_enable(&feature));
     }
 }

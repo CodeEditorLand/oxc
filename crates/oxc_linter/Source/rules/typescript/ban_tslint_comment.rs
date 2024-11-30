@@ -34,11 +34,15 @@ declare_oxc_lint!(
 impl Rule for BanTslintComment {
     fn run_once(&self, ctx: &LintContext) {
         let comments = ctx.semantic().comments();
+
         let source_text_len = ctx.semantic().source_text().len();
+
         for comment in comments {
             let raw = ctx.source_range(comment.content_span());
+
             if is_tslint_comment_directive(raw) {
                 let comment_span = get_full_comment(source_text_len, comment.span);
+
                 ctx.diagnostic_with_fix(
                     ban_tslint_comment_diagnostic(raw.trim(), comment_span),
                     |fixer| fixer.delete_range(comment_span),
@@ -63,6 +67,7 @@ fn get_full_comment(source_text_len: usize, span: Span) -> Span {
     if source_text_len > span.end as usize {
         span.end += 1;
     }
+
     span
 }
 
@@ -99,6 +104,7 @@ fn test() {
         // tslint:disable-line
         console.log(woah);",
             r"const woah = doSomeStuff();
+
                 console.log(woah);",
             None,
         ),
@@ -107,6 +113,7 @@ fn test() {
         /* tslint:disable-line */
         console.log(woah);",
             r"const woah = doSomeStuff();
+
                 console.log(woah);",
             None,
         ),

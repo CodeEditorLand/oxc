@@ -21,6 +21,7 @@ impl CoolIndex {
     /// produce a value larger than this in any of the ctors that don't
     /// have `unchecked` in their name.
     pub const MAX_INDEX: usize = i32::max_value() as usize;
+
     const _ENSURE_RAW_IS_UNSIGNED: [(); 0] = [(); <u32>::min_value() as usize];
 
     /// Construct this index type from a usize. Alias for `from_usize`.
@@ -57,6 +58,7 @@ impl CoolIndex {
     #[inline]
     pub fn from_usize(value: usize) -> Self {
         Self::check_index(value as usize);
+
         Self { _raw: value as u32 }
     }
 

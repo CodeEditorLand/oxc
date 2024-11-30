@@ -113,6 +113,7 @@ fn test() {
 						function x() {
 							return!
 								foo === bar;
+
 							throw!
 								foo === bar;
 						}

@@ -61,6 +61,7 @@ impl Rule for NoUnnecessaryTypeConstraint {
                         TSType::TSUnknownKeyword(t) => ("unknown", t.span),
                         _ => continue,
                     };
+
                     ctx.diagnostic(no_unnecessary_type_constraint_diagnostic(
                         param.name.name.as_str(),
                         value,

@@ -166,6 +166,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for Expression<'a> {
 				if check_for_new_objects {
 					return true;
 				}
+
 				array_expr
 					.elements
 					.iter()
@@ -181,6 +182,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for UnaryExpression<'a> {
 		if is_simple_unary_operator(self.operator) {
 			return self.argument.check_for_state_change(check_for_new_objects);
 		}
+
 		true
 	}
 }
@@ -188,6 +190,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for UnaryExpression<'a> {
 impl<'a, 'b> CheckForStateChange<'a, 'b> for BinaryExpression<'a> {
 	fn check_for_state_change(&self, check_for_new_objects:bool) -> bool {
 		let left = self.left.check_for_state_change(check_for_new_objects);
+
 		let right = self.right.check_for_state_change(check_for_new_objects);
 
 		left || right
@@ -418,6 +421,7 @@ pub fn get_bigint_value(expr:&Expression) -> Option<BigInt> {
 	match expr {
 		Expression::NumericLiteral(number_literal) => {
 			let value = number_literal.value;
+
 			if value.abs() < 2_f64.powi(53) && is_exact_int64(value) {
 				Some(BigInt::from(value as i64))
 			} else {
@@ -534,6 +538,7 @@ pub fn get_boolean_value(expr:&Expression) -> Option<bool> {
 				// a && true -> None
 				LogicalOperator::And => {
 					let left = get_boolean_value(&logical_expr.left);
+
 					let right = get_boolean_value(&logical_expr.right);
 
 					match (left, right) {
@@ -547,6 +552,7 @@ pub fn get_boolean_value(expr:&Expression) -> Option<bool> {
 				// a || b -> None
 				LogicalOperator::Or => {
 					let left = get_boolean_value(&logical_expr.left);
+
 					let right = get_boolean_value(&logical_expr.right);
 
 					match (left, right) {
@@ -607,6 +613,7 @@ pub fn get_string_value<'a>(expr:&'a Expression) -> Option<Cow<'a, str>> {
 		},
 		Expression::Identifier(ident) => {
 			let name = ident.name.as_str();
+
 			if matches!(name, "undefined" | "Infinity" | "NaN") {
 				Some(Cow::Borrowed(name))
 			} else {
@@ -663,5 +670,6 @@ pub fn get_side_free_string_value<'a>(expr:&'a Expression) -> Option<Cow<'a, str
 	if value.is_some() && !expr.may_have_side_effects() {
 		return value;
 	}
+
 	None
 }

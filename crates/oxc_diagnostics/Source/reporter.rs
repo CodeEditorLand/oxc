@@ -52,13 +52,17 @@ impl DiagnosticReporter {
             Self::Json { diagnostics } => {
                 format_json(diagnostics);
             }
+
             Self::Unix { total, writer } => {
                 if *total > 0 {
                     let line = format!("\n{total} problem{}\n", if *total > 1 { "s" } else { "" });
+
                     writer.write_all(line.as_bytes()).unwrap();
                 }
+
                 writer.flush().unwrap();
             }
+
             Self::Checkstyle { diagnostics } => {
                 format_checkstyle(diagnostics);
             }
@@ -70,6 +74,7 @@ impl DiagnosticReporter {
             Self::Graphical { writer, .. } | Self::Unix { writer, .. } => {
                 writer.write_all(s).unwrap();
             }
+
             Self::Json { .. } | Self::Checkstyle { .. } => {}
         }
     }
@@ -78,15 +83,21 @@ impl DiagnosticReporter {
         match self {
             Self::Graphical { handler, .. } => {
                 let mut output = String::new();
+
                 handler.render_report(&mut output, error.as_ref()).unwrap();
+
                 Some(output)
             }
+
             Self::Json { diagnostics } | Self::Checkstyle { diagnostics } => {
                 diagnostics.push(error);
+
                 None
             }
+
             Self::Unix { total: count, .. } => {
                 *count += 1;
+
                 Some(format_unix(&error))
             }
         }
@@ -105,23 +116,33 @@ struct Info {
 impl Info {
     fn new(diagnostic: &Error) -> Self {
         let mut line = 0;
+
         let mut column = 0;
+
         let mut filename = String::new();
+
         let mut message = String::new();
+
         let mut severity = Severity::Warning;
+
         let mut rule_id = None;
+
         if let Some(mut labels) = diagnostic.labels() {
             if let Some(source) = diagnostic.source_code() {
                 if let Some(label) = labels.next() {
                     if let Ok(span_content) = source.read_span(label.inner(), 0, 0) {
                         line = span_content.line() + 1;
+
                         column = span_content.column() + 1;
+
                         if let Some(name) = span_content.name() {
                             filename = name.to_string();
                         };
+
                         if matches!(diagnostic.severity(), Some(Severity::Error)) {
                             severity = Severity::Error;
                         }
+
                         let msg = diagnostic.to_string();
                         // Our messages usually comes with `eslint(rule):
                         // message`
@@ -133,6 +154,7 @@ impl Info {
                 }
             }
         }
+
         Self { line, column, filename, message, severity, rule_id }
     }
 }
@@ -140,36 +162,46 @@ impl Info {
 /// <https://github.com/fregante/eslint-formatters/tree/main/packages/eslint-formatter-json>
 fn format_json(diagnostics: &mut Vec<Error>) {
     let handler = JSONReportHandler::new();
+
     let messages = diagnostics
         .drain(..)
         .map(|error| {
             let mut output = String::from("\t");
+
             handler.render_report(&mut output, error.as_ref()).unwrap();
+
             output
         })
         .collect::<Vec<_>>()
         .join(",\n");
+
     println!("[\n{messages}\n]");
 }
 
 /// <https://github.com/fregante/eslint-formatters/tree/main/packages/eslint-formatter-unix>
 fn format_unix(diagnostic: &Error) -> String {
     let Info { line, column, filename, message, severity, rule_id } = Info::new(diagnostic);
+
     let severity = match severity {
         Severity::Error => "Error",
         _ => "Warning",
     };
+
     let rule_id =
         rule_id.map_or_else(|| Cow::Borrowed(""), |rule_id| Cow::Owned(format!("/{rule_id}")));
+
     format!("{filename}:{line}:{column}: {message} [{severity}{rule_id}]\n")
 }
 
 fn format_checkstyle(diagnostics: &[Error]) {
     let infos = diagnostics.iter().map(Info::new).collect::<Vec<_>>();
+
     let mut grouped: HashMap<String, Vec<Info>> = HashMap::new();
+
     for info in infos {
         grouped.entry(info.filename.clone()).or_default().push(info);
     }
+
     let messages = grouped.into_values().map(|infos| {
          let messages = infos
              .iter()
@@ -188,6 +220,7 @@ fn format_checkstyle(diagnostics: &[Error]) {
          let filename = &infos[0].filename;
          format!(r#"<file name="{filename}">{messages}</file>"#)
      }).collect::<Vec<_>>().join(" ");
+
     println!(
         r#"<?xml version="1.0" encoding="utf-8"?><checkstyle version="4.3">{messages}</checkstyle>"#
     );
@@ -200,16 +233,24 @@ fn xml_escape(raw: &str) -> Cow<str> {
 
 fn xml_escape_impl<F: Fn(u8) -> bool>(raw: &str, escape_chars: F) -> Cow<str> {
     let bytes = raw.as_bytes();
+
     let mut escaped = None;
+
     let mut iter = bytes.iter();
+
     let mut pos = 0;
+
     while let Some(i) = iter.position(|&b| escape_chars(b)) {
         if escaped.is_none() {
             escaped = Some(Vec::with_capacity(raw.len()));
         }
+
         let escaped = escaped.as_mut().expect("initialized");
+
         let new_pos = pos + i;
+
         escaped.extend_from_slice(&bytes[pos..new_pos]);
+
         match bytes[new_pos] {
             b'<' => escaped.extend_from_slice(b"&lt;"),
             b'>' => escaped.extend_from_slice(b"&gt;"),
@@ -230,6 +271,7 @@ fn xml_escape_impl<F: Fn(u8) -> bool>(raw: &str, escape_chars: F) -> Cow<str> {
                 )
             }
         }
+
         pos = new_pos + 1;
     }
 

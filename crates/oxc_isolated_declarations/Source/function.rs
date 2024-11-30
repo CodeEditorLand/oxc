@@ -21,10 +21,13 @@ impl<'a> IsolatedDeclarations<'a> {
             None
         } else {
             let return_type = self.infer_function_return_type(func);
+
             if return_type.is_none() {
                 self.error(function_must_have_explicit_return_type(get_function_span(func)));
             }
+
             let params = self.transform_formal_parameters(&func.params);
+
             Some(self.ast.alloc_function(
                 func.r#type,
                 func.span,
@@ -47,16 +50,19 @@ impl<'a> IsolatedDeclarations<'a> {
         is_remaining_params_have_required: bool,
     ) -> Option<FormalParameter<'a>> {
         let pattern = &param.pattern;
+
         if let BindingPatternKind::AssignmentPattern(pattern) = &pattern.kind {
             if pattern.left.kind.is_destructuring_pattern()
                 && pattern.left.type_annotation.is_none()
             {
                 self.error(parameter_must_have_explicit_type(param.span));
+
                 return None;
             }
         }
 
         let is_assignment_pattern = pattern.kind.is_assignment_pattern();
+
         let mut pattern =
             if let BindingPatternKind::AssignmentPattern(pattern) = &param.pattern.kind {
                 pattern.left.clone_in(self.ast.allocator)
@@ -74,9 +80,11 @@ impl<'a> IsolatedDeclarations<'a> {
                 .or_else(|| {
                     // report error for has no type annotation
                     let new_type = self.infer_type_from_formal_parameter(param);
+
                     if new_type.is_none() {
                         self.error(parameter_must_have_explicit_type(param.span));
                     }
+
                     new_type
                 })
                 .map(|ts_type| {
@@ -128,6 +136,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     params.items.iter().skip(index).any(|item| {
                         !(item.pattern.optional || item.pattern.kind.is_assignment_pattern())
                     });
+
                 self.transform_formal_parameter(item, is_remaining_params_have_required)
             }));
 
@@ -150,6 +159,7 @@ pub fn get_function_span(func: &Function<'_>) -> Span {
     func.id.as_ref().map_or_else(
         || {
             let start = func.params.span.start;
+
             Span::new(start, start)
         },
         |id| id.span,

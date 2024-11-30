@@ -16,6 +16,7 @@ pub struct Loader;
 impl Loader {
     pub fn can_load<P: AsRef<Path>>(path: P) -> bool {
         let path = path.as_ref();
+
         SourceType::from_path(path).is_ok()
             || path
                 .extension()
@@ -37,15 +38,18 @@ impl Loader {
         }
 
         let path = path.as_ref();
+
         let ext = path.extension().ok_or(LoadError::NoExtension)?;
         // file extension is not unicode, we definitely don't support it.
         let ext = ext.to_str().ok_or_else(|| LoadError::unsupported(ext))?;
 
         // let source_type = SourceType::from_path(path);
+
         if let Ok(source_type) = SourceType::from_path(path) {
             Ok(vec![JavaScriptSource::new(source_text, source_type)])
         } else {
             let partial = PartialLoader::parse(ext, source_text);
+
             partial.ok_or_else(|| LoadError::UnsupportedFileType(ext.to_string()))
         }
     }

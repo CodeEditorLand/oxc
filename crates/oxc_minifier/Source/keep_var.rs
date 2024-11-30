@@ -35,6 +35,7 @@ impl<'a> Visit<'a> for KeepVar<'a> {
             // match_module_declaration!(Statement) => {
             // visitor.visit_module_declaration(it.to_module_declaration())
             // }
+
             Statement::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
             _ => {}
         }
@@ -45,6 +46,7 @@ impl<'a> Visit<'a> for KeepVar<'a> {
             it.bound_names(&mut |ident| {
                 self.vars.push((ident.name.clone(), ident.span));
             });
+
             if it.has_init() {
                 self.all_hoisted = false;
             }
@@ -67,13 +69,17 @@ impl<'a> KeepVar<'a> {
         }
 
         let kind = VariableDeclarationKind::Var;
+
         let decls = self.ast.vec_from_iter(self.vars.into_iter().map(|(name, span)| {
             let binding_kind = self.ast.binding_pattern_kind_binding_identifier(span, name);
+
             let id = self.ast.binding_pattern(binding_kind, NONE, false);
+
             self.ast.variable_declarator(span, kind, id, None, false)
         }));
 
         let decl = self.ast.alloc_variable_declaration(SPAN, kind, decls, false);
+
         Some(decl)
     }
 

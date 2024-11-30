@@ -93,6 +93,7 @@ impl<'a> VarDeclarationsStore<'a> {
         ctx: &TraverseCtx<'a>,
     ) {
         let pattern = binding.create_binding_pattern(ctx);
+
         self.insert_var_binding_pattern(pattern, init, ctx);
     }
 
@@ -105,6 +106,7 @@ impl<'a> VarDeclarationsStore<'a> {
         ctx: &TraverseCtx<'a>,
     ) {
         let pattern = binding.create_binding_pattern(ctx);
+
         self.insert_let_binding_pattern(pattern, init, ctx);
     }
 
@@ -118,6 +120,7 @@ impl<'a> VarDeclarationsStore<'a> {
     ) {
         let declarator =
             ctx.ast.variable_declarator(SPAN, VariableDeclarationKind::Var, ident, init, false);
+
         self.insert_var_declarator(declarator, ctx);
     }
 
@@ -131,20 +134,25 @@ impl<'a> VarDeclarationsStore<'a> {
     ) {
         let declarator =
             ctx.ast.variable_declarator(SPAN, VariableDeclarationKind::Let, ident, init, false);
+
         self.insert_let_declarator(declarator, ctx);
     }
 
     /// Add a `var` declaration to be inserted at top of current enclosing statement block.
     pub fn insert_var_declarator(&self, declarator: VariableDeclarator<'a>, ctx: &TraverseCtx<'a>) {
         let mut stack = self.stack.borrow_mut();
+
         let declarators = stack.last_mut_or_init(|| Declarators::new(ctx));
+
         declarators.var_declarators.push(declarator);
     }
 
     /// Add a `let` declaration to be inserted at top of current enclosing statement block.
     pub fn insert_let_declarator(&self, declarator: VariableDeclarator<'a>, ctx: &TraverseCtx<'a>) {
         let mut stack = self.stack.borrow_mut();
+
         let declarators = stack.last_mut_or_init(|| Declarators::new(ctx));
+
         declarators.let_declarators.push(declarator);
     }
 }
@@ -153,6 +161,7 @@ impl<'a> VarDeclarationsStore<'a> {
 impl<'a> VarDeclarationsStore<'a> {
     fn record_entering_statements(&self) {
         let mut stack = self.stack.borrow_mut();
+
         stack.push(None);
     }
 
@@ -179,15 +188,19 @@ impl<'a> VarDeclarationsStore<'a> {
 
         // Check stack is emptied
         let stack = self.stack.borrow();
+
         debug_assert!(stack.len() == 1);
+
         debug_assert!(stack.last().is_none());
     }
 
     fn get_var_statement(&self, ctx: &mut TraverseCtx<'a>) -> Option<Vec<Statement<'a>>> {
         let mut stack = self.stack.borrow_mut();
+
         let Declarators { var_declarators, let_declarators } = stack.pop()?;
 
         let mut stmts = Vec::with_capacity(2);
+
         if !var_declarators.is_empty() {
             stmts.push(Self::create_declaration(
                 VariableDeclarationKind::Var,
@@ -195,6 +208,7 @@ impl<'a> VarDeclarationsStore<'a> {
                 ctx,
             ));
         }
+
         if !let_declarators.is_empty() {
             stmts.push(Self::create_declaration(
                 VariableDeclarationKind::Let,
@@ -202,6 +216,7 @@ impl<'a> VarDeclarationsStore<'a> {
                 ctx,
             ));
         }
+
         Some(stmts)
     }
 

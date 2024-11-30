@@ -60,6 +60,7 @@ impl JestFnKind {
             "beforeAll" | "beforeEach" | "afterAll" | "afterEach" => {
                 Self::General(JestGeneralFnKind::Hook)
             }
+
             _ => Self::Unknown,
         }
     }
@@ -103,8 +104,10 @@ pub fn is_type_of_jest_fn_call<'a>(
     kinds: &[JestFnKind],
 ) -> bool {
     let jest_fn_call = parse_jest_fn_call(call_expr, possible_jest_node, ctx);
+
     if let Some(jest_fn_call) = jest_fn_call {
         let kind = jest_fn_call.kind();
+
         if kinds.contains(&kind) {
             return true;
         }
@@ -123,6 +126,7 @@ pub fn parse_general_jest_fn_call<'a>(
     if let ParsedJestFnCallNew::GeneralJest(jest_fn_call) = jest_fn_call {
         return Some(jest_fn_call);
     }
+
     None
 }
 
@@ -136,6 +140,7 @@ pub fn parse_expect_jest_fn_call<'a>(
     if let ParsedJestFnCallNew::Expect(jest_fn_call) = jest_fn_call {
         return Some(jest_fn_call);
     }
+
     None
 }
 
@@ -174,12 +179,16 @@ pub fn iter_possible_jest_call_node<'a, 'c>(
     // get the longest valid chain of Jest Call Expression
     reference_id_with_original_list.flat_map(move |(reference_id, original)| {
         let mut id = semantic.symbols().get_reference(reference_id).node_id();
+
         std::iter::from_fn(move || loop {
             let parent = semantic.nodes().parent_node(id);
+
             if let Some(parent) = parent {
                 let parent_kind = parent.kind();
+
                 if matches!(parent_kind, AstKind::CallExpression(_)) {
                     id = parent.id();
+
                     return Some(PossibleJestNode { node: parent, original });
                 } else if matches!(
                     parent_kind,
@@ -206,19 +215,23 @@ fn collect_ids_referenced_to_import<'a, 'c>(
         .filter_map(|(symbol_id, reference_ids)| {
             if semantic.symbols().get_flags(symbol_id).is_import() {
                 let id = semantic.symbols().get_declaration(symbol_id);
+
                 let Some(AstKind::ImportDeclaration(import_decl)) =
                     semantic.nodes().parent_kind(id)
                 else {
                     return None;
                 };
+
                 let name = semantic.symbols().get_name(symbol_id);
 
                 if matches!(import_decl.source.value.as_str(), "@jest/globals" | "vitest") {
                     let original = find_original_name(import_decl, name);
+
                     let ret = reference_ids
                         .iter()
                         .map(|&reference_id| (reference_id, original))
                         .collect::<Vec<_>>();
+
                     return Some(ret);
                 }
             }
@@ -235,8 +248,10 @@ fn find_original_name<'a>(import_decl: &'a ImportDeclaration<'a>, name: &str) ->
             if import_specifier.local.name.as_str() == name {
                 return Some(import_specifier.imported.name().as_str());
             }
+
             None
         }
+
         _ => None,
     })
 }
@@ -257,6 +272,7 @@ fn collect_ids_referenced_to_global<'c>(
 /// `new Foo().bar` -> "Foo.bar"
 pub fn get_node_name<'a>(expr: &'a Expression<'a>) -> CompactStr {
     let chain = get_node_name_vec(expr);
+
     chain.join(".").into()
 }
 
@@ -268,23 +284,30 @@ pub fn get_node_name_vec<'a>(expr: &'a Expression<'a>) -> Vec<Cow<'a, str>> {
         Expression::StringLiteral(string_literal) => {
             chain.push(Cow::Borrowed(&string_literal.value));
         }
+
         Expression::TemplateLiteral(template_literal) if is_pure_string(template_literal) => {
             chain.push(Cow::Borrowed(template_literal.quasi().unwrap().as_str()));
         }
+
         Expression::TaggedTemplateExpression(tagged_expr) => {
             chain.extend(get_node_name_vec(&tagged_expr.tag));
         }
+
         Expression::CallExpression(call_expr) => chain.extend(get_node_name_vec(&call_expr.callee)),
         match_member_expression!(Expression) => {
             let member_expr = expr.to_member_expression();
+
             chain.extend(get_node_name_vec(member_expr.object()));
+
             if let Some(name) = member_expr.static_property_name() {
                 chain.push(Cow::Borrowed(name));
             }
         }
+
         Expression::NewExpression(new_expr) => {
             chain.extend(get_node_name_vec(&new_expr.callee));
         }
+
         _ => {}
     };
 
@@ -306,8 +329,11 @@ mod test {
     use std::{rc::Rc, sync::Arc};
 
     use oxc_allocator::Allocator;
+
     use oxc_parser::Parser;
+
     use oxc_semantic::SemanticBuilder;
+
     use oxc_span::SourceType;
 
     use crate::{options::LintOptions, ContextHost};
@@ -315,10 +341,14 @@ mod test {
     #[test]
     fn test_is_jest_file() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default();
+
         let parser_ret = Parser::new(&allocator, "", source_type).parse();
+
         let semantic_ret =
             SemanticBuilder::new().with_cfg(true).build(&parser_ret.program).semantic;
+
         let semantic_ret = Rc::new(semantic_ret);
 
         let build_ctx = |path: &'static str| {
@@ -332,12 +362,15 @@ mod test {
         };
 
         let ctx = build_ctx("foo.js");
+
         assert!(!super::is_jest_file(&ctx));
 
         let ctx = build_ctx("foo.test.js");
+
         assert!(super::is_jest_file(&ctx));
 
         let ctx = build_ctx("__tests__/foo/test.spec.js");
+
         assert!(super::is_jest_file(&ctx));
     }
 }

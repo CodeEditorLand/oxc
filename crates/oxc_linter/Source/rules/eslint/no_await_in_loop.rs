@@ -68,7 +68,9 @@ impl Rule for NoAwaitInLoop {
         let nodes = ctx.semantic().nodes();
         // Perform validation for AwaitExpression and ForOfStatement that contains await
         let mut parent_node = nodes.parent_node(node.id());
+
         let mut is_in_loop = false;
+
         while let Some(parent) = parent_node {
             // Check if the current node is the boundary of the loop
             if Self::is_boundary(parent) {
@@ -78,6 +80,7 @@ impl Rule for NoAwaitInLoop {
             // if AwaitExpression or AwaitForOfStatement are in loop, break and report error
             if Self::is_looped(span, parent) {
                 is_in_loop = true;
+
                 break;
             }
 
@@ -97,6 +100,7 @@ impl NoAwaitInLoop {
             Statement::ExpressionStatement(expr_statement) => {
                 Self::include_span(expr_statement.span, span)
             }
+
             _ => false,
         }
     }
@@ -134,12 +138,14 @@ impl NoAwaitInLoop {
         match parent.kind() {
             AstKind::ForStatement(stmt) => {
                 let mut result = Self::node_matches_stmt_span(span, &stmt.body);
+
                 if result {
                     return result;
                 }
 
                 if let Some(test) = &stmt.test {
                     result = Self::node_matches_expr_span(span, test);
+
                     if result {
                         return result;
                     }
@@ -151,16 +157,19 @@ impl NoAwaitInLoop {
 
                 result
             }
+
             AstKind::ForInStatement(stmt) => Self::node_matches_stmt_span(span, &stmt.body),
             AstKind::ForOfStatement(stmt) => Self::node_matches_stmt_span(span, &stmt.body),
             AstKind::WhileStatement(stmt) => {
                 Self::node_matches_stmt_span(span, &stmt.body)
                     || Self::node_matches_expr_span(span, &stmt.test)
             }
+
             AstKind::DoWhileStatement(stmt) => {
                 Self::node_matches_stmt_span(span, &stmt.body)
                     || Self::node_matches_expr_span(span, &stmt.test)
             }
+
             _ => false,
         }
     }

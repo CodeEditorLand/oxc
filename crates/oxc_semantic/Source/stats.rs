@@ -92,7 +92,9 @@ impl Stats {
     /// [`Semantic::stats`]: super::Semantic::stats
     pub fn count(program: &Program) -> Self {
         let mut counter = Counter::default();
+
         counter.visit_program(program);
+
         counter.stats
     }
 
@@ -107,7 +109,9 @@ impl Stats {
         let increase = |n: u32| (n as f64 * factor) as u32;
 
         self.scopes = increase(self.scopes);
+
         self.symbols = increase(self.symbols);
+
         self.references = increase(self.references);
 
         self
@@ -119,7 +123,9 @@ impl Stats {
     /// Panics if stats are not accurate.
     pub fn assert_accurate(self, actual: Self) {
         assert_eq!(self.nodes, actual.nodes, "nodes count mismatch");
+
         assert_eq!(self.scopes, actual.scopes, "scopes count mismatch");
+
         assert_eq!(self.references, actual.references, "references count mismatch");
         // `Counter` may overestimate number of symbols, because multiple `BindingIdentifier`s
         // can result in only a single symbol.
@@ -151,24 +157,28 @@ impl<'a> Visit<'a> for Counter {
     #[inline]
     fn visit_binding_identifier(&mut self, _: &BindingIdentifier<'a>) {
         self.stats.nodes += 1;
+
         self.stats.symbols += 1;
     }
 
     #[inline]
     fn visit_identifier_reference(&mut self, _: &IdentifierReference<'a>) {
         self.stats.nodes += 1;
+
         self.stats.references += 1;
     }
 
     #[inline]
     fn visit_ts_enum_member_name(&mut self, it: &TSEnumMemberName<'a>) {
         self.stats.symbols += 1;
+
         walk_ts_enum_member_name(self, it);
     }
 
     #[inline]
     fn visit_ts_module_declaration_name(&mut self, it: &TSModuleDeclarationName<'a>) {
         self.stats.symbols += 1;
+
         walk_ts_module_declaration_name(self, it);
     }
 }

@@ -17,6 +17,7 @@ const TESTS_ROOT: &str = "tasks/coverage/typescript/tests/";
 lazy_static::lazy_static! {
     // Returns a match for a test option. Test options have the form `// @name: value`
     static ref META_OPTIONS: Regex = Regex::new(r"(?m)^/{2}[[:space:]]*@(?P<name>[[:word:]]+)[[:space:]]*:[[:space:]]*(?P<value>[^\r\n]*)").unwrap();
+
     static ref TEST_BRACES: Regex = Regex::new(r"^[[:space:]]*[{|}][[:space:]]*$").unwrap();
 }
 
@@ -43,6 +44,7 @@ impl<T: Case> Suite<T> for TypeScriptSuite<T> {
         #[cfg(not(any(coverage, coverage_nightly)))]
         let supported_paths =
             ["conformance", "compiler"].iter().any(|p| path.to_string_lossy().contains(p));
+
         let unsupported_tests = [
             // these 2 relies on the ts "target" option
             "functionWithUseStrictAndSimpleParameterList.ts",
@@ -91,16 +93,20 @@ impl TypeScriptCase {
 impl Case for TypeScriptCase {
     fn new(path: PathBuf, code: String) -> Self {
         let meta = TypeScriptTestMeta::from_source(&path, &code);
+
         let compiler_options = &meta.options;
+
         let is_module = ["esnext", "es2022", "es2020", "es2015"]
             .into_iter()
             .any(|module| compiler_options.modules.contains(&module.to_string()));
+
         let source_type = SourceType::from_path(&path)
             .unwrap()
             .with_script(true)
             .with_module(is_module)
             .with_jsx(!compiler_options.jsx.is_empty())
             .with_typescript_definition(compiler_options.declaration);
+
         Self {
             path,
             // FIXME: current skip multi-file test cases, if doesn't skip in the
@@ -154,31 +160,42 @@ impl TypeScriptTestMeta {
     /// See `makeUnitsFromTest` in `harnessIO.ts` from TypeScript.
     pub fn from_source(path: &Path, code: &str) -> Self {
         let mut current_file_options: HashMap<String, String> = HashMap::default();
+
         let mut current_file_name: Option<String> = None;
+
         let mut test_unit_data: Vec<TestUnitData> = vec![];
+
         let mut current_file_content = String::new();
 
         for line in code.lines() {
             if let Some(option) = META_OPTIONS.captures(line) {
                 let meta_name = option.name("name").unwrap().as_str();
+
                 let meta_name = meta_name.to_lowercase();
+
                 let meta_value = option.name("value").unwrap().as_str();
+
                 let meta_value = meta_value.trim();
+
                 if meta_name != "filename" {
                     current_file_options.insert(meta_name.clone(), meta_value.to_string());
+
                     continue;
                 }
+
                 if let Some(file_name) = current_file_name.take() {
                     test_unit_data.push(TestUnitData {
                         name: file_name,
                         content: std::mem::take(&mut current_file_content),
                     });
                 }
+
                 current_file_name = Some(meta_value.to_string());
             } else {
                 if !current_file_content.is_empty() {
                     current_file_content.push('\n');
                 }
+
                 current_file_content.push_str(line);
             }
         }
@@ -196,7 +213,9 @@ impl TypeScriptTestMeta {
         });
 
         let options = CompilerOptions::new(&current_file_options);
+
         let error_files = Self::get_error_files(path, &options);
+
         Self { tests: test_unit_data, options, error_files }
     }
 
@@ -206,19 +225,29 @@ impl TypeScriptTestMeta {
     //   * `filename.errors.txt`
     fn get_error_files(path: &Path, options: &CompilerOptions) -> Vec<String> {
         let file_name = path.file_stem().unwrap().to_string_lossy();
+
         let root = project_root().join(TESTS_ROOT).join("baselines/reference");
+
         let mut suffixes = vec![String::new()];
+
         suffixes.extend(options.modules.iter().map(|module| format!("(module={module})")));
+
         suffixes.extend(options.targets.iter().map(|target| format!("(target={target})")));
+
         suffixes.extend(options.jsx.iter().map(|jsx| format!("(jsx={jsx})")));
+
         let mut error_files = vec![];
+
         for suffix in suffixes {
             let error_path = root.join(format!("{file_name}{suffix}.errors.txt"));
+
             if error_path.exists() {
                 let error_file = fs::read_to_string(error_path).unwrap();
+
                 error_files.push(error_file);
             }
         }
+
         error_files
     }
 }

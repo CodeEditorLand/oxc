@@ -12,7 +12,9 @@ bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct KindFlags: u8 {
         const Value = 1 << 0;
+
         const Type = 1 << 1;
+
         const All = Self::Value.bits() | Self::Type.bits();
     }
 }
@@ -40,26 +42,31 @@ pub struct ScopeTree<'a> {
 impl<'a> ScopeTree<'a> {
     pub fn new() -> Self {
         let levels = vec![Scope::new(ScopeFlags::Top)];
+
         Self { levels }
     }
 
     pub fn is_ts_module_block(&self) -> bool {
         let scope = self.levels.last().unwrap();
+
         scope.flags.contains(ScopeFlags::TsModuleBlock)
     }
 
     pub fn has_reference(&self, name: &str) -> bool {
         let scope = self.levels.last().unwrap();
+
         scope.references.contains_key(name)
     }
 
     fn add_binding(&mut self, name: Atom<'a>, flags: KindFlags) {
         let scope = self.levels.last_mut().unwrap();
+
         scope.bindings.insert(name, flags);
     }
 
     fn add_reference(&mut self, name: Atom<'a>, flags: KindFlags) {
         let scope = self.levels.last_mut().unwrap();
+
         scope.references.insert(name, flags);
     }
 
@@ -72,7 +79,9 @@ impl<'a> ScopeTree<'a> {
 
         // Resolve references in the current scope.
         let current_bindings = current_scope.bindings;
+
         let mut current_references = current_scope.references;
+
         current_references.retain(|name, reference_flags| {
             !current_bindings.get(name).is_some_and(|flags| flags.contains(*reference_flags))
         });
@@ -85,6 +94,7 @@ impl<'a> ScopeTree<'a> {
 impl<'a> Visit<'a> for ScopeTree<'a> {
     fn enter_scope(&mut self, flags: ScopeFlags, _: &Cell<Option<ScopeId>>) {
         let scope = Scope::new(flags);
+
         self.levels.push(scope);
     }
 
@@ -100,6 +110,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
         if let BindingPatternKind::BindingIdentifier(ident) = &pattern.kind {
             self.add_binding(ident.name.clone(), KindFlags::Value);
         }
+
         walk_binding_pattern(self, pattern);
     }
 
@@ -114,6 +125,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
     fn visit_ts_type_query(&mut self, ty: &TSTypeQuery<'a>) {
         if let Some(type_name) = ty.expr_name.as_ts_type_name() {
             let ident = TSTypeName::get_first_name(type_name);
+
             self.add_reference(ident.name.clone(), KindFlags::Value);
         } else {
             walk_ts_type_query(self, ty);
@@ -125,6 +137,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
             walk_declaration(self, declaration);
         } else if decl.source.is_none() {
             // export { ... }
+
             for specifier in &decl.specifiers {
                 if let Some(name) = specifier.local.identifier_name() {
                     self.add_reference(name, KindFlags::All);
@@ -146,34 +159,42 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
             Declaration::VariableDeclaration(_) => {
                 // add binding in BindingPattern
             }
+
             Declaration::FunctionDeclaration(decl) => {
                 if let Some(id) = decl.id.as_ref() {
                     self.add_binding(id.name.clone(), KindFlags::Value);
                 }
             }
+
             Declaration::ClassDeclaration(decl) => {
                 if let Some(id) = decl.id.as_ref() {
                     self.add_binding(id.name.clone(), KindFlags::Value);
                 }
             }
+
             Declaration::TSTypeAliasDeclaration(decl) => {
                 self.add_binding(decl.id.name.clone(), KindFlags::Type);
             }
+
             Declaration::TSInterfaceDeclaration(decl) => {
                 self.add_binding(decl.id.name.clone(), KindFlags::Type);
             }
+
             Declaration::TSEnumDeclaration(decl) => {
                 self.add_binding(decl.id.name.clone(), KindFlags::All);
             }
+
             Declaration::TSModuleDeclaration(decl) => {
                 if let TSModuleDeclarationName::Identifier(ident) = &decl.id {
                     self.add_binding(ident.name.clone(), KindFlags::All);
                 }
             }
+
             Declaration::TSImportEqualsDeclaration(decl) => {
                 self.add_binding(decl.id.name.clone(), KindFlags::Value);
             }
         }
+
         walk_declaration(self, declaration);
     }
 }

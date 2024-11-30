@@ -69,7 +69,9 @@ impl Rule for NoAwaitInPromiseMethods {
         let Some(first_argument) = call_expr.arguments[0].as_expression() else {
             return;
         };
+
         let first_argument = first_argument.without_parentheses();
+
         let Expression::ArrayExpression(first_argument_array_expr) = first_argument else {
             return;
         };

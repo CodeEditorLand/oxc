@@ -69,6 +69,7 @@ impl Rule for BadBitwiseOperator {
                     ctx.diagnostic(bad_bitwise_operator_diagnostic("|", "||", bin_expr.span));
                 }
             }
+
             AstKind::AssignmentExpression(assign_expr) => {
                 if assign_expr.operator == AssignmentOperator::BitwiseOR
                     && !is_numeric_expr(&assign_expr.right, true)
@@ -76,6 +77,7 @@ impl Rule for BadBitwiseOperator {
                     ctx.diagnostic(bad_bitwise_or_operator_diagnostic(assign_expr.span));
                 }
             }
+
             _ => {}
         }
     }
@@ -100,6 +102,7 @@ fn is_mistype_short_circuit(node: &AstNode) -> bool {
 
             false
         }
+
         _ => false,
     }
 }
@@ -108,11 +111,13 @@ fn is_mistype_option_fallback(node: &AstNode) -> bool {
     let AstKind::BinaryExpression(binary_expr) = node.kind() else {
         return false;
     };
+
     if binary_expr.operator == BinaryOperator::BitwiseOR {
         if let Expression::Identifier(_) = &binary_expr.left {
             return !is_numeric_expr(&binary_expr.right, true);
         }
     }
+
     false
 }
 
@@ -129,10 +134,12 @@ fn is_numeric_expr(expr: &Expression, is_outer_most: bool) -> bool {
                 unary_expr.operator != UnaryOperator::Typeof
             }
         }
+
         Expression::BinaryExpression(binary_expr) => !is_string_concat(binary_expr),
         Expression::ParenthesizedExpression(paren_expr) => {
             is_numeric_expr(&paren_expr.expression, false)
         }
+
         _ => {
             if is_outer_most {
                 expr.is_undefined()
@@ -158,6 +165,7 @@ fn contains_string_literal(expr: &Expression) -> bool {
         Expression::ParenthesizedExpression(paren_expr) => {
             contains_string_literal(&paren_expr.expression)
         }
+
         _ => false,
     }
 }

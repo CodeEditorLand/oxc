@@ -155,6 +155,7 @@ fn is_object_or_class_method(parent_node: &AstNode) -> bool {
                 || property.kind == PropertyKind::Get
                 || property.kind == PropertyKind::Set
         }
+
         _ => false,
     }
 }
@@ -173,34 +174,40 @@ fn has_inferred_name<'a>(function: &Function<'a>, parent_node: &AstNode<'a>) -> 
                         if get_function_identifier(function_expression) == get_function_identifier(function)
                 )
         }
+
         AstKind::ObjectProperty(property) => {
             matches!(&property.value, Expression::FunctionExpression(function_expression)
                 if get_function_identifier(function_expression) == get_function_identifier(function)
             )
         }
+
         AstKind::PropertyDefinition(definition) => {
             matches!(&definition.value.as_ref().unwrap(), Expression::FunctionExpression(function_expression)
                 if get_function_identifier(function_expression) == get_function_identifier(function)
             )
         }
+
         AstKind::AssignmentExpression(expression) => {
             matches!(expression.left, AssignmentTarget::AssignmentTargetIdentifier(_))
                 && matches!(&expression.right, Expression::FunctionExpression(function_expression)
                         if get_function_identifier(function_expression) == get_function_identifier(function)
                 )
         }
+
         AstKind::AssignmentTargetWithDefault(target) => {
             matches!(target.binding, AssignmentTarget::AssignmentTargetIdentifier(_))
                 && matches!(&target.init, Expression::FunctionExpression(function_expression)
                     if get_function_identifier(function_expression) == get_function_identifier(function)
                 )
         }
+
         AstKind::AssignmentPattern(pattern) => {
             matches!(pattern.left.kind, BindingPatternKind::BindingIdentifier(_))
                 && matches!(&pattern.right, Expression::FunctionExpression(function_expression)
                     if get_function_identifier(function_expression) == get_function_identifier(function)
                 )
         }
+
         AstKind::ObjectAssignmentTarget(target) => {
             for property in &target.properties {
                 let AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(identifier) =
@@ -208,11 +215,13 @@ fn has_inferred_name<'a>(function: &Function<'a>, parent_node: &AstNode<'a>) -> 
                 else {
                     continue;
                 };
+
                 let Expression::FunctionExpression(function_expression) =
                     &identifier.init.as_ref().unwrap()
                 else {
                     continue;
                 };
+
                 if get_function_identifier(function_expression) == get_function_identifier(function)
                 {
                     return true;
@@ -221,6 +230,7 @@ fn has_inferred_name<'a>(function: &Function<'a>, parent_node: &AstNode<'a>) -> 
 
             false
         }
+
         _ => false,
     }
 }
@@ -241,6 +251,7 @@ fn get_property_key_name<'a>(key: &PropertyKey<'a>) -> Option<Cow<'a, str>> {
         PropertyKey::RegExpLiteral(regex) => {
             Some(Cow::Owned(format!("/{}/{}", regex.regex.pattern, regex.regex.flags)))
         }
+
         PropertyKey::BigIntLiteral(bigint) => Some(Cow::Borrowed(bigint.raw.as_str())),
         PropertyKey::TemplateLiteral(template) => {
             if template.expressions.len() == 0 && template.quasis.len() == 1 {
@@ -251,6 +262,7 @@ fn get_property_key_name<'a>(key: &PropertyKey<'a>) -> Option<Cow<'a, str>> {
 
             None
         }
+
         _ => None,
     }
 }
@@ -261,6 +273,7 @@ fn get_static_property_name<'a>(parent_node: &AstNode<'a>) -> Option<Cow<'a, str
         AstKind::MethodDefinition(method_definition) => {
             (&method_definition.key, method_definition.computed)
         }
+
         AstKind::ObjectProperty(property) => (&property.key, property.computed),
         _ => return None,
     };
@@ -289,6 +302,7 @@ fn get_function_name_with_kind<'a>(func: &Function<'a>, parent_node: &AstNode<'a
                 tokens.push(Cow::Borrowed("static"));
             }
         }
+
         AstKind::PropertyDefinition(definition) => {
             if !definition.computed && definition.key.is_private_identifier() {
                 tokens.push(Cow::Borrowed("private"));
@@ -300,6 +314,7 @@ fn get_function_name_with_kind<'a>(func: &Function<'a>, parent_node: &AstNode<'a
                 tokens.push(Cow::Borrowed("static"));
             }
         }
+
         _ => {}
     }
 
@@ -330,6 +345,7 @@ fn get_function_name_with_kind<'a>(func: &Function<'a>, parent_node: &AstNode<'a
                 tokens.push(name);
             }
         }
+
         AstKind::PropertyDefinition(definition) => {
             if !definition.computed && definition.key.is_private_identifier() {
                 if let Some(name) = definition.key.name() {
@@ -341,6 +357,7 @@ fn get_function_name_with_kind<'a>(func: &Function<'a>, parent_node: &AstNode<'a
                 tokens.push(Cow::Borrowed(name.as_str()));
             }
         }
+
         _ => {
             if let Some(static_name) = get_static_property_name(parent_node) {
                 tokens.push(static_name);
@@ -379,6 +396,7 @@ impl Rule for FuncNames {
                     let Some(parent_node) = ctx.nodes().parent_node(node.id()) else {
                         continue;
                     };
+
                     let config =
                         if func.generator { &self.generators_config } else { &self.default_config };
 
@@ -412,6 +430,7 @@ impl Rule for FuncNames {
 
                                     None
                                 }
+
                                 _ => None,
                             });
 
@@ -421,6 +440,7 @@ impl Rule for FuncNames {
                         }
                     }
                 }
+
                 _ => {}
             }
         }
@@ -429,12 +449,14 @@ impl Rule for FuncNames {
             let func_name_complete = get_function_name_with_kind(func, parent_node);
 
             let report_span = Span::new(func.span.start, func.params.span.start);
+
             let replace_span = Span::new(
                 func.span.start,
                 func.type_parameters
                     .as_ref()
                     .map_or_else(|| func.params.span.start, |tp| tp.span.start),
             );
+
             if let Some(id) = func.id.as_ref() {
                 ctx.diagnostic_with_suggestion(
                     named_diagnostic(&func_name_complete, report_span),
@@ -487,9 +509,11 @@ fn guess_function_name<'a>(ctx: &LintContext<'a>, parent_id: NodeId) -> Option<C
             AstKind::AssignmentExpression(assign) => {
                 return assign.left.get_identifier().map(Cow::Borrowed);
             }
+
             AstKind::VariableDeclarator(decl) => {
                 return decl.id.get_identifier().as_ref().map(Atom::as_str).map(Cow::Borrowed);
             }
+
             AstKind::ObjectProperty(prop) => {
                 return prop.key.static_name().and_then(|name| {
                     if is_valid_identifier_name(&name) {
@@ -499,6 +523,7 @@ fn guess_function_name<'a>(ctx: &LintContext<'a>, parent_id: NodeId) -> Option<C
                     }
                 });
             }
+
             AstKind::PropertyDefinition(prop) => {
                 return prop.key.static_name().and_then(|name| {
                     if is_valid_identifier_name(&name) {
@@ -508,9 +533,11 @@ fn guess_function_name<'a>(ctx: &LintContext<'a>, parent_id: NodeId) -> Option<C
                     }
                 });
             }
+
             _ => return None,
         }
     }
+
     None
 }
 
@@ -537,7 +564,9 @@ fn test() {
     use crate::tester::Tester;
 
     let always = Some(json!(["always"]));
+
     let as_needed = Some(json!(["as-needed"]));
+
     let never = Some(json!(["never"]));
 
     let pass = vec![

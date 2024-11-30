@@ -46,7 +46,9 @@ impl<T: Case> Suite<T> for BabelSuite<T> {
         ]
         .iter()
         .any(|p| path.to_string_lossy().contains(p));
+
         let incorrect_extension = path.extension().map_or(true, |ext| ext == "json" || ext == "md");
+
         not_supported_directory || incorrect_extension
     }
 
@@ -86,20 +88,27 @@ impl BabelCase {
         T: DeserializeOwned,
     {
         let file = path.with_file_name(file_name);
+
         if file.exists() {
             let file = std::fs::File::open(file).unwrap();
+
             let reader = std::io::BufReader::new(file);
+
             let json: serde_json::Result<T> = serde_json::from_reader(reader);
+
             return json.ok();
         }
+
         None
     }
 
     fn read_output_json(path: &Path) -> Option<BabelOutput> {
         let dir = workspace_root().join(path);
+
         if let Some(json) = Self::read_file::<BabelOutput>(&dir, "output.json") {
             return Some(json);
         }
+
         Self::read_file::<BabelOutput>(&dir, "output.extended.json")
     }
 
@@ -126,19 +135,24 @@ impl Case for BabelCase {
     /// # Panics
     fn new(path: PathBuf, code: String) -> Self {
         let dir = workspace_root().join(&path);
+
         let options = BabelOptions::from_test_path(dir.parent().unwrap());
+
         let mut source_type = SourceType::from_path(&path)
             .unwrap()
             .with_script(true)
             .with_jsx(options.is_jsx())
             .with_typescript(options.is_typescript())
             .with_typescript_definition(options.is_typescript_definition());
+
         if options.is_unambiguous() {
             source_type = source_type.with_unambiguous(true);
         } else if options.is_module() {
             source_type = source_type.with_module(true);
         }
+
         let should_fail = Self::determine_should_fail(&path, &options);
+
         Self { path, code, source_type, options, should_fail, result: TestResult::ToBeRun }
     }
 
@@ -165,12 +179,14 @@ impl Case for BabelCase {
     fn skip_test_case(&self) -> bool {
         let not_supported_plugins =
             ["async-do-expression", "flow", "placeholders", "decorators-legacy", "recordAndTuple"];
+
         let has_not_supported_plugins = self
             .options
             .plugins
             .unsupported
             .iter()
             .any(|p| not_supported_plugins.iter().any(|plugin| plugin == p));
+
         has_not_supported_plugins
             || self.options.allow_await_outside_function
             || self.options.allow_undeclared_exports
@@ -178,6 +194,7 @@ impl Case for BabelCase {
 
     fn run(&mut self) {
         let source_type = self.source_type();
+
         self.result = self.execute(source_type);
     }
 }

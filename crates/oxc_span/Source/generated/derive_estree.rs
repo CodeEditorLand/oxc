@@ -12,8 +12,11 @@ use crate::span::types::*;
 impl Serialize for Span {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
+
         map.serialize_entry("start", &self.start)?;
+
         map.serialize_entry("end", &self.end)?;
+
         map.end()
     }
 }
@@ -21,9 +24,13 @@ impl Serialize for Span {
 impl Serialize for SourceType {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
+
         map.serialize_entry("language", &self.language)?;
+
         map.serialize_entry("moduleKind", &self.module_kind)?;
+
         map.serialize_entry("variant", &self.variant)?;
+
         map.end()
     }
 }
@@ -34,9 +41,11 @@ impl Serialize for Language {
             Language::JavaScript => {
                 serializer.serialize_unit_variant("Language", 0u32, "javascript")
             }
+
             Language::TypeScript => {
                 serializer.serialize_unit_variant("Language", 1u32, "typescript")
             }
+
             Language::TypeScriptDefinition => {
                 serializer.serialize_unit_variant("Language", 2u32, "typescriptDefinition")
             }
@@ -62,6 +71,7 @@ impl Serialize for LanguageVariant {
             LanguageVariant::Standard => {
                 serializer.serialize_unit_variant("LanguageVariant", 0u32, "standard")
             }
+
             LanguageVariant::Jsx => {
                 serializer.serialize_unit_variant("LanguageVariant", 1u32, "jsx")
             }

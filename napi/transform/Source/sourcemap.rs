@@ -32,6 +32,7 @@ pub struct SourceMap {
 impl From<oxc_sourcemap::SourceMap> for SourceMap {
     fn from(source_map: oxc_sourcemap::SourceMap) -> Self {
         let json = source_map.to_json();
+
         Self {
             file: json.file,
             mappings: json.mappings,

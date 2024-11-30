@@ -52,12 +52,15 @@ impl Rule for NoNonNullAssertedOptionalChain {
                 ChainElement::ComputedMemberExpression(member) if member.optional => {
                     Some(member.object.span())
                 }
+
                 ChainElement::StaticMemberExpression(member) if member.optional => {
                     Some(member.object.span())
                 }
+
                 ChainElement::PrivateFieldExpression(member) if member.optional => {
                     Some(member.object.span())
                 }
+
                 ChainElement::CallExpression(call) if call.optional => Some(call.callee.span()),
                 _ => None,
             },
@@ -74,20 +77,25 @@ impl Rule for NoNonNullAssertedOptionalChain {
                     None
                 }
             }
+
             expr @ match_member_expression!(Expression) => {
                 let member_expr = expr.to_member_expression();
+
                 if member_expr.optional() && !is_parent_member_or_call(node, ctx) {
                     Some(member_expr.object().span())
                 } else {
                     None
                 }
             }
+
             _ => None,
         };
 
         if let Some(chain_span) = chain_span {
             let chain_span_end = chain_span.end;
+
             let non_null_end = non_null_expr.span.end - 1;
+
             ctx.diagnostic(no_non_null_asserted_optional_chain_diagnostic(
                 Span::new(chain_span_end, chain_span_end),
                 Span::new(non_null_end, non_null_end),

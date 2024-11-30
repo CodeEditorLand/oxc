@@ -93,6 +93,7 @@ impl Rule for ConsistentEmptyArraySpread {
                     );
                 }
             }
+
             _ => {}
         }
     }

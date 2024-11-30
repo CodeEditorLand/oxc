@@ -66,9 +66,11 @@ impl Rule for NoUnreadableIife {
         if !arrow_expr.expression {
             return;
         }
+
         let Statement::ExpressionStatement(expr_stmt) = &arrow_expr.body.statements[0] else {
             return;
         };
+
         if matches!(expr_stmt.expression, Expression::ParenthesizedExpression(_)) {
             ctx.diagnostic(no_unreadable_iife_diagnostic(expr_stmt.span));
         }

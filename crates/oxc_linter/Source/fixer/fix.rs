@@ -30,9 +30,13 @@ bitflags! {
         const Dangerous = 1 << 2;
 
         const SafeFix = Self::Fix.bits();
+
         const SafeFixOrSuggestion = Self::Fix.bits() | Self::Suggestion.bits();
+
         const DangerousFix = Self::Dangerous.bits() | Self::Fix.bits();
+
         const DangerousSuggestion = Self::Dangerous.bits() | Self::Suggestion.bits();
+
         const DangerousFixOrSuggestion = Self::Dangerous.bits() | Self::Fix.bits() | Self::Suggestion.bits();
 
         /// Used to specify that no fixes should be applied.
@@ -96,6 +100,7 @@ impl FixKind {
         if self.is_empty() {
             return "";
         }
+
         match self {
             Self::Fix => "🛠️",
             Self::Suggestion => "💡",
@@ -217,12 +222,14 @@ impl<'a> RuleFix<'a> {
     /// ```
     pub fn dangerously(mut self) -> Self {
         self.kind.set(FixKind::Dangerous, true);
+
         self
     }
 
     #[inline]
     pub fn with_message<S: Into<Cow<'a, str>>>(mut self, message: S) -> Self {
         self.message = Some(message.into());
+
         self
     }
 
@@ -244,6 +251,7 @@ impl<'a> RuleFix<'a> {
     #[inline]
     pub fn extend<F: Into<CompositeFix<'a>>>(mut self, fix: F) -> Self {
         self.fix = self.fix.concat(fix.into());
+
         self
     }
 
@@ -352,6 +360,7 @@ impl GetSpan for CompositeFix<'_> {
             CompositeFix::Multiple(fixes) => {
                 fixes.iter().map(|fix| fix.span).reduce(|a, b| a.merge(&b)).unwrap_or(SPAN)
             }
+
             CompositeFix::None => SPAN,
         }
     }
@@ -363,9 +372,11 @@ impl<'a> CompositeFix<'a> {
             Self::None => *self = fix,
             Self::Single(fix1) => match fix {
                 Self::None => {}
+
                 Self::Single(other_fix) => {
                     *self = Self::Multiple(vec![std::mem::take(fix1), other_fix]);
                 }
+
                 Self::Multiple(mut fixes) => {
                     fixes.insert(0, std::mem::take(fix1));
                     *self = Self::Multiple(fixes);
@@ -373,9 +384,11 @@ impl<'a> CompositeFix<'a> {
             },
             Self::Multiple(fixes) => match fix {
                 Self::None => {}
+
                 Self::Single(fix) => {
                     fixes.push(fix);
                 }
+
                 Self::Multiple(other_fixes) => fixes.extend(other_fixes),
             },
         }
@@ -389,14 +402,17 @@ impl<'a> CompositeFix<'a> {
             (Self::Single(fix1), Self::Single(fix2)) => Self::Multiple(vec![fix1, fix2]),
             (Self::Single(fix), Self::Multiple(mut fixes)) => {
                 fixes.insert(0, fix);
+
                 Self::Multiple(fixes)
             }
             (Self::Multiple(mut fixes), Self::Single(fix)) => {
                 fixes.push(fix);
+
                 Self::Multiple(fixes)
             }
             (Self::Multiple(mut fixes1), Self::Multiple(fixes2)) => {
                 fixes1.extend(fixes2);
+
                 Self::Multiple(fixes1)
             }
         }
@@ -412,6 +428,7 @@ impl<'a> CompositeFix<'a> {
                     fs.len() > 1,
                     "Single-element or empty composite fix vecs should have been turned into CompositeFix::None or CompositeFix::Single"
                 );
+
                 fs.len()
             }
         }
@@ -427,6 +444,7 @@ impl<'a> CompositeFix<'a> {
                     !fs.is_empty(),
                     "Empty CompositeFix vecs should have been turned into CompositeFix::None"
                 );
+
                 fs.is_empty()
             }
         }
@@ -475,6 +493,7 @@ impl<'a> CompositeFix<'a> {
     /// <https://github.com/eslint/eslint/blob/v9.9.1/lib/linter/report-translator.js#L147-L179>
     fn merge_fixes(fixes: Vec<Fix<'a>>, source_text: &str) -> Fix<'a> {
         let mut fixes = fixes;
+
         if fixes.is_empty() {
             // Do nothing
             return Fix::empty();
@@ -486,8 +505,11 @@ impl<'a> CompositeFix<'a> {
 
         // safe, as fixes.len() > 1
         let start = fixes[0].span.start;
+
         let end = fixes[fixes.len() - 1].span.end;
+
         let mut last_pos = start;
+
         let mut output = String::new();
 
         for fix in fixes {
@@ -495,35 +517,45 @@ impl<'a> CompositeFix<'a> {
             // negative range or overlapping ranges is invalid
             if span.start > span.end {
                 debug_assert!(false, "Negative range is invalid: {span:?}");
+
                 return Fix::empty();
             }
+
             if last_pos > span.start {
                 debug_assert!(
                     false,
                     "Fix must not be overlapped, last_pos: {}, span.start: {}",
                     last_pos, span.start
                 );
+
                 return Fix::empty();
             }
 
             let Some(before) = source_text.get((last_pos) as usize..span.start as usize) else {
                 debug_assert!(false, "Invalid range: {}, {}", last_pos, span.start);
+
                 return Fix::empty();
             };
 
             output.reserve(before.len() + content.len());
+
             output.push_str(before);
+
             output.push_str(content);
+
             last_pos = span.end;
         }
 
         let Some(after) = source_text.get(last_pos as usize..end as usize) else {
             debug_assert!(false, "Invalid range: {:?}", last_pos as usize..end as usize);
+
             return Fix::empty();
         };
 
         output.push_str(after);
+
         output.shrink_to_fit();
+
         Fix::new(output, Span::new(start, end))
     }
 }
@@ -556,15 +588,19 @@ mod test {
                     let Self::Single(other) = other else {
                         return false;
                     };
+
                     fix == other
                 }
+
                 Self::Multiple(fixes) => {
                     let Self::Multiple(other) = other else {
                         return false;
                     };
+
                     if fixes.len() != other.len() {
                         return false;
                     }
+
                     fixes.iter().zip(other.iter()).all(|(a, b)| a == b)
                 }
             }
@@ -574,22 +610,30 @@ mod test {
     #[test]
     fn test_none() {
         assert!(FixKind::None.is_none());
+
         assert!(!FixKind::SafeFix.is_none());
+
         assert_eq!(FixKind::default(), FixKind::None);
     }
 
     #[test]
     fn test_can_apply() {
         assert!(FixKind::SafeFix.can_apply(FixKind::SafeFix));
+
         assert!(!FixKind::SafeFix.can_apply(FixKind::Suggestion));
+
         assert!(!FixKind::SafeFix.can_apply(FixKind::DangerousFix));
 
         assert!(FixKind::DangerousFix.can_apply(FixKind::SafeFix));
+
         assert!(FixKind::DangerousFix.can_apply(FixKind::DangerousFix));
+
         assert!(!FixKind::DangerousFix.can_apply(FixKind::Suggestion));
 
         assert!(!FixKind::None.can_apply(FixKind::SafeFix));
+
         assert!(!FixKind::None.can_apply(FixKind::Suggestion));
+
         assert!(!FixKind::None.can_apply(FixKind::DangerousFix));
     }
 
@@ -598,33 +642,46 @@ mod test {
         let f: CompositeFix = Fix::new("foo", Span::empty(4)).into();
 
         let mut none = CompositeFix::None;
+
         none.push(CompositeFix::None);
+
         assert_eq!(none, CompositeFix::None);
 
         none.push(f.clone());
+
         assert_eq!(&none, &f);
 
         let mut none = CompositeFix::None;
+
         let fixes = CompositeFix::from(vec![f.clone(), f]);
+
         none.push(fixes.clone());
+
         assert_eq!(none.len(), 2);
+
         assert_eq!(none, fixes);
     }
 
     #[test]
     fn test_composite_push_on_single() {
         let f1 = Fix::new("foo", Span::empty(4));
+
         let f2 = Fix::new("bar", Span::empty(5));
+
         let f3 = Fix::new("baz", Span::empty(6));
+
         let single = || CompositeFix::Single(f1.clone());
 
         // None.push(single) == single
         let mut f = single();
+
         f.push(CompositeFix::None);
+
         assert_eq!(f, single());
 
         // single1.push(single2) == [single1, single2]
         f.push(CompositeFix::Single(f2.clone()));
+
         assert_eq!(
             f,
             CompositeFix::Multiple(vec![
@@ -635,6 +692,7 @@ mod test {
 
         // single.push([f1, f2]) == [single, f1, f2]
         let mut f = single();
+
         f.push(vec![f2.clone(), f3.clone()].into());
 
         assert_eq!(f, CompositeFix::Multiple(vec![f1.clone(), f2.clone(), f3.clone()]));
@@ -643,23 +701,32 @@ mod test {
     #[test]
     fn test_composite_push_on_multiple() {
         let f1 = Fix::new("foo", Span::empty(4));
+
         let f2 = Fix::new("bar", Span::empty(5));
+
         let f3 = Fix::new("baz", Span::empty(6));
+
         let multiple = || CompositeFix::Multiple(vec![f1.clone(), f2.clone()]);
 
         // None.push(multiple) == multiple
         let mut f = multiple();
+
         f.push(CompositeFix::None);
+
         assert_eq!(f, multiple());
 
         // [f1, f2].push(f3) == [f1, f2, f3]
         let mut f = multiple();
+
         f.push(CompositeFix::Single(f3.clone()));
+
         assert_eq!(f, CompositeFix::Multiple(vec![f1.clone(), f2.clone(), f3.clone()]));
 
         // [f1, f2].push([f3, f3]) == [f1, f2, f3, f3]
         let mut f = multiple();
+
         f.push(vec![f3.clone(), f3.clone()].into());
+
         assert_eq!(f, CompositeFix::Multiple(vec![f1, f2, f3.clone(), f3]));
     }
 

@@ -42,6 +42,7 @@ impl<'a> State<'a> {
             self.unicode_mode || self.unicode_sets_mode || !capturing_group_names.is_empty();
 
         self.num_of_capturing_groups = num_of_left_capturing_parens;
+
         self.capturing_group_names = capturing_group_names;
 
         duplicated_named_capturing_groups
@@ -53,10 +54,13 @@ fn parse_capturing_groups<'a>(
     reader: &mut Reader<'a>,
 ) -> (u32, FxHashSet<Atom<'a>>, Vec<(u32, u32)>) {
     let mut num_of_left_capturing_parens = 0;
+
     let mut capturing_group_names = FxHashSet::default();
+
     let mut duplicated_named_capturing_groups = vec![];
 
     let mut in_escape = false;
+
     let mut in_character_class = false;
 
     // Count only normal CapturingGroup(named, unnamed)
@@ -93,12 +97,15 @@ fn parse_capturing_groups<'a>(
             // Collect capturing group names
             if reader.eat2('?', '<') {
                 let span_start = reader.offset();
+
                 while let Some(ch) = reader.peek() {
                     if ch == '>' as u32 {
                         break;
                     }
+
                     reader.advance();
                 }
+
                 let span_end = reader.offset();
 
                 if reader.eat('>') {
@@ -107,6 +114,7 @@ fn parse_capturing_groups<'a>(
                         // Report them with `Span`
                         duplicated_named_capturing_groups.push((span_start, span_end));
                     }
+
                     continue;
                 }
             }
@@ -151,6 +159,7 @@ mod tests {
                 capturing_group_names.len(),
                 !duplicated_named_capturing_groups.is_empty(),
             );
+
             assert_eq!(expected, actual, "{source_text}");
         }
     }

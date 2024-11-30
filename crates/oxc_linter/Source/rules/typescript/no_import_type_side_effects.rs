@@ -86,9 +86,11 @@ impl Rule for NoImportTypeSideEffects {
             let ImportDeclarationSpecifier::ImportSpecifier(specifier) = specifier else {
                 return;
             };
+
             if matches!(specifier.import_kind, ImportOrExportKind::Value) {
                 return;
             }
+
             type_specifiers.push(specifier);
         }
         // Can report and fix only if all specifiers are inline `type` qualifier:
@@ -97,6 +99,7 @@ impl Rule for NoImportTypeSideEffects {
             no_import_type_side_effects_diagnostic(import_decl.span),
             |_fixer| {
                 let raw = ctx.source_range(import_decl.span);
+
                 let mut fixes = vec![];
 
                 // import type A from 'foo.js'
@@ -163,5 +166,6 @@ fn test() {
             None,
         ),
     ];
+
     Tester::new(NoImportTypeSideEffects::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
 }

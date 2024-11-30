@@ -14,10 +14,13 @@ use oxc_cli::{CliRunResult, LintRunner, Runner};
 
 fn main() -> CliRunResult {
 	init_tracing();
+
 	init_miette();
 
 	let command = oxc_cli::lint_command().run();
+
 	command.handle_threads();
+
 	LintRunner::new(command.lint_options).run()
 }
 
@@ -29,5 +32,6 @@ fn init_miette() {
 
 fn init_tracing() {
 	use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
+
 	registry().with(fmt::layer()).with(EnvFilter::from_env("OXC_LOG")).init();
 }

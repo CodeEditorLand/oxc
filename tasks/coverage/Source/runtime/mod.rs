@@ -102,9 +102,13 @@ impl Case for Test262RuntimeCase {
 
     fn skip_test_case(&self) -> bool {
         let base_path = self.path().to_string_lossy();
+
         let test262_path = base_path.trim_start_matches("test262/test/");
+
         let includes = &self.base.meta().includes;
+
         let features = &self.base.meta().features;
+
         self.base.should_fail()
             || self.base.skip_test_case()
             || base_path.contains("built-ins")
@@ -128,31 +132,40 @@ impl Case for Test262RuntimeCase {
 
     async fn run_async(&mut self) {
         let code = self.get_code(false, false);
+
         let result = self.run_test_code("codegen", code).await;
 
         if result != TestResult::Passed {
             self.base.set_result(result);
+
             return;
         }
 
         let code = self.get_code(true, false);
+
         let result = self.run_test_code("transform", code).await;
 
         if result != TestResult::Passed {
             self.base.set_result(result);
+
             return;
         }
 
         // Minifier do not conform to annexB.
         let base_path = self.path().to_string_lossy();
+
         let test262_path = base_path.trim_start_matches("test262/test/");
+
         if test262_path.starts_with("annexB") {
             self.base.set_result(TestResult::Passed);
+
             return;
         }
 
         let code = self.get_code(false, true);
+
         let result = self.run_test_code("minify", code).await;
+
         self.base.set_result(result);
     }
 }
@@ -160,19 +173,29 @@ impl Case for Test262RuntimeCase {
 impl Test262RuntimeCase {
     fn get_code(&self, transform: bool, minify: bool) -> String {
         let source_text = self.base.code();
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let is_only_strict = self.base.meta().flags.contains(&TestFlag::OnlyStrict);
+
         let source_type = SourceType::cjs().with_module(is_module);
+
         let allocator = Allocator::default();
+
         let mut program = Parser::new(&allocator, source_text, source_type).parse().program;
 
         if transform {
             let (symbols, scopes) =
                 SemanticBuilder::new().build(&program).semantic.into_symbol_table_and_scope_tree();
+
             let mut options = TransformOptions::enable_all();
+
             options.jsx.refresh = None;
+
             options.helper_loader.mode = HelperLoaderMode::External;
+
             options.typescript.only_remove_type_imports = true;
+
             Transformer::new(&allocator, self.path(), &options).build_with_symbols_and_scopes(
                 symbols,
                 scopes,
@@ -193,19 +216,25 @@ impl Test262RuntimeCase {
             .with_mangler(mangler)
             .build(&program)
             .code;
+
         if is_only_strict {
             text = format!("\"use strict\";\n{text}");
         }
+
         if is_module {
             text = format!("{text}\n export {{}}");
         }
+
         text
     }
 
     async fn run_test_code(&self, case: &'static str, code: String) -> TestResult {
         let is_async = self.base.meta().flags.contains(&TestFlag::Async);
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let mut is_raw = self.base.meta().flags.contains(&TestFlag::Raw);
+
         let import_dir =
             self.test_root.join(self.base.path().parent().unwrap()).to_string_lossy().to_string();
 
@@ -237,9 +266,11 @@ impl Test262RuntimeCase {
                             return TestResult::Passed;
                         }
                     }
+
                     TestResult::GenericError(case, output)
                 }
             }
+
             Err(error) => TestResult::GenericError(case, error),
         }
     }

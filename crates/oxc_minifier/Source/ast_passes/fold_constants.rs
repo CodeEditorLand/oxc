@@ -43,6 +43,7 @@ impl<'a> FoldConstants {
 
 	pub fn with_evaluate(mut self, yes:bool) -> Self {
 		self.evaluate = yes;
+
 		self
 	}
 
@@ -147,6 +148,7 @@ impl<'a> FoldConstants {
 		{
 			let _ = mem::replace(&mut expr.argument, ctx.ast.number_0());
 		}
+
 		None
 	}
 
@@ -161,6 +163,7 @@ impl<'a> FoldConstants {
 		if !expr.argument.is_literal_value(/* include_function */ true) {
 			return None;
 		}
+
 		let s = match &mut expr.argument {
 			Expression::FunctionExpression(_) => "function",
 			Expression::StringLiteral(_) => "string",
@@ -174,6 +177,7 @@ impl<'a> FoldConstants {
 			Expression::Identifier(ident) if ctx.is_identifier_undefined(ident) => "undefined",
 			_ => return None,
 		};
+
 		Some(ctx.ast.expression_string_literal(SPAN, s))
 	}
 
@@ -190,7 +194,9 @@ impl<'a> FoldConstants {
 		}
 
 		let left_type = Ty::from(left);
+
 		let right_type = Ty::from(right);
+
 		match (left_type, right_type) {
             (Ty::Undetermined, _) | (_, Ty::Undetermined) => None,
 
@@ -199,9 +205,11 @@ impl<'a> FoldConstants {
                 // no need to use get_side_effect_free_string_value b/c we checked for side effects
                 // at the beginning
                 let left_string = ctx.get_string_value(left)?;
+
                 let right_string = ctx.get_string_value(right)?;
                 // let value = left_string.to_owned().
                 let value = left_string + right_string;
+
                 Some(ctx.ast.expression_string_literal(span, value))
             },
 
@@ -210,7 +218,9 @@ impl<'a> FoldConstants {
                 // when added, booleans get treated as numbers where `true` is 1 and `false` is 0
                 | (Ty::Boolean, Ty::Boolean) => {
                 let left_number = ctx.get_number_value(left)?;
+
                 let right_number = ctx.get_number_value(right)?;
+
                 let Ok(value) = TryInto::<f64>::try_into(left_number + right_number) else { return None };
                 // Float if value has a fractional part, otherwise Decimal
                 let number_base = if is_exact_int64(value) { NumberBase::Decimal } else { NumberBase::Float };
@@ -234,6 +244,7 @@ impl<'a> FoldConstants {
 			Tri::False => false,
 			Tri::Unknown => return None,
 		};
+
 		Some(ctx.ast.expression_boolean_literal(span, value))
 	}
 
@@ -247,6 +258,7 @@ impl<'a> FoldConstants {
 		if left.may_have_side_effects() || right.may_have_side_effects() {
 			return Tri::Unknown;
 		}
+
 		match op {
 			BinaryOperator::Equality => Self::try_abstract_equality_comparison(left, right, ctx),
 			BinaryOperator::Inequality => {
@@ -281,11 +293,14 @@ impl<'a> FoldConstants {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Tri {
 		let left = Ty::from(left_expr);
+
 		let right = Ty::from(right_expr);
+
 		if left != Ty::Undetermined && right != Ty::Undetermined {
 			if left == right {
 				return Self::try_strict_equality_comparison(left_expr, right_expr, ctx);
 			}
+
 			if matches!((left, right), (Ty::Null, Ty::Void) | (Ty::Void, Ty::Null)) {
 				return Tri::True;
 			}
@@ -334,6 +349,7 @@ impl<'a> FoldConstants {
 
 			if matches!(left, Ty::BigInt) || matches!(right, Ty::BigInt) {
 				let left_bigint = ctx.get_side_free_bigint_value(left_expr);
+
 				let right_bigint = ctx.get_side_free_bigint_value(right_expr);
 
 				if let (Some(l_big), Some(r_big)) = (left_bigint, right_bigint) {
@@ -351,6 +367,7 @@ impl<'a> FoldConstants {
 
 			return Tri::False;
 		}
+
 		Tri::Unknown
 	}
 
@@ -362,12 +379,15 @@ impl<'a> FoldConstants {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Tri {
 		let left = Ty::from(left_expr);
+
 		let right = Ty::from(right_expr);
 
 		// First, check for a string comparison.
 		if left == Ty::Str && right == Ty::Str {
 			let left_string = ctx.get_side_free_string_value(left_expr);
+
 			let right_string = ctx.get_side_free_string_value(right_expr);
+
 			if let (Some(left_string), Some(right_string)) = (left_string, right_string) {
 				// In JS, browsers parse \v differently. So do not compare
 				// strings if one contains \v.
@@ -397,9 +417,11 @@ impl<'a> FoldConstants {
 		}
 
 		let left_bigint = ctx.get_side_free_bigint_value(left_expr);
+
 		let right_bigint = ctx.get_side_free_bigint_value(right_expr);
 
 		let left_num = ctx.get_side_free_number_value(left_expr);
+
 		let right_num = ctx.get_side_free_number_value(right_expr);
 
 		match (left_bigint, right_bigint, left_num, right_num) {
@@ -479,15 +501,19 @@ impl<'a> FoldConstants {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Tri {
 		let left = Ty::from(left_expr);
+
 		let right = Ty::from(right_expr);
+
 		if left != Ty::Undetermined && right != Ty::Undetermined {
 			// Strict equality can only be true for values of the same type.
 			if left != right {
 				return Tri::False;
 			}
+
 			return match left {
 				Ty::Number => {
 					let left_number = ctx.get_side_free_number_value(left_expr);
+
 					let right_number = ctx.get_side_free_number_value(right_expr);
 
 					if let (Some(l_num), Some(r_num)) = (left_number, right_number) {
@@ -502,7 +528,9 @@ impl<'a> FoldConstants {
 				},
 				Ty::Str => {
 					let left_string = ctx.get_side_free_string_value(left_expr);
+
 					let right_string = ctx.get_side_free_string_value(right_expr);
+
 					if let (Some(left_string), Some(right_string)) = (left_string, right_string) {
 						// In JS, browsers parse \v differently. So do not
 						// compare strings if one contains \v.
@@ -544,6 +572,7 @@ impl<'a> FoldConstants {
 		if left_expr.is_nan() || right_expr.is_nan() {
 			return Tri::False;
 		}
+
 		Tri::Unknown
 	}
 
@@ -558,6 +587,7 @@ impl<'a> FoldConstants {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Option<Expression<'a>> {
 		let left_num = ctx.get_side_free_number_value(left);
+
 		let right_num = ctx.get_side_free_number_value(right);
 
 		if let (Some(NumberValue::Number(left_val)), Some(NumberValue::Number(right_val))) =
@@ -574,6 +604,7 @@ impl<'a> FoldConstants {
 			}
 
 			let right_val_int = right_val as i32;
+
 			let bits = NumericLiteral::ecmascript_to_int32(left_val);
 
 			let result_val:f64 = match op {
@@ -584,6 +615,7 @@ impl<'a> FoldConstants {
 					// We must force Rust to do the same here.
 					#[allow(clippy::cast_sign_loss)]
 					let res = bits as u32 >> right_val_int as u32;
+
 					f64::from(res)
 				},
 				_ => unreachable!("Unknown binary operator {:?}", op),
@@ -609,9 +641,11 @@ impl<'a> FoldConstants {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Option<Expression<'a>> {
 		let op = logical_expr.operator;
+
 		debug_assert!(matches!(op, LogicalOperator::And | LogicalOperator::Or));
 
 		let left = &logical_expr.left;
+
 		let left_val = ctx.get_boolean_value(left).to_option();
 
 		if let Some(lval) = left_val {
@@ -648,16 +682,24 @@ impl<'a> FoldConstants {
 			// foo() or: false_with_sideeffects && foo() =>
 			// false_with_sideeffects, foo()
 			let left = ctx.ast.move_expression(&mut logical_expr.left);
+
 			let right = ctx.ast.move_expression(&mut logical_expr.right);
+
 			let mut vec = ctx.ast.vec_with_capacity(2);
+
 			vec.push(left);
+
 			vec.push(right);
+
 			let sequence_expr = ctx.ast.expression_sequence(logical_expr.span, vec);
+
 			return Some(sequence_expr);
 		} else if let Expression::LogicalExpression(left_child) = &mut logical_expr.left {
 			if left_child.operator == logical_expr.operator {
 				let left_child_right_boolean = ctx.get_boolean_value(&left_child.right).to_option();
+
 				let left_child_op = left_child.operator;
+
 				if let Some(right_boolean) = left_child_right_boolean {
 					if !left_child.right.may_have_side_effects() {
 						// a || false || b => a || b
@@ -666,19 +708,23 @@ impl<'a> FoldConstants {
 							|| right_boolean && left_child_op == LogicalOperator::And
 						{
 							let left = ctx.ast.move_expression(&mut left_child.left);
+
 							let right = ctx.ast.move_expression(&mut logical_expr.right);
+
 							let logic_expr = ctx.ast.expression_logical(
 								logical_expr.span,
 								left,
 								left_child_op,
 								right,
 							);
+
 							return Some(logic_expr);
 						}
 					}
 				}
 			}
 		}
+
 		None
 	}
 
@@ -689,8 +735,11 @@ impl<'a> FoldConstants {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Option<Expression<'a>> {
 		debug_assert_eq!(logical_expr.operator, LogicalOperator::Coalesce);
+
 		let left = &logical_expr.left;
+
 		let left_val = ctx.get_known_value_type(left);
+
 		match left_val {
 			ValueType::Null | ValueType::Void => {
 				Some(if left.may_have_side_effects() {
@@ -699,6 +748,7 @@ impl<'a> FoldConstants {
 						ctx.ast.move_expression(&mut logical_expr.left),
 						ctx.ast.move_expression(&mut logical_expr.right),
 					]);
+
 					ctx.ast.expression_sequence(SPAN, expressions)
 				} else {
 					// nullish condition => this expression evaluates to the

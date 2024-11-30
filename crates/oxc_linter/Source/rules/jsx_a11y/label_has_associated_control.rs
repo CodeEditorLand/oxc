@@ -112,15 +112,22 @@ impl Rule for LabelHasAssociatedControl {
         let mut config = LabelHasAssociatedControlConfig::default();
 
         let mut control_builder = GlobSetBuilder::new();
+
         control_builder.add(Glob::new("input").unwrap());
+
         control_builder.add(Glob::new("meter").unwrap());
+
         control_builder.add(Glob::new("output").unwrap());
+
         control_builder.add(Glob::new("progress").unwrap());
+
         control_builder.add(Glob::new("select").unwrap());
+
         control_builder.add(Glob::new("textarea").unwrap());
 
         let Some(options) = value.get(0) else {
             config.control_components = control_builder.build().unwrap();
+
             return Self(Box::new(config));
         };
 
@@ -183,19 +190,28 @@ impl Rule for LabelHasAssociatedControl {
             controls
         } else {
             let mut control_builder = GlobSetBuilder::new();
+
             control_builder.add(Glob::new("input").unwrap());
+
             control_builder.add(Glob::new("meter").unwrap());
+
             control_builder.add(Glob::new("output").unwrap());
+
             control_builder.add(Glob::new("progress").unwrap());
+
             control_builder.add(Glob::new("select").unwrap());
+
             control_builder.add(Glob::new("textarea").unwrap());
+
             control_builder.build().unwrap()
         };
 
         config.label_components.sort_unstable();
+
         config.label_components.dedup();
 
         config.label_attributes.sort_unstable();
+
         config.label_attributes.dedup();
 
         Self(Box::new(config))
@@ -213,12 +229,14 @@ impl Rule for LabelHasAssociatedControl {
         }
 
         let has_html_for = has_jsx_prop(&element.opening_element, "htmlFor").is_some();
+
         let has_control = self.has_nested_control(element, ctx);
 
         if !self.has_accessible_label(element, ctx) {
             ctx.diagnostic(label_has_associated_control_diagnostic_no_label(
                 element.opening_element.span,
             ));
+
             return;
         }
 
@@ -228,16 +246,19 @@ impl Rule for LabelHasAssociatedControl {
                     return;
                 }
             }
+
             Assert::Nesting => {
                 if has_control {
                     return;
                 }
             }
+
             Assert::Both => {
                 if has_html_for && has_control {
                     return;
                 }
             }
+
             Assert::Either => {
                 if has_html_for || has_control {
                     return;
@@ -254,8 +275,10 @@ impl LabelHasAssociatedControl {
         if root.opening_element.attributes.iter().any(|attribute| match attribute {
             JSXAttributeItem::Attribute(attr) => {
                 let attr_name = get_jsx_attribute_name(&attr.name);
+
                 self.label_attributes.binary_search(&attr_name.into()).is_ok()
             }
+
             JSXAttributeItem::SpreadAttribute(_) => true,
         }) {
             return true;
@@ -307,6 +330,7 @@ impl LabelHasAssociatedControl {
 
                 false
             }
+
             JSXChild::Fragment(fragment) => {
                 for child in &fragment.children {
                     if self.search_for_nested_control(child, depth + 1, ctx) {
@@ -316,6 +340,7 @@ impl LabelHasAssociatedControl {
 
                 false
             }
+
             JSXChild::Text(_) | JSXChild::Spread(_) => false,
         }
     }
@@ -344,11 +369,13 @@ impl LabelHasAssociatedControl {
                                             JSXAttributeValue::StringLiteral(literal) => {
                                                 !literal.value.as_str().trim().is_empty()
                                             }
+
                                             _ => true,
                                         }
                                     })
                             })
                         }
+
                         JSXAttributeItem::SpreadAttribute(_) => true,
                     });
 
@@ -374,6 +401,7 @@ impl LabelHasAssociatedControl {
 
                 false
             }
+
             JSXChild::Fragment(fragment) => {
                 for child in &fragment.children {
                     if self.search_for_accessible_label(child, depth + 1, ctx) {
@@ -383,6 +411,7 @@ impl LabelHasAssociatedControl {
 
                 false
             }
+
             JSXChild::Spread(_) => false,
         }
     }

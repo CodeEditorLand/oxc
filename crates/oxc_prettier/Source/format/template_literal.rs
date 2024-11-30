@@ -25,6 +25,7 @@ impl<'a, 'b> TemplateLiteralPrinter<'a, 'b> {
             Self::TemplateLiteral(template_literal) => {
                 template_literal.expressions.get(index).map(|expression| expression.format(p))
             }
+
             Self::TSTemplateLiteralType(template_literal) => {
                 template_literal.types.get(index).map(|type_| type_.format(p))
             }
@@ -37,16 +38,20 @@ pub(super) fn print_template_literal<'a, 'b>(
     template_literal: &'b TemplateLiteralPrinter<'a, 'b>,
 ) -> Doc<'a> {
     let mut parts = p.vec();
+
     parts.push(text!("`"));
 
     for (index, quais) in template_literal.quasis().iter().enumerate() {
         parts.push(quais.format(p));
+
         let Some(expr_doc) = template_literal.get_nth_expr_doc(p, index) else {
             break;
         };
 
         parts.push(text!("${"));
+
         parts.push(expr_doc);
+
         parts.push(text!("}"));
     }
 

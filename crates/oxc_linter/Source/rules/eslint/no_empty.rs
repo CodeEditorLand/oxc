@@ -38,6 +38,7 @@ declare_oxc_lint!(
 impl Rule for NoEmpty {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         Self {
             allow_empty_catch: obj
                 .and_then(|v| v.get("allowEmptyCatch"))
@@ -50,6 +51,7 @@ impl Rule for NoEmpty {
         match node.kind() {
             AstKind::BlockStatement(block) if block.body.is_empty() => {
                 let parent = ctx.nodes().parent_kind(node.id());
+
                 if self.allow_empty_catch && matches!(parent, Some(AstKind::CatchClause(_))) {
                     return;
                 }
@@ -57,6 +59,7 @@ impl Rule for NoEmpty {
                 if ctx.semantic().has_comments_between(block.span) {
                     return;
                 }
+
                 ctx.diagnostic_with_suggestion(no_empty_diagnostic("block", block.span), |fixer| {
                     if let Some(parent) = parent {
                         if let AstKind::TryStatement(try_stmt) = parent {
@@ -75,21 +78,25 @@ impl Rule for NoEmpty {
                                 }
                             }
                         }
+
                         if matches!(parent, AstKind::CatchClause(_)) {
                             return fixer.noop();
                         }
+
                         fixer.delete(&parent)
                     } else {
                         fixer.noop()
                     }
                 });
             }
+
             AstKind::SwitchStatement(switch) if switch.cases.is_empty() => {
                 ctx.diagnostic_with_suggestion(
                     no_empty_diagnostic("switch", switch.span),
                     |fixer| fixer.delete(switch),
                 );
             }
+
             _ => {}
         }
     }
@@ -97,7 +104,9 @@ impl Rule for NoEmpty {
 
 fn find_finally_start(ctx: &LintContext, finally_clause: &BlockStatement) -> Option<u32> {
     let src = ctx.source_text();
+
     let finally_start = finally_clause.span.start as usize - 1;
+
     let mut start = finally_start;
 
     let src_chars: Vec<char> = src.chars().collect();
@@ -108,15 +117,18 @@ fn find_finally_start(ctx: &LintContext, finally_clause: &BlockStatement) -> Opt
                 if ch == 'y'
                     && "finally".chars().rev().skip(1).all(|c| {
                         start -= 1;
+
                         src_chars.get(start) == Some(&c)
                     })
                 {
                     #[allow(clippy::cast_possible_truncation)]
                     return Some(start as u32);
                 }
+
                 return None;
             }
         }
+
         start = start.saturating_sub(1);
     }
 

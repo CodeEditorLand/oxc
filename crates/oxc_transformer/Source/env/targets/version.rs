@@ -28,8 +28,11 @@ impl FromStr for Version {
         let mut parts = v.split('.');
         // safari tp
         let major = parts.next().unwrap().parse::<u32>().map_err(|_| ())?;
+
         let minor = parts.next().unwrap_or("0").parse::<u32>().unwrap();
+
         let patch = parts.next().unwrap_or("0").parse::<u32>().unwrap();
+
         Ok(Version { major, minor, patch })
     }
 }
@@ -44,16 +47,19 @@ impl cmp::Ord for Version {
     fn cmp(&self, other: &Version) -> Ordering {
         match self.major.cmp(&other.major) {
             Ordering::Equal => {}
+
             r => return r,
         }
 
         match self.minor.cmp(&other.minor) {
             Ordering::Equal => {}
+
             r => return r,
         }
 
         match self.patch.cmp(&other.patch) {
             Ordering::Equal => {}
+
             r => return r,
         }
 

@@ -41,9 +41,13 @@ pub enum TestCaseKind {
 impl TestCase {
     pub fn new(cwd: &Path, path: &Path) -> Option<Self> {
         let mut options = BabelOptions::from_test_path(path.parent().unwrap());
+
         options.cwd.replace(cwd.to_path_buf());
+
         let transform_options = TransformOptions::try_from(&options);
+
         let path = path.to_path_buf();
+
         let errors = vec![];
 
         // in `exec` directory
@@ -83,6 +87,7 @@ impl TestCase {
             .unwrap()
             .with_script(true)
             .with_jsx(options.plugins.syntax_jsx);
+
         source_type = match options.source_type.as_deref() {
             Some("unambiguous") => source_type.with_unambiguous(true),
             Some("script") => source_type.with_script(true),
@@ -90,9 +95,11 @@ impl TestCase {
             Some(s) => panic!("Unexpected source type {s}"),
             None => source_type,
         };
+
         source_type = source_type.with_typescript(
             options.plugins.typescript.is_some() || options.plugins.syntax_typescript.is_some(),
         );
+
         source_type
     }
 
@@ -140,6 +147,7 @@ impl TestCase {
             }
             // Skip tests that are known to fail
             let full_path = path.to_string_lossy();
+
             if SKIP_TESTS.iter().any(|path| full_path.starts_with(path)) {
                 return true;
             }
@@ -161,10 +169,12 @@ impl TestCase {
 
     fn transform(&self, mode: HelperLoaderMode) -> Result<String, String> {
         let path = &self.path;
+
         let transform_options = match &self.transform_options {
             Ok(transform_options) => transform_options,
             Err(json_err) => {
                 let error = json_err.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n");
+
                 return Err(error);
             }
         };
@@ -172,21 +182,28 @@ impl TestCase {
         let source_text = fs::read_to_string(path).unwrap();
 
         let project_root = project_root();
+
         let mut options = transform_options.clone();
+
         options.helper_loader.mode = mode;
+
         let mut driver = Driver::new(false, options).execute(&source_text, self.source_type, path);
+
         let errors = driver.errors();
+
         if !errors.is_empty() {
             let source = NamedSource::new(
                 path.strip_prefix(project_root).unwrap().to_string_lossy(),
                 source_text.to_string(),
             );
+
             return Err(errors
                 .into_iter()
                 .map(|err| format!("{:?}", err.with_source_code(source.clone())))
                 .collect::<Vec<_>>()
                 .join("\n"));
         }
+
         Ok(driver.printed())
     }
 
@@ -196,6 +213,7 @@ impl TestCase {
         }
 
         let filtered = options.filter.is_some();
+
         match self.kind {
             TestCaseKind::Conformance => self.test_conformance(filtered),
             TestCaseKind::Exec => {
@@ -203,6 +221,7 @@ impl TestCase {
                     self.test_exec(filtered);
                 }
             }
+
             TestCaseKind::Snapshot => self.test_snapshot(filtered),
         }
     }
@@ -211,28 +230,35 @@ impl TestCase {
     fn test_conformance(&mut self, filtered: bool) {
         let output_path = self.path.parent().unwrap().read_dir().unwrap().find_map(|entry| {
             let path = entry.ok()?.path();
+
             let file_stem = path.file_stem()?;
             (file_stem == "output").then_some(path)
         });
 
         let allocator = Allocator::default();
+
         let input = fs::read_to_string(&self.path).unwrap();
 
         if filtered {
             println!("input_path: {:?}", &self.path);
+
             println!("output_path: {output_path:?}");
         }
 
         let mut transformed_code = String::new();
+
         let mut actual_errors = None;
+
         let mut transform_options = None;
 
         match self.transform(HelperLoaderMode::External) {
             Err(error) => {
                 actual_errors.replace(get_babel_error(&error));
             }
+
             Ok(code) => {
                 transform_options.replace(self.transform_options.as_ref().unwrap().clone());
+
                 transformed_code = code;
             }
         }
@@ -240,6 +266,7 @@ impl TestCase {
         let babel_options = &self.options;
 
         let output;
+
         let passed = if let Some(throws) = &babel_options.throws {
             output = throws.cow_replace(" (1:6)", "").into_owned();
             !output.is_empty()
@@ -274,37 +301,54 @@ impl TestCase {
                 if actual_errors.is_none() {
                     actual_errors.replace("x Output mismatch".to_string());
                 }
+
                 false
             }
         };
 
         if filtered {
             println!("Options:");
+
             println!("{transform_options:#?}\n");
+
             println!("Input:\n");
+
             println!("{input}\n");
+
             if babel_options.throws.is_some() {
                 println!("Expected Errors:\n");
+
                 println!("{output}\n");
+
                 println!("Actual Errors:\n");
+
                 if let Some(actual_errors) = &actual_errors {
                     println!("{actual_errors}\n");
+
                     if !passed {
                         println!("Diff:\n");
+
                         print_diff_in_terminal(&output, actual_errors);
                     }
                 }
             } else {
                 println!("Expected:\n");
+
                 println!("{output}\n");
+
                 println!("Transformed:\n");
+
                 println!("{transformed_code}");
+
                 println!("Errors:\n");
+
                 if let Some(actual_errors) = &actual_errors {
                     println!("{actual_errors}\n");
                 }
+
                 if !passed {
                     println!("Diff:\n");
+
                     print_diff_in_terminal(&output, &transformed_code);
                 }
             }
@@ -318,6 +362,7 @@ impl TestCase {
                     Driver::new(/* check transform mismatch */ true, options)
                         .execute(&input, self.source_type, &self.path)
                         .errors();
+
                 self.errors.extend(mismatch_errors);
             }
         } else if let Some(actual_errors) = actual_errors {
@@ -328,6 +373,7 @@ impl TestCase {
     fn test_exec(&mut self, filtered: bool) {
         if filtered {
             println!("input_path: {:?}", &self.path);
+
             println!("Input:\n{}\n", fs::read_to_string(&self.path).unwrap());
         }
 
@@ -337,9 +383,11 @@ impl TestCase {
                 if filtered {
                     println!("Transform Errors:\n{error:?}\n",);
                 }
+
                 return;
             }
         };
+
         self.write_to_test_files(&result);
     }
 
@@ -349,17 +397,23 @@ impl TestCase {
             .strip_prefix(packages_root())
             .or_else(|_| self.path.strip_prefix(oxc_test_root()))
             .unwrap();
+
         let new_file_name: String =
             normalize_path(unprefixed_path).split('/').collect::<Vec<&str>>().join("-");
+
         let mut target_path = fixture_root().join(new_file_name);
+
         target_path.set_extension("test.js");
+
         let content = Self::template(content);
+
         fs::write(&target_path, content).unwrap();
     }
 
     fn template(code: &str) -> String {
         // Move all the import statements to top level.
         let mut codes = vec![];
+
         let mut imports = vec![];
 
         for line in code.lines() {
@@ -371,6 +425,7 @@ impl TestCase {
         }
 
         let code = codes.join("\n");
+
         let imports = imports.join("\n");
 
         format!(
@@ -387,20 +442,31 @@ test("exec", () => {{
             Ok(code) => code,
             Err(error) => error,
         };
+
         let mut path = snap_root().join(self.path.strip_prefix(packages_root()).unwrap());
+
         path.set_file_name("output");
+
         let input_extension = self.path.extension().unwrap().to_str().unwrap();
+
         let extension =
             input_extension.chars().map(|c| if c == 't' { 'j' } else { c }).collect::<String>();
+
         path.set_extension(extension);
+
         if filtered {
             println!("Input path: {:?}", &self.path);
+
             println!("Output path: {path:?}");
+
             println!("Input:\n{}\n", fs::read_to_string(&self.path).unwrap());
+
             println!("Output:\n{result}\n");
         }
+
         if fs::write(&path, &result).is_err() {
             fs::create_dir_all(path.parent().unwrap()).unwrap();
+
             fs::write(path, &result).unwrap();
         }
     }

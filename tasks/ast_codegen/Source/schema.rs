@@ -69,7 +69,9 @@ impl Enum {
 
     pub fn as_type(&self) -> Type {
         let ident = self.ident();
+
         let generics = &self.item.generics;
+
         parse_quote!(#ident #generics)
     }
 }
@@ -113,7 +115,9 @@ impl Struct {
 
     pub fn as_type(&self) -> Type {
         let ident = self.ident();
+
         let generics = &self.item.generics;
+
         parse_quote!(#ident #generics)
     }
 }
@@ -167,9 +171,11 @@ impl AstType {
             Item::Struct(it) => {
                 Ok(AstType::Struct(Struct::with_meta(it, StructMeta::new(module_path))))
             }
+
             Item::Macro(it) => {
                 Ok(AstType::Macro(Macro::with_meta(it, MacroMeta::new(module_path))))
             }
+
             _ => Err(String::from("Unsupported Item!")),
         }
     }
@@ -206,11 +212,13 @@ impl AstType {
                 $it.meta.visitable = value;
             }};
         }
+
         match self {
             AstType::Enum(it) => assign!(it),
             AstType::Struct(it) => assign!(it),
             AstType::Macro(it) => return Err(unexpanded_macro_err(&it.item)),
         }
+
         Ok(())
     }
 
@@ -220,6 +228,7 @@ impl AstType {
             AstType::Struct(it) => it.meta.ast = value,
             AstType::Macro(it) => return Err(unexpanded_macro_err(&it.item)),
         }
+
         Ok(())
     }
 
@@ -250,11 +259,13 @@ impl AstType {
                 $it.meta.layout_64 = layout_64;
             }};
         }
+
         match self {
             AstType::Enum(it) => assign!(it),
             AstType::Struct(it) => assign!(it),
             AstType::Macro(it) => return Err(unexpanded_macro_err(&it.item)),
         }
+
         Ok(())
     }
 
@@ -281,6 +292,7 @@ pub struct Module {
 impl ToTokens for Module {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.append_all(self.attrs.clone());
+
         self.items.iter().for_each(|it| it.borrow().to_tokens(tokens));
     }
 }
@@ -290,14 +302,22 @@ impl Module {
     pub fn with_path(file: PathBuf) -> Self {
         let path = {
             let no_ext = file.with_extension("");
+
             let string = no_ext.to_string_lossy();
+
             let mut parts = string.split('/');
+
             assert_eq!(parts.next(), Some("crates"));
+
             let krate = parts.next().unwrap();
+
             assert_eq!(parts.next(), Some("src"));
+
             let mut parts = [krate].into_iter().chain(parts);
+
             parts.join("::")
         };
+
         Self { file, path, shebang: None, attrs: Vec::new(), items: Vec::new(), loaded: false }
     }
 
@@ -305,11 +325,17 @@ impl Module {
         assert!(!self.loaded, "can't load twice!");
 
         let mut file = std::fs::File::open(&self.file).normalize()?;
+
         let mut content = String::new();
+
         file.read_to_string(&mut content).normalize()?;
+
         let file = parse_file(content.as_str()).normalize()?;
+
         self.shebang = file.shebang;
+
         self.attrs = file.attrs;
+
         self.items = file
             .items
             .into_iter()
@@ -324,7 +350,9 @@ impl Module {
             .map(|it| AstType::new(it, self.path.clone()))
             .map_ok(|it| Rc::new(RefCell::new(it)))
             .collect::<Result<_>>()?;
+
         self.loaded = true;
+
         Ok(self)
     }
 
@@ -336,6 +364,7 @@ impl Module {
         }
 
         self.items.iter().try_for_each(expand)?;
+
         Ok(self)
     }
 
@@ -346,6 +375,7 @@ impl Module {
         }
 
         self.items.iter().try_for_each(analyze)?;
+
         Ok(self)
     }
 }
@@ -364,21 +394,32 @@ pub fn expand(ast_ref: &AstRef) -> Result<()> {
                     // tokens if we fail we try parsing the inheritance, And we
                     // would raise an error only if both of these fail.
                     let attrs = input.call(Attribute::parse_outer)?;
+
                     let vis = input.parse::<Visibility>()?;
+
                     let enum_token = input.parse::<Token![enum]>()?;
+
                     let ident = input.parse::<Ident>()?;
+
                     let generics = input.parse::<Generics>()?;
+
                     let (where_clause, brace_token, variants, inherits) = {
                         let where_clause = input.parse()?;
 
                         let content;
+
                         let brace = braced!(content in input);
+
                         let mut variants = Punctuated::new();
+
                         let mut inherits = Vec::<Ident>::new();
+
                         while !content.is_empty() {
                             if let Ok(variant) = Variant::parse(&content) {
                                 variants.push_value(variant);
+
                                 let punct = content.parse()?;
+
                                 variants.push_punct(punct);
                             } else if content.parse::<Token![@]>().is_ok()
                                 && content.parse::<Ident>().is_ok_and(|id| id == "inherit")
@@ -391,6 +432,7 @@ pub fn expand(ast_ref: &AstRef) -> Result<()> {
 
                         (where_clause, brace, variants, inherits)
                     };
+
                     Ok((
                         ItemEnum {
                             attrs,
@@ -405,6 +447,7 @@ pub fn expand(ast_ref: &AstRef) -> Result<()> {
                     ))
                 })
                 .normalize()?;
+
             Some(AstType::Enum(Enum::with_meta(
                 enum_,
                 EnumMeta {
@@ -413,6 +456,7 @@ pub fn expand(ast_ref: &AstRef) -> Result<()> {
                 },
             )))
         }
+
         _ => None,
     };
 
@@ -429,41 +473,51 @@ pub fn analyze(ast_ref: &AstRef) -> Result<()> {
         Mark,
         Visit,
     }
+
     let ast_attr = match &*ast_ref.borrow() {
         AstType::Enum(Enum { item: ItemEnum { attrs, .. }, .. })
         | AstType::Struct(Struct { item: ItemStruct { attrs, .. }, .. }) => {
             let attr = attrs.iter().find(|attr| attr.path().is_ident("ast"));
+
             let attr = match attr {
                 Some(Attribute { meta: Meta::Path(_), .. }) => AstAttr::Mark,
                 Some(attr @ Attribute { meta: Meta::List(_), .. }) => {
                     // TODO: support for punctuated list of arguments here if
                     // needed!
                     let args = attr.parse_args::<Path>().normalize()?;
+
                     if args.is_ident("visit") {
                         AstAttr::Visit
                     } else {
                         AstAttr::Mark
                     }
                 }
+
                 Some(_) => {
                     return Err(String::from("Invalid arguments in the `ast` attribute!"));
                 }
+
                 None => AstAttr::None,
             };
+
             Some(attr)
         }
+
         AstType::Macro(_) => None,
     };
 
     match ast_attr {
         Some(AstAttr::Visit) => {
             ast_ref.borrow_mut().set_ast(true)?;
+
             ast_ref.borrow_mut().set_visitable(true)?;
         }
+
         Some(AstAttr::Mark) => {
             // AST without visit!
             ast_ref.borrow_mut().set_ast(true)?;
         }
+
         Some(AstAttr::None) => {
             return Err(format!(
                 "All `enums` and `structs` defined in the source of truth should be marked with \
@@ -471,6 +525,7 @@ pub fn analyze(ast_ref: &AstRef) -> Result<()> {
                 ast_ref.borrow().ident()
             ));
         }
+
         None => { /* unrelated items like `use`, `type` and `macro` definitions */ }
     }
 

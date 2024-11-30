@@ -86,6 +86,7 @@ declare_oxc_lint!(
 impl Rule for ImportNoNamespace {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         Self(Box::new(ImportNoNamespaceConfig {
             ignore: obj
                 .and_then(|v| v.get("ignore"))
@@ -127,6 +128,7 @@ impl Rule for ImportNoNamespace {
                         ctx.diagnostic(import_no_namespace_diagnostic(entry.local_name.span()));
                     }
                 }
+
                 ImportImportName::Name(_) | ImportImportName::Default(_) => {}
             };
         });

@@ -22,6 +22,7 @@ impl TryFrom<PluginPresetEntries> for BabelPresets {
 
     fn try_from(entries: PluginPresetEntries) -> Result<Self, Self::Error> {
         let mut p = Self::default();
+
         for entry in entries.0 {
             match entry.name() {
                 "env" => {
@@ -34,9 +35,11 @@ impl TryFrom<PluginPresetEntries> for BabelPresets {
                 "react" => {
                     p.jsx = entry.value::<JsxOptions>().map_err(|err| p.errors.push(err)).ok();
                 }
+
                 s => p.unsupported.push(s.to_string()),
             }
         }
+
         Ok(p)
     }
 }

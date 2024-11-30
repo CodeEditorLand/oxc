@@ -32,6 +32,7 @@ impl<T: Case> Suite<T> for TypeScriptSuite<T> {
         #[cfg(not(any(coverage, coverage_nightly)))]
         let supported_paths =
             ["conformance", "compiler"].iter().any(|p| path.to_string_lossy().contains(p));
+
         let unsupported_tests = [
             // these 2 relies on the ts "target" option
             "functionWithUseStrictAndSimpleParameterList.ts",
@@ -83,6 +84,7 @@ impl Case for TypeScriptCase {
     fn new(path: PathBuf, code: String) -> Self {
         let TestCaseContent { tests, settings, error_files } =
             TestCaseContent::make_units_from_test(&path, &code);
+
         Self { path, code, units: tests, settings, error_files, result: TestResult::ToBeRun }
     }
 
@@ -108,13 +110,17 @@ impl Case for TypeScriptCase {
 
     fn run(&mut self) {
         let units = self.units.clone();
+
         for unit in units {
             self.code.clone_from(&unit.content);
+
             self.result = self.execute(unit.source_type);
+
             if self.result != TestResult::Passed {
                 return;
             }
         }
+
         self.result = TestResult::Passed;
     }
 }

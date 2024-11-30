@@ -14,9 +14,13 @@ bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
     pub struct ElementKind: u8 {
         const Accessor = 1 << 0;
+
         const Method = 1 << 1;
+
         const Property = 1 << 2;
+
         const Setter = 1 << 3;
+
         const Getter = 1 << 4;
     }
 }

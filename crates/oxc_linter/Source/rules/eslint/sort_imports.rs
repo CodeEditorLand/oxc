@@ -87,12 +87,15 @@ impl Rule for SortImports {
 
         let ignore_case =
             config.get("ignoreCase").and_then(serde_json::Value::as_bool).unwrap_or_default();
+
         let ignore_member_sort =
             config.get("ignoreMemberSort").and_then(serde_json::Value::as_bool).unwrap_or_default();
+
         let ignore_declaration_sort = config
             .get("ignoreDeclarationSort")
             .and_then(serde_json::Value::as_bool)
             .unwrap_or_default();
+
         let allow_separated_groups = config
             .get("allowSeparatedGroups")
             .and_then(serde_json::Value::as_bool)
@@ -137,6 +140,7 @@ impl Rule for SortImports {
         let Some(root) = ctx.nodes().root_node() else {
             return;
         };
+
         let AstKind::Program(program) = root.kind() else { unreachable!() };
 
         let mut import_declarations = vec![];
@@ -204,15 +208,18 @@ impl SortImports {
     ) {
         let current_member_syntax_group_index =
             self.member_syntax_sort_order.get_group_index_by_import_decl(current);
+
         let previous_member_syntax_group_index =
             self.member_syntax_sort_order.get_group_index_by_import_decl(previous);
 
         let mut current_local_member_name = get_first_local_member_name(current);
+
         let mut previous_local_member_name = get_first_local_member_name(previous);
 
         if self.ignore_case {
             current_local_member_name = current_local_member_name
                 .map(|name| Cow::Owned(name.cow_to_lowercase().into_owned()));
+
             previous_local_member_name = previous_local_member_name
                 .map(|name| Cow::Owned(name.cow_to_lowercase().into_owned()));
         }
@@ -226,8 +233,10 @@ impl SortImports {
             std::cmp::Ordering::Less => {
                 let current_kind =
                     self.member_syntax_sort_order.get(current_member_syntax_group_index);
+
                 let previous_kind =
                     self.member_syntax_sort_order.get(previous_member_syntax_group_index);
+
                 if let Some((current_kind, previous_kind)) = current_kind.zip(previous_kind) {
                     ctx.diagnostic(unexpected_syntax_order_diagnostic(
                         current_kind,
@@ -236,6 +245,7 @@ impl SortImports {
                     ));
                 }
             }
+
             std::cmp::Ordering::Equal => {
                 // ```js
                 // import { b } from 'foo.js'
@@ -249,6 +259,7 @@ impl SortImports {
                     }
                 }
             }
+
             std::cmp::Ordering::Greater => {}
         }
     }
@@ -281,6 +292,7 @@ impl SortImports {
             .windows(2)
             .find(|window| {
                 let a = window[0].local.name.as_str();
+
                 let b = window[1].local.name.as_str();
 
                 if self.ignore_case {
@@ -307,6 +319,7 @@ impl SortImports {
         if is_fixable {
             // Safe to index because we know that `specifiers` is at least 2 element long
             let specifiers_span = specifiers[0].span.merge(&specifiers[specifiers.len() - 1].span);
+
             ctx.diagnostic_with_fix(
                 sort_members_alphabetically_diagnostic(unsorted_name, unsorted_span),
                 |fixer| {
@@ -316,9 +329,11 @@ impl SortImports {
                         .windows(2)
                         .map(|window| {
                             let a = window[0].span;
+
                             let b = window[1].span;
 
                             let padding = Span::new(a.end, b.start);
+
                             ctx.source_range(padding)
                         })
                         .collect();
@@ -328,6 +343,7 @@ impl SortImports {
 
                     let specifiers = specifiers.iter().sorted_by(|a, b| {
                         let a = a.local.name.as_str();
+
                         let b = b.local.name.as_str();
 
                         if self.ignore_case {
@@ -341,7 +357,9 @@ impl SortImports {
                         String::new(),
                         |mut acc, (specifier, padding)| {
                             let _ = acc.write_str(ctx.source_range(specifier.span));
+
                             let _ = acc.write_str(padding);
+
                             acc
                         },
                     );
@@ -400,6 +418,7 @@ impl MemberSyntaxSortOrder {
                     ImportKind::Multiple
                 }
             }
+
             None => ImportKind::None,
         };
 
@@ -447,6 +466,7 @@ impl Display for ImportKind {
 
 fn get_first_local_member_name<'a>(decl: &ImportDeclaration<'a>) -> Option<Cow<'a, str>> {
     let specifiers = decl.specifiers.as_ref()?;
+
     specifiers.first().map(ImportDeclarationSpecifier::name)
 }
 
@@ -458,7 +478,9 @@ fn get_number_of_lines_between(left: Span, right: Span, ctx: &LintContext) -> us
     if left.end >= right.start {
         return 0;
     }
+
     let between_span = Span::new(left.end, right.start);
+
     let count = ctx.source_range(between_span).lines().count();
 
     // In same line
@@ -477,28 +499,34 @@ fn test() {
     let pass = vec![
         (
             "import a from 'foo.js';
+
             import b from 'bar.js';
+
             import c from 'baz.js';
             ",
             None,
         ),
         (
             "import * as B from 'foo.js';
+
             import A from 'bar.js';",
             None,
         ),
         (
             "import * as B from 'foo.js';
+
             import {a, b} from 'bar.js';",
             None,
         ),
         (
             "import {b, c} from 'bar.js';
+
             import A from 'foo.js';",
             None,
         ),
         (
             "import A from 'bar.js';
+
             import {b, c} from 'foo.js';",
             Some(
                 serde_json::json!([{ "memberSyntaxSortOrder": ["single", "multiple", "none", "all"] }]),
@@ -506,42 +534,50 @@ fn test() {
         ),
         (
             "import {a, b} from 'bar.js';
+
             import {c, d} from 'foo.js';",
             None,
         ),
         (
             "import A from 'foo.js';
+
             import B from 'bar.js';",
             None,
         ),
         (
             "import A from 'foo.js';
+
             import a from 'bar.js';",
             None,
         ),
         (
             "import a, * as b from 'foo.js';
+
             import c from 'bar.js';",
             None,
         ),
         (
             "import 'foo.js';
+
             import a from 'bar.js';",
             None,
         ),
         (
             "import B from 'foo.js';
+
             import a from 'bar.js';",
             None,
         ),
         (
             "import a from 'foo.js';
+
             import B from 'bar.js';",
             Some(serde_json::json!([{ "ignoreCase": true }])),
         ),
         ("import {a, b, c, d} from 'foo.js';", None),
         (
             "import a from 'foo.js';
+
             import B from 'bar.js';",
             Some(serde_json::json!([{ "ignoreDeclarationSort": true }])),
         ),
@@ -563,11 +599,13 @@ fn test() {
         ),
         (
             "import * as bar from 'bar.js';
+
             import * as foo from 'foo.js';",
             None,
         ),
         (
             "import 'foo';
+
             import bar from 'bar';",
             Some(serde_json::json!([{ "ignoreCase": true }])),
         ),
@@ -599,7 +637,9 @@ fn test() {
         ),
         (
             "import b from 'b';
+
             foo();
+
             import a from 'a';",
             Some(serde_json::json!([{ "allowSeparatedGroups": true }])),
         ),
@@ -621,6 +661,7 @@ fn test() {
             "import c from 'c';
 
             import a from 'a';
+
             import b from 'b';",
             Some(serde_json::json!([{ "allowSeparatedGroups": true }])),
         ),
@@ -637,41 +678,49 @@ fn test() {
     let fail = vec![
         (
             "import a from 'foo.js';
+
             import A from 'bar.js';",
             None,
         ),
         (
             "import b from 'foo.js';
+
             import a from 'bar.js';",
             None,
         ),
         (
             "import {b, c} from 'foo.js';
+
             import {a, d} from 'bar.js';",
             None,
         ),
         (
             "import * as foo from 'foo.js';
+
             import * as bar from 'bar.js';",
             None,
         ),
         (
             "import a from 'foo.js';
+
             import {b, c} from 'bar.js';",
             None,
         ),
         (
             "import a from 'foo.js';
+
             import * as b from 'bar.js';",
             None,
         ),
         (
             "import a from 'foo.js';
+
             import 'bar.js';",
             None,
         ),
         (
             "import b from 'bar.js';
+
             import * as a from 'foo.js';",
             Some(
                 serde_json::json!([{ "memberSyntaxSortOrder": ["all", "single", "multiple", "none"] }]),
@@ -680,6 +729,7 @@ fn test() {
         ("import {b, a, d, c} from 'foo.js';", None),
         (
             "import {b, a, d, c} from 'foo.js';
+
             import {e, f, g, h} from 'bar.js';",
             Some(serde_json::json!([{ "ignoreDeclarationSort": true }])),
         ),
@@ -703,16 +753,19 @@ fn test() {
         ),
         (
             "import b from 'b';
+
             import a from 'a';",
             None,
         ),
         (
             "import b from 'b';
+
             import a from 'a';",
             Some(serde_json::json!([{}])),
         ),
         (
             "import b from 'b';
+
             import a from 'a';",
             Some(serde_json::json!([{ "allowSeparatedGroups": false }])),
         ),
@@ -754,6 +807,7 @@ fn test() {
         (
             "import { b } from
             'b';
+
             import
                 { a } from 'a';",
             Some(serde_json::json!([{ "allowSeparatedGroups": false }])),
@@ -762,6 +816,7 @@ fn test() {
             "import c from 'c';
 
             import b from 'b';
+
             import a from 'a';",
             Some(serde_json::json!([{ "allowSeparatedGroups": true }])),
         ),
@@ -828,5 +883,6 @@ fn test() {
             None,
         ),
     ];
+
     Tester::new(SortImports::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
 }

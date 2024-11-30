@@ -47,11 +47,15 @@ impl Runner for FormatRunner {
 impl FormatRunner {
 	fn format(path:&Path) {
 		let source_text = std::fs::read_to_string(path).unwrap();
+
 		let allocator = Allocator::default();
+
 		let source_type = SourceType::from_path(path).unwrap();
+
 		let ret = Parser::new(&allocator, &source_text, source_type)
 			.preserve_parens(false)
 			.parse();
+
 		let _ = Prettier::new(&allocator, &source_text, &ret.trivias, PrettierOptions::default())
 			.build(&ret.program);
 	}

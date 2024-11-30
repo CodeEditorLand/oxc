@@ -89,6 +89,7 @@ impl<'a> ExpressionExt for Expression<'a> {
                         matches!(&expr.right, Expression::NumericLiteral(lit)
                             if (lit.value - 1f64).abs() < f64::EPSILON)
                     }
+
                     AssignmentOperator::Assign => {
                         let Expression::BinaryExpression(bin_expr) = &expr.right else {
                             return false;
@@ -103,12 +104,15 @@ impl<'a> ExpressionExt for Expression<'a> {
                             | (Expression::NumericLiteral(lit), Expression::Identifier(id)) => {
                                 id.name == var_name && (lit.value - 1f64).abs() < f64::EPSILON
                             }
+
                             _ => false,
                         }
                     }
+
                     _ => false,
                 }
             }
+
             _ => false,
         }
     }
@@ -131,6 +135,7 @@ impl Rule for PreferForOf {
         }
 
         let decl = &for_stmt_init.declarations[0];
+
         let (var_name, var_symbol_id) = match &decl.id.kind {
             BindingPatternKind::BindingIdentifier(id) => (&id.name, id.symbol_id()),
             _ => return,
@@ -156,6 +161,7 @@ impl Rule for PreferForOf {
             let Some(mem_expr) = test_expr.right.as_member_expression() else {
                 return;
             };
+
             if !matches!(mem_expr.static_property_name(), Some(prop_name) if prop_name == "length")
             {
                 return;
@@ -169,6 +175,7 @@ impl Rule for PreferForOf {
                         None => return,
                     }
                 }
+
                 _ => return,
             }
         };
@@ -176,17 +183,20 @@ impl Rule for PreferForOf {
         let Some(update_expr) = &for_stmt.update else {
             return;
         };
+
         if !update_expr.is_increment_of(var_name) {
             return;
         }
 
         let nodes = ctx.nodes();
+
         let body_span = for_stmt.body.span();
 
         if ctx.semantic().symbol_references(var_symbol_id).any(|reference| {
             let ref_id = reference.node_id();
 
             let symbol_span = nodes.get_node(ref_id).kind().span();
+
             if !body_span.contains(symbol_span) {
                 return false;
             }
@@ -200,19 +210,23 @@ impl Rule for PreferForOf {
                     AstKind::SimpleAssignmentTarget(_) => {
                         return true;
                     }
+
                     AstKind::UnaryExpression(unary_expr)
                         if unary_expr.operator == UnaryOperator::Delete =>
                     {
                         return true;
                     }
+
                     _ => {}
                 }
             }
 
             let parent_kind = ref_parent.kind();
+
             let AstKind::MemberExpression(mem_expr) = parent_kind else {
                 return true;
             };
+
             match mem_expr.object() {
                 Expression::Identifier(id) => id.name.as_str() != array_name,
                 expr if expr.is_member_expression() => {
@@ -221,6 +235,7 @@ impl Rule for PreferForOf {
                         None => true,
                     }
                 }
+
                 _ => true,
             }
         }) {
@@ -228,6 +243,7 @@ impl Rule for PreferForOf {
         }
 
         let span = for_stmt_init.span.merge(&test_expr.span).merge(&update_expr.span());
+
         ctx.diagnostic(prefer_for_of_diagnostic(span));
     }
 }

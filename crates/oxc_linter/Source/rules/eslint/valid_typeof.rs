@@ -10,17 +10,21 @@ use crate::{context::LintContext, rule::Rule, AstNode};
 fn not_string(help: Option<&'static str>, span: Span) -> OxcDiagnostic {
     let mut d =
         OxcDiagnostic::warn("Typeof comparisons should be to string literals.").with_label(span);
+
     if let Some(x) = help {
         d = d.with_help(x);
     }
+
     d
 }
 
 fn invalid_value(help: Option<&'static str>, span: Span) -> OxcDiagnostic {
     let mut d = OxcDiagnostic::warn("Invalid typeof comparison value.").with_label(span);
+
     if let Some(x) = help {
         d = d.with_help(x);
     }
+
     d
 }
 
@@ -64,6 +68,7 @@ impl Rule for ValidTypeof {
             {
                 unary_expr
             }
+
             _ => return,
         };
 
@@ -71,6 +76,7 @@ impl Rule for ValidTypeof {
             Some(AstKind::BinaryExpression(binary_expr)) if binary_expr.operator.is_equality() => {
                 binary_expr
             }
+
             _ => return,
         };
 
@@ -84,6 +90,7 @@ impl Rule for ValidTypeof {
             if !VALID_TYPES.contains(lit.value.as_str()) {
                 ctx.diagnostic(invalid_value(None, sibling.span()));
             }
+
             return;
         }
 
@@ -92,6 +99,7 @@ impl Rule for ValidTypeof {
                 if template.quasi().is_some_and(|value| !VALID_TYPES.contains(value.as_str())) {
                     ctx.diagnostic(invalid_value(None, sibling.span()));
                 }
+
                 return;
             }
         }
@@ -112,6 +120,7 @@ impl Rule for ValidTypeof {
                     },
                     |fixer| fixer.replace(sibling.span(), "\"undefined\""),
                 );
+
                 return;
             }
         }

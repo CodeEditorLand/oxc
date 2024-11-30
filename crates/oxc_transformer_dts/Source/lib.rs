@@ -47,6 +47,7 @@ impl<'a> TransformerDts<'a> {
         _trivias: Trivias,
     ) -> Self {
         let ctx = Rc::new(TransformDtsCtx::new(allocator));
+
         Self { ctx, scope: ScopeTree::new(allocator) }
     }
 
@@ -56,9 +57,13 @@ impl<'a> TransformerDts<'a> {
     /// transformation.
     pub fn build(mut self, program: &Program<'a>) -> TransformerDtsReturn {
         let source_type = SourceType::default().with_module(true).with_typescript_definition(true);
+
         let directives = self.ctx.ast.new_vec();
+
         let stmts = self.transform_program(program);
+
         let program = self.ctx.ast.program(SPAN, source_type, directives, None, stmts);
+
         let source_text =
             Codegen::<false>::new("", "", Trivias::default(), CodegenOptions::default())
                 .build(&program)
@@ -106,6 +111,7 @@ impl<'a> TransformerDts<'a> {
         program: &Program<'a>,
     ) -> oxc_allocator::Vec<'a, Statement<'a>> {
         let mut new_ast_stmts = self.ctx.ast.new_vec::<Statement<'a>>();
+
         for stmt in &program.body {
             if let Some(decl) = stmt.as_declaration() {
                 if let Some(decl) = self.transform_declaration(decl, false) {
@@ -115,6 +121,7 @@ impl<'a> TransformerDts<'a> {
                 }
             }
         }
+
         new_ast_stmts
     }
 
@@ -123,8 +130,11 @@ impl<'a> TransformerDts<'a> {
         stmts: &oxc_allocator::Vec<'a, Statement<'a>>,
     ) -> oxc_allocator::Vec<'a, Statement<'a>> {
         let mut new_stmts = Vec::new();
+
         let mut variables_declarations = VecDeque::new();
+
         let mut variable_transformed_indexes = VecDeque::new();
+
         let mut transformed_indexes = Vec::new();
         // 1. Collect all declarations, module declarations
         // 2. Transform export declarations
@@ -137,20 +147,27 @@ impl<'a> TransformerDts<'a> {
                         variables_declarations.push_back(
                             self.ctx.ast.copy(&decl.declarations).into_iter().collect::<Vec<_>>(),
                         );
+
                         variable_transformed_indexes.push_back(Vec::default());
                     }
+
                     Declaration::UsingDeclaration(decl) => {
                         variables_declarations.push_back(
                             self.ctx.ast.copy(&decl.declarations).into_iter().collect::<Vec<_>>(),
                         );
+
                         variable_transformed_indexes.push_back(Vec::default());
                     }
+
                     _ => {}
                 }
+
                 new_stmts.push(self.ctx.ast.copy(stmt));
             }
+
             match_module_declaration!(Statement) => {
                 transformed_indexes.push(new_stmts.len());
+
                 match stmt.to_module_declaration() {
                     ModuleDeclaration::ExportDefaultDeclaration(decl) => {
                         if let Some((var_decl, new_decl)) =
@@ -158,21 +175,26 @@ impl<'a> TransformerDts<'a> {
                         {
                             if let Some(var_decl) = var_decl {
                                 self.scope.visit_variable_declaration(&var_decl);
+
                                 new_stmts.push(Statement::VariableDeclaration(
                                     self.ctx.ast.alloc(var_decl),
                                 ));
+
                                 transformed_indexes.push(new_stmts.len());
                             }
 
                             self.scope.visit_export_default_declaration(&new_decl);
+
                             new_stmts.push(Statement::ExportDefaultDeclaration(
                                 self.ctx.ast.alloc(new_decl),
                             ));
+
                             return;
                         }
 
                         self.scope.visit_export_default_declaration(decl);
                     }
+
                     ModuleDeclaration::ExportNamedDeclaration(decl) => {
                         if let Some(new_decl) = self.transform_export_named_declaration(decl) {
                             self.scope.visit_declaration(
@@ -182,31 +204,37 @@ impl<'a> TransformerDts<'a> {
                             new_stmts.push(Statement::ExportNamedDeclaration(
                                 self.ctx.ast.alloc(new_decl),
                             ));
+
                             return;
                         }
 
                         self.scope.visit_export_named_declaration(decl);
                     }
+
                     module_declaration => self.scope.visit_module_declaration(module_declaration),
                 }
 
                 new_stmts.push(self.ctx.ast.copy(stmt));
             }
+
             _ => {}
         });
 
         // 5. Transform statements until no more transformation can be done
         let mut last_reference_len = 0;
+
         while last_reference_len != self.scope.references_len() {
             last_reference_len = self.scope.references_len();
 
             let mut variables_declarations_iter = variables_declarations.iter_mut();
+
             let mut variable_transformed_indexes_iter = variable_transformed_indexes.iter_mut();
 
             (0..new_stmts.len()).for_each(|i| {
                 if transformed_indexes.contains(&i) {
                     return;
                 }
+
                 let Some(decl) = new_stmts[i].as_declaration() else {
                     return;
                 };
@@ -216,6 +244,7 @@ impl<'a> TransformerDts<'a> {
                     let Some(cur_variable_declarations) = variables_declarations_iter.next() else {
                         unreachable!()
                     };
+
                     let Some(cur_transformed_indexes) = variable_transformed_indexes_iter.next()
                     else {
                         unreachable!()
@@ -230,13 +259,17 @@ impl<'a> TransformerDts<'a> {
                             self.transform_variable_declarator(&cur_variable_declarations[ii], true)
                         {
                             self.scope.visit_variable_declarator(&decl);
+
                             cur_transformed_indexes.push(ii);
+
                             cur_variable_declarations[ii] = decl;
                         }
                     });
                 } else if let Some(decl) = self.transform_declaration(decl, true) {
                     self.scope.visit_declaration(&decl);
+
                     transformed_indexes.push(i);
+
                     new_stmts[i] = Statement::from(decl);
                 }
             });
@@ -246,14 +279,17 @@ impl<'a> TransformerDts<'a> {
         //    imports
         // 7. Return transformed statements
         let mut new_ast_stmts = self.ctx.ast.new_vec_with_capacity(transformed_indexes.len());
+
         for (index, stmt) in new_stmts.into_iter().enumerate() {
             match stmt {
                 _ if transformed_indexes.contains(&index) => {
                     new_ast_stmts.push(stmt);
                 }
+
                 Statement::VariableDeclaration(decl) => {
                     let indexes =
                         variable_transformed_indexes.pop_front().unwrap_or_else(|| unreachable!());
+
                     let declarations =
                         variables_declarations.pop_front().unwrap_or_else(|| unreachable!());
 
@@ -269,12 +305,15 @@ impl<'a> TransformerDts<'a> {
                                         .map(|(_, decl)| decl),
                                 ),
                             );
+
                         new_ast_stmts.push(Statement::VariableDeclaration(variables_declaration));
                     }
                 }
+
                 Statement::UsingDeclaration(decl) => {
                     let indexes =
                         variable_transformed_indexes.pop_front().unwrap_or_else(|| unreachable!());
+
                     let declarations =
                         variables_declarations.pop_front().unwrap_or_else(|| unreachable!());
 
@@ -290,9 +329,11 @@ impl<'a> TransformerDts<'a> {
                                         .map(|(_, decl)| decl),
                                 ),
                             );
+
                         new_ast_stmts.push(Statement::VariableDeclaration(variable_declaration));
                     }
                 }
+
                 Statement::ImportDeclaration(decl) => {
                     // We must transform this in the end, because we need to
                     // know all references
@@ -302,6 +343,7 @@ impl<'a> TransformerDts<'a> {
                         new_ast_stmts.push(Statement::ImportDeclaration(decl));
                     }
                 }
+
                 _ => {}
             }
         }

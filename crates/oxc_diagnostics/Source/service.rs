@@ -85,6 +85,7 @@ impl DiagnosticService {
     /// implementations.
     pub(crate) fn new<R: DiagnosticReporter + 'static>(reporter: R) -> Self {
         let (sender, receiver) = mpsc::channel();
+
         Self {
             reporter: Box::new(reporter) as Box<dyn DiagnosticReporter>,
             quiet: false,
@@ -124,6 +125,7 @@ impl DiagnosticService {
     #[must_use]
     pub fn with_quiet(mut self, yes: bool) -> Self {
         self.quiet = yes;
+
         self
     }
 
@@ -135,6 +137,7 @@ impl DiagnosticService {
     #[must_use]
     pub fn with_silent(mut self, yes: bool) -> Self {
         self.silent = yes;
+
         self
     }
 
@@ -149,6 +152,7 @@ impl DiagnosticService {
     #[must_use]
     pub fn with_max_warnings(mut self, max_warnings: Option<usize>) -> Self {
         self.max_warnings = max_warnings;
+
         self
     }
 
@@ -187,7 +191,9 @@ impl DiagnosticService {
         diagnostics: Vec<OxcDiagnostic>,
     ) -> (PathBuf, Vec<Error>) {
         let path = path.as_ref();
+
         let source = Arc::new(NamedSource::new(path.to_string_lossy(), source_text.to_owned()));
+
         let diagnostics = diagnostics
             .into_iter()
             .map(|diagnostic| diagnostic.with_source_code(Arc::clone(&source)))
@@ -201,17 +207,24 @@ impl DiagnosticService {
     pub fn run(&mut self) {
         while let Ok(Some((path, diagnostics))) = self.receiver.recv() {
             let mut output = String::new();
+
             for diagnostic in diagnostics {
                 let severity = diagnostic.severity();
+
                 let is_warning = severity == Some(Severity::Warning);
+
                 let is_error = severity == Some(Severity::Error) || severity.is_none();
+
                 if is_warning || is_error {
                     if is_warning {
                         let warnings_count = self.warnings_count() + 1;
+
                         self.warnings_count.set(warnings_count);
                     }
+
                     if is_error {
                         let errors_count = self.errors_count() + 1;
+
                         self.errors_count.set(errors_count);
                     }
                     // The --quiet flag follows ESLint's --quiet behavior as documented here: https://eslint.org/docs/latest/use/command-line-interface#--quiet
@@ -233,13 +246,18 @@ impl DiagnosticService {
                             OxcDiagnostic::warn("File is too long to fit on the screen")
                                 .with_help(format!("{path:?} seems like a minified file")),
                         );
+
                         err_str = format!("{minified_diagnostic:?}");
+
                         output = err_str;
+
                         break;
                     }
+
                     output.push_str(&err_str);
                 }
             }
+
             self.reporter.render_diagnostics(output.as_bytes());
         }
 

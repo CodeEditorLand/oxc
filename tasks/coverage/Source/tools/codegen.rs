@@ -18,12 +18,14 @@ fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
         source_text,
         source_type,
     );
+
     if result != TestResult::Passed {
         return result;
     };
 
     let result = Driver { codegen: true, remove_whitespace: true, ..Driver::default() }
         .idempotency("Minify", source_text, source_type);
+
     if result != TestResult::Passed {
         return result;
     }
@@ -58,9 +60,13 @@ impl Case for CodegenTest262Case {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let source_type = SourceType::default().with_module(is_module);
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
@@ -92,8 +98,11 @@ impl Case for CodegenBabelCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
@@ -125,13 +134,17 @@ impl Case for CodegenTypeScriptCase {
 
     fn run(&mut self) {
         let units = self.base.units.clone();
+
         for unit in units {
             let result = get_result(&unit.content, unit.source_type);
+
             if result != TestResult::Passed {
                 self.base.result = result;
+
                 return;
             }
         }
+
         self.base.result = TestResult::Passed;
     }
 }
@@ -163,8 +176,11 @@ impl Case for CodegenMiscCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }

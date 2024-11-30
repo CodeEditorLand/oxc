@@ -74,18 +74,23 @@ impl<'a, 'ctx> RegExp<'a, 'ctx> {
     pub fn new(options: RegExpOptions, ctx: &'ctx TransformCtx<'a>) -> Self {
         // Get unsupported flags
         let mut unsupported_flags = RegExpFlags::empty();
+
         if options.dot_all_flag {
             unsupported_flags |= RegExpFlags::S;
         }
+
         if options.sticky_flag {
             unsupported_flags |= RegExpFlags::Y;
         }
+
         if options.unicode_flag {
             unsupported_flags |= RegExpFlags::U;
         }
+
         if options.match_indices {
             unsupported_flags |= RegExpFlags::D;
         }
+
         if options.set_notation {
             unsupported_flags |= RegExpFlags::V;
         }
@@ -121,10 +126,13 @@ impl<'a, 'ctx> Traverse<'a> for RegExp<'a, 'ctx> {
         let Expression::RegExpLiteral(regexp) = expr else {
             return;
         };
+
         let regexp = regexp.as_mut();
 
         let flags = regexp.regex.flags;
+
         let has_unsupported_flags = flags.intersects(self.unsupported_flags);
+
         if !has_unsupported_flags {
             if !self.some_unsupported_patterns {
                 // This RegExp has no unsupported flags, and there are no patterns which may need transforming,
@@ -133,10 +141,12 @@ impl<'a, 'ctx> Traverse<'a> for RegExp<'a, 'ctx> {
             }
 
             let literal_span = regexp.span;
+
             let pattern = match &mut regexp.regex.pattern {
                 RegExpPattern::Raw(raw) => {
                     #[expect(clippy::cast_possible_truncation)]
                     let pattern_len = raw.len() as u32;
+
                     let pattern_span_start = literal_span.start + 1; // +1 to skip the opening `/`
                     let flags_span_start = pattern_span_start + pattern_len + 1; // +1 to skip the closing `/`
                     let flags_text = Span::new(flags_span_start, literal_span.end)
@@ -151,18 +161,24 @@ impl<'a, 'ctx> Traverse<'a> for RegExp<'a, 'ctx> {
                     ) {
                         Ok(pattern) => {
                             regexp.regex.pattern = RegExpPattern::Pattern(ctx.alloc(pattern));
+
                             let RegExpPattern::Pattern(pattern) = &regexp.regex.pattern else {
                                 unreachable!()
                             };
+
                             pattern
                         }
+
                         Err(error) => {
                             regexp.regex.pattern = RegExpPattern::Invalid(raw);
+
                             self.ctx.error(error);
+
                             return;
                         }
                     }
                 }
+
                 RegExpPattern::Invalid(_) => return,
                 RegExpPattern::Pattern(pattern) => &**pattern,
             };
@@ -180,6 +196,7 @@ impl<'a, 'ctx> Traverse<'a> for RegExp<'a, 'ctx> {
 
         let callee = {
             let symbol_id = ctx.scopes().find_binding(ctx.current_scope_id(), "RegExp");
+
             ctx.create_ident_expr(SPAN, Atom::from("RegExp"), symbol_id, ReferenceFlags::read())
         };
 
@@ -212,6 +229,7 @@ impl<'a, 'ctx> RegExp<'a, 'ctx> {
                     return self.unicode_property_escapes
                         && character_class_has_unicode_property_escape(character_class)
                 }
+
                 Term::LookAroundAssertion(assertion) => {
                     return self.look_behind_assertions
                         && matches!(
@@ -220,6 +238,7 @@ impl<'a, 'ctx> RegExp<'a, 'ctx> {
                                 | LookAroundAssertionKind::NegativeLookbehind
                         )
                 }
+
                 Term::Quantifier(quantifier) => term = &quantifier.body,
                 _ => return false,
             }
@@ -233,6 +252,7 @@ fn character_class_has_unicode_property_escape(character_class: &CharacterClass)
         CharacterClassContents::NestedCharacterClass(character_class) => {
             character_class_has_unicode_property_escape(character_class)
         }
+
         _ => false,
     })
 }
@@ -247,5 +267,6 @@ fn try_parse_pattern<'a>(
     use oxc_regular_expression::{LiteralParser, Options};
 
     let options = Options { pattern_span_offset, flags_span_offset };
+
     LiteralParser::new(ctx.ast.allocator, raw, Some(flags_text), options).parse()
 }

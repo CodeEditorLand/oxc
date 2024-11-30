@@ -50,13 +50,16 @@ impl Rule for NoAsyncPromiseExecutor {
         let AstKind::NewExpression(new_expression) = node.kind() else {
             return;
         };
+
         if !new_expression.callee.is_specific_id("Promise") {
             return;
         }
+
         let Some(expression) = new_expression.arguments.first().and_then(Argument::as_expression)
         else {
             return;
         };
+
         let mut span = match expression.get_inner_expression() {
             Expression::ArrowFunctionExpression(arrow) if arrow.r#async => arrow.span,
             Expression::FunctionExpression(func) if func.r#async => func.span,

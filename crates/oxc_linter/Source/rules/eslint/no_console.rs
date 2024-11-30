@@ -76,9 +76,11 @@ impl Rule for NoConsole {
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(mem) = call_expr.callee.as_member_expression() else {
             return;
         };
+
         let Expression::Identifier(ident) = mem.object() else {
             return;
         };
@@ -89,6 +91,7 @@ impl Rule for NoConsole {
         {
             if let Some((mem_span, _)) = mem.static_property_info() {
                 let diagnostic_span = ident.span().merge(&mem_span);
+
                 ctx.diagnostic_with_suggestion(no_console_diagnostic(diagnostic_span), |fixer| {
                     remove_console(fixer, ctx, node)
                 });
@@ -103,6 +106,7 @@ fn remove_console<'c, 'a: 'c>(
     node: &AstNode<'a>,
 ) -> RuleFix<'a> {
     let mut node_to_delete = node;
+
     for parent in ctx.nodes().ancestors(node.id()).skip(1) {
         match parent.kind() {
             AstKind::ParenthesizedExpression(_)
@@ -132,9 +136,11 @@ fn remove_console<'c, 'a: 'c>(
             => {
                 return fixer.replace(node_to_delete.span(), "undefined").dangerously()
             }
+
             _ => break,
         }
     }
+
     fixer.delete(node_to_delete)
 }
 

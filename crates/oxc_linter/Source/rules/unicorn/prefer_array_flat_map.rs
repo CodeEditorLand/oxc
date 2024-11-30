@@ -50,13 +50,16 @@ impl Rule for PreferArrayFlatMap {
         if !is_method_call(flat_call_expr, None, Some(&["flat"]), None, None) {
             return;
         }
+
         let Some(member_expr) = flat_call_expr.callee.as_member_expression() else {
             return;
         };
+
         let Expression::CallExpression(call_expr) = &member_expr.object().without_parentheses()
         else {
             return;
         };
+
         if !is_method_call(call_expr, None, Some(&["map"]), None, None) {
             return;
         }
@@ -75,14 +78,21 @@ impl Rule for PreferArrayFlatMap {
             let mut fixes = vec![];
             // delete flat
             let delete_start = member_expr.object().span().end;
+
             let delete_end = flat_call_expr.span().end;
+
             let delete_span = Span::new(delete_start, delete_end);
+
             fixes.push(Fix::delete(delete_span));
             // replace map with flatMap
             let replace_end = call_expr.callee.span().end;
+
             let replace_start = replace_end - 3;
+
             let replace_span = Span::new(replace_start, replace_end);
+
             fixes.push(Fix::new("flatMap", replace_span));
+
             fixes
         });
     }

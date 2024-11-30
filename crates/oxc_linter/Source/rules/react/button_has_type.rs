@@ -78,6 +78,7 @@ impl Rule for ButtonHasType {
                 };
 
                 let name = identifier.name.as_str();
+
                 if name != "button" {
                     return;
                 }
@@ -93,6 +94,7 @@ impl Rule for ButtonHasType {
                     },
                 );
             }
+
             AstKind::CallExpression(call_expr) => {
                 if is_create_element_call(call_expr) {
                     let Some(Argument::StringLiteral(str)) = call_expr.arguments.first() else {
@@ -132,6 +134,7 @@ impl Rule for ButtonHasType {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -167,9 +170,11 @@ impl ButtonHasType {
                     false
                 }
             }
+
             Some(JSXAttributeValue::StringLiteral(str)) => {
                 self.is_valid_button_type_prop_string_literal(str.value.as_str())
             }
+
             _ => false,
         }
     }
@@ -179,19 +184,24 @@ impl ButtonHasType {
             Expression::StringLiteral(str) => {
                 self.is_valid_button_type_prop_string_literal(str.value.as_str())
             }
+
             Expression::TemplateLiteral(template_literal) => {
                 if !template_literal.is_no_substitution_template() {
                     return false;
                 }
+
                 if let Some(quasi) = template_literal.quasi() {
                     return self.is_valid_button_type_prop_string_literal(quasi.as_str());
                 }
+
                 false
             }
+
             Expression::ConditionalExpression(conditional_expr) => {
                 self.is_valid_button_type_prop_expression(&conditional_expr.consequent)
                     && self.is_valid_button_type_prop_expression(&conditional_expr.alternate)
             }
+
             _ => false,
         }
     }

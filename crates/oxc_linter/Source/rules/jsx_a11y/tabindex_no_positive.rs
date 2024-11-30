@@ -53,6 +53,7 @@ impl Rule for TabindexNoPositive {
         let AstKind::JSXOpeningElement(jsx_el) = node.kind() else {
             return;
         };
+
         if let Some(tab_index_prop) = has_jsx_prop_ignore_case(jsx_el, "tabIndex") {
             check_and_diagnose(tab_index_prop, ctx);
         }

@@ -58,6 +58,7 @@ declare_oxc_lint!(
 impl Rule for MaxClassesPerFile {
     fn from_configuration(value: serde_json::Value) -> Self {
         let config = value.get(0);
+
         if let Some(max) = config
             .and_then(Value::as_number)
             .and_then(serde_json::Number::as_u64)
@@ -77,6 +78,7 @@ impl Rule for MaxClassesPerFile {
                 .and_then(|config| config.get("ignoreExpressions"))
                 .and_then(serde_json::Value::as_bool)
                 .unwrap_or(false);
+
             Self(Box::new(MaxClassesPerFileConfig { max, ignore_expressions }))
         }
     }
@@ -91,6 +93,7 @@ impl Rule for MaxClassesPerFile {
                 .iter_enumerated()
                 .filter(|(_class_id, node_id)| !ctx.nodes().kind(**node_id).is_declaration())
                 .count();
+
             class_count -= class_expressions;
         }
 
@@ -99,6 +102,7 @@ impl Rule for MaxClassesPerFile {
         }
 
         let node_id = ctx.semantic().classes().get_node_id(ClassId::from(self.max));
+
         let span = if let AstKind::Class(class) = ctx.nodes().kind(node_id) {
             class.span
         } else {
@@ -120,18 +124,21 @@ fn test() {
         ("class Foo {}", Some(serde_json::json!([1]))),
         (
             "class Foo {}
+
 			class Bar {}",
             Some(serde_json::json!([2])),
         ),
         ("class Foo {}", Some(serde_json::json!([{ "max": 1 }]))),
         (
             "class Foo {}
+
 			class Bar {}",
             Some(serde_json::json!([{ "max": 2 }])),
         ),
         (
             "
 			                class Foo {}
+
 			                const myExpression = class {}
 			            ",
             Some(serde_json::json!([{ "ignoreExpressions": true, "max": 1 }])),
@@ -139,7 +146,9 @@ fn test() {
         (
             "
 			                class Foo {}
+
 			                class Bar {}
+
 			                const myExpression = class {}
 			            ",
             Some(serde_json::json!([{ "ignoreExpressions": true, "max": 2 }])),
@@ -149,21 +158,25 @@ fn test() {
     let fail = vec![
         (
             "class Foo {}
+
 			class Bar {}",
             None,
         ),
         (
             "class Foo {}
+
 			const myExpression = class {}",
             None,
         ),
         (
             "var x = class {};
+
 			var y = class {};",
             None,
         ),
         (
             "class Foo {}
+
 			var x = class {};",
             None,
         ),
@@ -172,7 +185,9 @@ fn test() {
         (
             "
 			                class Foo {}
+
 			                class Bar {}
+
 			                const myExpression = class {}
 			            ",
             Some(serde_json::json!([{ "ignoreExpressions": true, "max": 1 }])),
@@ -180,8 +195,11 @@ fn test() {
         (
             "
 			                class Foo {}
+
 			                class Bar {}
+
 			                class Baz {}
+
 			                const myExpression = class {}
 			            ",
             Some(serde_json::json!([{ "ignoreExpressions": true, "max": 2 }])),

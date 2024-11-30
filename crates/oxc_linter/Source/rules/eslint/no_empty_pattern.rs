@@ -79,6 +79,7 @@ impl Rule for NoEmptyPattern {
             AstKind::ObjectPattern(object) if object.is_empty() => ("object", object.span),
             _ => return,
         };
+
         ctx.diagnostic(no_empty_pattern_diagnostic(pattern_type, span));
     }
 }

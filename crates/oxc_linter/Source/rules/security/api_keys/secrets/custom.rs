@@ -20,15 +20,19 @@ impl SecretScannerMeta for CustomSecret {
     fn rule_name(&self) -> Cow<'static, str> {
         self.rule_name.clone().into()
     }
+
     fn message(&self) -> Cow<'static, str> {
         self.message.clone().into()
     }
+
     fn min_len(&self) -> NonZeroU32 {
         self.min_len
     }
+
     fn max_len(&self) -> Option<NonZeroU32> {
         self.max_len
     }
+
     fn min_entropy(&self) -> f32 {
         self.entropy
     }

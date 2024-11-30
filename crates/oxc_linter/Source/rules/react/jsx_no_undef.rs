@@ -62,13 +62,17 @@ impl Rule for JsxNoUndef {
         if let AstKind::JSXOpeningElement(elem) = &node.kind() {
             if let Some(ident) = get_resolvable_ident(&elem.name) {
                 let reference = ctx.symbols().get_reference(ident.reference_id());
+
                 if reference.symbol_id().is_some() {
                     return;
                 }
+
                 let name = ident.name.as_str();
+
                 if ctx.globals().is_enabled(name) {
                     return;
                 }
+
                 ctx.diagnostic(jsx_no_undef_diagnostic(name, ident.span));
             }
         }
@@ -95,6 +99,7 @@ fn test() {
         (
             r"
         var React;
+
         class Hello extends React.Component {
           render() {
             return <this.props.tag />
@@ -107,6 +112,7 @@ fn test() {
         (
             r#"
         import Text from "cool-module";
+
         const TextWrapper = function (props) {
           return (
             <Text />
@@ -121,8 +127,11 @@ fn test() {
         (
             "
         var React;
+
         import { Foo } from './foo';
+
         import App = Foo.App;
+
         React.render(<App />);
         ",
             None,
@@ -143,6 +152,8 @@ fn test() {
     Tester::new(JsxNoUndef::NAME, pass, fail).test_and_snapshot();
 
     let pass = vec![("let x = <A.B />;", None, Some(json!({ "globals": {"A": "readonly" } })))];
+
     let fail = vec![("let x = <A.B />;", None, None)];
+
     Tester::new(JsxNoUndef::NAME, pass, fail).test();
 }

@@ -51,12 +51,15 @@ impl Rule for NoPrototypeBuiltins {
         let AstKind::CallExpression(expr) = node.kind() else {
             return;
         };
+
         let Some(member_expr) = expr.callee.get_member_expr() else {
             return;
         };
+
         let Some(prop_name) = member_expr.static_property_name() else {
             return;
         };
+
         if DISALLOWED_PROPS.contains(&prop_name) {
             ctx.diagnostic(no_prototype_builtins_diagnostic(prop_name, member_expr.span()));
         }

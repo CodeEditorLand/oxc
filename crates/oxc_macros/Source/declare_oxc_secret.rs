@@ -18,7 +18,9 @@ pub struct SecretRuleMeta {
 impl Parse for SecretRuleMeta {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let struct_name = input.parse()?;
+
         input.parse::<Token!(,)>()?;
+
         let description = input.parse()?;
 
         eat_comma(&input)?;
@@ -37,40 +39,51 @@ impl Parse for SecretRuleMeta {
             match ident.to_string().as_str() {
                 "entropy" => {
                     input.parse::<Token!(=)>()?;
+
                     let entropy = input.parse::<LitFloat>()?;
+
                     parse_assert!(
                         entropy.base10_parse::<f32>()? >= 0.0,
                         entropy,
                         "Entropy must be greater than or equal to 0."
                     );
+
                     rule.entropy = Some(entropy);
                 }
                 "min_len" => {
                     input.parse::<Token!(=)>()?;
+
                     let min_len = input.parse::<LitInt>()?;
+
                     parse_assert!(
                         min_len.base10_parse::<u32>()? > 0,
                         min_len,
                         "Minimum length must be greater than or equal to 1."
                     );
+
                     rule.min_len = Some(min_len);
                 }
                 "max_len" => {
                     input.parse::<Token!(=)>()?;
+
                     let max_len = input.parse::<LitInt>()?;
+
                     parse_assert!(
                         max_len.base10_parse::<u32>()? > 0,
                         max_len,
                         "Maximum length cannot be zero."
                     );
+
                     rule.max_len = Some(max_len);
                 }
+
                 _ => parse_assert!(
                     false,
                     ident,
                     "Unexpected attribute. Only `entropy`, `min_len`, and `max_len` are allowed."
                 ),
             }
+
             eat_comma(&input)?;
         }
 
@@ -79,7 +92,9 @@ impl Parse for SecretRuleMeta {
 
         if let (Some(min), Some(max)) = (rule.min_len.as_ref(), &rule.max_len.as_ref()) {
             let min = min.base10_parse::<u32>()?;
+
             let max = max.base10_parse::<u32>()?;
+
             parse_assert!(
                 min <= max,
                 max,

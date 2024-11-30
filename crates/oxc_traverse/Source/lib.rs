@@ -72,8 +72,11 @@ pub use context::{
 
 mod generated {
     pub mod ancestor;
+
     pub(super) mod scopes_collector;
+
     pub mod traverse;
+
     pub(super) mod walk;
 }
 pub use generated::{ancestor, ancestor::Ancestor, traverse::Traverse};
@@ -153,8 +156,11 @@ pub fn traverse_mut<'a, Tr: Traverse<'a>>(
     scopes: ScopeTree,
 ) -> (SymbolTable, ScopeTree) {
     let mut ctx = TraverseCtx::new(scopes, symbols, allocator);
+
     walk_program(traverser, program, &mut ctx);
+
     debug_assert!(ctx.ancestors_depth() == 1);
+
     ctx.scoping.into_symbol_table_and_scope_tree()
 }
 

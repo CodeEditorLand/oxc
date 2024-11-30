@@ -10,6 +10,7 @@ pub fn is_document_page(file_path: &str) -> bool {
     let Some(page) = file_path.split("pages").last() else {
         return false;
     };
+
     page.starts_with("/_document") || page.starts_with("\\_document")
 }
 

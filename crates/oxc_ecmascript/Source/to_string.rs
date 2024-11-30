@@ -37,9 +37,11 @@ impl<'a> ToJsString<'a> for ArrayExpressionElement<'a> {
             ArrayExpressionElement::Elision(_) | ArrayExpressionElement::NullLiteral(_) => {
                 Some(Cow::Borrowed(""))
             }
+
             ArrayExpressionElement::Identifier(id) if id.name.as_str() == "undefined" => {
                 Some(Cow::Borrowed(""))
             }
+
             expr @ match_expression!(ArrayExpressionElement) => {
                 expr.as_expression().and_then(ToJsString::to_js_string)
             }
@@ -56,15 +58,19 @@ impl<'a> ToJsString<'a> for StringLiteral<'a> {
 impl<'a> ToJsString<'a> for TemplateLiteral<'a> {
     fn to_js_string(&self) -> Option<Cow<'a, str>> {
         let mut str = String::new();
+
         for (i, quasi) in self.quasis.iter().enumerate() {
             str.push_str(quasi.value.cooked.as_ref()?);
 
             if i < self.expressions.len() {
                 let expr = &self.expressions[i];
+
                 let value = expr.to_js_string()?;
+
                 str.push_str(&value);
             }
         }
+
         Some(Cow::Owned(str))
     }
 }
@@ -72,6 +78,7 @@ impl<'a> ToJsString<'a> for TemplateLiteral<'a> {
 impl<'a> ToJsString<'a> for IdentifierReference<'a> {
     fn to_js_string(&self) -> Option<Cow<'a, str>> {
         let name = self.name.as_str();
+
         matches!(name, "undefined" | "Infinity" | "NaN").then(|| Cow::Borrowed(name))
     }
 }
@@ -79,6 +86,7 @@ impl<'a> ToJsString<'a> for IdentifierReference<'a> {
 impl<'a> ToJsString<'a> for NumericLiteral<'a> {
     fn to_js_string(&self) -> Option<Cow<'a, str>> {
         use oxc_syntax::number::ToJsString;
+
         Some(Cow::Owned(self.value.to_js_string()))
     }
 }

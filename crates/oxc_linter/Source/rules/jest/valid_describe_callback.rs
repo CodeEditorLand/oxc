@@ -84,12 +84,15 @@ impl Rule for ValidDescribeCallback {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
     let node = possible_jest_node.node;
+
     let AstKind::CallExpression(call_expr) = node.kind() else {
         return;
     };
+
     let Some(jest_fn_call) = parse_general_jest_fn_call(call_expr, possible_jest_node, ctx) else {
         return;
     };
+
     if !matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Describe)) {
         return;
     }
@@ -102,6 +105,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
             let Some(property_name) = member_expr.static_property_name() else {
                 return;
             };
+
             if property_name == "todo" {
                 return;
             }
@@ -110,12 +114,14 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
 
     if arg_len == 0 {
         diagnostic(ctx, call_expr.span, Message::NameAndCallback);
+
         return;
     }
 
     if arg_len == 1 {
         // For better error notice, we locate it to arguments[0]
         diagnostic(ctx, call_expr.arguments[0].span(), Message::NameAndCallback);
+
         return;
     }
 
@@ -124,8 +130,10 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
             if fn_expr.r#async {
                 diagnostic(ctx, fn_expr.span, Message::NoAsyncDescribeCallback);
             }
+
             let no_each_fields =
                 jest_fn_call.members.iter().all(|member| member.is_name_unequal("each"));
+
             if no_each_fields && fn_expr.params.parameters_count() > 0 {
                 diagnostic(ctx, fn_expr.span, Message::UnexpectedDescribeArgument);
             }
@@ -133,25 +141,31 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
             let Some(ref body) = fn_expr.body else {
                 return;
             };
+
             if let Some(span) = find_first_return_stmt_span(body) {
                 diagnostic(ctx, span, Message::UnexpectedReturnInDescribe);
             }
         }
+
         Argument::ArrowFunctionExpression(arrow_expr) => {
             if arrow_expr.r#async {
                 diagnostic(ctx, arrow_expr.span, Message::NoAsyncDescribeCallback);
             }
+
             let no_each_fields =
                 jest_fn_call.members.iter().all(|member| member.is_name_unequal("each"));
+
             if no_each_fields && arrow_expr.params.parameters_count() > 0 {
                 diagnostic(ctx, arrow_expr.span, Message::UnexpectedDescribeArgument);
             }
 
             if arrow_expr.expression && arrow_expr.body.statements.len() > 0 {
                 let stmt = &arrow_expr.body.statements[0];
+
                 let Statement::ExpressionStatement(expr_stmt) = stmt else {
                     return;
                 };
+
                 if let Expression::CallExpression(call_expr) = &expr_stmt.expression {
                     diagnostic(ctx, call_expr.span, Message::UnexpectedReturnInDescribe);
                 }
@@ -161,6 +175,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
                 diagnostic(ctx, span, Message::UnexpectedReturnInDescribe);
             }
         }
+
         callback => diagnostic(ctx, callback.span(), Message::SecondArgumentMustBeFunction),
     }
 }
@@ -177,6 +192,7 @@ fn find_first_return_stmt_span(function_body: &FunctionBody) -> Option<Span> {
 
 fn diagnostic(ctx: &LintContext, span: Span, message: Message) {
     let (error, help) = message.details();
+
     ctx.diagnostic(valid_describe_callback_diagnostic(error, help, span));
 }
 
@@ -199,9 +215,11 @@ impl Message {
             Self::SecondArgumentMustBeFunction => {
                 ("Second argument must be a function", "Replace second argument with a function")
             }
+
             Self::NoAsyncDescribeCallback => {
                 ("No async describe callback", "Remove `async` keyword")
             }
+
             Self::UnexpectedDescribeArgument => (
                 "Unexpected argument(s) in describe callback",
                 "Remove argument(s) of describe callback",
@@ -281,6 +299,7 @@ fn test() {
         (
             "
             import { fdescribe } from '@jest/globals';
+
             fdescribe('foo', async function () {})
             ",
             None,
@@ -293,8 +312,10 @@ fn test() {
                 it('works', () => {
                     expect(true).toEqual(true);
                 });
+
                 describe('async', async () => {
                     await new Promise(setImmediate);
+
                     it('breaks', () => {
                         throw new Error('Fail');
                     });
@@ -369,6 +390,7 @@ fn test() {
         (
             "
                 import { describe } from 'vitest';
+
                 describe.todo(\"runPrettierFormat\");
             ",
             None,
@@ -438,8 +460,10 @@ fn test() {
                     it('works', () => {
                         expect(true).toEqual(true);
                     });
+
                     describe('async', async () => {
                         await new Promise(setImmediate);
+
                         it('breaks', () => {
                             throw new Error('Fail');
                         });
@@ -510,6 +534,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest);
+
     fail.extend(fail_vitest);
 
     Tester::new(ValidDescribeCallback::NAME, pass, fail)

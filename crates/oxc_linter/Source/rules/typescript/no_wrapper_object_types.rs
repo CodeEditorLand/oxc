@@ -63,6 +63,7 @@ impl Rule for NoWrapperObjectTypes {
                     return;
                 }
             }
+
             AstKind::TSClassImplements(ts_class_implements) => {
                 if let TSTypeName::IdentifierReference(type_name) = &ts_class_implements.expression
                 {
@@ -71,6 +72,7 @@ impl Rule for NoWrapperObjectTypes {
                     return;
                 }
             }
+
             AstKind::TSInterfaceHeritage(ts_interface_heritage) => {
                 if let Expression::Identifier(extends) = &ts_interface_heritage.expression {
                     (extends.name.as_str(), extends.span, extends.reference_id())
@@ -78,6 +80,7 @@ impl Rule for NoWrapperObjectTypes {
                     return;
                 }
             }
+
             _ => {
                 return;
             }

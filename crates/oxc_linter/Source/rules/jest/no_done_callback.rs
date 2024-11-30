@@ -87,9 +87,11 @@ impl Rule for NoDoneCallback {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
     let node = possible_jest_node.node;
+
     if let AstKind::CallExpression(call_expr) = node.kind() {
         if let Some(jest_fn_call) = parse_general_jest_fn_call(call_expr, possible_jest_node, ctx) {
             let kind = jest_fn_call.kind;
+
             if !matches!(
                 kind,
                 JestFnKind::General(JestGeneralFnKind::Test | JestGeneralFnKind::Hook)
@@ -118,17 +120,20 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
                     if func_expr.params.parameters_count() != 1 + callback_arg_index {
                         return;
                     }
+
                     let Some(span) = get_span_of_first_parameter(&func_expr.params) else {
                         return;
                     };
 
                     if func_expr.r#async {
                         ctx.diagnostic(use_await_instead_of_callback(span));
+
                         return;
                     }
 
                     ctx.diagnostic(no_done_callback(span));
                 }
+
                 Argument::ArrowFunctionExpression(arrow_expr) => {
                     if arrow_expr.params.parameters_count() != 1 + callback_arg_index {
                         return;
@@ -140,11 +145,13 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
 
                     if arrow_expr.r#async {
                         ctx.diagnostic(use_await_instead_of_callback(span));
+
                         return;
                     }
 
                     ctx.diagnostic(no_done_callback(span));
                 }
+
                 _ => {}
             }
         }
@@ -153,6 +160,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
 
 fn get_span_of_first_parameter(params: &FormalParameters) -> Option<Span> {
     let span = params.items.first().map(|param| param.span);
+
     if span.is_none() {
         return params.rest.as_ref().map(|rest| rest.span);
     }
@@ -221,7 +229,9 @@ fn test() {
             "
                 test('my test', async (done) => {
                     await myAsyncTask();
+
                     expect(true).toBe(false);
+
                     done();
                 });
             ",
@@ -250,6 +260,7 @@ fn test() {
             "
                 afterAll(async (done) => {
                     await myAsyncTask();
+
                     done();
                 });
             ",

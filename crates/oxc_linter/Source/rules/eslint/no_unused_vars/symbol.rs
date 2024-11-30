@@ -31,6 +31,7 @@ impl PartialEq for Symbol<'_, '_> {
 impl<'s, 'a> Symbol<'s, 'a> {
     pub fn new(semantic: &'s Semantic<'a>, symbol_id: SymbolId) -> Self {
         let flags = semantic.symbols().get_flags(symbol_id);
+
         Self { semantic, id: symbol_id, flags, span: OnceCell::new() }
     }
 
@@ -152,6 +153,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 _ => break,
             }
         }
+
         self.symbols().get_span(self.id)
     }
 
@@ -160,7 +162,9 @@ impl<'s, 'a> Symbol<'s, 'a> {
         if binding.kind.is_destructuring_pattern() {
             return self.symbols().get_span(self.id);
         }
+
         let own = binding.kind.span();
+
         binding.type_annotation.as_ref().map_or(own, |ann| Span::new(own.start, ann.span.start))
     }
 }
@@ -171,6 +175,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
     /// NOTE: does not support CJS right now.
     pub fn is_exported(&self) -> bool {
         let is_in_exportable_scope = self.is_root() || self.is_in_ts_namespace();
+
         is_in_exportable_scope
             && (self.semantic.module_record().exported_bindings.contains_key(self.name())
                 || self.in_export_node())
@@ -188,9 +193,11 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 AstKind::ModuleDeclaration(module) => {
                     return module.is_export();
                 }
+
                 AstKind::ExportNamedDeclaration(_) | AstKind::ExportDefaultDeclaration(_) => {
                     return true;
                 }
+
                 AstKind::VariableDeclaration(_)
                 | AstKind::ArrayExpressionElement(_)
                 | AstKind::ArrayExpression(_)
@@ -199,11 +206,13 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 | AstKind::TSSatisfiesExpression(_) => {
                     continue;
                 }
+
                 _ => {
                     return false;
                 }
             }
         }
+
         false
     }
 
@@ -239,6 +248,7 @@ impl<'a> PartialEq<IdentifierReference<'a>> for Symbol<'_, 'a> {
     fn eq(&self, other: &IdentifierReference<'a>) -> bool {
         // cheap: no resolved reference means its a global reference
         let reference = self.symbols().get_reference(other.reference_id());
+
         reference.symbol_id().is_some_and(|symbol_id| self.id == symbol_id)
     }
 }

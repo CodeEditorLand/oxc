@@ -75,8 +75,10 @@ impl Rule for NoLonelyIf {
                 if parent_if_stmt.alternate.is_some() {
                     return;
                 }
+
                 parent_if_stmt.span
             }
+
             AstKind::IfStatement(parent_if_stmt) => {
                 if parent_if_stmt.alternate.is_some() {
                     return;
@@ -84,6 +86,7 @@ impl Rule for NoLonelyIf {
 
                 parent_if_stmt.span
             }
+
             _ => return,
         };
 

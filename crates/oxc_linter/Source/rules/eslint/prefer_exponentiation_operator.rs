@@ -58,11 +58,14 @@ impl Rule for PreferExponentiationOperator {
                     ctx.diagnostic(prefer_exponentian_operator_diagnostic(call_expr.span));
                 }
             }
+
             match_member_expression!(Expression) => {
                 let member_expr = member_expor_obj.to_member_expression();
+
                 let Some(static_prop_name) = member_expr.static_property_name() else {
                     return;
                 };
+
                 if static_prop_name != "Math" {
                     return;
                 }
@@ -75,6 +78,7 @@ impl Rule for PreferExponentiationOperator {
                     }
                 }
             }
+
             _ => {}
         };
     }
@@ -107,6 +111,7 @@ fn test() {
         "function foo() { Math.pow(a, b); var Math; }",
         "
 			                var globalThis = bar;
+
 			                globalThis.Math.pow(a, b)
 			            ",
         "class C { #pow; foo() { Math.#pow(a, b); } }",

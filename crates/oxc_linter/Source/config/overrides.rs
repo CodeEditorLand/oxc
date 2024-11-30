@@ -30,6 +30,7 @@ pub struct OxlintOverrides(IndexVec<OverrideId, OxlintOverride>);
 
 impl Deref for OxlintOverrides {
     type Target = IndexVec<OverrideId, OxlintOverride>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -98,19 +99,25 @@ impl GlobSet {
         patterns: I,
     ) -> Result<Self, globset::Error> {
         let patterns = patterns.into_iter();
+
         let size_hint = patterns.size_hint();
 
         let mut builder = globset::GlobSetBuilder::new();
+
         let mut raw = Vec::with_capacity(size_hint.1.unwrap_or(size_hint.0));
 
         for pattern in patterns {
             let pattern = pattern.as_ref();
+
             let glob = globset::Glob::new(pattern)?;
+
             builder.add(glob);
+
             raw.push(pattern.to_string());
         }
 
         let globs = builder.build()?;
+
         Ok(Self { raw, globs })
     }
 
@@ -134,6 +141,7 @@ impl<'de> de::Deserialize<'de> for GlobSet {
         D: de::Deserializer<'de>,
     {
         let globs = Vec::<String>::deserialize(deserializer)?;
+
         Self::new(globs).map_err(de::Error::custom)
     }
 }
@@ -156,32 +164,39 @@ mod test {
     #[test]
     fn test_globset() {
         use super::*;
+
         use serde_json::{from_value, json};
 
         let config: OxlintOverride = from_value(json!({
             "files": ["*.tsx",],
         }))
         .unwrap();
+
         assert!(config.files.globs.is_match("/some/path/foo.tsx"));
+
         assert!(!config.files.globs.is_match("/some/path/foo.ts"));
 
         let config: OxlintOverride = from_value(json!({
             "files": ["lib/*.ts",],
         }))
         .unwrap();
+
         assert!(config.files.globs.is_match("lib/foo.ts"));
+
         assert!(!config.files.globs.is_match("src/foo.ts"));
     }
 
     #[test]
     fn test_parsing_plugins() {
         use super::*;
+
         use serde_json::{from_value, json};
 
         let config: OxlintOverride = from_value(json!({
             "files": ["*.tsx"],
         }))
         .unwrap();
+
         assert_eq!(config.plugins, None);
 
         let config: OxlintOverride = from_value(json!({
@@ -189,6 +204,7 @@ mod test {
             "plugins": [],
         }))
         .unwrap();
+
         assert_eq!(config.plugins, Some(LintPlugins::empty()));
 
         let config: OxlintOverride = from_value(json!({
@@ -196,6 +212,7 @@ mod test {
             "plugins": ["typescript", "react"],
         }))
         .unwrap();
+
         assert_eq!(config.plugins, Some(LintPlugins::REACT | LintPlugins::TYPESCRIPT));
     }
 }

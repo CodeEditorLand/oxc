@@ -66,10 +66,12 @@ impl Rule for NoChildrenProp {
                 let JSXAttributeName::Identifier(attr_ident) = &attr.name else {
                     return;
                 };
+
                 if attr_ident.name == "children" {
                     ctx.diagnostic(no_children_prop_diagnostic(attr_ident.span));
                 }
             }
+
             AstKind::CallExpression(call_expr) => {
                 if is_create_element_call(call_expr) {
                     if let Some(Argument::ObjectExpression(obj_expr)) = call_expr.arguments.get(1) {
@@ -87,6 +89,7 @@ impl Rule for NoChildrenProp {
                     }
                 }
             }
+
             _ => {}
         }
     }

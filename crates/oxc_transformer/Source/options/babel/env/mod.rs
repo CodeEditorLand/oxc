@@ -64,6 +64,7 @@ impl BabelEnvOptions {
         } else {
             &features()[plugin_name]
         };
+
         self.targets.should_enable(versions)
     }
 }

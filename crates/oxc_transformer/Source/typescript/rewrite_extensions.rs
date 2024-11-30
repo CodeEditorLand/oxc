@@ -29,6 +29,7 @@ impl TypeScriptRewriteExtensions {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let value = source.value.as_str();
+
         if !value.contains(['/', '\\']) {
             return;
         }
@@ -43,11 +44,14 @@ impl TypeScriptRewriteExtensions {
         };
 
         let value = value.trim_end_matches(extension);
+
         source.value = if self.mode.is_remove() {
             ctx.ast.atom(value.trim_end_matches('.'))
         } else {
             let mut value = value.to_string();
+
             value.push_str(replace);
+
             ctx.ast.atom(&value)
         };
     }
@@ -62,6 +66,7 @@ impl<'a> Traverse<'a> for TypeScriptRewriteExtensions {
         if node.import_kind.is_type() {
             return;
         }
+
         self.rewrite_extensions(&mut node.source, ctx);
     }
 
@@ -73,6 +78,7 @@ impl<'a> Traverse<'a> for TypeScriptRewriteExtensions {
         if node.export_kind.is_type() {
             return;
         }
+
         if let Some(source) = node.source.as_mut() {
             self.rewrite_extensions(source, ctx);
         }
@@ -86,6 +92,7 @@ impl<'a> Traverse<'a> for TypeScriptRewriteExtensions {
         if node.export_kind.is_type() {
             return;
         }
+
         self.rewrite_extensions(&mut node.source, ctx);
     }
 }

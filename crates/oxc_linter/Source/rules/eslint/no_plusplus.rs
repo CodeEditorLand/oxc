@@ -16,6 +16,7 @@ fn no_plusplus_diagnostic(span: Span, operator: UpdateOperator) -> OxcDiagnostic
         UpdateOperator::Increment => {
             diagnostic.with_help("Use the assignment operator `+=` instead.")
         }
+
         UpdateOperator::Decrement => {
             diagnostic.with_help("Use the assignment operator `-=` instead.")
         }
@@ -87,6 +88,7 @@ declare_oxc_lint!(
 impl Rule for NoPlusplus {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         Self {
             allow_for_loop_afterthoughts: obj
                 .and_then(|v| v.get("allowForLoopAfterthoughts"))
@@ -112,6 +114,7 @@ impl Rule for NoPlusplus {
                 UpdateOperator::Increment => "+=",
                 UpdateOperator::Decrement => "-=",
             };
+
             ctx.diagnostic_with_suggestion(
                 no_plusplus_diagnostic(expr.span, expr.operator),
                 |fixer| fixer.replace(expr.span, format!("{ident} {operator} 1")),

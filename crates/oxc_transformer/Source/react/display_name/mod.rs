@@ -105,7 +105,9 @@ impl<'a> ReactDisplayName<'a> {
 		if call_expr.arguments.len() != 1 {
 			return None;
 		}
+
 		let arg = call_expr.arguments.get_mut(0)?;
+
 		match arg {
 			Argument::ObjectExpression(obj_expr) => Some(obj_expr),
 			_ => None,
@@ -119,17 +121,25 @@ impl<'a> ReactDisplayName<'a> {
 		let not_safe = obj_expr.properties.iter().any(|prop| {
             matches!(prop, ObjectPropertyKind::ObjectProperty(p) if p.key.static_name().is_some_and(|name| name == DISPLAY_NAME))
         });
+
 		if not_safe {
 			return;
 		}
+
 		let object_property = {
 			let kind = PropertyKind::Init;
+
 			let identifier_name = IdentifierName::new(SPAN, self.ctx.ast.new_atom(DISPLAY_NAME));
+
 			let key = self.ctx.ast.property_key_identifier(identifier_name);
+
 			let string_literal = StringLiteral::new(SPAN, name);
+
 			let value = self.ctx.ast.literal_string_expression(string_literal);
+
 			self.ctx.ast.object_property(SPAN, kind, key, value, None, false, false, false)
 		};
+
 		obj_expr
 			.properties
 			.insert(0, ObjectPropertyKind::ObjectProperty(object_property));

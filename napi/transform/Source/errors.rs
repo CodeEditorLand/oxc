@@ -14,6 +14,7 @@ pub fn wrap_diagnostics(
     if errors.is_empty() {
         return vec![];
     }
+
     let source = {
         let lang = match (source_type.is_javascript(), source_type.is_jsx()) {
             (true, false) => "JavaScript",
@@ -30,6 +31,7 @@ pub fn wrap_diagnostics(
 
         let ns = NamedSource::new(filename.to_string_lossy(), source_text.to_string())
             .with_language(lang);
+
         Arc::new(ns)
     };
 

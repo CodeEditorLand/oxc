@@ -177,9 +177,11 @@ impl Rule for NoLargeSnapshots {
 impl NoLargeSnapshots {
     fn run<'a>(&self, possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(jest_fn_call) = parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
@@ -194,36 +196,45 @@ impl NoLargeSnapshots {
             let Some(first_arg) = jest_fn_call.args.first() else {
                 return;
             };
+
             let Some(first_arg_expr) = first_arg.as_expression() else {
                 return;
             };
 
             let span = first_arg_expr.span();
+
             self.report_in_span(span, ctx);
         }
     }
 
     fn report_in_expr_stmt(&self, expr_stmt: &ExpressionStatement, ctx: &LintContext) {
         let line_count = Self::get_line_count(expr_stmt.span, ctx);
+
         let allowed = match &expr_stmt.expression {
             Expression::AssignmentExpression(assignment_expr) => {
                 let Some(member_expr) = assignment_expr.left.as_member_expression() else {
                     return;
                 };
+
                 self.check_allowed_in_snapshots(member_expr, ctx)
             }
+
             Expression::BinaryExpression(binary_expr) => {
                 let Some(member_expr) = binary_expr.left.as_member_expression() else {
                     return;
                 };
+
                 self.check_allowed_in_snapshots(member_expr, ctx)
             }
+
             Expression::LogicalExpression(logical_expr) => {
                 let Some(member_expr) = logical_expr.left.as_member_expression() else {
                     return;
                 };
+
                 self.check_allowed_in_snapshots(member_expr, ctx)
             }
+
             _ => false,
         };
 
@@ -256,6 +267,7 @@ impl NoLargeSnapshots {
         let Some(snapshot_name) = member_expr.static_property_name() else {
             return false;
         };
+
         let Some(file_name) = ctx.file_path().to_str() else {
             return false;
         };
@@ -274,7 +286,9 @@ impl NoLargeSnapshots {
 
     fn get_line_count(span: Span, ctx: &LintContext) -> usize {
         let start = span.start as usize;
+
         let end = span.end as usize;
+
         ctx.source_text()[start..=end].lines().count() - 1
     }
 
@@ -307,6 +321,7 @@ fn test() {
 
     fn generate_snapshot_lines(lines: usize) -> String {
         let repeated_lines = "line\n".repeat(lines);
+
         format!("`\n{repeated_lines}`")
     }
 
@@ -340,9 +355,13 @@ fn test() {
     // let another_snap_path = "/another-mock-component.jsx.snap";
 
     let tow_match_inline_cases = generate_match_inline_snapshot(2);
+
     let two_throw_error_match_cases = generate_throw_error_matching_inline_snapshot(2);
+
     let twenty_match_inline_cases = generate_match_inline_snapshot(20);
+
     let sixty_match_inline_cases = generate_match_inline_snapshot(60);
+
     let sixty_cases = format!(
         "
             expect(
@@ -401,6 +420,7 @@ fn test() {
     ];
 
     let fifty_match_inline_cases = generate_match_inline_snapshot(50);
+
     let fifty_throw_error_match_cases = generate_throw_error_matching_inline_snapshot(50);
 
     // let fifty_two_exports_snapshot = generate_exports_snapshot_string(58, None);

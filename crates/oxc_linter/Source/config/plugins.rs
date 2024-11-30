@@ -52,20 +52,35 @@ impl Default for LintPlugins {
 impl From<LintPluginOptions> for LintPlugins {
     fn from(options: LintPluginOptions) -> Self {
         let mut plugins = LintPlugins::empty();
+
         plugins.set(LintPlugins::REACT, options.react);
+
         plugins.set(LintPlugins::UNICORN, options.unicorn);
+
         plugins.set(LintPlugins::TYPESCRIPT, options.typescript);
+
         plugins.set(LintPlugins::OXC, options.oxc);
+
         plugins.set(LintPlugins::IMPORT, options.import);
+
         plugins.set(LintPlugins::JSDOC, options.jsdoc);
+
         plugins.set(LintPlugins::JEST, options.jest);
+
         plugins.set(LintPlugins::VITEST, options.vitest);
+
         plugins.set(LintPlugins::JSX_A11Y, options.jsx_a11y);
+
         plugins.set(LintPlugins::NEXTJS, options.nextjs);
+
         plugins.set(LintPlugins::REACT_PERF, options.react_perf);
+
         plugins.set(LintPlugins::PROMISE, options.promise);
+
         plugins.set(LintPlugins::NODE, options.node);
+
         plugins.set(LintPlugins::SECURITY, options.security);
+
         plugins
     }
 }
@@ -156,6 +171,7 @@ impl<S: AsRef<str>> FromIterator<S> for LintPlugins {
 impl<'de> Deserialize<'de> for LintPlugins {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct LintPluginsVisitor;
+
         impl<'de> de::Visitor<'de> for LintPluginsVisitor {
             type Value = LintPlugins;
 
@@ -179,6 +195,7 @@ impl<'de> Deserialize<'de> for LintPlugins {
                 A: de::SeqAccess<'de>,
             {
                 let mut plugins = LintPlugins::empty();
+
                 loop {
                     // serde_json::from_str will provide an &str, while
                     // serde_json::from_value provides a String. The former is
@@ -188,11 +205,13 @@ impl<'de> Deserialize<'de> for LintPlugins {
                         Ok(Some(next)) => {
                             plugins |= next.as_str().into();
                         }
+
                         Ok(None) => break,
                         Err(_) => match seq.next_element::<&str>() {
                             Ok(Some(next)) => {
                                 plugins |= next.into();
                             }
+
                             Ok(None) | Err(_) => break,
                         },
                     };
@@ -209,6 +228,7 @@ impl<'de> Deserialize<'de> for LintPlugins {
 impl Serialize for LintPlugins {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let vec: Vec<&str> = self.iter().map(Into::into).collect();
+
         vec.serialize(serializer)
     }
 }
@@ -217,9 +237,11 @@ impl JsonSchema for LintPlugins {
     fn schema_name() -> String {
         "LintPlugins".to_string()
     }
+
     fn schema_id() -> std::borrow::Cow<'static, str> {
         std::borrow::Cow::Borrowed("LintPlugins")
     }
+
     fn json_schema(gen: &mut SchemaGenerator) -> Schema {
         gen.subschema_for::<Vec<&str>>()
     }
@@ -316,8 +338,10 @@ impl LintPluginOptions {
 impl<S: AsRef<str>> FromIterator<(S, bool)> for LintPluginOptions {
     fn from_iter<I: IntoIterator<Item = (S, bool)>>(iter: I) -> Self {
         let mut options = Self::none();
+
         for (s, enabled) in iter {
             let flags = LintPlugins::from(s.as_ref());
+
             match flags {
                 LintPlugins::REACT => options.react = enabled,
                 LintPlugins::UNICORN => options.unicorn = enabled,
@@ -350,6 +374,7 @@ impl<'s> FromIterator<&'s str> for LintPluginOptions {
 #[cfg(test)]
 mod test {
     use super::*;
+
     impl PartialEq for LintPluginOptions {
         fn eq(&self, other: &Self) -> bool {
             self.react == other.react
@@ -372,25 +397,33 @@ mod test {
     #[test]
     fn test_default_conversion() {
         let plugins = LintPlugins::default();
+
         let options = LintPluginOptions::default();
+
         assert_eq!(LintPlugins::from(options), plugins);
     }
 
     #[test]
     fn test_collect_empty() {
         let empty: &[&str] = &[];
+
         let plugins: LintPluginOptions = empty.iter().copied().collect();
+
         assert_eq!(plugins, LintPluginOptions::none());
 
         let empty: Vec<(String, bool)> = vec![];
+
         let plugins: LintPluginOptions = empty.into_iter().collect();
+
         assert_eq!(plugins, LintPluginOptions::none());
     }
 
     #[test]
     fn test_collect_strings() {
         let enabled = vec!["react", "typescript", "jest"];
+
         let plugins: LintPluginOptions = enabled.into_iter().collect();
+
         let expected = LintPluginOptions {
             react: true,
             unicorn: false,
@@ -407,6 +440,7 @@ mod test {
             node: false,
             security: false,
         };
+
         assert_eq!(plugins, expected);
     }
 }

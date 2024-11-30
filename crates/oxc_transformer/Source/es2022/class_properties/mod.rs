@@ -304,6 +304,7 @@ impl<'a, 'ctx> Traverse<'a> for ClassProperties<'a, 'ctx> {
                 // TODO: `transform_tagged_template_expression` is no-op at present
                 self.transform_tagged_template_expression(expr, ctx);
             }
+
             _ => {}
         }
     }
@@ -325,11 +326,13 @@ impl<'a, 'ctx> Traverse<'a> for ClassProperties<'a, 'ctx> {
             // `class C {}`
             Statement::ClassDeclaration(class) => {
                 let stmt_address = class.address();
+
                 self.transform_class_declaration(class, stmt_address, ctx);
             }
             // `export class C {}`
             Statement::ExportNamedDeclaration(decl) => {
                 let stmt_address = decl.address();
+
                 if let Some(Declaration::ClassDeclaration(class)) = &mut decl.declaration {
                     self.transform_class_declaration(class, stmt_address, ctx);
                 }
@@ -337,11 +340,13 @@ impl<'a, 'ctx> Traverse<'a> for ClassProperties<'a, 'ctx> {
             // `export default class {}`
             Statement::ExportDefaultDeclaration(decl) => {
                 let stmt_address = decl.address();
+
                 if let ExportDefaultDeclarationKind::ClassDeclaration(class) = &mut decl.declaration
                 {
                     self.transform_class_export_default(class, stmt_address, ctx);
                 }
             }
+
             _ => {}
         }
     }

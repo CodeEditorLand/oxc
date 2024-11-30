@@ -18,7 +18,9 @@ pub struct Template<'a> {
 impl<'a> Template<'a> {
     pub fn with_context(context: &'a Context) -> Self {
         let mut registry = handlebars::Handlebars::new();
+
         registry.register_escape_fn(handlebars::no_escape);
+
         Self { context, registry }
     }
 
@@ -29,6 +31,7 @@ impl<'a> Template<'a> {
             .unwrap();
 
         let out_path = Path::new("crates/oxc_linter/src/javascript_globals.rs");
+
         File::create(out_path)?.write_all(rendered.as_bytes())?;
 
         println!("Saved env file to {out_path:?}");

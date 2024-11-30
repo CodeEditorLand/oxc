@@ -11,10 +11,13 @@ impl<'b, TVec: Serialize, TAfter: Serialize> Serialize for AppendTo<'b, TVec, TA
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         if let Some(after) = self.after {
             let mut seq = serializer.serialize_seq(Some(self.array.len() + 1))?;
+
             for element in self.array {
                 seq.serialize_element(element)?;
             }
+
             seq.serialize_element(after)?;
+
             seq.end()
         } else {
             self.array.serialize(serializer)

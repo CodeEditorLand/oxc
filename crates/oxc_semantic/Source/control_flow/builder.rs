@@ -54,6 +54,7 @@ impl ControlFlowGraphBuilder {
 			.graph
 			.node_weight(self.current_node_ix)
 			.expect("expected `self.current_node_ix` to be a valid node index in self.graph");
+
 		self.basic_blocks
 			.get_mut(idx)
 			.expect("expected `self.current_node_ix` to be a valid node index in self.graph")
@@ -62,8 +63,11 @@ impl ControlFlowGraphBuilder {
 	#[must_use]
 	pub fn new_basic_block_for_function(&mut self) -> BasicBlockId {
 		self.basic_blocks.push(Vec::new());
+
 		let basic_block_id = self.basic_blocks.len() - 1;
+
 		let graph_index = self.graph.add_node(basic_block_id);
+
 		self.current_node_ix = graph_index;
 
 		// todo: get smarter about what can throw, ie: return can't throw but
@@ -78,7 +82,9 @@ impl ControlFlowGraphBuilder {
 	#[must_use]
 	pub fn new_basic_block(&mut self) -> BasicBlockId {
 		self.basic_blocks.push(Vec::new());
+
 		let graph_index = self.graph.add_node(self.basic_blocks.len() - 1);
+
 		self.current_node_ix = graph_index;
 
 		// todo: get smarter about what can throw, ie: return can't throw but
@@ -97,7 +103,9 @@ impl ControlFlowGraphBuilder {
 	#[must_use]
 	pub fn new_register(&mut self) -> Register {
 		let register = Register::Index(self.next_free_register);
+
 		self.next_free_register += 1;
+
 		register
 	}
 
@@ -113,6 +121,7 @@ impl ControlFlowGraphBuilder {
 			)];
 
 			saved_store.0.push(basic_block_element);
+
 			saved_store.1 = Some(register);
 		} else {
 			self.current_basic_block().push(basic_block_element);
@@ -137,8 +146,11 @@ impl ControlFlowGraphBuilder {
 
 	pub fn put_unreachable(&mut self) {
 		let current_node_ix = self.current_node_ix;
+
 		let basic_block_with_unreachable_graph_ix = self.new_basic_block();
+
 		self.add_edge(current_node_ix, basic_block_with_unreachable_graph_ix, EdgeType::Normal);
+
 		self.current_basic_block().push(BasicBlockElement::Unreachable);
 	}
 
@@ -147,7 +159,9 @@ impl ControlFlowGraphBuilder {
 	#[must_use]
 	pub fn preserve_expression_state(&mut self) -> PreservedExpressionState {
 		let use_this_register = self.use_this_register.take();
+
 		let mut store_final_assignments_into_this_array = vec![];
+
 		std::mem::swap(
 			&mut store_final_assignments_into_this_array,
 			&mut self.store_final_assignments_into_this_array,
@@ -161,6 +175,7 @@ impl ControlFlowGraphBuilder {
 
 	pub fn restore_expression_state(&mut self, mut preserved_state:PreservedExpressionState) {
 		self.use_this_register = preserved_state.use_this_register.take();
+
 		self.store_final_assignments_into_this_array =
 			preserved_state.store_final_assignments_into_this_array;
 	}
@@ -178,9 +193,12 @@ impl ControlFlowGraphBuilder {
 		match control_flow_type {
 			StatementControlFlowType::DoesNotUseContinue => {
 				self.basic_blocks_with_breaks.push(vec![]);
+
 				if let Some(next_label) = &self.next_label.take() {
 					self.label_to_ast_node_ix.push((next_label.clone(), id));
+
 					pss.put_label = true;
+
 					self.ast_node_to_break_continue.push((
 						id,
 						self.basic_blocks_with_breaks.len() - 1,
@@ -190,10 +208,14 @@ impl ControlFlowGraphBuilder {
 			},
 			StatementControlFlowType::UsesContinue => {
 				self.basic_blocks_with_breaks.push(vec![]);
+
 				self.basic_blocks_with_continues.push(vec![]);
+
 				if let Some(next_label) = &self.next_label.take() {
 					self.label_to_ast_node_ix.push((next_label.clone(), id));
+
 					pss.put_label = true;
+
 					self.ast_node_to_break_continue.push((
 						id,
 						self.basic_blocks_with_breaks.len() - 1,
@@ -236,8 +258,11 @@ impl ControlFlowGraphBuilder {
 
 		if preserved_state.put_label {
 			let popped = self.label_to_ast_node_ix.pop();
+
 			let popped_2 = self.ast_node_to_break_continue.pop();
+
 			debug_assert_eq!(popped.unwrap().1, id);
+
 			debug_assert_eq!(popped_2.unwrap().0, id);
 		}
 	}

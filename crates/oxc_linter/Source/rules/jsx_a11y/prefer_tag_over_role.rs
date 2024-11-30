@@ -56,6 +56,7 @@ impl PreferTagOverRole {
         if let JSXAttributeItem::Attribute(attr) = role_prop {
             if let Some(JSXAttributeValue::StringLiteral(role_values)) = &attr.value {
                 let roles = role_values.value.split_whitespace();
+
                 for role in roles {
                     Self::check_role(role, role_to_tag, jsx_name, attr.span, ctx);
                 }
@@ -103,6 +104,7 @@ impl Rule for PreferTagOverRole {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     let pass = vec![
         "<div />",
         "<div role=\"unknown\" />",
@@ -111,6 +113,7 @@ fn test() {
         "<img role=\"img\" />",
         "<input role=\"checkbox\" />",
     ];
+
     let fail: Vec<&str> = vec![
         r#"<div role="checkbox" />"#,
         r#"<div role="button checkbox" />"#,
@@ -122,5 +125,6 @@ fn test() {
         r#"<other role="checkbox" />"#,
         r#"<div role="banner" />"#,
     ];
+
     Tester::new(PreferTagOverRole::NAME, pass, fail).test_and_snapshot();
 }

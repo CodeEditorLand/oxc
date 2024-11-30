@@ -7,7 +7,9 @@ pub trait SeparatedList<'a>: Sized {
 
     fn parse(p: &mut ParserImpl<'a>) -> Result<Self> {
         let mut list = Self::new(p);
+
         list.parse_list(p)?;
+
         Ok(list)
     }
 
@@ -35,6 +37,7 @@ pub trait SeparatedList<'a>: Sized {
                 first = false;
             } else {
                 p.expect(self.separator())?;
+
                 if p.at(self.close()) {
                     break;
                 }
@@ -44,6 +47,7 @@ pub trait SeparatedList<'a>: Sized {
         }
 
         p.expect(self.close())?;
+
         Ok(())
     }
 }

@@ -68,6 +68,7 @@ impl Rule for NoBarrelFile {
 
     fn run_once(&self, ctx: &LintContext<'_>) {
         let semantic = ctx.semantic();
+
         let module_record = semantic.module_record();
 
         if module_record.not_esm {
@@ -81,27 +82,32 @@ impl Rule for NoBarrelFile {
             .filter_map(|export_entry| {
                 if let Some(module_request) = &export_entry.module_request {
                     let import_name = &export_entry.import_name;
+
                     if import_name.is_all() || import_name.is_all_but_default() {
                         return Some(module_request);
                     }
                 }
+
                 None
             })
             .collect::<Vec<_>>();
 
         let mut labels = vec![];
+
         let mut total: usize = 0;
 
         for module_request in module_requests {
             if let Some(remote_module) = module_record.loaded_modules.get(module_request.name()) {
                 if let Some(count) = count_loaded_modules(remote_module.value()) {
                     total += count;
+
                     labels.push(module_request.span().label(format!("{count} modules")));
                 }
             };
         }
 
         let threshold = self.threshold;
+
         if total >= threshold {
             ctx.diagnostic(no_barrel_file(total, threshold, labels));
         }
@@ -112,6 +118,7 @@ fn count_loaded_modules(module_record: &ModuleRecord) -> Option<usize> {
     if module_record.loaded_modules.is_empty() {
         return None;
     }
+
     Some(
         ModuleGraphVisitorBuilder::default()
             .visit_fold(0, module_record, |acc, _, _| VisitFoldWhile::Next(acc + 1))

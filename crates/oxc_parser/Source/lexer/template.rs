@@ -34,6 +34,7 @@ impl<'a> Lexer<'a> {
                     b'$' => {
                         // SAFETY: Next byte is `$` which is ASCII, so after it is a UTF-8 char boundary
                         let after_dollar = unsafe { pos.add(1) };
+
                         if after_dollar.addr() < self.source.end_addr() {
                             // If `${`, exit.
                             // SAFETY: Have checked there's at least 1 further byte to read.
@@ -41,6 +42,7 @@ impl<'a> Lexer<'a> {
                                 // Skip `${` and stop searching.
                                 // SAFETY: Consuming `${` leaves `pos` on a UTF-8 char boundary.
                                 pos = unsafe { pos.add(2) };
+
                                 false
                             } else {
                                 // Not `${`. Continue searching.
@@ -56,7 +58,9 @@ impl<'a> Lexer<'a> {
                         // Skip '`' and stop searching.
                         // SAFETY: Char at `pos` is '`', so `pos + 1` is a UTF-8 char boundary.
                         pos = unsafe { pos.add(1) };
+
                         ret = tail;
+
                         false
                     },
                     b'\r' => {
@@ -64,6 +68,7 @@ impl<'a> Lexer<'a> {
                         // `pos` has only been advanced relative to `self.source.position()`.
                         return unsafe { self.template_literal_carriage_return(pos, substitute, tail) };
                     }
+
                     _ => {
                         // `TEMPLATE_LITERAL_TABLE` only matches `$`, '`', `\r` and `\`
                         debug_assert!(next_byte == b'\\');
@@ -75,6 +80,7 @@ impl<'a> Lexer<'a> {
             },
             handle_eof: {
                 self.error(diagnostics::unterminated_string(self.unterminated_range()));
+
                 return Kind::Undetermined;
             },
         };
@@ -105,7 +111,9 @@ impl<'a> Lexer<'a> {
         if pos.addr() == self.source.end_addr() {
             return cold_branch(|| {
                 self.source.advance_to_end();
+
                 self.error(diagnostics::unterminated_string(self.unterminated_range()));
+
                 Kind::Undetermined
             });
         }
@@ -143,9 +151,11 @@ impl<'a> Lexer<'a> {
         // `read_string_escape_sequence` expects `self.source` to be positioned after `\`.
         // SAFETY: Caller guarantees next byte is `\`, which is ASCII, so `pos + 1` is UTF-8 char boundary.
         let after_backslash = pos.add(1);
+
         self.source.set_position(after_backslash);
 
         let mut is_valid_escape_sequence = true;
+
         self.read_string_escape_sequence(&mut str, true, &mut is_valid_escape_sequence);
 
         // Continue search after escape
@@ -170,9 +180,13 @@ impl<'a> Lexer<'a> {
         // will be double what we've seen so far, or `MIN_ESCAPED_TEMPLATE_LIT_LEN` minimum.
         // SAFETY: Caller guarantees `pos` is not before `self.source.position()`.
         let so_far = self.source.str_from_current_to_pos_unchecked(pos);
+
         let capacity = max(so_far.len() * 2, MIN_ESCAPED_TEMPLATE_LIT_LEN);
+
         let mut str = String::with_capacity_in(capacity, self.allocator);
+
         str.push_str(so_far);
+
         str
     }
 
@@ -198,6 +212,7 @@ impl<'a> Lexer<'a> {
                 if next_byte == b'$' {
                     // SAFETY: Next byte is `$` which is ASCII, so after it is a UTF-8 char boundary
                     let after_dollar = pos.add(1);
+
                     if after_dollar.addr() < self.source.end_addr() {
                         // If `${`, exit.
                         // SAFETY: Have checked there's at least 1 further byte to read.
@@ -208,11 +223,13 @@ impl<'a> Lexer<'a> {
                             // Where `chunk_start` is updated, it's always before or equal to `pos`.
                             // So `chunk_start` cannot be after `pos`.
                             let chunk = self.source.str_between_positions_unchecked(chunk_start, pos);
+
                             str.push_str(chunk);
 
                             // Skip `${` and stop searching.
                             // SAFETY: Consuming `${` leaves `pos` on a UTF-8 char boundary.
                             pos = pos.add(2);
+
                             false
                         } else {
                             // Not `${`. Continue searching.
@@ -230,6 +247,7 @@ impl<'a> Lexer<'a> {
                     // Where `chunk_start` is updated, it's always before or equal to `pos`.
                     // So `chunk_start` cannot be after `pos`.
                     let chunk = self.source.str_between_positions_unchecked(chunk_start, pos);
+
                     str.push_str(chunk);
 
                     match next_byte {
@@ -237,9 +255,12 @@ impl<'a> Lexer<'a> {
                             // Skip '`' and stop searching.
                             // SAFETY: Byte at `pos` is '`' (ASCII), so `pos + 1` is a UTF-8 char boundary.
                             pos = pos.add(1);
+
                             ret = tail;
+
                             false
                         }
+
                         b'\r' => {
                             // Set next chunk to start after `\r`.
                             // SAFETY: Next byte is `\r` which is ASCII, so after it is a UTF-8 char boundary.
@@ -266,6 +287,7 @@ impl<'a> Lexer<'a> {
                             // Continue searching
                             true
                         }
+
                         _ => {
                             // `TEMPLATE_LITERAL_TABLE` only matches `$`, '`', `\r` and `\`
                             debug_assert!(next_byte == b'\\');
@@ -274,11 +296,14 @@ impl<'a> Lexer<'a> {
                             // `read_string_escape_sequence` expects `self.source` to be positioned after `\`.
                             // SAFETY: Next byte is `\`, which is ASCII, so `pos + 1` is UTF-8 char boundary.
                             let after_backslash = pos.add(1);
+
                             self.source.set_position(after_backslash);
+
                             self.read_string_escape_sequence(&mut str, true, &mut is_valid_escape_sequence);
 
                             // Start next chunk after escape sequence
                             chunk_start = self.source.position();
+
                             assert!(chunk_start.addr() >= after_backslash.addr());
 
                             // Continue search after escape sequence.
@@ -296,6 +321,7 @@ impl<'a> Lexer<'a> {
             },
             handle_eof: {
                 self.error(diagnostics::unterminated_string(self.unterminated_range()));
+
                 return Kind::Undetermined;
             },
         };
@@ -309,14 +335,18 @@ impl<'a> Lexer<'a> {
     /// See Section 12, the parser needs to re-tokenize on `TemplateSubstitutionTail`,
     pub(crate) fn next_template_substitution_tail(&mut self) -> Token {
         self.token.start = self.offset() - 1;
+
         let kind = self.read_template_literal(Kind::TemplateMiddle, Kind::TemplateTail);
+
         self.lookahead.clear();
+
         self.finish_next(kind)
     }
 
     /// Save escaped template string
     fn save_template_string(&mut self, is_valid_escape_sequence: bool, s: &'a str) {
         self.escaped_templates.insert(self.token.start, is_valid_escape_sequence.then_some(s));
+
         self.token.escaped = true;
     }
 
@@ -324,14 +354,18 @@ impl<'a> Lexer<'a> {
         if token.escaped {
             return self.escaped_templates[&token.start];
         }
+
         let raw = &self.source.whole()[token.start as usize..token.end as usize];
+
         Some(match token.kind {
             Kind::NoSubstitutionTemplate | Kind::TemplateTail => {
                 &raw[1..raw.len() - 1] // omit surrounding quotes or leading "}" and trailing "`"
             }
+
             Kind::TemplateHead | Kind::TemplateMiddle => {
                 &raw[1..raw.len() - 2] // omit leading "`" or "}" and trailing "${"
             }
+
             _ => raw,
         })
     }

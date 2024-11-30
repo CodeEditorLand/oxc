@@ -67,6 +67,7 @@ impl<'a> TopLevelStatementsStore<'a> {
     /// Insert statements at top of program.
     fn insert_into_program(&self, program: &mut Program<'a>) {
         let mut stmts = self.stmts.borrow_mut();
+
         if stmts.is_empty() {
             return;
         }

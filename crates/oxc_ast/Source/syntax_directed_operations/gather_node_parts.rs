@@ -25,14 +25,17 @@ impl<'a> GatherNodeParts<'a> for MemberExpression<'a> {
 		match self {
 			MemberExpression::ComputedMemberExpression(expr) => {
 				expr.object.gather(f);
+
 				expr.expression.gather(f);
 			},
 			MemberExpression::StaticMemberExpression(expr) => {
 				expr.object.gather(f);
+
 				expr.property.gather(f);
 			},
 			MemberExpression::PrivateFieldExpression(expr) => {
 				expr.object.gather(f);
+
 				expr.field.gather(f);
 			},
 		}

@@ -118,7 +118,9 @@ impl Rule for AriaRole {
         let Some(value) = value.as_array() else {
             return Self::default();
         };
+
         let mut ignore_non_dom = false;
+
         let mut allowed_invalid_roles: Vec<String> = vec![];
 
         let _ = value.iter().find(|v| {
@@ -134,6 +136,7 @@ impl Rule for AriaRole {
 
                 return true;
             }
+
             false
         });
 
@@ -158,13 +161,17 @@ impl Rule for AriaRole {
                 match get_prop_value(aria_role) {
                     Some(JSXAttributeValue::ExpressionContainer(container)) => {
                         let jsexp = &container.expression;
+
                         if matches!(jsexp, JSXExpression::NullLiteral(_)) || jsexp.is_undefined() {
                             ctx.diagnostic(aria_role_diagnostic(attr.span, ""));
                         }
                     }
+
                     Some(JSXAttributeValue::StringLiteral(str)) => {
                         let words_str = String::from(str.value.as_str());
+
                         let words = words_str.split_whitespace();
+
                         if let Some(error_prop) = words.into_iter().find(|word| {
                             !VALID_ARIA_ROLES.contains(word)
                                 && !self.allowed_invalid_roles.contains(&(*word).to_string())
@@ -175,6 +182,7 @@ impl Rule for AriaRole {
                             ));
                         }
                     }
+
                     _ => {
                         ctx.diagnostic(aria_role_diagnostic(attr.span, ""));
                     }

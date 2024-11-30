@@ -61,17 +61,20 @@ declare_oxc_lint!(
 impl Rule for NoNamedAsDefault {
     fn run_once(&self, ctx: &LintContext<'_>) {
         let module_record = ctx.module_record();
+
         for import_entry in &module_record.import_entries {
             let ImportImportName::Default(import_span) = &import_entry.import_name else {
                 continue;
             };
 
             let specifier = import_entry.module_request.name();
+
             let Some(remote_module_record_ref) = module_record.loaded_modules.get(specifier) else {
                 continue;
             };
 
             let import_name = import_entry.local_name.name();
+
             if remote_module_record_ref.exported_bindings.contains_key(import_name) {
                 ctx.diagnostic(no_named_as_default_diagnostic(
                     *import_span,

@@ -28,6 +28,7 @@ pub fn is_immutable_value(expr: &Expression<'_>) -> bool {
         Expression::Identifier(ident) => {
             matches!(ident.name.as_str(), "undefined" | "Infinity" | "NaN")
         }
+
         _ => false,
     }
 }
@@ -39,9 +40,11 @@ impl<'a, 'b> IsLiteralValue<'a, 'b> for Expression<'a> {
             Self::ArrayExpression(expr) => {
                 expr.elements.iter().all(|element| element.is_literal_value(include_functions))
             }
+
             Self::ObjectExpression(expr) => {
                 expr.properties.iter().all(|property| property.is_literal_value(include_functions))
             }
+
             _ => is_immutable_value(self),
         }
     }

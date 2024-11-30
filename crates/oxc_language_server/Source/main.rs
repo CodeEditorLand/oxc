@@ -88,14 +88,18 @@ enum SyntheticRunLevel {
 impl LanguageServer for Backend {
     async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
         self.init(params.root_uri)?;
+
         self.init_ignore_glob().await;
+
         let options = params.initialization_options.and_then(|mut value| {
             let settings = value.get_mut("settings")?.take();
+
             serde_json::from_value::<Options>(settings).ok()
         });
 
         if let Some(value) = options {
             info!("initialize: {:?}", value);
+
             info!("language server version: {:?}", env!("CARGO_PKG_VERSION"));
             *self.options.lock().await = value;
         }
@@ -118,6 +122,7 @@ impl LanguageServer for Backend {
         };
 
         self.init_linter_config().await;
+
         Ok(InitializeResult {
             server_info: Some(ServerInfo { name: "oxc".into(), version: None }),
             offset_encoding: None,
@@ -156,8 +161,10 @@ impl LanguageServer for Backend {
                     .and_then(|value| serde_json::from_value::<Options>(value).ok())
                 else {
                     error!("Can't fetch `oxc_language_server` configuration");
+
                     return;
                 };
+
                 options
             };
 
@@ -167,6 +174,7 @@ impl LanguageServer for Backend {
             "
         configuration changed:
         incoming: {changed_options:?}
+
         current: {current_option:?}
         "
         );
@@ -177,6 +185,7 @@ impl LanguageServer for Backend {
             debug!("lint level change detected {:?}", &changed_options.get_lint_level());
             // clear all exists diagnostics when linter is disabled
             let opened_files = self.diagnostics_report_map.iter().map(|k| k.key().to_string());
+
             let cleared_diagnostics = opened_files
                 .into_iter()
                 .map(|uri| {
@@ -190,6 +199,7 @@ impl LanguageServer for Backend {
                     )
                 })
                 .collect::<Vec<_>>();
+
             self.publish_all_diagnostics(&cleared_diagnostics).await;
         }
 
@@ -202,14 +212,18 @@ impl LanguageServer for Backend {
                 .is_some_and(|path| path.to_str().unwrap() != current_option.config_path)
         {
             info!("config path change detected {:?}", &changed_options.get_config_path());
+
             self.init_linter_config().await;
+
             self.revalidate_open_files().await;
         }
     }
 
     async fn did_change_watched_files(&self, _params: DidChangeWatchedFilesParams) {
         debug!("watched file did change");
+
         self.init_linter_config().await;
+
         self.revalidate_open_files().await;
     }
 
@@ -225,13 +239,17 @@ impl LanguageServer for Backend {
         debug!("oxc server did save");
         // drop as fast as possible
         let run_level = { self.options.lock().await.get_lint_level() };
+
         if run_level < SyntheticRunLevel::OnSave {
             return;
         }
+
         let uri = params.text_document.uri;
+
         if self.is_ignored(&uri).await {
             return;
         }
+
         self.handle_file_update(uri, None, None).await;
     }
 
@@ -239,15 +257,19 @@ impl LanguageServer for Backend {
     /// get the file context from the language client
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let run_level = { self.options.lock().await.get_lint_level() };
+
         if run_level < SyntheticRunLevel::OnType {
             return;
         }
 
         let uri = &params.text_document.uri;
+
         if self.is_ignored(uri).await {
             return;
         }
+
         let content = params.content_changes.first().map(|c| c.text.clone());
+
         self.handle_file_update(
             params.text_document.uri,
             content,
@@ -258,18 +280,22 @@ impl LanguageServer for Backend {
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let run_level = { self.options.lock().await.get_lint_level() };
+
         if run_level <= SyntheticRunLevel::Disable {
             return;
         }
+
         if self.is_ignored(&params.text_document.uri).await {
             return;
         }
+
         self.handle_file_update(params.text_document.uri, None, Some(params.text_document.version))
             .await;
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let uri = params.text_document.uri.to_string();
+
         self.diagnostics_report_map.remove(&uri);
     }
 
@@ -337,9 +363,11 @@ impl Backend {
             .expect("The root uri should be initialized already")
             .as_ref()
             .expect("should get uri");
+
         let mut builder = globset::GlobSetBuilder::new();
         // Collecting all ignore files
         builder.add(Glob::new("**/.eslintignore").unwrap());
+
         builder.add(Glob::new("**/.gitignore").unwrap());
 
         let ignore_file_glob_set = builder.build().unwrap();
@@ -352,15 +380,19 @@ impl Backend {
             .flatten();
 
         let mut gitignore_globs = self.gitignore_glob.lock().await;
+
         for entry in walk {
             let ignore_file_path = entry.path();
+
             if !ignore_file_glob_set.is_match(ignore_file_path) {
                 continue;
             }
 
             if let Some(ignore_file_dir) = ignore_file_path.parent() {
                 let mut builder = ignore::gitignore::GitignoreBuilder::new(ignore_file_dir);
+
                 builder.add(ignore_file_path);
+
                 if let Ok(gitignore) = builder.build() {
                     gitignore_globs.push(gitignore);
                 }
@@ -393,14 +425,19 @@ impl Backend {
         let Some(Some(uri)) = self.root_uri.get() else {
             return;
         };
+
         let Ok(root_path) = uri.to_file_path() else {
             return;
         };
+
         let mut config_path = None;
+
         let config = root_path.join(self.options.lock().await.get_config_path().unwrap());
+
         if config.exists() {
             config_path = Some(config);
         }
+
         if let Some(config_path) = config_path {
             let mut linter = self.server_linter.write().await;
             *linter = ServerLinter::new_with_linter(
@@ -440,7 +477,9 @@ impl Backend {
         if !uri.path().starts_with(root_uri.path()) {
             return false;
         }
+
         let gitignore_globs = &(*self.gitignore_glob.lock().await);
+
         for gitignore in gitignore_globs {
             if let Ok(uri_path) = uri.to_file_path() {
                 if !uri_path.starts_with(gitignore.path()) {
@@ -448,14 +487,18 @@ impl Backend {
                 }
 
                 let path = PathBuf::from(uri.path());
+
                 let ignored =
                     gitignore.matched_path_or_any_parents(&path, path.is_dir()).is_ignore();
+
                 if ignored {
                     debug!("ignored: {uri}");
+
                     return true;
                 }
             }
         }
+
         false
     }
 }
@@ -465,9 +508,11 @@ async fn main() {
     env_logger::init();
 
     let stdin = tokio::io::stdin();
+
     let stdout = tokio::io::stdout();
 
     let server_linter = ServerLinter::new();
+
     let diagnostics_report_map = DashMap::new();
 
     let (service, socket) = LspService::build(|client| Backend {

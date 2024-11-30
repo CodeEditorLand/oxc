@@ -19,12 +19,14 @@ impl<'a> ToBigInt<'a> for Expression<'a> {
         match self {
             Expression::NumericLiteral(number_literal) => {
                 let value = number_literal.value;
+
                 if value.abs() < 2_f64.powi(53) && value.fract() == 0.0 {
                     Some(BigInt::from(value as i64))
                 } else {
                     None
                 }
             }
+
             Expression::BigIntLiteral(lit) => lit.to_big_int(),
             Expression::BooleanLiteral(bool_literal) => {
                 if bool_literal.value {
@@ -33,6 +35,7 @@ impl<'a> ToBigInt<'a> for Expression<'a> {
                     Some(BigInt::zero())
                 }
             }
+
             Expression::UnaryExpression(unary_expr) => match unary_expr.operator {
                 UnaryOperator::LogicalNot => {
                     self.to_boolean().map(
@@ -45,21 +48,26 @@ impl<'a> ToBigInt<'a> for Expression<'a> {
                         },
                     )
                 }
+
                 UnaryOperator::UnaryNegation => {
                     unary_expr.argument.to_big_int().map(std::ops::Neg::neg)
                 }
+
                 UnaryOperator::BitwiseNot => {
                     unary_expr.argument.to_big_int().map(std::ops::Not::not)
                 }
+
                 UnaryOperator::UnaryPlus => unary_expr.argument.to_big_int(),
                 _ => None,
             },
             Expression::StringLiteral(string_literal) => {
                 string_literal.value.as_str().string_to_big_int()
             }
+
             Expression::TemplateLiteral(_) => {
                 self.to_js_string().and_then(|value| value.as_ref().string_to_big_int())
             }
+
             _ => None,
         }
     }
@@ -68,7 +76,9 @@ impl<'a> ToBigInt<'a> for Expression<'a> {
 impl<'a> ToBigInt<'a> for BigIntLiteral<'a> {
     fn to_big_int(&self) -> Option<BigInt> {
         let value = self.raw.as_str().trim_end_matches('n').string_to_big_int();
+
         debug_assert!(value.is_some(), "Failed to parse {}", self.raw);
+
         value
     }
 }

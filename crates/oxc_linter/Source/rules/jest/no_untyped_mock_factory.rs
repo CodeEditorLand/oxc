@@ -104,12 +104,15 @@ impl Rule for NoUntypedMockFactory {
 impl NoUntypedMockFactory {
     fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(mem_expr) = call_expr.callee.as_member_expression() else {
             return;
         };
+
         let Some((property_span, property_name)) = mem_expr.static_property_info() else {
             return;
         };
@@ -130,6 +133,7 @@ impl NoUntypedMockFactory {
         let Some(name_node) = call_expr.arguments.first() else {
             return;
         };
+
         let Some(expr) = name_node.as_expression() else {
             return;
         };
@@ -142,9 +146,13 @@ impl NoUntypedMockFactory {
                 ),
                 |fixer| {
                     let mut content = fixer.codegen();
+
                     content.print_str("<typeof import('");
+
                     content.print_str(string_literal.value.as_str());
+
                     content.print_str("')>(");
+
                     let span = Span::sized(string_literal.span.start - 1, 1);
 
                     fixer.replace(span, content)
@@ -168,6 +176,7 @@ impl NoUntypedMockFactory {
             Expression::ArrowFunctionExpression(arrow_func_expr) => {
                 arrow_func_expr.return_type.is_some()
             }
+
             _ => false,
         }
     }
@@ -323,6 +332,7 @@ fn test() {
         (
             "
                 const moduleToMock = 'random-num';
+
                 jest.mock(moduleToMock, () => {
                     return jest.fn(() => 42);
                 });

@@ -50,12 +50,15 @@ fn assert_generated_derives(attrs: &[Attribute]) -> TokenStream {
         .flat_map(parse_attr)
         .map(|derive| {
             let (abs_derive, generics) = abs_trait(&derive);
+
             quote! {{
                 // NOTE: these are wrapped in a scope to avoid the need for unique identifiers.
                 trait AssertionTrait: #abs_derive #generics {}
+
                 impl<T: #derive #generics> AssertionTrait for T {}
             }}
         });
+
     quote!(const _: () = { #(#assertion)* };)
 }
 

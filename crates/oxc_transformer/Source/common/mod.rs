@@ -42,8 +42,11 @@ impl<'a, 'ctx> Common<'a, 'ctx> {
 impl<'a, 'ctx> Traverse<'a> for Common<'a, 'ctx> {
     fn exit_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.module_imports.exit_program(program, ctx);
+
         self.var_declarations.exit_program(program, ctx);
+
         self.top_level_statements.exit_program(program, ctx);
+
         self.arrow_function_converter.exit_program(program, ctx);
     }
 
@@ -61,6 +64,7 @@ impl<'a, 'ctx> Traverse<'a> for Common<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         self.var_declarations.exit_statements(stmts, ctx);
+
         self.statement_injector.exit_statements(stmts, ctx);
     }
 

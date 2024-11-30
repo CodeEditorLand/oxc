@@ -77,6 +77,7 @@ impl SourceMap {
     /// Convert `SourceMap` to vlq sourcemap data url.
     pub fn to_data_url(&self) -> String {
         let base_64_str = base64_simd::STANDARD.encode_to_string(self.to_json_string().as_bytes());
+
         format!("data:application/json;charset=utf-8;base64,{base_64_str}")
     }
 
@@ -159,7 +160,9 @@ impl SourceMap {
 
     pub fn get_source_and_content(&self, id: u32) -> Option<(&str, &str)> {
         let source = self.get_source(id)?;
+
         let content = self.get_source_content(id)?;
+
         Some((source, content))
     }
 
@@ -171,7 +174,9 @@ impl SourceMap {
             .enumerate()
             .map(|(idx, token)| (token.dst_line, token.dst_col, idx as u32))
             .collect::<Vec<_>>();
+
         table.sort_unstable();
+
         table
     }
 
@@ -183,6 +188,7 @@ impl SourceMap {
         col: u32,
     ) -> Option<&Token> {
         let table = greatest_lower_bound(lookup_table, &(line, col), |table| (table.0, table.1))?;
+
         self.get_token(table.2)
     }
 
@@ -221,6 +227,7 @@ fn greatest_lower_bound<'a, T, K: Ord, F: Fn(&'a T) -> K>(
             break;
         }
     }
+
     slice.get(idx)
 }
 
@@ -233,16 +240,21 @@ fn test_sourcemap_lookup_token() {
         "names": ["x","alert"],
         "mappings": "AAAA,GAAIA,GAAI,EACR,IAAIA,GAAK,EAAG,CACVC,MAAM"
     }"#;
+
     let sm = SourceMap::from_json_string(input).unwrap();
+
     let lookup_table = sm.generate_lookup_table();
+
     assert_eq!(
         sm.lookup_source_view_token(&lookup_table, 0, 0).unwrap().to_tuple(),
         (Some("coolstuff.js"), 0, 0, None)
     );
+
     assert_eq!(
         sm.lookup_source_view_token(&lookup_table, 0, 3).unwrap().to_tuple(),
         (Some("coolstuff.js"), 0, 4, Some("x"))
     );
+
     assert_eq!(
         sm.lookup_source_view_token(&lookup_table, 0, 24).unwrap().to_tuple(),
         (Some("coolstuff.js"), 2, 8, None)
@@ -272,18 +284,25 @@ fn test_sourcemap_source_view_token() {
         vec![Token::new(1, 1, 1, 1, Some(0), Some(0))],
         None,
     );
+
     let mut source_view_tokens = sm.get_source_view_tokens();
+
     assert_eq!(source_view_tokens.next().unwrap().to_tuple(), (Some("foo.js"), 1, 1, Some("foo")));
 }
 
 #[test]
 fn test_mut_sourcemap() {
     let mut sm = SourceMap::default();
+
     sm.set_file("index.js");
+
     sm.set_sources(vec!["foo.js"]);
+
     sm.set_source_contents(vec!["foo"]);
 
     assert_eq!(sm.get_file(), Some("index.js"));
+
     assert_eq!(sm.get_source(0), Some("foo.js"));
+
     assert_eq!(sm.get_source_content(0), Some("foo"));
 }

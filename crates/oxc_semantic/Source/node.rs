@@ -234,6 +234,7 @@ impl<'a> AstNodes<'a> {
     /// [`Program`]: oxc_ast::ast::Program
     pub fn ancestor_ids(&self, node_id: NodeId) -> impl Iterator<Item = NodeId> + '_ {
         let parent_ids = &self.parent_ids;
+
         std::iter::successors(Some(node_id), |&node_id| parent_ids[node_id])
     }
 
@@ -252,8 +253,11 @@ impl<'a> AstNodes<'a> {
         flags: NodeFlags,
     ) -> NodeId {
         let node_id = self.parent_ids.push(Some(parent_node_id));
+
         let node = AstNode::new(kind, scope_id, cfg_id, flags, node_id);
+
         self.nodes.push(node);
+
         node_id
     }
 
@@ -266,21 +270,27 @@ impl<'a> AstNodes<'a> {
         flags: NodeFlags,
     ) -> NodeId {
         let node_id = self.parent_ids.push(None);
+
         self.root = Some(node_id);
+
         let node = AstNode::new(kind, scope_id, cfg_id, flags, node_id);
+
         self.nodes.push(node);
+
         node_id
     }
 
     /// Reserve space for at least `additional` more nodes.
     pub fn reserve(&mut self, additional: usize) {
         self.nodes.reserve(additional);
+
         self.parent_ids.reserve(additional);
     }
 }
 
 impl<'a, 'n> IntoIterator for &'n AstNodes<'a> {
     type Item = &'n AstNode<'a>;
+
     type IntoIter = std::slice::Iter<'n, AstNode<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -300,6 +310,7 @@ impl<'s, 'a> Iterator for AstNodeParentIter<'s, 'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(node_id) = self.current_node_id {
             self.current_node_id = self.nodes.parent_ids[node_id];
+
             Some(self.nodes.get_node(node_id))
         } else {
             None

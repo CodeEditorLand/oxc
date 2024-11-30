@@ -94,6 +94,7 @@ impl Value {
                     Value::String(StringValue::NonEmpty)
                 }
             }
+
             Expression::TemplateLiteral(template_lit) => {
                 if !template_lit.is_no_substitution_template() {
                     Value::Unknown
@@ -103,6 +104,7 @@ impl Value {
                     Value::String(StringValue::NonEmpty)
                 }
             }
+
             _ => Value::Unknown,
         }
     }
@@ -139,10 +141,12 @@ pub fn get_write_expr<'a, 'b>(
     ctx: &'b LintContext<'a>,
 ) -> Option<&'b Expression<'a>> {
     let parent = ctx.nodes().parent_node(node_id)?;
+
     match parent.kind() {
         AstKind::SimpleAssignmentTarget(_) | AstKind::AssignmentTarget(_) => {
             get_write_expr(parent.id(), ctx)
         }
+
         AstKind::AssignmentExpression(assign_expr) => Some(&assign_expr.right),
         _ => None,
     }
@@ -153,6 +157,7 @@ pub fn no_effects() {}
 lazy_static! {
     static ref PURE_FUNCTIONS_SET: FxHashSet<&'static str> = {
         let mut set = FxHashSet::default();
+
         set.extend(pure_functions::PURE_FUNCTIONS);
 
         set
@@ -171,6 +176,7 @@ impl<'a> FunctionName<'a> {
             Expression::StaticMemberExpression(member_expr) => {
                 Some(FunctionName::StaticMemberExpr(member_expr))
             }
+
             _ => None,
         }
     }
@@ -189,6 +195,7 @@ pub fn is_pure_function(function_name: &FunctionName, options: &NodeListenerOpti
     if has_pure_notation(function_name.span(), options.ctx) {
         return true;
     }
+
     let name = flatten_member_expr_if_possible(function_name);
 
     if options.whitelist_functions.is_some_and(|whitelist| whitelist.contains(&name.to_string())) {
@@ -205,9 +212,12 @@ fn flatten_member_expr_if_possible(function_name: &FunctionName) -> CompactStr {
             else {
                 return CompactStr::from("");
             };
+
             let flattened_parent = flatten_member_expr_if_possible(&parent_name);
+
             CompactStr::from(format!("{}.{}", flattened_parent, static_member_expr.property.name))
         }
+
         FunctionName::Identifier(ident) => ident.name.to_compact_str(),
     }
 }
@@ -226,7 +236,9 @@ pub fn has_pure_notation(span: Span, ctx: &LintContext) -> bool {
     let Some(comment) = ctx.semantic().comments_range(..span.start).next_back() else {
         return false;
     };
+
     let raw = ctx.source_range(comment.content_span());
+
     raw.contains("@__PURE__") || raw.contains("#__PURE__")
 }
 
@@ -265,6 +277,7 @@ pub fn get_leading_tree_shaking_comment<'a>(span: Span, ctx: &LintContext<'a>) -
     let comment = ctx.semantic().comments_range(..span.start).next_back()?;
 
     let comment_span = comment.content_span();
+
     let comment_text = comment_span.source_text(ctx.source_text());
 
     if !is_tree_shaking_comment(comment_text) {
@@ -283,6 +296,7 @@ pub fn get_leading_tree_shaking_comment<'a>(span: Span, ctx: &LintContext<'a>) -
 
     // Next step, we need make sure it's not the trailing comment of the previous line.
     let mut current_line_start = span.start as usize;
+
     for c in ctx.source_text()[..span.start as usize].chars().rev() {
         if c == '\n' {
             break;
@@ -290,6 +304,7 @@ pub fn get_leading_tree_shaking_comment<'a>(span: Span, ctx: &LintContext<'a>) -
 
         current_line_start -= c.len_utf8();
     }
+
     let Ok(current_line_start) = u32::try_from(current_line_start) else {
         return None;
     };
@@ -297,10 +312,12 @@ pub fn get_leading_tree_shaking_comment<'a>(span: Span, ctx: &LintContext<'a>) -
     if comment_span.end < current_line_start {
         let previous_line =
             ctx.source_text()[..comment_span.end as usize].lines().next_back().unwrap_or("");
+
         let nothing_before_comment = previous_line
             .trim()
             .strip_prefix(if comment.kind == CommentKind::Line { "//" } else { "/*" })
             .is_some_and(|s| s.trim().is_empty());
+
         if !nothing_before_comment {
             return None;
         }
@@ -318,7 +335,9 @@ pub fn is_local_variable_a_whitelisted_module(
     else {
         return false;
     };
+
     let module_name = parent.source.value.as_str();
+
     is_function_side_effect_free(name, module_name, options)
 }
 
@@ -330,6 +349,7 @@ pub fn is_function_side_effect_free(
     let Some(whitelist_modules) = options.whitelist_modules else {
         return false;
     };
+
     for module in whitelist_modules {
         let is_module_match =
             module.name == module_name || module.name == "#local" && module_name.starts_with('.');
@@ -362,6 +382,7 @@ pub fn calculate_binary_operation(op: BinaryOperator, left: Value, right: Value)
                     Value::String(StringValue::NonEmpty)
                 }
             }
+
             _ => Value::Unknown,
         },
         BinaryOperator::Subtraction => match (left, right) {
@@ -390,6 +411,7 @@ pub fn calculate_binary_operation(op: BinaryOperator, left: Value, right: Value)
                 .neg_bool()
                 .unwrap_or(Value::Unknown)
         }
+
         BinaryOperator::Equality => match (left, right) {
             (Value::Number(a), Value::Number(b)) => Value::Boolean((a - b).abs() < f64::EPSILON),
             _ => Value::Unknown,
@@ -399,6 +421,7 @@ pub fn calculate_binary_operation(op: BinaryOperator, left: Value, right: Value)
                 .neg_bool()
                 .unwrap_or(Value::Unknown)
         }
+
         BinaryOperator::StrictEquality => match (left, right) {
             (Value::Number(a), Value::Number(b)) => Value::Boolean((a - b).abs() < f64::EPSILON),
             (Value::Boolean(a), Value::Boolean(b)) => Value::Boolean(a == b),
@@ -409,6 +432,7 @@ pub fn calculate_binary_operation(op: BinaryOperator, left: Value, right: Value)
                 .neg_bool()
                 .unwrap_or(Value::Unknown)
         }
+
         BinaryOperator::LessEqualThan => match (left, right) {
             (Value::Number(a), Value::Number(b)) => Value::Boolean(a <= b),
             _ => Value::Unknown,
@@ -424,6 +448,7 @@ pub fn calculate_binary_operation(op: BinaryOperator, left: Value, right: Value)
             (Value::Number(a), Value::Number(b)) => {
                 // Casting between two integers of the same size (e.g. i32 -> u32) is a no-op
                 let a = a as i32;
+
                 let b = b as i32;
                 // 1. Let lNum be ! ToUint32(x).
                 let l_num = a as u32;
@@ -434,6 +459,7 @@ pub fn calculate_binary_operation(op: BinaryOperator, left: Value, right: Value)
                 // 4. Return the result of performing a zero-filling right shift of lNum by shiftCount bits.
                 Value::Number(f64::from(l_num >> shift_count))
             }
+
             _ => Value::Unknown,
         },
         BinaryOperator::Remainder => match (left, right) {
@@ -463,12 +489,14 @@ pub fn calculate_binary_operation(op: BinaryOperator, left: Value, right: Value)
                 let l_num = a as i32;
                 // 2. Let rNum be ! ToUint32(y).
                 let r_num = b as i32;
+
                 let r_num = r_num as u32;
                 // 3. Let shiftCount be ℝ(rNum) modulo 32.
                 let shift_count = r_num % 32;
                 // 4. Return the result of left shifting lNum by shiftCount bits.
                 Value::Number(f64::from(l_num << shift_count))
             }
+
             _ => Value::Unknown,
         },
         BinaryOperator::ShiftRight => match (left, right) {
@@ -478,12 +506,14 @@ pub fn calculate_binary_operation(op: BinaryOperator, left: Value, right: Value)
                 let l_num = a as i32;
                 // 2. Let rNum be ! ToUint32(y).
                 let r_num = b as i32;
+
                 let r_num = r_num as u32;
                 // 3. Let shiftCount be ℝ(rNum) modulo 32.
                 let shift_count = r_num % 32;
                 // 4. Return the result of performing a sign-extending right shift of lNum by shiftCount bits. The most significant bit is propagated. The mathematical value of the result is exactly representable as a 32-bit two's complement bit string.i
                 Value::Number(f64::from(l_num >> shift_count))
             }
+
             _ => Value::Unknown,
         },
         BinaryOperator::In | BinaryOperator::Instanceof => Value::Unknown,
@@ -495,6 +525,7 @@ pub fn calculate_logical_operation(op: LogicalOperator, left: Value, right: Valu
     match op {
         LogicalOperator::And => {
             let left = left.to_bool();
+
             let right = right.to_bool();
 
             match (left, right) {
@@ -503,8 +534,10 @@ pub fn calculate_logical_operation(op: LogicalOperator, left: Value, right: Valu
                 _ => Value::Unknown,
             }
         }
+
         LogicalOperator::Or => {
             let left = left.to_bool();
+
             let right = right.to_bool();
 
             match (left, right) {
@@ -513,6 +546,7 @@ pub fn calculate_logical_operation(op: LogicalOperator, left: Value, right: Valu
                 _ => Value::Unknown,
             }
         }
+
         LogicalOperator::Coalesce => Value::Unknown,
     }
 }
@@ -549,11 +583,14 @@ fn test_calculate_binary_operation() {
 
     // "+"
     let op = BinaryOperator::Addition;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Number(3.0));
+
     assert_eq!(
         fun(op, Value::String(StringValue::Empty), Value::String(StringValue::Empty)),
         Value::String(StringValue::Empty)
     );
+
     assert_eq!(
         fun(op, Value::String(StringValue::Empty), Value::String(StringValue::NonEmpty)),
         Value::String(StringValue::NonEmpty)
@@ -566,114 +603,159 @@ fn test_calculate_binary_operation() {
 
     // "-"
     let op = BinaryOperator::Subtraction;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Number(-1.0));
 
     // "*",
     let op = BinaryOperator::Multiplication;
+
     assert_eq!(fun(op, Value::Number(4.0), Value::Number(2.0),), Value::Number(8.0));
 
     // "/",
     let op = BinaryOperator::Division;
+
     assert_eq!(fun(op, Value::Number(4.0), Value::Number(2.0),), Value::Number(2.0));
 
     // "<"
     let op = BinaryOperator::LessThan;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Unknown, Value::Number(2.0),), Value::Boolean(false));
 
     // ">=",
     let op = BinaryOperator::GreaterEqualThan;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Number(2.0), Value::Number(2.0),), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Number(3.0), Value::Number(2.0),), Value::Boolean(true));
 
     // "==",
     let op = BinaryOperator::Equality;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(1.0),), Value::Boolean(true));
 
     // "!=",
     let op = BinaryOperator::Inequality;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(1.0),), Value::Boolean(false));
 
     // "===",
     let op = BinaryOperator::StrictEquality;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(1.0),), Value::Boolean(true));
     // "!==",
     let op = BinaryOperator::StrictInequality;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(1.0),), Value::Boolean(false));
 
     // "<=",
     let op = BinaryOperator::LessEqualThan;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Number(2.0), Value::Number(2.0),), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Number(3.0), Value::Number(2.0),), Value::Boolean(false));
 
     // ">",
     let op = BinaryOperator::GreaterThan;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Number(2.0), Value::Number(2.0),), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Number(3.0), Value::Number(2.0),), Value::Boolean(true));
 
     // "<<",
     let op = BinaryOperator::ShiftLeft;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(0.0),), Value::Number(1.0));
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Number(4.0));
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(31.0),), Value::Number(-2_147_483_648.0));
+
     assert_eq!(
         fun(op, Value::Number(1.0), Value::Number(f64::MAX),),
         Value::Number(-2_147_483_648.0)
     );
+
     assert_eq!(fun(op, Value::Number(-5.0), Value::Number(2.0),), Value::Number(-20.0));
 
     // ">>",
     let op = BinaryOperator::ShiftRight;
+
     assert_eq!(fun(op, Value::Number(4.0), Value::Number(2.0),), Value::Number(1.0));
     // issue: https://github.com/oxc-project/oxc/issues/4914
     assert_eq!(fun(op, Value::Number(4.0), Value::Number(49.0)), Value::Number(0.0));
+
     assert_eq!(fun(op, Value::Number(-5.0), Value::Number(2.0),), Value::Number(-2.0));
 
     // ">>>",
     let op = BinaryOperator::ShiftRightZeroFill;
+
     assert_eq!(fun(op, Value::Number(0.0), Value::Number(0.0),), Value::Number(0.0));
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(0.0),), Value::Number(1.0));
+
     assert_eq!(fun(op, Value::Number(4.0), Value::Number(2.0),), Value::Number(1.0));
+
     assert_eq!(fun(op, Value::Number(2.0), Value::Number(4.0),), Value::Number(0.0));
+
     assert_eq!(fun(op, Value::Number(4096.0), Value::Number(4096.0)), Value::Number(4096.0));
+
     assert_eq!(fun(op, Value::Number(4096.0), Value::Number(1024.0)), Value::Number(4096.0));
+
     assert_eq!(fun(op, Value::Number(4096.0), Value::Number(33.0)), Value::Number(2048.0));
+
     assert_eq!(fun(op, Value::Number(4.0), Value::Number(49.0)), Value::Number(0.0));
+
     assert_eq!(fun(op, Value::Number(-5.0), Value::Number(2.0)), Value::Number(1_073_741_822.0));
 
     // "%",
     let op = BinaryOperator::Remainder;
+
     assert_eq!(fun(op, Value::Number(4.0), Value::Number(2.0),), Value::Number(0.0));
 
     // "|",
     let op = BinaryOperator::BitwiseOR;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Number(3.0));
 
     // "^",
     let op = BinaryOperator::BitwiseXOR;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Number(3.0));
 
     // "&",
     let op = BinaryOperator::BitwiseAnd;
+
     assert_eq!(fun(op, Value::Number(1.0), Value::Number(2.0),), Value::Number(0.0));
 
     // "in",
     let op = BinaryOperator::In;
+
     assert_eq!(fun(op, Value::Unknown, Value::Number(2.0),), Value::Unknown);
 
     // "instanceof",
     let op = BinaryOperator::Instanceof;
+
     assert_eq!(fun(op, Value::Unknown, Value::Number(2.0),), Value::Unknown);
 
     // "**",
     let op = BinaryOperator::Exponential;
+
     assert_eq!(fun(op, Value::Number(2.0), Value::Number(3.0),), Value::Number(8.0));
 }
 
@@ -685,26 +767,41 @@ fn test_logical_operation() {
 
     // "&&"
     let op = LogicalOperator::And;
+
     assert_eq!(fun(op, Value::Boolean(true), Value::Boolean(true)), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Boolean(true), Value::Boolean(false)), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Boolean(false), Value::Boolean(true)), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Boolean(false), Value::Boolean(false)), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Unknown, Value::Boolean(true)), Value::Unknown);
+
     assert_eq!(fun(op, Value::Boolean(true), Value::Unknown), Value::Unknown);
+
     assert_eq!(fun(op, Value::Unknown, Value::Unknown), Value::Unknown);
 
     // "||"
     let op = LogicalOperator::Or;
+
     assert_eq!(fun(op, Value::Boolean(true), Value::Boolean(true)), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Boolean(true), Value::Boolean(false)), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Boolean(false), Value::Boolean(true)), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Boolean(false), Value::Boolean(false)), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Unknown, Value::Boolean(true)), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Boolean(true), Value::Unknown), Value::Boolean(true));
+
     assert_eq!(fun(op, Value::Unknown, Value::Unknown), Value::Unknown);
 
     // "??"
     let op = LogicalOperator::Coalesce;
+
     assert_eq!(fun(op, Value::Boolean(true), Value::Boolean(true)), Value::Unknown);
 }
 
@@ -716,26 +813,36 @@ fn test_unary_operation() {
 
     // "-"
     let op = UnaryOperator::UnaryNegation;
+
     assert_eq!(fun(op, Value::Number(1.0)), Value::Number(-1.0));
+
     assert_eq!(fun(op, Value::Boolean(true)), Value::Unknown);
 
     // "+"
     let op = UnaryOperator::UnaryPlus;
+
     assert_eq!(fun(op, Value::Number(1.0)), Value::Number(1.0));
+
     assert_eq!(fun(op, Value::Boolean(true)), Value::Unknown);
 
     // "!"
     let op = UnaryOperator::LogicalNot;
+
     assert_eq!(fun(op, Value::Boolean(true)), Value::Boolean(false));
+
     assert_eq!(fun(op, Value::Number(1.0)), Value::Unknown);
 
     // "~"
     let op = UnaryOperator::BitwiseNot;
+
     assert_eq!(fun(op, Value::Number(1.0)), Value::Number(-2.0));
+
     assert_eq!(fun(op, Value::Boolean(true)), Value::Unknown);
 
     // "typeof"
     let op = UnaryOperator::Typeof;
+
     assert_eq!(fun(op, Value::Number(1.0)), Value::String(StringValue::NonEmpty));
+
     assert_eq!(fun(op, Value::Boolean(true)), Value::String(StringValue::NonEmpty));
 }

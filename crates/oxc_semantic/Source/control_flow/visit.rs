@@ -14,7 +14,9 @@ where
 	F: Fn(&EdgeWeight) -> Option<State>,
 	G: FnMut(&BasicBlockId, State) -> (State, bool), {
 	let mut q = vec![];
+
 	let mut final_states = vec![];
+
 	let mut visited = FxHashSet::default();
 
 	// for initial node
@@ -33,17 +35,22 @@ where
 			if visited.contains(&edge.target()) {
 				continue;
 			}
+
 			if let Some(result_of_edge_filtering) = edge_filter(edge.weight()) {
 				final_states.push(result_of_edge_filtering);
 			} else {
 				let target = edge.target();
+
 				let (new_state, keep_walking_this_path) = visitor(&target, state.clone());
+
 				visited.insert(target);
+
 				if keep_walking_this_path {
 					q.push((target, new_state.clone()));
 				} else {
 					final_states.push(new_state.clone());
 				}
+
 				edges += 1;
 			}
 		}

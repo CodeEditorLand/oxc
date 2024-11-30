@@ -58,6 +58,7 @@ impl Rule for NoReturnAssign {
             .get(0)
             .and_then(Value::as_str)
             .map_or_else(|| false, |value| value != "except-parens");
+
         Self { always_disallow_assignment_in_return }
     }
 
@@ -65,6 +66,7 @@ impl Rule for NoReturnAssign {
         let AstKind::AssignmentExpression(assign) = node.kind() else {
             return;
         };
+
         if !self.always_disallow_assignment_in_return
             && ctx
                 .nodes()
@@ -75,9 +77,11 @@ impl Rule for NoReturnAssign {
         }
 
         let mut parent_node = ctx.nodes().parent_node(node.id());
+
         while parent_node.is_some_and(|parent| !is_sentinel_node(parent.kind())) {
             parent_node = ctx.nodes().parent_node(parent_node.unwrap().id());
         }
+
         if let Some(parent) = parent_node {
             match parent.kind() {
                 AstKind::ReturnStatement(_) => {
@@ -86,6 +90,7 @@ impl Rule for NoReturnAssign {
                         "Return statements should not contain an assignment.",
                     ));
                 }
+
                 AstKind::ArrowFunctionExpression(arrow) => {
                     if arrow.expression {
                         ctx.diagnostic(no_return_assign_diagnostic(
@@ -94,6 +99,7 @@ impl Rule for NoReturnAssign {
                         ));
                     }
                 }
+
                 _ => (),
             }
         }

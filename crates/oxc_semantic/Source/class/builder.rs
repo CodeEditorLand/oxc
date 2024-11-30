@@ -37,6 +37,7 @@ impl ClassTableBuilder {
         nodes: &AstNodes,
     ) {
         let parent_id = nodes.parent_id(current_node_id).unwrap_or_else(|| unreachable!());
+
         self.current_class_id = Some(self.classes.declare_class(self.current_class_id, parent_id));
 
         for element in &class.body {
@@ -44,12 +45,15 @@ impl ClassTableBuilder {
                 ClassElement::PropertyDefinition(definition) => {
                     self.declare_class_property(definition);
                 }
+
                 ClassElement::MethodDefinition(definition) => {
                     self.declare_class_method(definition);
                 }
+
                 ClassElement::AccessorProperty(definition) => {
                     self.declare_class_accessor(definition);
                 }
+
                 _ => {}
             }
         }
@@ -57,6 +61,7 @@ impl ClassTableBuilder {
 
     pub fn declare_class_accessor(&mut self, property: &AccessorProperty) {
         let is_private = property.key.is_private_identifier();
+
         let name = property.key.name();
 
         if let Some(name) = name {
@@ -77,6 +82,7 @@ impl ClassTableBuilder {
 
     pub fn declare_class_property(&mut self, property: &PropertyDefinition) {
         let is_private = property.key.is_private_identifier();
+
         let name = property.key.name();
 
         if let Some(name) = name {
@@ -102,6 +108,7 @@ impl ClassTableBuilder {
         nodes: &AstNodes,
     ) {
         let parent_kind = nodes.parent_kind(current_node_id);
+
         if let Some(parent_kind) = parent_kind {
             if matches!(parent_kind, AstKind::PrivateInExpression(_) | AstKind::MemberExpression(_))
             {
@@ -114,6 +121,7 @@ impl ClassTableBuilder {
                         ident.span,
                         element_ids,
                     );
+
                     self.classes.add_private_identifier_reference(class_id, reference);
                 }
             }
@@ -124,7 +132,9 @@ impl ClassTableBuilder {
         if method.kind.is_constructor() || method.value.is_typescript_syntax() {
             return;
         }
+
         let is_private = method.key.is_private_identifier();
+
         let name = method.key.name();
 
         if let Some(name) = name {

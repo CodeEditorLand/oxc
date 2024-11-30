@@ -46,28 +46,35 @@ impl Rule for PreferNodeProtocol {
                 Expression::StringLiteral(ref str_lit) => {
                     Some((str_lit.value.clone(), str_lit.span))
                 }
+
                 _ => None,
             },
             AstKind::TSImportEqualsDeclaration(import) => match &import.module_reference {
                 TSModuleReference::ExternalModuleReference(external) => {
                     Some((external.expression.value.clone(), external.expression.span))
                 }
+
                 _ => None,
             },
             AstKind::CallExpression(call) if !call.optional => {
                 call.common_js_require().map(|s| (s.value.clone(), s.span))
             }
+
             AstKind::ModuleDeclaration(ModuleDeclaration::ImportDeclaration(import)) => {
                 Some((import.source.value.clone(), import.source.span))
             }
+
             AstKind::ModuleDeclaration(ModuleDeclaration::ExportNamedDeclaration(export)) => {
                 export.source.as_ref().map(|item| (item.value.clone(), item.span))
             }
+
             _ => None,
         };
+
         let Some((string_lit_value, span)) = string_lit_value_with_span else {
             return;
         };
+
         let module_name = if let Some((prefix, postfix)) = string_lit_value.split_once('/') {
             // `e.g. ignore "assert/"`
             if postfix.is_empty() {
@@ -78,6 +85,7 @@ impl Rule for PreferNodeProtocol {
         } else {
             string_lit_value.as_str()
         };
+
         if module_name.starts_with("node:") || NODEJS_BUILTINS.binary_search(&module_name).is_err()
         {
             return;
@@ -93,6 +101,7 @@ impl Rule for PreferNodeProtocol {
                 );
                 // We're replacing inside the string literal, shift to account for quotes.
                 let span = span.shrink_left(1).shrink_right(1);
+
                 fixer.replace(span, format!("node:{string_lit_value}"))
             },
         );

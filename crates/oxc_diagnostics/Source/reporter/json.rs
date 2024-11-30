@@ -23,6 +23,7 @@ impl DiagnosticReporter for JsonReporter {
 
     fn render_error(&mut self, error: Error) -> Option<String> {
         self.diagnostics.push(error);
+
         None
     }
 }
@@ -31,14 +32,18 @@ impl DiagnosticReporter for JsonReporter {
 #[allow(clippy::print_stdout)]
 fn format_json(diagnostics: &mut Vec<Error>) {
     let handler = JSONReportHandler::new();
+
     let messages = diagnostics
         .drain(..)
         .map(|error| {
             let mut output = String::from("\t");
+
             handler.render_report(&mut output, error.as_ref()).unwrap();
+
             output
         })
         .collect::<Vec<_>>()
         .join(",\n");
+
     println!("[\n{messages}\n]");
 }

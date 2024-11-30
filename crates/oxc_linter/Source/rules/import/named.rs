@@ -93,16 +93,21 @@ impl Rule for Named {
             let ImportImportName::Name(import_name) = &import_entry.import_name else {
                 continue;
             };
+
             let specifier = import_entry.module_request.name();
             // Get remote module record
             let Some(remote_module_record_ref) = module_record.loaded_modules.get(specifier) else {
                 continue;
             };
+
             let remote_module_record = remote_module_record_ref.value();
+
             if remote_module_record.not_esm {
                 continue;
             }
+
             let import_span = import_name.span();
+
             let import_name = import_name.name();
             // Check `import { default as foo } from 'bar'`
             if import_name.as_str() == "default" && remote_module_record.export_default.is_some() {
@@ -128,15 +133,19 @@ impl Rule for Named {
             let Some(module_request) = &export_entry.module_request else {
                 continue;
             };
+
             let ExportImportName::Name(import_name) = &export_entry.import_name else {
                 continue;
             };
+
             let specifier = module_request.name();
             // Get remote module record
             let Some(remote_module_record_ref) = module_record.loaded_modules.get(specifier) else {
                 continue;
             };
+
             let remote_module_record = remote_module_record_ref.value();
+
             if remote_module_record.not_esm {
                 continue;
             }
@@ -146,9 +155,11 @@ impl Rule for Named {
             if *name == "default" && remote_module_record.export_default.is_some() {
                 continue;
             }
+
             if remote_module_record.exported_bindings.contains_key(name) {
                 continue;
             }
+
             ctx.diagnostic(named_diagnostic(name, specifier, import_name.span()));
         }
     }

@@ -110,6 +110,7 @@ impl RuleCategory {
             Self::Restriction => {
                 "Lints which prevent the use of language and library features. Must not be enabled as a whole, should be considered on a case-by-case basis before enabling."
             }
+
             Self::Nursery => "New lints that are still under development.",
         }
     }
@@ -129,6 +130,7 @@ impl RuleCategory {
 
 impl TryFrom<&str> for RuleCategory {
     type Error = ();
+
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "correctness" => Ok(Self::Correctness),
@@ -187,8 +189,10 @@ impl RuleFixMeta {
                     !kind.is_none(),
                     "This lint rule indicates that it provides an auto-fix but its FixKind is None. This is a bug. If this rule does not provide a fix, please use RuleFixMeta::None. Otherwise, please provide a valid FixKind"
                 );
+
                 kind
             }
+
             RuleFixMeta::None | RuleFixMeta::FixPending => FixKind::None,
         }
     }
@@ -228,6 +232,7 @@ impl RuleFixMeta {
                         "Fix kinds must contain Fix and/or Suggestion, but {self:?} has neither."
                     ),
                 };
+
                 let mut message =
                     if kind.is_dangerous() { format!("dangerous {noun}") } else { noun.into() };
 
@@ -306,21 +311,25 @@ mod test {
     use markdown::{to_html_with_options, Options};
 
     use super::RuleCategory;
+
     use crate::rules::RULES;
 
     #[test]
     fn ensure_documentation() {
         assert!(!RULES.is_empty());
+
         let options = Options::gfm();
 
         for rule in RULES.iter() {
             let name = rule.name();
+
             assert!(
                 rule.documentation().is_some_and(|s| !s.is_empty()),
                 "Rule '{name}' is missing documentation."
             );
             // will panic if provided invalid markdown
             let html = to_html_with_options(rule.documentation().unwrap(), &options).unwrap();
+
             assert!(!html.is_empty());
         }
     }

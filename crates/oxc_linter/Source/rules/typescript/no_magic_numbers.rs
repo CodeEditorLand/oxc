@@ -77,6 +77,7 @@ impl TryFrom<&serde_json::Value> for NoMagicNumbersConfig {
 				fn get_bool_property(object:&serde_json::Value, index:&str) -> bool {
 					object.get(index).and_then(serde_json::Value::as_bool).unwrap_or_default()
 				}
+
 				Ok(Self {
 					ignore:object
 						.get("ignore")
@@ -243,6 +244,7 @@ struct InternConfig<'a> {
 impl InternConfig<'_> {
 	pub fn from<'a>(node:&'a AstNode<'a>, parent_node:&'a AstNode<'a>) -> InternConfig<'a> {
 		let is_unary = matches!(parent_node.kind(), AstKind::UnaryExpression(_));
+
 		let is_negative = matches!(parent_node.kind(), AstKind::UnaryExpression(unary) if unary.operator == UnaryOperator::UnaryNegation);
 
 		match node.kind() {
@@ -263,6 +265,7 @@ impl InternConfig<'_> {
 			},
 			AstKind::BigIntLiteral(bigint) => {
 				let big_int_string = bigint.raw.clone().into_string();
+
 				if is_negative {
 					let raw = format!("-{big_int_string}");
 
@@ -300,6 +303,7 @@ impl Rule for NoMagicNumbers {
 		}
 
 		let nodes = ctx.semantic().nodes();
+
 		let config = InternConfig::from(node, nodes.parent_node(node.id()).unwrap());
 
 		if self.is_skipable(&config, nodes) {
@@ -307,6 +311,7 @@ impl Rule for NoMagicNumbers {
 		}
 
 		let parent_kind = nodes.parent_node(config.node.id()).unwrap().kind();
+
 		let span = config.node.kind().span();
 
 		let Some(reason) = self.get_report_reason(&parent_kind) else {
@@ -454,6 +459,7 @@ impl NoMagicNumbers {
 		}
 
 		let parent = nodes.parent_node(config.node.id()).unwrap();
+
 		let parent_kind = parent.kind();
 
 		if self.ignore_enums && is_ts_enum(&parent_kind) {
@@ -528,12 +534,17 @@ fn test() {
 	use crate::tester::Tester;
 
 	let ignore_array_indexes = Some(serde_json::json!([{"ignoreArrayIndexes": true}]));
+
 	let ignore_default_values = Some(serde_json::json!([{"ignoreDefaultValues": true}]));
+
 	let enforce_const = Some(serde_json::json!([{ "enforceConst": true}]));
+
 	let ignore_class_field_initial_values =
 		Some(serde_json::json!([{ "ignoreClassFieldInitialValues": true }]));
+
 	let ignore_numeric_literal_types =
 		Some(serde_json::json!([{ "ignoreNumericLiteralTypes": true }]));
+
 	let ignore_typed_index_arrays = Some(serde_json::json!([{ "ignoreTypeIndexes": true }]));
 
 	let pass = vec![

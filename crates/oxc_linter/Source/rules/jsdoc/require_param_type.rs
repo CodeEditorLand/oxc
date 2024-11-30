@@ -66,9 +66,11 @@ impl Rule for RequireParamType {
         };
 
         let settings = &ctx.settings().jsdoc;
+
         let resolved_param_tag_name = settings.resolve_tag_name("param");
 
         let mut root_count = 0;
+
         for jsdoc in jsdocs
             .iter()
             .filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
@@ -84,6 +86,7 @@ impl Rule for RequireParamType {
                 if name_part.is_some_and(|name_part| !name_part.parsed().contains('.')) {
                     root_count += 1;
                 }
+
                 if settings.exempt_destructured_roots_from_checks {
                     // -1 for count to idx conversion
                     if let Some(ParamKind::Nested(_)) = params_to_check.get(root_count - 1) {

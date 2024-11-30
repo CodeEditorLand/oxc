@@ -65,6 +65,7 @@ impl Rule for NoNamespace {
         let AstKind::TSModuleDeclaration(declaration) = node.kind() else {
             return;
         };
+
         let TSModuleDeclarationName::Identifier(ident) = &declaration.id else {
             return;
         };
@@ -94,6 +95,7 @@ impl Rule for NoNamespace {
                 Span::new(declaration.span.start + i as u32, declaration.span.start + i as u32 + 9)
             }),
         };
+
         if let Some(span) = span {
             ctx.diagnostic(no_namespace_diagnostic(span));
         }
@@ -103,6 +105,7 @@ impl Rule for NoNamespace {
         if self.allow_definition_files && ctx.source_type().is_typescript_definition() {
             return false;
         }
+
         ctx.source_type().is_typescript()
     }
 }
@@ -112,6 +115,7 @@ fn is_declaration(node: &AstNode, ctx: &LintContext) -> bool {
         let AstKind::TSModuleDeclaration(declaration) = node.kind() else {
             return false;
         };
+
         declaration.declare
     })
 }

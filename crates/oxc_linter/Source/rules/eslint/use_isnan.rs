@@ -85,33 +85,40 @@ impl Rule for UseIsnan {
                 if is_nan_identifier(&expr.left) {
                     ctx.diagnostic(comparison_with_na_n(expr.left.span()));
                 }
+
                 if is_nan_identifier(&expr.right) {
                     ctx.diagnostic(comparison_with_na_n(expr.right.span()));
                 }
             }
+
             AstKind::BinaryExpression(expr) if expr.operator.is_equality() => {
                 if is_nan_identifier(&expr.left) {
                     ctx.diagnostic_with_fix(comparison_with_na_n(expr.left.span()), |fixer| {
                         fixer.replace(expr.span, make_equality_fix(true, expr, ctx))
                     });
                 }
+
                 if is_nan_identifier(&expr.right) {
                     ctx.diagnostic_with_fix(comparison_with_na_n(expr.right.span()), |fixer| {
                         fixer.replace(expr.span, make_equality_fix(false, expr, ctx))
                     });
                 }
             }
+
             AstKind::SwitchCase(case) if self.enforce_for_switch_case => {
                 let Some(test) = &case.test else { return };
+
                 if is_nan_identifier(test) {
                     ctx.diagnostic(case_na_n(test.span()));
                 }
             }
+
             AstKind::SwitchStatement(switch) if self.enforce_for_switch_case => {
                 if is_nan_identifier(&switch.discriminant) {
                     ctx.diagnostic(switch_na_n(switch.discriminant.span()));
                 }
             }
+
             AstKind::CallExpression(call) if self.enforce_for_index_of => {
                 // do this check first b/c it's cheaper than is_target_callee
                 if call.arguments.len() != 1 {
@@ -120,12 +127,14 @@ impl Rule for UseIsnan {
                 // Match target array prototype methods whose only argument is
                 // NaN
                 let Some(method) = is_target_callee(&call.callee) else { return };
+
                 if let Some(expr) = call.arguments[0].as_expression() {
                     if is_nan_identifier(expr) {
                         ctx.diagnostic(index_of_na_n(method, expr.span()));
                     }
                 }
             }
+
             _ => (),
         }
     }
@@ -156,6 +165,7 @@ fn is_nan_identifier<'a>(expr: &'a Expression<'a>) -> bool {
 /// If callee is calling the `indexOf` or `lastIndexOf` function.
 fn is_target_callee<'a>(callee: &'a Expression<'a>) -> Option<&'static str> {
     const TARGET_METHODS: [&str; 2] = ["indexOf", "lastIndexOf"];
+
     let callee = callee.get_inner_expression();
 
     if let Some(expr) = callee.as_member_expression() {
@@ -166,6 +176,7 @@ fn is_target_callee<'a>(callee: &'a Expression<'a>) -> Option<&'static str> {
 
     if let Expression::ChainExpression(chain) = callee {
         let expr = chain.expression.as_member_expression()?;
+
         return expr.static_property_name().and_then(|property| {
             TARGET_METHODS.iter().find(|method| **method == property).copied()
         });

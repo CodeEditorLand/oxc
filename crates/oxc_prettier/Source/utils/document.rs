@@ -10,13 +10,16 @@ pub fn will_break(doc: &mut Doc<'_>) -> bool {
             if group.should_break {
                 return true;
             }
+
             if let Some(expanded_states) = &mut group.expanded_states {
                 if expanded_states.iter_mut().rev().any(will_break) {
                     return true;
                 }
             }
+
             check_array(&mut group.contents)
         }
+
         Doc::IfBreak(d) => will_break(&mut d.break_contents),
         Doc::Array(arr)
         | Doc::Indent(arr)

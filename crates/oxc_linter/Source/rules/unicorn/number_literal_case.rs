@@ -85,6 +85,7 @@ impl Rule for NumberLiteralCase {
                 let span = number.span;
                 (span.source_text(ctx.source_text()), span)
             }
+
             _ => return,
         };
 
@@ -105,45 +106,57 @@ fn check_number_literal(number_literal: &str, raw_span: Span) -> Option<(OxcDiag
             number_literal.cow_to_lowercase().into_owned(),
         ));
     }
+
     if number_literal.starts_with("0X") || number_literal.starts_with("0x") {
         let has_uppercase_prefix = number_literal.starts_with("0X");
+
         let has_lowercase_digits = number_literal[2..].chars().any(|c| ('a'..='f').contains(&c));
+
         if has_uppercase_prefix && has_lowercase_digits {
             return Some((
                 uppercase_prefix_and_lowercase_hexadecimal_digits(raw_span, "0x"),
                 "0x".to_owned() + &digits_to_uppercase(&number_literal[2..]),
             ));
         }
+
         if has_uppercase_prefix {
             return Some((
                 uppercase_prefix(Span::new(raw_span.start + 1, raw_span.start + 2), "0x"),
                 "0x".to_owned() + &number_literal[2..],
             ));
         }
+
         if has_lowercase_digits {
             return Some((
                 lowercase_hexadecimal_digits(Span::new(raw_span.start + 2, raw_span.end)),
                 "0x".to_owned() + &digits_to_uppercase(&number_literal[2..]),
             ));
         }
+
         return None;
     }
+
     if let Some(index) = number_literal.find('E') {
         let char_position = raw_span.start + index as u32;
+
         return Some((
             uppercase_exponential_notation(Span::new(char_position, char_position + 1)),
             number_literal.cow_to_lowercase().into_owned(),
         ));
     }
+
     None
 }
 
 fn digits_to_uppercase(digits: &str) -> String {
     let mut result = digits.cow_to_uppercase().into_owned();
+
     if result.ends_with('N') {
         result.truncate(result.len() - 1);
+
         result.push('n');
     }
+
     result
 }
 

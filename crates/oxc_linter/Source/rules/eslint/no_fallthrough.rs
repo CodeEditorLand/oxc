@@ -251,8 +251,11 @@ declare_oxc_lint!(
 impl Rule for NoFallthrough {
     fn from_configuration(value: serde_json::Value) -> Self {
         let Some(value) = value.get(0) else { return Self::default() };
+
         let comment_pattern = value.get("commentPattern").and_then(serde_json::Value::as_str);
+
         let allow_empty_case = value.get("allowEmptyCase").and_then(serde_json::Value::as_bool);
+
         let report_unused_fallthrough_comment =
             value.get("reportUnusedFallthroughComment").and_then(serde_json::Value::as_bool);
 
@@ -263,7 +266,9 @@ impl Rule for NoFallthrough {
         let AstKind::SwitchStatement(switch) = node.kind() else { return };
 
         let cfg = ctx.cfg();
+
         let switch_id = node.cfg_id();
+
         let graph = cfg.graph();
 
         let (cfg_ids, tests, default, exit) = get_switch_semantic_cases(ctx, node, switch);
@@ -281,6 +286,7 @@ impl Rule for NoFallthrough {
                 EdgeType::Normal | EdgeType::Jump | EdgeType::Error(ErrorEdgeKind::Explicit) => {
                     None
                 }
+
                 _ => Some(None),
             },
             &mut |node, last_cond: Option<BlockNodeId>| {
@@ -289,12 +295,15 @@ impl Rule for NoFallthrough {
                 if node == switch_id {
                     return (last_cond, true);
                 }
+
                 if node == default_or_exit {
                     return (last_cond, false);
                 }
+
                 if tests.contains_key(&node) {
                     return (last_cond, true);
                 }
+
                 if cfg.basic_block(node).is_unreachable() {
                     return (None, false);
                 }
@@ -303,11 +312,13 @@ impl Rule for NoFallthrough {
                     .edges_directed(node, Direction::Outgoing)
                     .find(|it| {
                         let target = it.target();
+
                         if let Some(default) = default {
                             if default == target {
                                 return true;
                             }
                         }
+
                         tests.contains_key(&target)
                     })
                     .map(|e| e.target());
@@ -320,26 +331,32 @@ impl Rule for NoFallthrough {
         .collect();
 
         let mut iter = switch.cases.iter().zip(cfg_ids).peekable();
+
         while let Some((case, _)) = iter.next() {
             let Some((next_case, next_cfg_id)) = iter.peek() else { continue };
+
             if !fallthroughs.contains(next_cfg_id) {
                 if self.0.report_unused_fallthrough_comment {
                     if let Some(span) = self.maybe_allow_fallthrough_trivia(ctx, case, next_case) {
                         ctx.diagnostic(no_unused_fallthrough_diagnostic(span));
                     }
                 }
+
                 continue;
             }
+
             let is_illegal_fallthrough = {
                 let is_fallthrough = !case.consequent.is_empty()
                     || (!self.0.allow_empty_case
                         && Self::has_blanks_between(ctx, case.span.start..next_case.span.start));
+
                 is_fallthrough
                     && self.maybe_allow_fallthrough_trivia(ctx, case, next_case).is_none()
             };
 
             if is_illegal_fallthrough {
                 let span = next_case.span;
+
                 if next_case.is_default_case() {
                     ctx.diagnostic(no_fallthrough_default_diagnostic(span));
                 } else {
@@ -353,6 +370,7 @@ impl Rule for NoFallthrough {
 fn possible_fallthrough_comment_span(case: &SwitchCase) -> (u32, Option<u32>) {
     if let Ok(Statement::BlockStatement(block)) = case.consequent.iter().exactly_one() {
         let span = block.span;
+
         if let Some(last) = block.body.last() {
             (last.span().end, Some(span.end))
         } else {
@@ -379,6 +397,7 @@ impl NoFallthrough {
         fall: &SwitchCase,
     ) -> Option<Span> {
         let semantic = ctx.semantic();
+
         let is_fallthrough_comment_in_range = |range: Range<u32>| {
             let comment = semantic
                 .comments_range(range)
@@ -393,12 +412,14 @@ impl NoFallthrough {
 
         if let Some(end) = end {
             let range = start..end;
+
             if is_fallthrough_comment_in_range(range.clone()) {
                 return Some(Span::new(start, end));
             }
         }
 
         let range = start..fall.span.start;
+
         if is_fallthrough_comment_in_range(range.clone()) {
             Some(Span::new(start, fall.span.start))
         } else {
@@ -410,12 +431,14 @@ impl NoFallthrough {
         if comment.starts_with("oxlint-") || comment.starts_with("eslint-") {
             return false;
         }
+
         if let Some(custom_pattern) = &self.0.comment_pattern {
             custom_pattern.is_match(comment)
         } else {
             // We are doing a quick check here to see if it starts with the expected "falls" comment,
             // so that we don't need to initialize the pattern matcher if we don't need it.
             let comment = comment.trim().cow_to_ascii_lowercase();
+
             comment == "falls through"
                 || comment == "fall through"
                 || comment == "fallsthrough"
@@ -451,12 +474,16 @@ fn get_switch_semantic_cases(
     /* exit */ Option<BlockNodeId>,
 ) {
     let cfg = ctx.cfg();
+
     let graph = cfg.graph();
+
     let has_default = switch.cases.iter().any(SwitchCase::is_default_case);
+
     let (tests, exit) = graph
         .edges_directed(node.cfg_id(), Direction::Outgoing)
         .fold((Vec::new(), None), |(mut conds, exit), it| {
             let target = it.target();
+
             if !matches!(it.weight(), EdgeType::Normal) {
                 (conds, exit)
             } else if cfg
@@ -482,6 +509,7 @@ fn get_switch_semantic_cases(
                             })
                     })
                     .is_some_and(|it| it.consequent.is_empty() || it.consequent.iter().exactly_one().is_ok_and(|it| matches!(it, Statement::BlockStatement(b) if b.body.is_empty())));
+
                 conds.push((target, is_empty));
                 (conds, exit)
             } else {
@@ -490,6 +518,7 @@ fn get_switch_semantic_cases(
         });
 
     let mut cfg_ids: Vec<_> = tests.iter().rev().map(|it| it.0).collect();
+
     let (default, exit) = if has_default {
         if let Some(exit) = exit {
             cfg_ids.push(exit);

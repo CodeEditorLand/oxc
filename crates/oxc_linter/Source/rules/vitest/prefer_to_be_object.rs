@@ -78,6 +78,7 @@ impl Rule for PreferToBeObject {
 impl PreferToBeObject {
     fn run<'a>(possible_vitest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_vitest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
@@ -96,6 +97,7 @@ impl PreferToBeObject {
             ctx.diagnostic_with_fix(prefer_to_be_object(matcher.span), |fixer| {
                 fixer.replace(Span::new(matcher.span.start, call_expr.span.end), "toBeObject()")
             });
+
             return;
         }
 
@@ -129,10 +131,12 @@ impl PreferToBeObject {
             if id.name == "Object" {
                 ctx.diagnostic_with_fix(prefer_to_be_object(matcher.span), |fixer| {
                     let mut formatter = fixer.codegen();
+
                     formatter.print_str(fixer.source_range(Span::new(
                         call_expr.span.start,
                         binary_expr.left.span().end,
                     )));
+
                     formatter.print_str(
                         fixer.source_range(Span::new(
                             binary_expr.span.end,
@@ -231,6 +235,7 @@ fn test() {
             None,
         ),
     ];
+
     Tester::new(PreferToBeObject::NAME, pass, fail)
         .with_vitest_plugin(true)
         .expect_fix(fix)

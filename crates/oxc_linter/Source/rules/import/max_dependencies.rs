@@ -74,6 +74,7 @@ declare_oxc_lint!(
 impl Rule for MaxDependencies {
     fn from_configuration(value: Value) -> Self {
         let config = value.get(0);
+
         if let Some(max) = config
             .and_then(Value::as_number)
             .and_then(serde_json::Number::as_u64)
@@ -86,6 +87,7 @@ impl Rule for MaxDependencies {
                 .and_then(Value::as_number)
                 .and_then(serde_json::Number::as_u64)
                 .map_or(10, |v| usize::try_from(v).unwrap_or(10));
+
             let ignore_type_imports = config
                 .and_then(|config| config.get("ignoreTypeImports"))
                 .and_then(Value::as_bool)
@@ -97,6 +99,7 @@ impl Rule for MaxDependencies {
 
     fn run_once(&self, ctx: &LintContext<'_>) {
         let module_record = ctx.module_record();
+
         let mut module_count = module_record.import_entries.len();
 
         let Some(entry) = module_record.import_entries.get(self.max) else {
@@ -118,6 +121,7 @@ impl Rule for MaxDependencies {
             "File has too many dependencies ({}). Maximum allowed is {}.",
             module_count, self.max,
         );
+
         ctx.diagnostic(max_dependencies_diagnostic(error, entry.module_request.span()));
     }
 }
@@ -159,6 +163,7 @@ fn test() {
         (
             r"
             import type { x } from './foo';
+
             import type { y } from './foo';
             ",
             Some(json!([{"max": 1, "ignoreTypeImports": true}])),
@@ -169,7 +174,9 @@ fn test() {
         (
             r"
             import { x } from './foo';
+
             import { y } from './foo';
+
             import { z } from './bar';
             ",
             Some(json!([{"max": 1}])),
@@ -177,7 +184,9 @@ fn test() {
         (
             r"
             import { x } from './foo';
+
             import { y } from './foo';
+
             import { z } from './baz';
             ",
             Some(json!([{"max": 2}])),
@@ -193,6 +202,7 @@ fn test() {
         (
             r"
             import type { x } from './foo';
+
             import type { y } from './foo';
             ",
             Some(json!([{"max": 1, }])),
@@ -200,7 +210,9 @@ fn test() {
         (
             r"
             import type { x } from './foo';
+
             import type { y } from './foo';
+
             import type { z } from './baz';
             ",
             Some(json!([{"max": 2, "ignoreTypeImports": false}])),

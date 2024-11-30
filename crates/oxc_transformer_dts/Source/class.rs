@@ -23,6 +23,7 @@ impl<'a> TransformerDts<'a> {
                 )
                 .with_label(key.span()),
             );
+
             true
         } else {
             false
@@ -89,15 +90,18 @@ impl<'a> TransformerDts<'a> {
         params: Box<'a, FormalParameters<'a>>,
     ) -> ClassElement<'a> {
         let function = &definition.value;
+
         if definition.accessibility.is_some_and(|a| a.is_private()) {
             let r#type = match definition.r#type {
                 MethodDefinitionType::MethodDefinition => {
                     PropertyDefinitionType::PropertyDefinition
                 }
+
                 MethodDefinitionType::TSAbstractMethodDefinition => {
                     PropertyDefinitionType::TSAbstractPropertyDefinition
                 }
             };
+
             return self.create_class_property(
                 r#type,
                 self.ctx.ast.copy(&definition.key),
@@ -121,6 +125,7 @@ impl<'a> TransformerDts<'a> {
             type_annotation,
             Modifiers::empty(),
         );
+
         self.ctx.ast.class_method(
             definition.r#type,
             definition.span,
@@ -171,8 +176,10 @@ impl<'a> TransformerDts<'a> {
             // pattern.(1187)
             return None;
         };
+
         let key =
             self.ctx.ast.property_key_identifier(IdentifierName::new(SPAN, ident_name.clone()));
+
         Some(self.ctx.ast.class_property(
             PropertyDefinitionType::PropertyDefinition,
             param.span,
@@ -197,20 +204,26 @@ impl<'a> TransformerDts<'a> {
         }
 
         let mut elements = self.ctx.ast.new_vec();
+
         let mut has_private_key = false;
+
         for element in &decl.body.body {
             match element {
                 ClassElement::StaticBlock(_) => {}
+
                 ClassElement::MethodDefinition(definition) => {
                     if self.report_property_key(&definition.key, definition.computed) {
                         continue;
                     }
+
                     if definition.key.is_private_identifier() {
                         has_private_key = true;
+
                         continue;
                     }
 
                     let function = &definition.value;
+
                     let params = self.transform_formal_parameters(&function.params);
 
                     if definition.kind.is_constructor() {
@@ -220,6 +233,7 @@ impl<'a> TransformerDts<'a> {
                                 // annotation
                                 let type_annotation =
                                     self.ctx.ast.copy(&params.items[index].pattern.type_annotation);
+
                                 if let Some(new_element) = self
                                     .transform_formal_parameter_to_class_property(
                                         param,
@@ -233,8 +247,10 @@ impl<'a> TransformerDts<'a> {
                     }
 
                     let new_element = self.transform_class_method_definition(definition, params);
+
                     elements.push(new_element);
                 }
+
                 ClassElement::PropertyDefinition(property) => {
                     if self.report_property_key(&property.key, property.computed) {
                         continue;
@@ -246,6 +262,7 @@ impl<'a> TransformerDts<'a> {
                         elements.push(self.transform_class_property_definition(property));
                     }
                 }
+
                 ClassElement::AccessorProperty(property) => {
                     if self.report_property_key(&property.key, property.computed) {
                         return None;
@@ -253,6 +270,7 @@ impl<'a> TransformerDts<'a> {
 
                     if property.key.is_private_identifier() {
                         has_private_key = true;
+
                         continue;
                     }
 
@@ -266,8 +284,10 @@ impl<'a> TransformerDts<'a> {
                         property.r#static,
                         self.ctx.ast.new_vec(),
                     );
+
                     elements.push(new_element);
                 }
+
                 ClassElement::TSIndexSignature(_) => elements.push(self.ctx.ast.copy(element)),
             }
         }
@@ -282,8 +302,11 @@ impl<'a> TransformerDts<'a> {
                 .ctx
                 .ast
                 .property_key_private_identifier(PrivateIdentifier::new(SPAN, "private".into()));
+
             let r#type = PropertyDefinitionType::PropertyDefinition;
+
             let decorators = self.ctx.ast.new_vec();
+
             let new_element = self.ctx.ast.class_property(
                 r#type, SPAN, ident, None, false, false, false, false, false, false, false, None,
                 None, decorators,
@@ -295,6 +318,7 @@ impl<'a> TransformerDts<'a> {
         let body = self.ctx.ast.class_body(decl.body.span, elements);
 
         let mut modifiers = self.modifiers_declare();
+
         if decl.modifiers.is_contains_abstract() {
             modifiers.add_modifier(Modifier { span: SPAN, kind: ModifierKind::Abstract });
         };

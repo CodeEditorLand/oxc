@@ -49,7 +49,9 @@ impl Rule for NoVarRequires {
             // the grandparent is an expression statement => this is a top level require()
             let is_expression_statement = {
                 let parent_node = ctx.nodes().parent_node(node.id());
+
                 let grandparent_node = parent_node.and_then(|x| ctx.nodes().parent_node(x.id()));
+
                 matches!(
                     (
                         parent_node.map(oxc_semantic::AstNode::kind),
@@ -86,7 +88,9 @@ fn test() {
         "require?.('foo');",
         r"
             import { createRequire } from 'module';
+
             const require = createRequire('foo');
+
             const json = require('./some.json');
         ",
         "
@@ -113,6 +117,7 @@ fn test() {
         "const foo: Foo = require('./foo.json').default;",
         r"
             const configValidator = new Validator(require('./a.json'));
+
             configValidator.addSchema(require('./a.json'));
         ",
     ];

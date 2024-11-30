@@ -38,6 +38,7 @@ impl Rule for NoDivRegex {
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         if let AstKind::RegExpLiteral(lit) = node.kind() {
             let Some(pattern) = lit.regex.pattern.as_pattern() else { return };
+
             if pattern
                 .body
                 .body
@@ -47,6 +48,7 @@ impl Rule for NoDivRegex {
             {
                 ctx.diagnostic_with_fix(no_div_regex_diagnostic(lit.span), |fixer| {
                     let span = Span::sized(lit.span.start + 1, 1);
+
                     fixer.replace(span, "[=]")
                 });
             }

@@ -107,6 +107,7 @@ impl Rule for ImgRedundantAlt {
         let Some(config) = value.get(0) else {
             return Self::default();
         };
+
         let components = config.get("components").and_then(Value::as_array).map_or(
             Vec::from(COMPONENTS_FIXED_TO_VALIDATE),
             |v| {
@@ -116,6 +117,7 @@ impl Rule for ImgRedundantAlt {
                     .collect::<Vec<_>>()
             },
         );
+
         let words =
             config.get("words").and_then(Value::as_array).map_or(Vec::from(REDUNDANT_WORDS), |v| {
                 v.iter().filter_map(Value::as_str).chain(REDUNDANT_WORDS).collect::<Vec<_>>()
@@ -128,6 +130,7 @@ impl Rule for ImgRedundantAlt {
         let AstKind::JSXOpeningElement(jsx_el) = node.kind() else {
             return;
         };
+
         let Some(element_type) = get_element_type(ctx, jsx_el) else {
             return;
         };
@@ -168,6 +171,7 @@ impl Rule for ImgRedundantAlt {
                     ctx.diagnostic(img_redundant_alt_diagnostic(alt_attribute_name_span));
                 }
             }
+
             JSXAttributeValue::ExpressionContainer(container) => match &container.expression {
                 JSXExpression::StringLiteral(lit) => {
                     let alt_text = lit.value.as_str();
@@ -176,6 +180,7 @@ impl Rule for ImgRedundantAlt {
                         ctx.diagnostic(img_redundant_alt_diagnostic(alt_attribute_name_span));
                     }
                 }
+
                 JSXExpression::TemplateLiteral(lit) => {
                     for quasi in &lit.quasis {
                         let alt_text = quasi.value.raw.as_str();
@@ -185,6 +190,7 @@ impl Rule for ImgRedundantAlt {
                         }
                     }
                 }
+
                 _ => {}
             },
             _ => {}
@@ -201,6 +207,7 @@ impl ImgRedundantAlt {
                 return true;
             }
         }
+
         false
     }
 }

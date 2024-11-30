@@ -18,6 +18,7 @@ impl DiagnosticReporter for CheckstyleReporter {
 
     fn render_error(&mut self, error: Error) -> Option<String> {
         self.diagnostics.push(error);
+
         None
     }
 }
@@ -25,10 +26,13 @@ impl DiagnosticReporter for CheckstyleReporter {
 #[allow(clippy::print_stdout)]
 fn format_checkstyle(diagnostics: &[Error]) {
     let infos = diagnostics.iter().map(Info::new).collect::<Vec<_>>();
+
     let mut grouped: FxHashMap<String, Vec<Info>> = FxHashMap::default();
+
     for info in infos {
         grouped.entry(info.filename.clone()).or_default().push(info);
     }
+
     let messages = grouped.into_values().map(|infos| {
          let messages = infos
              .iter()
@@ -47,6 +51,7 @@ fn format_checkstyle(diagnostics: &[Error]) {
          let filename = &infos[0].filename;
          format!(r#"<file name="{filename}">{messages}</file>"#)
      }).collect::<Vec<_>>().join(" ");
+
     println!(
         r#"<?xml version="1.0" encoding="utf-8"?><checkstyle version="4.3">{messages}</checkstyle>"#
     );
@@ -59,16 +64,24 @@ fn xml_escape(raw: &str) -> Cow<str> {
 
 fn xml_escape_impl<F: Fn(u8) -> bool>(raw: &str, escape_chars: F) -> Cow<str> {
     let bytes = raw.as_bytes();
+
     let mut escaped = None;
+
     let mut iter = bytes.iter();
+
     let mut pos = 0;
+
     while let Some(i) = iter.position(|&b| escape_chars(b)) {
         if escaped.is_none() {
             escaped = Some(Vec::with_capacity(raw.len()));
         }
+
         let escaped = escaped.as_mut().expect("initialized");
+
         let new_pos = pos + i;
+
         escaped.extend_from_slice(&bytes[pos..new_pos]);
+
         match bytes[new_pos] {
             b'<' => escaped.extend_from_slice(b"&lt;"),
             b'>' => escaped.extend_from_slice(b"&gt;"),
@@ -87,6 +100,7 @@ fn xml_escape_impl<F: Fn(u8) -> bool>(raw: &str, escape_chars: F) -> Cow<str> {
                 "Only '<', '>','\', '&', '\"', '\\t', '\\r', '\\n', and ' ' are escaped"
             ),
         }
+
         pos = new_pos + 1;
     }
 

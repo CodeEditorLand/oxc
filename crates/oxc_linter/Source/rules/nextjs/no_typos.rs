@@ -55,12 +55,15 @@ impl Rule for NoTypos {
         let Some(path) = ctx.file_path().to_str() else {
             return false;
         };
+
         let Some(path_after_pages) = path.split("pages").nth(1) else {
             return false;
         };
+
         if path_after_pages.starts_with("/api") {
             return false;
         }
+
         true
     }
 
@@ -75,9 +78,11 @@ impl Rule for NoTypos {
                             let BindingPatternKind::BindingIdentifier(id) = &decl.id.kind else {
                                 continue;
                             };
+
                             let Some(potential_typo) = get_potential_typo(&id.name) else {
                                 continue;
                             };
+
                             ctx.diagnostic(no_typos_diagnostic(
                                 id.name.as_str(),
                                 potential_typo,
@@ -85,17 +90,21 @@ impl Rule for NoTypos {
                             ));
                         }
                     }
+
                     Declaration::FunctionDeclaration(decl) => {
                         let Some(id) = &decl.id else { return };
+
                         let Some(potential_typo) = get_potential_typo(&id.name) else {
                             return;
                         };
+
                         ctx.diagnostic(no_typos_diagnostic(
                             id.name.as_str(),
                             potential_typo,
                             id.span,
                         ));
                     }
+
                     _ => {}
                 }
             }
@@ -121,6 +130,7 @@ fn get_potential_typo(fn_name: &str) -> Option<&str> {
 // the minimum number of operations required to convert string a to string b.
 fn min_distance(a: &str, b: &str) -> usize {
     let m = a.len();
+
     let n = b.len();
 
     if m < n {
@@ -135,14 +145,20 @@ fn min_distance(a: &str, b: &str) -> usize {
 
     for (i, s1) in a.char_indices() {
         let mut current_row = vec![i + 1];
+
         for (j, s2) in b.char_indices() {
             let insertions = previous_row[j + 1] + 1;
+
             let deletions = current_row[j] + 1;
+
             let substitutions = previous_row[j] + usize::from(s1 != s2);
+
             current_row.push(insertions.min(deletions).min(substitutions));
         }
+
         previous_row = current_row;
     }
+
     previous_row[n]
 }
 
@@ -158,7 +174,9 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export const getStaticPaths = async () => {};
+
                 export const getStaticProps = async () => {};
             ",
             None,
@@ -170,6 +188,7 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export const getServerSideProps = async () => {};
             ",
             None,
@@ -181,7 +200,9 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export async function getStaticPaths() {};
+
                 export async function getStaticProps() {};
            	",
             None,
@@ -193,6 +214,7 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export async function getServerSideProps() {};
         	",
             None,
@@ -204,6 +226,7 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export async function getServerSidePropsss() {};
             ",
             None,
@@ -215,6 +238,7 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export async function getstatisPath() {};
             ",
             None,
@@ -227,7 +251,9 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export const getStaticpaths = async () => {};
+
                 export const getStaticProps = async () => {};
             ",
             None,
@@ -240,7 +266,9 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export const getStaticpaths = async () => {};
+
                 export const getStaticProps = async () => {};
             ",
             None,
@@ -255,7 +283,9 @@ fn test() {
                 export default function Page() {
                 return <div></div>;
                 }
+
                 export const getStaticpaths = async () => {};
+
                 export const getStaticProps = async () => {};
             ",
             None,
@@ -267,7 +297,9 @@ fn test() {
                 export default function Page() {
                     return <div></div>;
                 }
+
                 export async function getStaticPathss(){};
+
                 export async function getStaticPropss(){};
             ",
             None,
@@ -279,6 +311,7 @@ fn test() {
                 export default function Page() {
                     return <div></div>;
                 }
+
                 export async function getServurSideProps(){};
             ",
             None,
@@ -290,6 +323,7 @@ fn test() {
                 export default function Page() {
                     return <div></div>;
                 }
+
                 export const getServurSideProps = () => {};
             ",
             None,

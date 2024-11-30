@@ -86,11 +86,14 @@ impl<'a> StatementInjectorStore<'a> {
 
     fn insert_before_address(&self, target: Address, stmt: Statement<'a>) {
         let mut insertions = self.insertions.borrow_mut();
+
         let adjacent_stmts = insertions.entry(target).or_default();
+
         let index = adjacent_stmts
             .iter()
             .position(|s| matches!(s.direction, Direction::After))
             .unwrap_or(adjacent_stmts.len());
+
         adjacent_stmts.insert(index, AdjacentStatement { stmt, direction: Direction::Before });
     }
 
@@ -102,7 +105,9 @@ impl<'a> StatementInjectorStore<'a> {
 
     fn insert_after_address(&self, target: Address, stmt: Statement<'a>) {
         let mut insertions = self.insertions.borrow_mut();
+
         let adjacent_stmts = insertions.entry(target).or_default();
+
         adjacent_stmts.push(AdjacentStatement { stmt, direction: Direction::After });
     }
 
@@ -121,7 +126,9 @@ impl<'a> StatementInjectorStore<'a> {
         S: IntoIterator<Item = Statement<'a>>,
     {
         let mut insertions = self.insertions.borrow_mut();
+
         let adjacent_stmts = insertions.entry(target).or_default();
+
         adjacent_stmts.splice(
             0..0,
             stmts.into_iter().map(|stmt| AdjacentStatement { stmt, direction: Direction::Before }),
@@ -143,7 +150,9 @@ impl<'a> StatementInjectorStore<'a> {
         S: IntoIterator<Item = Statement<'a>>,
     {
         let mut insertions = self.insertions.borrow_mut();
+
         let adjacent_stmts = insertions.entry(target).or_default();
+
         adjacent_stmts.extend(
             stmts.into_iter().map(|stmt| AdjacentStatement { stmt, direction: Direction::After }),
         );
@@ -159,6 +168,7 @@ impl<'a> StatementInjectorStore<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let mut insertions = self.insertions.borrow_mut();
+
         if insertions.is_empty() {
             return;
         }
@@ -167,6 +177,7 @@ impl<'a> StatementInjectorStore<'a> {
             .iter()
             .filter_map(|s| insertions.get(&s.address()).map(Vec::len))
             .sum::<usize>();
+
         if new_statement_count == 0 {
             return;
         }
@@ -179,13 +190,18 @@ impl<'a> StatementInjectorStore<'a> {
                     .iter()
                     .position(|s| matches!(s.direction, Direction::After))
                     .unwrap_or(adjacent_stmts.len());
+
                 if first_after_stmt_index != 0 {
                     let right = adjacent_stmts.split_off(first_after_stmt_index);
+
                     new_statements.extend(adjacent_stmts.into_iter().map(|s| s.stmt));
+
                     new_statements.push(stmt);
+
                     new_statements.extend(right.into_iter().map(|s| s.stmt));
                 } else {
                     new_statements.push(stmt);
+
                     new_statements.extend(adjacent_stmts.into_iter().map(|s| s.stmt));
                 }
             } else {

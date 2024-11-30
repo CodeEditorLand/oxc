@@ -84,7 +84,9 @@ fn resolve_global_binding<'a, 'b: 'a>(
     ctx: &LintContext<'a>,
 ) -> Option<&'a str> {
     let scope = ctx.scopes();
+
     let nodes = ctx.nodes();
+
     let symbols = ctx.symbols();
 
     if ctx.semantic().is_reference_to_global_variable(ident) {
@@ -99,28 +101,34 @@ fn resolve_global_binding<'a, 'b: 'a>(
                 is not a global",
             &ident.name
         );
+
         return None;
     };
 
     let decl = nodes.get_node(symbols.get_declaration(binding_id));
+
     match decl.kind() {
         AstKind::VariableDeclarator(parent_decl) => {
             if !parent_decl.id.kind.is_binding_identifier() {
                 return Some(ident.name.as_str());
             }
+
             match &parent_decl.init {
                 // handles "let a = JSON; let b = a; a();"
                 Some(Expression::Identifier(parent_ident)) if parent_ident.name != ident.name => {
                     let decl_scope = decl.scope_id();
+
                     return resolve_global_binding(parent_ident, decl_scope, ctx);
                 }
                 // handles "let a = globalThis.JSON; let b = a; a();"
                 Some(parent_expr) if parent_expr.is_member_expression() => {
                     return global_this_member(parent_expr.to_member_expression());
                 }
+
                 _ => None,
             }
         }
+
         _ => None,
     }
 }
@@ -154,6 +162,7 @@ impl Rule for NoObjCalls {
                     }
                 }
             }
+
             _ => {
                 // noop
             }
@@ -175,8 +184,10 @@ fn test() {
         // reference test cases
         (
             "let j = JSON;
+
             function foo() {
                 let j = x => x;
+
                 return x();
             }",
             None,
@@ -188,6 +199,7 @@ fn test() {
         (
             r"
         export const getConfig = getConfig;
+
         getConfig();",
             None,
         ),

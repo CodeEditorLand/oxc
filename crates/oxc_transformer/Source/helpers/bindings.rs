@@ -50,13 +50,16 @@ impl<'a> BoundIdentifier<'a> {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Self {
 		let symbol_id = ctx.generate_uid(name, scope_id, flags);
+
 		let name = ctx.ast.atom(&ctx.symbols().names[symbol_id]);
+
 		Self { name, symbol_id }
 	}
 
 	/// Create `BoundIdentifier` for new binding in root scope
 	pub fn new_uid_in_root_scope(name:&str, flags:SymbolFlags, ctx:&mut TraverseCtx<'a>) -> Self {
 		let scope_id = ctx.scopes().root_scope_id();
+
 		Self::new_uid(name, scope_id, flags, ctx)
 	}
 
@@ -68,6 +71,7 @@ impl<'a> BoundIdentifier<'a> {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Self {
 		let scope_id = ctx.current_scope_id();
+
 		Self::new_uid(name, scope_id, flags, ctx)
 	}
 

@@ -85,6 +85,7 @@ declare_oxc_lint!(
 impl Rule for ExpectExpect {
     fn from_configuration(value: serde_json::Value) -> Self {
         let default_assert_function_names = vec!["expect".into()];
+
         let config = value.get(0);
 
         let assert_function_names = config
@@ -121,8 +122,10 @@ fn run<'a>(
     ctx: &LintContext<'a>,
 ) {
     let node = possible_jest_node.node;
+
     if let AstKind::CallExpression(call_expr) = node.kind() {
         let name = get_node_name(&call_expr.callee);
+
         if is_type_of_jest_fn_call(
             call_expr,
             possible_jest_node,
@@ -134,9 +137,11 @@ fn run<'a>(
                 let Some(property_name) = member_expr.static_property_name() else {
                     return;
                 };
+
                 if property_name == "todo" {
                     return;
                 }
+
                 if property_name == "skip" && ctx.frameworks().is_vitest() {
                     return;
                 }
@@ -168,6 +173,7 @@ fn check_arguments<'a>(
             }
         }
     }
+
     false
 }
 
@@ -197,16 +203,21 @@ fn check_assert_function_used<'a>(
     match expr {
         Expression::FunctionExpression(fn_expr) => {
             let body = &fn_expr.body;
+
             if let Some(body) = body {
                 return check_statements(&body.statements, assert_function_names, visited, ctx);
             }
         }
+
         Expression::ArrowFunctionExpression(arrow_expr) => {
             let body = &arrow_expr.body;
+
             return check_statements(&body.statements, assert_function_names, visited, ctx);
         }
+
         Expression::CallExpression(call_expr) => {
             let name = get_node_name(&call_expr.callee);
+
             if matches_assert_function_name(&name, assert_function_names) {
                 return true;
             }
@@ -221,21 +232,27 @@ fn check_assert_function_used<'a>(
 
             return has_assert_function;
         }
+
         Expression::Identifier(ident) => {
             let Some(node) = get_declaration_of_variable(ident, ctx) else {
                 return false;
             };
+
             let AstKind::Function(function) = node.kind() else {
                 return false;
             };
+
             let Some(body) = &function.body else {
                 return false;
             };
+
             return check_statements(&body.statements, assert_function_names, visited, ctx);
         }
+
         Expression::AwaitExpression(expr) => {
             return check_assert_function_used(&expr.argument, assert_function_names, visited, ctx);
         }
+
         _ => {}
     };
 
@@ -252,9 +269,11 @@ fn check_statements<'a>(
         Statement::ExpressionStatement(expr_stmt) => {
             check_assert_function_used(&expr_stmt.expression, assert_function_names, visited, ctx)
         }
+
         Statement::BlockStatement(block_stmt) => {
             check_statements(&block_stmt.body, assert_function_names, visited, ctx)
         }
+
         Statement::IfStatement(if_stmt) => {
             if let Statement::BlockStatement(block_stmt) = &if_stmt.consequent {
                 check_statements(&block_stmt.body, assert_function_names, visited, ctx)
@@ -262,6 +281,7 @@ fn check_statements<'a>(
                 false
             }
         }
+
         _ => false,
     })
 }
@@ -308,6 +328,7 @@ fn test() {
             "
             test('should pass', () => {
                 expect(true).toBeDefined();
+
                 foo(true).toBe(true);
             });
             ",
@@ -356,6 +377,7 @@ fn test() {
             "
             theoretically('the number {input} is correctly translated to string', theories, theory => {
                 const output = NumberToLongString(theory.input);
+
                 expect(output).toBe(theory.expected);
             })
             ",
@@ -377,6 +399,7 @@ fn test() {
 
         	test('should pass', () => {
         	expect(true).toBeDefined();
+
         	foo(true).toBe(true);
         	});
         ",
@@ -388,6 +411,7 @@ fn test() {
 
         	checkThat('this passes', () => {
         	expect(true).toBeDefined();
+
         	foo(true).toBe(true);
         	});
         ",
@@ -412,6 +436,7 @@ fn test() {
                 const asyncFunction = async () => {
                     throw new Error('nope')
                 };
+
                 await expect(asyncFunction()).rejects.toThrow();
             });
             "#,
@@ -424,6 +449,7 @@ fn test() {
                     const asyncFunction = async () => {
                         throw new Error('nope')
                     };
+
                     await expect(asyncFunction()).rejects.toThrow();
                 }
             });
@@ -437,6 +463,7 @@ fn test() {
                     const asyncFunction = async () => {
                         throw new Error('nope')
                     };
+
                     await expect(asyncFunction()).rejects.toThrow();
                 }
             });
@@ -518,6 +545,7 @@ fn test() {
                 const asyncFunction = async () => {
                     throw new Error('nope')
                 };
+
                 await foo(asyncFunction()).rejects.toThrow();
             });
             "#,
@@ -541,6 +569,7 @@ fn test() {
         (
             "
                 import { test } from 'vitest';
+
                 test.skip(\"skipped test\", () => {})
             ",
             None,
@@ -556,6 +585,7 @@ fn test() {
             "
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     foo(true).toBe(true);
                 });
             ",
@@ -624,6 +654,7 @@ fn test() {
             "
                 theoretically('the number {input} is correctly translated to string', theories, theory => {
                     const output = NumberToLongString(theory.input);
+
                     expect(output).toBe(theory.expected);
                 })
             ",
@@ -675,6 +706,7 @@ fn test() {
 
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     foo(true).toBe(true);
                 });
             ",
@@ -686,6 +718,7 @@ fn test() {
 
                 checkThat('this passes', () => {
                     expect(true).toBeDefined();
+
                     foo(true).toBe(true);
                 });
             ",
@@ -782,6 +815,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest);
+
     fail.extend(fail_vitest);
 
     Tester::new(ExpectExpect::NAME, pass, fail)

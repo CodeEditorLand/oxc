@@ -354,6 +354,7 @@ impl BinaryOperator {
             Self::Equality | Self::Inequality | Self::StrictEquality | Self::StrictInequality => {
                 Precedence::BitwiseAnd
             }
+
             Self::LessThan
             | Self::LessEqualThan
             | Self::GreaterThan
@@ -377,6 +378,7 @@ impl GetPrecedence for BinaryOperator {
             Self::Equality | Self::Inequality | Self::StrictEquality | Self::StrictInequality => {
                 Precedence::Equals
             }
+
             Self::LessThan
             | Self::LessEqualThan
             | Self::GreaterThan

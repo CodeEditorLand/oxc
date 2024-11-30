@@ -23,8 +23,11 @@ impl<'a> IsolatedDeclarations<'a> {
         decl: &TSEnumDeclaration<'a>,
     ) -> Option<Declaration<'a>> {
         let mut members = self.ast.vec();
+
         let mut prev_initializer_value = Some(ConstantValue::Number(-1.0));
+
         let mut prev_members = FxHashMap::default();
+
         for member in &decl.members {
             let value = if let Some(initializer) = &member.initializer {
                 let computed_value =
@@ -48,6 +51,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     TSEnumMemberName::Identifier(id) => &id.name,
                     TSEnumMemberName::String(str) => &str.value,
                 };
+
                 prev_members.insert(member_name.clone(), value.clone());
             }
 
@@ -63,6 +67,7 @@ impl<'a> IsolatedDeclarations<'a> {
                             self.ast.expression_identifier_reference(SPAN, "Infinity")
                         } else {
                             let value = if is_negative { -v } else { v };
+
                             self.ast.expression_numeric_literal(
                                 SPAN,
                                 value,
@@ -77,6 +82,7 @@ impl<'a> IsolatedDeclarations<'a> {
                             expr
                         }
                     }
+
                     ConstantValue::String(v) => self.ast.expression_string_literal(SPAN, v, None),
                 }),
             );
@@ -114,14 +120,18 @@ impl<'a> IsolatedDeclarations<'a> {
         match expr {
             match_member_expression!(Expression) => {
                 let expr = expr.to_member_expression();
+
                 let Expression::Identifier(ident) = expr.object() else { return None };
+
                 if ident.name == enum_name {
                     let property = expr.static_property_name()?;
+
                     prev_members.get(property).cloned()
                 } else {
                     None
                 }
             }
+
             Expression::Identifier(ident) => {
                 if ident.name == "Infinity" {
                     return Some(ConstantValue::Number(f64::INFINITY));
@@ -135,6 +145,7 @@ impl<'a> IsolatedDeclarations<'a> {
 
                 None
             }
+
             _ => None,
         }
     }
@@ -152,24 +163,31 @@ impl<'a> IsolatedDeclarations<'a> {
             | Expression::PrivateFieldExpression(_) => {
                 self.evaluate_ref(expr, enum_name, prev_members)
             }
+
             Expression::BinaryExpression(expr) => {
                 self.eval_binary_expression(expr, enum_name, prev_members)
             }
+
             Expression::UnaryExpression(expr) => {
                 self.eval_unary_expression(expr, enum_name, prev_members)
             }
+
             Expression::NumericLiteral(lit) => Some(ConstantValue::Number(lit.value)),
             Expression::StringLiteral(lit) => Some(ConstantValue::String(lit.value.to_string())),
             Expression::TemplateLiteral(lit) => {
                 let mut value = String::new();
+
                 for part in &lit.quasis {
                     value.push_str(&part.value.raw);
                 }
+
                 Some(ConstantValue::String(value))
             }
+
             Expression::ParenthesizedExpression(expr) => {
                 self.evaluate(&expr.expression, enum_name, prev_members)
             }
+
             _ => None,
         }
     }
@@ -182,6 +200,7 @@ impl<'a> IsolatedDeclarations<'a> {
         prev_members: &FxHashMap<Atom<'a>, ConstantValue>,
     ) -> Option<ConstantValue> {
         let left = self.evaluate(&expr.left, enum_name, prev_members)?;
+
         let right = self.evaluate(&expr.right, enum_name, prev_members)?;
 
         if matches!(expr.operator, BinaryOperator::Addition)
@@ -224,12 +243,15 @@ impl<'a> IsolatedDeclarations<'a> {
             BinaryOperator::BitwiseXOR => {
                 Some(ConstantValue::Number(f64::from(left.to_int_32() ^ right.to_int_32())))
             }
+
             BinaryOperator::BitwiseOR => {
                 Some(ConstantValue::Number(f64::from(left.to_int_32() | right.to_int_32())))
             }
+
             BinaryOperator::BitwiseAnd => {
                 Some(ConstantValue::Number(f64::from(left.to_int_32() & right.to_int_32())))
             }
+
             BinaryOperator::Multiplication => Some(ConstantValue::Number(left * right)),
             BinaryOperator::Division => Some(ConstantValue::Number(left / right)),
             BinaryOperator::Addition => Some(ConstantValue::Number(left + right)),
@@ -259,6 +281,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 } else {
                     value
                 };
+
                 return Some(value);
             }
         };

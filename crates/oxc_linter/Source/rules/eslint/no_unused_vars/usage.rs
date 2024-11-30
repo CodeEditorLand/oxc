@@ -32,7 +32,9 @@ impl<'s, 'a> Symbol<'s, 'a> {
         // can return `true` for values
         const TYPE: SymbolFlags =
             SymbolFlags::TypeAlias.union(SymbolFlags::TypeParameter).union(SymbolFlags::Interface);
+
         const ENUM: SymbolFlags = SymbolFlags::Enum.union(SymbolFlags::EnumMember);
+
         const NAMESPACE_LIKE: SymbolFlags =
             SymbolFlags::NameSpaceModule.union(SymbolFlags::ValueModule);
 
@@ -65,6 +67,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
     #[inline]
     fn is_definitely_reassignable_variable(&self) -> bool {
         let f = self.flags();
+
         f.is_variable() && !f.contains(SymbolFlags::ConstVariable.union(SymbolFlags::Function))
     }
 
@@ -96,8 +99,11 @@ impl<'s, 'a> Symbol<'s, 'a> {
         // Use symbol flags to skip the usage checks we are certain don't need
         // to be run.
         let do_reassignment_checks = self.is_possibly_reassignable();
+
         let do_type_self_usage_checks = self.could_have_type_reference_within_own_decl();
+
         let do_self_call_check = self.is_maybe_callable();
+
         let do_discarded_read_checks = self.is_definitely_reassignable_variable();
 
         for reference in self.references() {
@@ -110,6 +116,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 "Resolved reference to symbol {:?} is missing a symbol id",
                 self.id()
             );
+
             assert!(reference.symbol_id().is_some_and(|id| id == self.id()));
 
             // ====================== Write usage checks =======================
@@ -136,6 +143,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 if do_type_self_usage_checks && self.is_type_self_usage(reference) {
                     continue;
                 }
+
                 return true;
             }
 
@@ -194,6 +202,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                             .first()
                             .is_some_and(|s| matches!(s, Statement::ReturnStatement(_)));
                     }
+
                     _ => return false,
                 },
                 _ => return false,
@@ -243,6 +252,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                         FoundStatus::NotFound => continue,
                     }
                 }
+
                 AstKind::ArrayAssignmentTarget(arr) => {
                     match options.search_array_assignment_target(self, arr) {
                         FoundStatus::Ignored => return true,
@@ -250,11 +260,13 @@ impl<'s, 'a> Symbol<'s, 'a> {
                         FoundStatus::NotFound => continue,
                     }
                 }
+
                 _ => {
                     return false;
                 }
             }
         }
+
         false
     }
 
@@ -302,6 +314,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                     if self.flags().is_class() {
                         continue;
                     }
+
                     return false;
                 }
 
@@ -319,6 +332,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 _ => continue,
             }
         }
+
         false
     }
 
@@ -370,13 +384,16 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 false,
                 "is_self_reassignment() should only be called on resolved symbol references"
             );
+
             return true;
         }
 
         // Have we seen this reference be used to update the value of another
         // symbol, or for some other logically-relevant purpose?
         let mut is_used_by_others = true;
+
         let name = self.name();
+
         let ref_span = self.get_ref_span(reference);
 
         for node in self.nodes().ancestors(reference.node_id()).skip(1) {
@@ -438,8 +455,10 @@ impl<'s, 'a> Symbol<'s, 'a> {
                     if self.is_in_return_statement(node.id()) {
                         return false;
                     }
+
                     break;
                 }
+
                 AstKind::Function(f) if f.is_declaration() => {
                     break;
                 }
@@ -450,6 +469,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 {
                     return false;
                 }
+
                 AstKind::ReturnStatement(_) => {
                     match self.get_nearest_function(node.id()) {
                         // We're definitely in a function (assuming valid
@@ -465,6 +485,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 //    let a = 1;
                 //    a = yield a // <- still considered used b/c it's propagated to the caller
                 // }
+
                 AstKind::YieldExpression(_) => return false,
                 _ => { /* continue up tree */ }
             }
@@ -491,10 +512,12 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 {
                     return true;
                 }
+
                 x if x.is_statement() => return false,
                 _ => continue,
             }
         }
+
         false
     }
 
@@ -547,6 +570,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                     if id.span == ref_span() {
                         continue;
                     }
+
                     break;
                 }
                 (_, AstKind::CallExpression(_) | AstKind::NewExpression(_)) => break,
@@ -575,6 +599,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                     {
                         return false;
                     }
+
                     continue;
                 }
                 (parent, AstKind::SequenceExpression(seq)) => {
@@ -582,6 +607,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                         !seq.expressions.is_empty(),
                         "empty SequenceExpressions should be a parse error."
                     );
+
                     let Some(last) = seq.expressions.last() else {
                         continue;
                     };
@@ -592,6 +618,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                         return true;
                     }
                 }
+
                 _ => continue,
             }
         }
@@ -614,6 +641,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
         let Some(ref_node) = self.get_ref_relevant_node(reference) else {
             return false;
         };
+
         if !matches!(ref_node.kind(), AstKind::CallExpression(_) | AstKind::NewExpression(_)) {
             return false;
         }
@@ -663,6 +691,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 ) if self == &assignment.left => {
                     return true;
                 }
+
                 _ => {}
             }
         }
@@ -672,12 +701,15 @@ impl<'s, 'a> Symbol<'s, 'a> {
 
     fn is_self_call_simple(&self, reference: &Reference) -> bool {
         let decl_scope_id = self.scope_id();
+
         let call_scope_id = self.get_ref_scope(reference);
+
         let Some(container_id) = self.declaration().kind().get_container_scope_id() else {
             debug_assert!(
                 false,
                 "Found a function call or or new expr reference on a node flagged as a function or class, but the symbol's declaration node has no scope id. It should always be a container."
             );
+
             return false;
         };
 
@@ -734,24 +766,31 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 AstKind::Function(f) => {
                     return f.id.as_ref().map(BindingIdentifier::symbol_id);
                 }
+
                 AstKind::ArrowFunctionExpression(_) => {
                     needs_variable_identifier = true;
+
                     continue;
                 }
+
                 AstKind::VariableDeclarator(decl) if needs_variable_identifier => {
                     return decl.id.get_binding_identifier().map(BindingIdentifier::symbol_id);
                 }
+
                 AstKind::AssignmentTarget(target) if needs_variable_identifier => {
                     return match target {
                         AssignmentTarget::AssignmentTargetIdentifier(id) => {
                             self.symbols().get_reference(id.reference_id()).symbol_id()
                         }
+
                         _ => None,
                     };
                 }
+
                 AstKind::Program(_) => {
                     return None;
                 }
+
                 _ => continue,
             }
         }

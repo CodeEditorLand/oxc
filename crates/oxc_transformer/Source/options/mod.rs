@@ -121,9 +121,13 @@ impl TransformOptions {
 impl From<ESTarget> for TransformOptions {
     fn from(target: ESTarget) -> Self {
         let mut engine_targets = EngineTargets::default();
+
         engine_targets.insert(Engine::Es, target.version());
+
         let mut env = EnvOptions::from(engine_targets);
+
         env.es2022.class_properties = None;
+
         Self { env, ..Self::default() }
     }
 }
@@ -134,7 +138,9 @@ impl TryFrom<&BabelOptions> for TransformOptions {
     /// If the `options` contains any unknown fields, they will be returned as a list of errors.
     fn try_from(options: &BabelOptions) -> Result<Self, Self::Error> {
         let mut errors = Vec::<String>::new();
+
         errors.extend(options.plugins.errors.iter().map(Clone::clone));
+
         errors.extend(options.presets.errors.iter().map(Clone::clone));
 
         let typescript = options
@@ -154,11 +160,17 @@ impl TryFrom<&BabelOptions> for TransformOptions {
             } else {
                 JsxOptions::default()
             };
+
             jsx_options.development = options.plugins.react_jsx_dev.is_some();
+
             jsx_options.jsx_plugin = options.plugins.react_jsx.is_some();
+
             jsx_options.display_name_plugin = options.plugins.react_display_name;
+
             jsx_options.jsx_self_plugin = options.plugins.react_jsx_self;
+
             jsx_options.jsx_source_plugin = options.plugins.react_jsx_source;
+
             jsx_options
         };
 

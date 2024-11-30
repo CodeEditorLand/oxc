@@ -85,6 +85,7 @@ declare_oxc_lint!(
 impl Rule for ValidExpect {
     fn from_configuration(value: serde_json::Value) -> Self {
         let default_async_matchers = vec![String::from("toResolve"), String::from("toReject")];
+
         let config = value.get(0);
 
         let async_matchers = config
@@ -93,6 +94,7 @@ impl Rule for ValidExpect {
             .map_or(default_async_matchers, |v| {
                 v.iter().filter_map(serde_json::Value::as_str).map(String::from).collect()
             });
+
         let min_args = config
             .and_then(|config| config.get("minArgs"))
             .and_then(serde_json::Value::as_number)
@@ -125,13 +127,16 @@ impl Rule for ValidExpect {
 impl ValidExpect {
     fn run<'a>(&self, possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(jest_fn_call) = parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
         };
+
         let reporting_span = jest_fn_call.expect_error.map_or(call_expr.span, |_| {
             find_top_most_member_expression(node, ctx).map_or(call_expr.span, GetSpan::span)
         });
@@ -139,19 +144,28 @@ impl ValidExpect {
         match jest_fn_call.expect_error {
             Some(ExpectError::MatcherNotFound) => {
                 let (error, help) = Message::MatcherNotFound.details();
+
                 ctx.diagnostic(valid_expect_diagnostic(error, help, reporting_span));
+
                 return;
             }
+
             Some(ExpectError::MatcherNotCalled) => {
                 let (error, help) = Message::MatcherNotCalled.details();
+
                 ctx.diagnostic(valid_expect_diagnostic(error, help, reporting_span));
+
                 return;
             }
+
             Some(ExpectError::ModifierUnknown) => {
                 let (error, help) = Message::ModifierUnknown.details();
+
                 ctx.diagnostic(valid_expect_diagnostic(error, help, reporting_span));
+
                 return;
             }
+
             None => {}
         }
 
@@ -165,24 +179,32 @@ impl ValidExpect {
                 self.max_args,
                 if self.max_args > 1 { "s" } else { "" }
             );
+
             let help = "Remove the extra arguments.";
+
             ctx.diagnostic(valid_expect_diagnostic(error, help, call_expr.span));
+
             return;
         }
+
         if call_expr.arguments.len() < self.min_args {
             let error = format!(
                 "Expect requires at least {} argument{} ",
                 self.min_args,
                 if self.min_args > 1 { "s" } else { "" }
             );
+
             let help = "Add the missing arguments.";
+
             ctx.diagnostic(valid_expect_diagnostic(error, help, call_expr.span));
+
             return;
         }
 
         let Some(matcher) = jest_fn_call.matcher() else {
             return;
         };
+
         let Some(matcher_name) = matcher.name() else {
             return;
         };
@@ -203,27 +225,36 @@ impl ValidExpect {
         // In that case our target CallExpression node is the one with
         // the last `then` or `catch` statement.
         let target_node = get_parent_if_thenable(node, ctx);
+
         let Some(final_node) = find_promise_call_expression_node(node, ctx, target_node) else {
             return;
         };
+
         let Some(parent) = ctx.nodes().parent_node(final_node.id()) else {
             return;
         };
+
         if !is_acceptable_return_node(parent, !self.always_await, ctx) {
             let span;
+
             let (error, help) = if target_node.id() == final_node.id() {
                 let AstKind::CallExpression(call_expr) = target_node.kind() else {
                     return;
                 };
+
                 span = call_expr.span;
+
                 Message::AsyncMustBeAwaited.details()
             } else {
                 let AstKind::CallExpression(call_expr) = final_node.kind() else {
                     return;
                 };
+
                 span = call_expr.span;
+
                 Message::PromisesWithAsyncAssertionsMustBeAwaited.details()
             };
+
             ctx.diagnostic(valid_expect_diagnostic(error, help, span));
         }
     }
@@ -234,20 +265,24 @@ fn find_top_most_member_expression<'a, 'b>(
     ctx: &'b LintContext<'a>,
 ) -> Option<&'b MemberExpression<'a>> {
     let mut top_most_member_expression = None;
+
     let mut node = node;
 
     loop {
         let parent = ctx.nodes().parent_node(node.id())?;
+
         match node.kind() {
             AstKind::MemberExpression(member_expr) => {
                 top_most_member_expression = Some(member_expr);
             }
+
             _ => {
                 if !matches!(parent.kind(), AstKind::MemberExpression(_)) {
                     break;
                 }
             }
         }
+
         node = parent;
     }
 
@@ -260,6 +295,7 @@ fn is_acceptable_return_node<'a, 'b>(
     ctx: &'b LintContext<'a>,
 ) -> bool {
     let mut node = node;
+
     loop {
         if allow_return && matches!(node.kind(), AstKind::ReturnStatement(_)) {
             return true;
@@ -273,8 +309,10 @@ fn is_acceptable_return_node<'a, 'b>(
                 let Some(parent) = ctx.nodes().parent_node(node.id()) else {
                     return false;
                 };
+
                 node = parent;
             }
+
             AstKind::ArrowFunctionExpression(arrow_expr) => return arrow_expr.expression,
             AstKind::AwaitExpression(_) => return true,
             _ => return false,
@@ -291,8 +329,10 @@ fn get_parent_with_ignore<'a, 'b>(
     ctx: &'b LintContext<'a>,
 ) -> Option<ParentAndIsFirstItem<'a, 'b>> {
     let mut node = node;
+
     loop {
         let parent = ctx.nodes().parent_node(node.id())?;
+
         if !matches!(parent.kind(), AstKind::Argument(_) | AstKind::ArrayExpressionElement(_)) {
             // we don't want to report `Promise.all([invalidExpectCall_1, invalidExpectCall_2])` twice.
             // so we need mark whether the node is the first item of an array.
@@ -322,12 +362,15 @@ fn find_promise_call_expression_node<'a, 'b>(
     let Some((mut parent, is_first_array_item)) = get_parent_with_ignore(node, ctx) else {
         return Some(default_node);
     };
+
     if !matches!(parent.kind(), AstKind::CallExpression(_) | AstKind::ArrayExpression(_)) {
         return Some(default_node);
     }
+
     let Some((grandparent, _)) = get_parent_with_ignore(parent, ctx) else {
         return Some(default_node);
     };
+
     if matches!(parent.kind(), AstKind::ArrayExpression(_))
         && matches!(grandparent.kind(), AstKind::CallExpression(_))
     {
@@ -343,6 +386,7 @@ fn find_promise_call_expression_node<'a, 'b>(
                     if is_first_array_item {
                         return Some(parent);
                     }
+
                     return None;
                 }
             }
@@ -362,12 +406,15 @@ fn get_parent_if_thenable<'a, 'b>(
     let Some(grandparent) = grandparent else {
         return node;
     };
+
     let AstKind::CallExpression(call_expr) = grandparent.kind() else {
         return node;
     };
+
     let Some(member_expr) = call_expr.callee.as_member_expression() else {
         return node;
     };
+
     let Some(name) = member_expr.static_property_name() else {
         return node;
     };
@@ -402,9 +449,11 @@ impl Message {
             Self::ModifierUnknown => {
                 ("Expect has an unknown modifier.", "Is it a spelling mistake?")
             }
+
             Self::AsyncMustBeAwaited => {
                 ("Async assertions must be awaited.", "Add `await` to your assertion.")
             }
+
             Self::PromisesWithAsyncAssertionsMustBeAwaited => (
                 "Promises which return async assertions must be awaited.",
                 "Add `await` to your assertion.",
@@ -421,6 +470,7 @@ fn test_1() {
         "test('valid-expect', async () => { await Promise.race([expect(Promise.reject(2)).rejects.not.toBeDefined(), expect(Promise.reject(2)).rejects.not.toBeDefined()]); })",
         None,
     )];
+
     let fail = vec![];
 
     Tester::new(ValidExpect::NAME, pass, fail).with_jest_plugin(true).test();
@@ -636,6 +686,7 @@ fn test() {
             "
                 test('valid-expect', async () => {
                 expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                 expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -645,6 +696,7 @@ fn test() {
             "
                 test('valid-expect', async () => {
                     await expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                     expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -654,6 +706,7 @@ fn test() {
             "
                 test('valid-expect', async () => {
                     expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                     return expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -663,6 +716,7 @@ fn test() {
             "
                 test('valid-expect', async () => {
                     expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                     return expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -672,6 +726,7 @@ fn test() {
             "
                 test('valid-expect', async () => {
                     await expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                     return expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -681,6 +736,7 @@ fn test() {
             "
                 test('valid-expect', async () => {
                     await expect(Promise.resolve(2)).toResolve();
+
                     return expect(Promise.resolve(1)).toReject();
                 });
             ",
@@ -789,6 +845,7 @@ fn test() {
                 test('valid-expect', () => {
                     return expect(functionReturningAPromise()).resolves.toEqual(1).then(async () => {
                         await expect(Promise.resolve(2)).resolves.toBe(1);
+
                         expect(Promise.resolve(4)).resolves.toBe(4);
                     });
                 });
@@ -995,6 +1052,7 @@ fn test() {
             "
                 test(\"valid-expect\", async () => {
                     expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                     expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -1004,6 +1062,7 @@ fn test() {
             "
                 test(\"valid-expect\", async () => {
                     await expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                     expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -1013,6 +1072,7 @@ fn test() {
             "
                 test(\"valid-expect\", async () => {
                     expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                     return expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -1021,6 +1081,7 @@ fn test() {
         ("
                 test(\"valid-expect\", async () => {
                     expect(Promise.resolve(2)).resolves.not.toBeDefined();
+
                     return expect(Promise.resolve(1)).rejects.toBeDefined();
                 });
             ",
@@ -1113,6 +1174,7 @@ fn test() {
                 test(\"valid-expect\", () => {
                     return expect(functionReturningAPromise()).resolves.toEqual(1).then(async () => {
                         await expect(Promise.resolve(2)).resolves.toBe(1);
+
                         expect(Promise.resolve(4)).resolves.toBe(4);
                     });
                 });
@@ -1130,6 +1192,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest);
+
     fail.extend(fail_vitest);
 
     Tester::new(ValidExpect::NAME, pass, fail)

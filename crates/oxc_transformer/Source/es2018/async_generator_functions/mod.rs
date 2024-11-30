@@ -89,9 +89,11 @@ impl<'a, 'ctx> Traverse<'a> for AsyncGeneratorFunctions<'a, 'ctx> {
             Expression::AwaitExpression(await_expr) => {
                 self.transform_await_expression(await_expr, ctx)
             }
+
             Expression::YieldExpression(yield_expr) => {
                 self.transform_yield_expression(yield_expr, ctx)
             }
+
             Expression::FunctionExpression(func) => {
                 if func.r#async && func.generator {
                     Some(self.executor.transform_function_expression(func, ctx))
@@ -99,6 +101,7 @@ impl<'a, 'ctx> Traverse<'a> for AsyncGeneratorFunctions<'a, 'ctx> {
                     None
                 }
             }
+
             _ => None,
         };
 
@@ -123,6 +126,7 @@ impl<'a, 'ctx> Traverse<'a> for AsyncGeneratorFunctions<'a, 'ctx> {
                     None
                 }
             }
+
             Statement::ExportNamedDeclaration(decl) => {
                 if let Some(Declaration::FunctionDeclaration(func)) = &mut decl.declaration {
                     Some(func)
@@ -130,12 +134,14 @@ impl<'a, 'ctx> Traverse<'a> for AsyncGeneratorFunctions<'a, 'ctx> {
                     None
                 }
             }
+
             _ => None,
         };
 
         if let Some(function) = function {
             if function.r#async && function.generator && !function.is_typescript_syntax() {
                 let new_statement = self.executor.transform_function_declaration(function, ctx);
+
                 self.ctx.statement_injector.insert_after(stmt, new_statement);
             }
         }
@@ -165,12 +171,17 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
 
         expr.argument.as_mut().map(|argument| {
             let argument = Argument::from(ctx.ast.move_expression(argument));
+
             let arguments = ctx.ast.vec1(argument);
+
             let mut argument =
                 self.ctx.helper_call_expr(Helper::AsyncIterator, SPAN, arguments, ctx);
+
             let arguments = ctx.ast.vec1(Argument::from(argument));
+
             argument =
                 self.ctx.helper_call_expr(Helper::AsyncGeneratorDelegate, SPAN, arguments, ctx);
+
             ctx.ast.expression_yield(SPAN, expr.delegate, Some(argument))
         })
     }
@@ -200,7 +211,9 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
         }
 
         let mut argument = ctx.ast.move_expression(&mut expr.argument);
+
         let arguments = ctx.ast.vec1(Argument::from(argument));
+
         argument = self.ctx.helper_call_expr(Helper::AwaitAsyncGenerator, SPAN, arguments, ctx);
 
         Some(ctx.ast.expression_yield(SPAN, false, Some(argument)))
@@ -214,10 +227,12 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                 Ancestor::FunctionBody(func) => {
                     return *func.generator();
                 }
+
                 Ancestor::ArrowFunctionExpressionBody(_) => {
                     // Arrow functions can't be generator functions
                     return false;
                 }
+
                 _ => {}
             }
         }

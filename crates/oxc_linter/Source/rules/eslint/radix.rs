@@ -77,6 +77,7 @@ impl Rule for Radix {
                     Self::check_arguments(self, call_expr, ctx);
                 }
             }
+
             Expression::StaticMemberExpression(member_expr) => {
                 if let Expression::Identifier(ident) = member_expr.object.without_parentheses() {
                     if ident.is_global_reference_name("Number", ctx.symbols())
@@ -86,6 +87,7 @@ impl Rule for Radix {
                     }
                 }
             }
+
             Expression::ChainExpression(chain_expr) => {
                 if let Some(member_expr) = chain_expr.expression.as_member_expression() {
                     if let Expression::Identifier(ident) = member_expr.object() {
@@ -97,6 +99,7 @@ impl Rule for Radix {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -111,8 +114,10 @@ impl Radix {
                     ctx.diagnostic(missing_radix(call_expr.span));
                 }
             }
+
             _ => {
                 let radix_arg = &call_expr.arguments[1];
+
                 if matches!(&self.radix_type, RadixType::AsNeeded) && is_default_radix(radix_arg) {
                     ctx.diagnostic(redundant_radix(radix_arg.span()));
                 } else if !is_valid_radix(radix_arg) {

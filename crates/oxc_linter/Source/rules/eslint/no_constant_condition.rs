@@ -85,11 +85,13 @@ impl Rule for NoConstantCondition {
                     ctx.diagnostic(no_constant_condition_diagnostic(if_stmt.test.span()));
                 }
             }
+
             AstKind::ConditionalExpression(condition_expr) => {
                 if condition_expr.test.is_constant(true, ctx) {
                     ctx.diagnostic(no_constant_condition_diagnostic(condition_expr.test.span()));
                 }
             }
+
             _ => {}
         }
     }

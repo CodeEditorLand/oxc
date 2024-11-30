@@ -34,6 +34,7 @@ declare_oxc_lint!(
 impl Rule for NoIrregularWhitespace {
     fn run_once(&self, ctx: &LintContext) {
         let irregular_whitespaces = ctx.semantic().irregular_whitespaces();
+
         for irregular_whitespace in irregular_whitespaces {
             ctx.diagnostic(no_irregular_whitespace_diagnostic(*irregular_whitespace));
         }
@@ -253,6 +254,7 @@ fn test() {
         ),
         (
             r"var any 　 = 'thing', other 　 = 'thing';
+
 			var third 　 = 'thing';",
             None,
         ),

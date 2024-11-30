@@ -67,13 +67,16 @@ fn missing_dependency_diagnostic(hook_name: &str, deps: &[String], span: Span) -
         format!("'{}'", deps[0])
     } else {
         let mut iter = deps.iter();
+
         let all_but_last = iter
             .by_ref()
             .take(deps.len() - 1)
             .map(|s| format!("'{s}'",))
             .collect::<Vec<_>>()
             .join(", ");
+
         let last = iter.next().unwrap();
+
         format!("{all_but_last}, and '{last}'")
     };
 
@@ -188,6 +191,7 @@ declare_oxc_lint!(
     ///     }, [props]);
     ///     return <div />;
     /// }
+
     ExhaustiveDeps,
     nursery
 );
@@ -214,11 +218,14 @@ impl Rule for ExhaustiveDeps {
         };
 
         let Some(callback_index) = get_reactive_hook_callback_index(call_expr) else { return };
+
         let callback_node = call_expr.arguments.get(callback_index);
+
         let dependencies_node = call_expr.arguments.get(callback_index + 1);
 
         let Some(callback_node) = callback_node else {
             ctx.diagnostic(missing_callback_diagnostic(hook_name.as_str(), call_expr.span()));
+
             return;
         };
 
@@ -231,6 +238,7 @@ impl Rule for ExhaustiveDeps {
                     call_expr.span(),
                 ));
             }
+
             return;
         }
 
@@ -240,16 +248,20 @@ impl Rule for ExhaustiveDeps {
                     hook_name.as_str(),
                     callback_node.span(),
                 ));
+
                 None
             }
+
             match_expression!(Argument) => {
                 match callback_node.to_expression().get_inner_expression() {
                     Expression::ArrowFunctionExpression(arrow_function_expression) => {
                         Some(CallbackNode::ArrowFunction(arrow_function_expression))
                     }
+
                     Expression::FunctionExpression(function_expression) => {
                         Some(CallbackNode::Function(function_expression))
                     }
+
                     Expression::Identifier(ident) => {
                         if let Some(dependencies_node) = dependencies_node {
                             // The function passed as a callback is not written inline.
@@ -285,15 +297,18 @@ impl Rule for ExhaustiveDeps {
                                                 Expression::FunctionExpression(function) => {
                                                     Some(CallbackNode::Function(function))
                                                 }
+
                                                 Expression::ArrowFunctionExpression(function) => {
                                                     Some(CallbackNode::ArrowFunction(function))
                                                 }
+
                                                 _ => {
                                                     ctx.diagnostic(missing_dependency_diagnostic(
                                                         hook_name,
                                                         &[ident.name.to_string()],
                                                         dependencies_node.span(),
                                                     ));
+
                                                     None
                                                 }
                                             }
@@ -301,17 +316,21 @@ impl Rule for ExhaustiveDeps {
                                             None
                                         }
                                     }
+
                                     AstKind::Function(function) => {
                                         Some(CallbackNode::Function(function))
                                     }
+
                                     AstKind::FormalParameter(_) => {
                                         ctx.diagnostic(missing_dependency_diagnostic(
                                             hook_name,
                                             &[ident.name.to_string()],
                                             dependencies_node.span(),
                                         ));
+
                                         None
                                     }
+
                                     _ => None,
                                 }
                             } else {
@@ -321,11 +340,13 @@ impl Rule for ExhaustiveDeps {
                             None
                         }
                     }
+
                     _ => {
                         ctx.diagnostic(unknown_dependencies_diagnostic(
                             hook_name.as_str(),
                             callback_node.span(),
                         ));
+
                         None
                     }
                 }
@@ -347,10 +368,13 @@ impl Rule for ExhaustiveDeps {
                     hook_name.as_str(),
                     node.span(),
                 ));
+
                 None
             }
+
             match_expression!(Argument) => {
                 let inner_expr = node.to_expression().get_inner_expression();
+
                 match inner_expr {
                     Expression::ArrayExpression(array_expr) => Some(array_expr),
                     Expression::Identifier(ident)
@@ -359,11 +383,13 @@ impl Rule for ExhaustiveDeps {
                     {
                         None
                     }
+
                     _ => {
                         ctx.diagnostic(dependency_array_not_array_literal_diagnostic(
                             hook_name.as_str(),
                             node.span(),
                         ));
+
                         None
                     }
                 }
@@ -385,6 +411,7 @@ impl Rule for ExhaustiveDeps {
             for r#ref in refs_inside_cleanups {
                 if let Expression::Identifier(ident) = r#ref.object.get_inner_expression() {
                     let reference = ctx.semantic().symbols().get_reference(ident.reference_id());
+
                     let has_write_reference = reference.symbol_id().is_some_and(|symbol_id| {
                         ctx.semantic().symbol_references(symbol_id).any(|reference| {
                             ctx.nodes().parent_node(reference.node_id()).is_some_and(|parent| {
@@ -394,9 +421,11 @@ impl Rule for ExhaustiveDeps {
                                 else {
                                     return false;
                                 };
+
                                 if member_expr.property.name != "current" {
                                     return false;
                                 }
+
                                 ctx.nodes().parent_node(parent.id()).is_some_and(|grand_parent| {
                                     matches!(
                                         grand_parent.kind(),
@@ -411,6 +440,7 @@ impl Rule for ExhaustiveDeps {
                         continue;
                     }
                 }
+
                 ctx.diagnostic(ref_accessed_directly_in_effect_cleanup_diagnostic(r#ref.span()));
             }
         }
@@ -419,9 +449,11 @@ impl Rule for ExhaustiveDeps {
             if is_effect {
                 let contains_set_state_call = {
                     let mut finder = ExhaustiveDepsVisitor::new(ctx.semantic());
+
                     if let Some(function_body) = callback_node.body() {
                         finder.visit_function_body_root(function_body);
                     }
+
                     finder.set_state_call
                 };
 
@@ -444,8 +476,10 @@ impl Rule for ExhaustiveDeps {
                         hook_name.as_str(),
                         elem.span(),
                     ));
+
                     None
                 }
+
                 match_expression!(ArrayExpressionElement) => {
                     let elem = elem.to_expression().get_inner_expression();
 
@@ -456,6 +490,7 @@ impl Rule for ExhaustiveDeps {
                             hook_name.as_str(),
                             elem.span(),
                         ));
+
                         None
                     }
                 }
@@ -464,8 +499,10 @@ impl Rule for ExhaustiveDeps {
         #[allow(clippy::mutable_key_type)]
         let declared_dependencies = {
             let mut declared_dependencies = FxHashSet::default();
+
             for item in declared_dependencies_iter {
                 let span = item.span;
+
                 if !declared_dependencies.insert(item) {
                     ctx.diagnostic(literal_in_dependency_array_diagnostic(span));
                 }
@@ -477,6 +514,7 @@ impl Rule for ExhaustiveDeps {
         for dependency in &declared_dependencies {
             if let Some(symbol_id) = dependency.symbol_id {
                 let dependency_scope_id = ctx.semantic().symbols().get_scope_id(symbol_id);
+
                 if !(ctx
                     .semantic()
                     .scopes()
@@ -504,6 +542,7 @@ impl Rule for ExhaustiveDeps {
             if !is_identifier_a_dependency(&dep.name, dep.reference_id, ctx, component_scope_id) {
                 return false;
             };
+
             true
         });
 
@@ -574,6 +613,7 @@ fn is_symbol_declaration_referentially_unique(symbol_id: SymbolId, ctx: &LintCon
 
             false
         }
+
         _ => false,
     }
 }
@@ -593,16 +633,20 @@ fn is_expression_referentially_unique(expr: &Expression) -> bool {
             is_expression_referentially_unique(&conditional.consequent)
                 || is_expression_referentially_unique(&conditional.alternate)
         }
+
         Expression::LogicalExpression(logical) => {
             is_expression_referentially_unique(&logical.left)
                 || is_expression_referentially_unique(&logical.right)
         }
+
         Expression::BinaryExpression(bin_expr) => {
             is_expression_referentially_unique(&bin_expr.right)
         }
+
         Expression::AssignmentExpression(assignment) => {
             is_expression_referentially_unique(&assignment.right)
         }
+
         _ => false,
     }
 }
@@ -660,8 +704,10 @@ fn get_node_name_without_react_namespace<'a, 'b>(expr: &'b Expression<'a>) -> Op
             if let Expression::Identifier(_ident) = &member.object {
                 return Some(&member.property.name);
             }
+
             None
         }
+
         Expression::Identifier(ident) => Some(&ident.name),
         _ => None,
     }
@@ -680,7 +726,9 @@ struct Dependency<'a> {
 impl Hash for Dependency<'_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.name.hash(state);
+
         self.symbol_id.hash(state);
+
         self.chain.hash(state);
     }
 }
@@ -707,6 +755,7 @@ impl Dependency<'_> {
 fn chain_contains(a: &[Atom<'_>], b: &[Atom<'_>]) -> bool {
     for (index, part) in b.iter().enumerate() {
         let Some(other) = a.get(index) else { return false };
+
         if other != part {
             return false;
         };
@@ -773,6 +822,7 @@ fn is_identifier_a_dependency<'a>(
     };
 
     let semantic = ctx.semantic();
+
     let scopes = semantic.scopes();
 
     // if the variable was declared in the root scope, then it's not a dependency
@@ -803,6 +853,7 @@ fn is_identifier_a_dependency<'a>(
     //   }, []);
     //  return <div />;
     // }
+
     if scopes.iter_all_child_ids(component_scope_id).any(|id| id == declaration.scope_id()) {
         return false;
     }
@@ -831,6 +882,7 @@ fn is_stable_value<'a, 'b>(
 
             false
         }
+
         AstKind::VariableDeclarator(declaration) => {
             // if the variable does not have an initializer, then it's not a stable value
             let Some(init) = &declaration.init else {
@@ -845,6 +897,7 @@ fn is_stable_value<'a, 'b>(
                         Expression::FunctionExpression(func) => func.body.as_ref(),
                         _ => None,
                     };
+
                 if let Some(function_body) = function_body {
                     return is_function_stable(function_body, ctx, component_scope_id);
                 }
@@ -910,6 +963,7 @@ fn is_stable_value<'a, 'b>(
 
             false
         }
+
         AstKind::ArrowFunctionExpression(_) | AstKind::Function(_) => {
             let function_body = match node.kind() {
                 AstKind::ArrowFunctionExpression(arrow_func) => Some(&arrow_func.body),
@@ -921,6 +975,7 @@ fn is_stable_value<'a, 'b>(
 
             is_function_stable(function_body, ctx, component_scope_id)
         }
+
         _ => false,
     }
 }
@@ -933,7 +988,9 @@ fn is_function_stable<'a, 'b>(
     #[allow(clippy::mutable_key_type)]
     let deps = {
         let mut collector = ExhaustiveDepsVisitor::new(ctx.semantic());
+
         collector.visit_function_body(function_body);
+
         collector.found_dependencies
     };
 
@@ -995,6 +1052,7 @@ impl<'a, 'b> Visit<'a> for ExhaustiveDepsVisitor<'a, 'b> {
     fn enter_node(&mut self, kind: AstKind<'a>) {
         self.stack.push(kind);
     }
+
     fn leave_node(&mut self, _kind: AstKind<'a>) {
         self.stack.pop();
     }
@@ -1002,9 +1060,11 @@ impl<'a, 'b> Visit<'a> for ExhaustiveDepsVisitor<'a, 'b> {
     fn visit_ts_type_annotation(&mut self, _it: &oxc_ast::ast::TSTypeAnnotation<'a>) {
         // noop
     }
+
     fn visit_ts_type_reference(&mut self, _it: &oxc_ast::ast::TSTypeReference<'a>) {
         // noop
     }
+
     fn visit_ts_type_parameters(
         &mut self,
         _it: &oxc_allocator::Vec<'a, oxc_ast::ast::TSTypeParameter<'a>>,
@@ -1020,6 +1080,7 @@ impl<'a, 'b> Visit<'a> for ExhaustiveDepsVisitor<'a, 'b> {
                     it,
                 )
             };
+
             self.refs_inside_cleanups.push(it);
         }
 
@@ -1029,6 +1090,7 @@ impl<'a, 'b> Visit<'a> for ExhaustiveDepsVisitor<'a, 'b> {
             || self.skip_reporting_dependency
         {
             self.visit_expression(&it.object);
+
             return;
         }
 
@@ -1051,8 +1113,11 @@ impl<'a, 'b> Visit<'a> for ExhaustiveDepsVisitor<'a, 'b> {
                 }
 
                 let cur_skip_reporting_dependency = self.skip_reporting_dependency;
+
                 self.skip_reporting_dependency = true;
+
                 self.visit_expression(&it.object);
+
                 self.skip_reporting_dependency = cur_skip_reporting_dependency;
             }
             // this means that some part of the chain could not be analyzed
@@ -1068,6 +1133,7 @@ impl<'a, 'b> Visit<'a> for ExhaustiveDepsVisitor<'a, 'b> {
         if self.skip_reporting_dependency {
             return;
         }
+
         self.found_dependencies.insert(Dependency {
             name: ident.name.clone(),
             reference_id: ident.reference_id(),
@@ -1089,6 +1155,7 @@ impl<'a, 'b> Visit<'a> for ExhaustiveDepsVisitor<'a, 'b> {
                         false
                     }
                 }
+
                 _ => false,
             };
 
@@ -1105,6 +1172,7 @@ impl<'a, 'b> Visit<'a> for ExhaustiveDepsVisitor<'a, 'b> {
 
 fn is_inside_effect_cleanup(stack: &[AstKind<'_>]) -> bool {
     let mut iter = stack.iter().rev();
+
     let mut is_in_returned_function = false;
 
     while let Some(cur) = iter.next() {
@@ -1116,6 +1184,7 @@ fn is_inside_effect_cleanup(stack: &[AstKind<'_>]) -> bool {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -1137,6 +1206,7 @@ fn test() {
         r"function MyComponent() {
           useEffect(() => {
             const local = {};
+
             console.log(local);
           }, []);
         }",
@@ -1155,6 +1225,7 @@ fn test() {
           const local1 = {};
           {
             const local2 = {};
+
             useEffect(() => {
               console.log(local1);
               console.log(local2);
@@ -1165,6 +1236,7 @@ fn test() {
           const local1 = someFunc();
           {
             const local2 = someFunc();
+
             useCallback(() => {
               console.log(local1);
               console.log(local2);
@@ -1175,6 +1247,7 @@ fn test() {
           const local1 = someFunc();
           function MyNestedComponent() {
             const local2 = someFunc();
+
             useCallback(() => {
               console.log(local1);
               console.log(local2);
@@ -1185,6 +1258,7 @@ fn test() {
           const local = someFunc();
           useEffect(() => {
             console.log(local);
+
             console.log(local);
           }, [local]);
         }",
@@ -1207,6 +1281,7 @@ fn test() {
         r"function MyComponent({ foo }) {
           useEffect(() => {
             console.log(foo.length);
+
             console.log(foo.slice(0));
           }, [foo]);
         }",
@@ -1228,12 +1303,14 @@ fn test() {
         r"function MyComponent(props) {
           useEffect(() => {
             console.log(props.foo);
+
             console.log(props.bar);
           }, [props.bar, props.foo]);
         }",
         r"function MyComponent(props) {
           useEffect(() => {
             console.log(props.foo);
+
             console.log(props.bar);
           }, [props.foo, props.bar]);
         }",
@@ -1241,7 +1318,9 @@ fn test() {
           const local = someFunc();
           useEffect(() => {
             console.log(props.foo);
+
             console.log(props.bar);
+
             console.log(local);
           }, [props.foo, props.bar, local]);
         }",
@@ -1249,12 +1328,14 @@ fn test() {
           const local = {};
           useEffect(() => {
             console.log(props.foo);
+
             console.log(props.bar);
           }, [props, props.foo]);
 
           let color = someFunc();
           useEffect(() => {
             console.log(props.foo.bar.baz);
+
             console.log(color);
           }, [props.foo, props.foo.bar.baz, color]);
         }",
@@ -1281,18 +1362,21 @@ fn test() {
         r"function MyComponent(props) {
           useEffect(() => {
             console.log(props.foo.bar);
+
             console.log(props.foo?.bar);
           }, [props.foo?.bar]);
         }",
         r"function MyComponent(props) {
           useEffect(() => {
             console.log(props.foo.bar);
+
             console.log(props.foo?.bar);
           }, [props.foo.bar]);
         }",
         r"function MyComponent(props) {
           useEffect(() => {
             console.log(props.foo);
+
             console.log(props.foo?.bar);
           }, [props.foo]);
         }",
@@ -1338,6 +1422,7 @@ fn test() {
           useEffect(myEffect, []);
         }",
         r"const local = {};
+
         function MyComponent() {
           const myEffect = () => {
             console.log(local);
@@ -1345,6 +1430,7 @@ fn test() {
           useEffect(myEffect, []);
         }",
         r"const local = {};
+
         function MyComponent() {
           function myEffect() {
             console.log(local);
@@ -1365,6 +1451,7 @@ fn test() {
           useEffect(myEffect, []);
         }",
         r"const local = {};
+
         function MyComponent() {
           const myEffect = () => {
             otherThing()
@@ -1388,9 +1475,11 @@ fn test() {
           useEffect(myEffect, [,myEffect,,]);
         }",
         r"let local = {};
+
         function myEffect() {
           console.log(local);
         }
+
         function MyComponent() {
           useEffect(myEffect, []);
         }",
@@ -1426,6 +1515,7 @@ fn test() {
           }, []);
         }",
         r"const local = {};
+
         useEffect(() => {
           console.log(local);
         }, []);",
@@ -1434,6 +1524,7 @@ fn test() {
           const local2 = {};
           useEffect(() => {
             console.log(local1);
+
             console.log(local2);
           }, []);
         }",
@@ -1469,32 +1560,53 @@ fn test() {
           useEffect(() => {
             // Known to be static
             console.log(definitelyRef1.current);
+
             console.log(definitelyRef2.current);
+
             console.log(maybeRef1.current);
+
             console.log(maybeRef2.current);
+
             setState1();
+
             setState2();
+
             dispatch1();
+
             dispatch2();
+
             startTransition1();
+
             startTransition2();
+
             startTransition3();
+
             startTransition4();
 
             // Dynamic
             console.log(state1);
+
             console.log(state2);
+
             console.log(state3);
+
             console.log(state4);
+
             console.log(state5);
+
             console.log(state6);
+
             console.log(isPending2);
+
             console.log(isPending4);
+
             mySetState();
+
             myDispatch();
 
             // Not sure; assume dynamic
             maybeSetState();
+
             maybeDispatch();
           }, [
             // Dynamic
@@ -1529,26 +1641,41 @@ fn test() {
           useEffect(() => {
             // Known to be static
             console.log(definitelyRef1.current);
+
             console.log(definitelyRef2.current);
+
             console.log(maybeRef1.current);
+
             console.log(maybeRef2.current);
+
             setState1();
+
             setState2();
+
             dispatch1();
+
             dispatch2();
 
             // Dynamic
             console.log(state1);
+
             console.log(state2);
+
             console.log(state3);
+
             console.log(state4);
+
             console.log(state5);
+
             console.log(state6);
+
             mySetState();
+
             myDispatch();
 
             // Not sure; assume dynamic
             maybeSetState();
+
             maybeDispatch();
           }, [
             // Dynamic
@@ -1594,7 +1721,9 @@ fn test() {
           const myRef = useRef();
           useEffect(() => {
             const handleMove = () => {};
+
             myRef.current = {};
+
             return () => {
               console.log(myRef.current.toString())
             };
@@ -1605,7 +1734,9 @@ fn test() {
           const myRef = useRef();
           useEffect(() => {
             const handleMove = () => {};
+
             myRef.current = {};
+
             return () => {
               console.log(myRef?.current?.toString())
             };
@@ -1626,8 +1757,11 @@ fn test() {
           const myRef = useRef();
           useEffect(() => {
             const handleMove = () => {};
+
             const node = myRef.current;
+
             node.addEventListener('mousemove', handleMove);
+
             return () => node.removeEventListener('mousemove', handleMove);
           }, []);
           return <div ref={myRef} />;
@@ -1635,8 +1769,11 @@ fn test() {
         r"function useMyThing(myRef) {
           useEffect(() => {
             const handleMove = () => {};
+
             const node = myRef.current;
+
             node.addEventListener('mousemove', handleMove);
+
             return () => node.removeEventListener('mousemove', handleMove);
           }, [myRef]);
           return <div ref={myRef} />;
@@ -1644,11 +1781,15 @@ fn test() {
         r"function useMyThing(myRef) {
           useCallback(() => {
             const handleMouse = () => {};
+
             myRef.current.addEventListener('mousemove', handleMouse);
+
             myRef.current.addEventListener('mousein', handleMouse);
+
             return function() {
               setTimeout(() => {
                 myRef.current.removeEventListener('mousemove', handleMouse);
+
                 myRef.current.removeEventListener('mousein', handleMouse);
               });
             }
@@ -1660,7 +1801,9 @@ fn test() {
             const handleMove = () => {
               console.log(myRef.current)
             };
+
             window.addEventListener('mousemove', handleMove);
+
             return () => window.removeEventListener('mousemove', handleMove);
           }, []);
           return <div ref={myRef} />;
@@ -1671,7 +1814,9 @@ fn test() {
             const handleMove = () => {
               return () => window.removeEventListener('mousemove', handleMove);
             };
+
             window.addEventListener('mousemove', handleMove);
+
             return () => {};
           }, []);
           return <div ref={myRef} />;
@@ -1682,7 +1827,9 @@ fn test() {
           const local3 = null;
           useEffect(() => {
             console.log(local1);
+
             console.log(local2);
+
             console.log(local3);
           }, []);
         }",
@@ -1692,7 +1839,9 @@ fn test() {
           const local3 = null;
           useEffect(() => {
             console.log(local1);
+
             console.log(local2);
+
             console.log(local3);
           }, [local1, local2, local3]);
         }",
@@ -1773,15 +1922,19 @@ fn test() {
 
           function handleNext1(value) {
             let value2 = value * 100;
+
             setState(value2);
+
             console.log('hello');
           }
           const handleNext2 = (value) => {
             setState(foo(value));
+
             console.log('hello');
           };
           let handleNext3 = function(value) {
             console.log(value);
+
             dispatch({ type: 'x', value });
           };
           useEffect(() => {
@@ -1803,6 +1956,7 @@ fn test() {
             function tick() {
               savedCallback.current();
             }
+
             if (delay !== null) {
               let id = setInterval(tick, delay);
               return () => clearInterval(id);
@@ -1816,6 +1970,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(c => c + 1);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -1828,6 +1983,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(c => c + 1);
             }, 1000);
+
             return () => clearInterval(id);
           }, [setCount]);
 
@@ -1844,6 +2000,7 @@ fn test() {
             let id = setInterval(() => {
               tick();
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -1860,6 +2017,7 @@ fn test() {
             let id = setInterval(() => {
               dispatch('inc');
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -1878,6 +2036,7 @@ fn test() {
 
           useEffect(() => {
             let id = setInterval(tick, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -1892,6 +2051,7 @@ fn test() {
         r"function withFetch(fetchPodcasts) {
           return function Podcasts({ id }) {
             let [podcasts, setPodcasts] = useState(null);
+
             useEffect(() => {
               fetchPodcasts(id).then(setPodcasts);
             }, [id]);
@@ -1903,6 +2063,7 @@ fn test() {
             function doFetch({ fetchPodcasts }) {
               fetchPodcasts(id).then(setPodcasts);
             }
+
             doFetch({ fetchPodcasts: API.fetchPodcasts });
           }, [id]);
         }",
@@ -1917,6 +2078,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(increment);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -1933,12 +2095,14 @@ fn test() {
             let id = setInterval(() => {
               setCount(count => increment(count));
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
           return <h1>{count}</h1>;
         }",
         r"import increment from './increment';
+
         function Counter() {
           let [count, setCount] = useState(0);
 
@@ -1946,6 +2110,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(count => count + increment);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -1970,11 +2135,14 @@ fn test() {
           const [state, setState] = useState(null);
           useEffect(() => {
             let ignore = false;
+
             fetchSomething();
+
             async function fetchSomething() {
               const result = await (await fetch('http://hn.algolia.com/api/v1/search?query=' + query)).json();
               if (!ignore) setState(result);
             }
+
             return () => { ignore = true; };
           }, [query]);
           return (
@@ -2000,7 +2168,9 @@ fn test() {
           const [state, setState] = useState(0);
           useEffect(() => {
             const handleResize = () => setState(window.innerWidth);
+
             window.addEventListener('resize', handleResize);
+
             return () => window.removeEventListener('resize', handleResize);
           });
         }",
@@ -2014,24 +2184,28 @@ fn test() {
             const bar = () => {
               arguments;
             };
+
             bar();
           }, [])
         }",
         r"function Example(props) {
           useEffect(() => {
             let topHeight = 0;
+
             topHeight = props.upperViewHeight;
           }, [props.upperViewHeight]);
         }",
         r"function Example(props) {
           useEffect(() => {
             let topHeight = 0;
+
             topHeight = props?.upperViewHeight;
           }, [props?.upperViewHeight]);
         }",
         r"function Example(props) {
           useEffect(() => {
             let topHeight = 0;
+
             topHeight = props?.upperViewHeight;
           }, [props]);
         }",
@@ -2077,17 +2251,22 @@ fn test() {
 
   return useMemo(() => {
     groupCollapsedState;
+
     groups;
+
     const items: VirtuosoItem<T>[] = [];
+
     return items;
   }, [groupCollapsedState, groups]);
 };",
         r"function MyComponent() {
     const options = useOptions();
+
     useEffect(() => {
         if (!dropTargetRef.current) {
             return;
         }
+
         return dropTargetForElements({
             onDropTargetChange: (args) => {
                 if (options && dropTargetRef.current) {
@@ -2133,6 +2312,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(c => c + 1);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -2186,6 +2366,7 @@ fn test() {
             function inner() {
               console.log(local);
             }
+
             inner();
           }, []);
         }",
@@ -2193,6 +2374,7 @@ fn test() {
           const local1 = someFunc();
           {
             const local2 = someFunc();
+
             useEffect(() => {
               console.log(local1);
               console.log(local2);
@@ -2204,6 +2386,7 @@ fn test() {
           const local2 = {};
           useEffect(() => {
             console.log(local1);
+
             console.log(local2);
           }, [local1]);
         }",
@@ -2218,6 +2401,7 @@ fn test() {
           const local1 = someFunc();
           function MyNestedComponent() {
             const local2 = {};
+
             useCallback(() => {
               console.log(local1);
               console.log(local2);
@@ -2228,6 +2412,7 @@ fn test() {
           const local = {};
           useEffect(() => {
             console.log(local);
+
             console.log(local);
           }, []);
         }",
@@ -2235,6 +2420,7 @@ fn test() {
           const local = {};
           useEffect(() => {
             console.log(local);
+
             console.log(local);
           }, [local, local]);
         }",
@@ -2332,6 +2518,7 @@ fn test() {
           const local = {};
           useCallback(() => {
             console.log(props.foo);
+
             console.log(props.bar);
           }, [props, props.foo]);
         }",
@@ -2339,6 +2526,7 @@ fn test() {
           const local = {};
           useCallback(() => {
             console.log(props.foo);
+
             console.log(props.bar);
           }, []);
         }",
@@ -2369,6 +2557,7 @@ fn test() {
           let color = {}
           const fn = useCallback(() => {
             console.log(props.foo.bar.baz);
+
             console.log(color);
           }, [props.foo, props.foo.bar.baz]);
         }",
@@ -2380,6 +2569,7 @@ fn test() {
         r"function MyComponent(props) {
           const fn = useCallback(() => {
             console.log(props.foo.bar.baz);
+
             console.log(props.foo.fizz.bizz);
           }, []);
         }",
@@ -2391,6 +2581,7 @@ fn test() {
         r"function MyComponent(props) {
           const fn = useCallback(() => {
             console.log(props);
+
             console.log(props.hello);
           }, [props.foo.bar.baz]);
         }",
@@ -2404,6 +2595,7 @@ fn test() {
           const local1 = {};
           useCallback(() => {
             const local1 = {};
+
             console.log(local1);
           }, [local1]);
         }`",
@@ -2419,6 +2611,7 @@ fn test() {
         r"function MyComponent(props) {
           useEffect(() => {
             console.log(props.foo);
+
             console.log(props.bar);
           }, []);
         }",
@@ -2444,7 +2637,9 @@ fn test() {
           const local = {};
           useEffect(() => {
             console.log(props.foo);
+
             console.log(props.bar);
+
             console.log(local);
           }, []);
         }",
@@ -2452,7 +2647,9 @@ fn test() {
           const local = {};
           useEffect(() => {
             console.log(props.foo);
+
             console.log(props.bar);
+
             console.log(local);
           }, [props]);
         }",
@@ -2516,6 +2713,7 @@ fn test() {
           const [state, setState] = useState();
           useEffect(() => {
             ref.current = {};
+
             setState(state + 1);
           }, []);
         }",
@@ -2524,6 +2722,7 @@ fn test() {
           const [state, setState] = useState();
           useEffect(() => {
             ref.current = {};
+
             setState(state + 1);
           }, [ref]);
         }",
@@ -2532,8 +2731,11 @@ fn test() {
           const ref2 = useRef();
           useEffect(() => {
             ref1.current.focus();
+
             console.log(ref2.current.textContent);
+
             alert(props.someOtherRefs.current.innerHTML);
+
             fetch(props.color);
           }, []);
         }",
@@ -2542,8 +2744,11 @@ fn test() {
           const ref2 = useRef();
           useEffect(() => {
             ref1.current.focus();
+
             console.log(ref2.current.textContent);
+
             alert(props.someOtherRefs.current.innerHTML);
+
             fetch(props.color);
           }, [ref1.current, ref2.current, props.someOtherRefs, props.color]);
         }",
@@ -2552,8 +2757,11 @@ fn test() {
           const ref2 = useRef();
           useEffect(() => {
             ref1?.current?.focus();
+
             console.log(ref2?.current?.textContent);
+
             alert(props.someOtherRefs.current.innerHTML);
+
             fetch(props.color);
           }, [ref1?.current, ref2?.current, props.someOtherRefs, props.color]);
         }",
@@ -2568,6 +2776,7 @@ fn test() {
           const ref2 = useRef();
           useEffect(() => {
             ref1.current.scrollTop = 0;
+
             ref2.current.scrollTop = 0;
           }, [ref1.current, ref2.current, activeTab]);
         }",
@@ -2576,6 +2785,7 @@ fn test() {
           const ref2 = useRef();
           const fn = useCallback(() => {
             ref1.current.scrollTop = initY;
+
             ref2.current.scrollTop = initY;
           }, [ref1.current, ref2.current, activeTab, initY]);
         }",
@@ -2611,6 +2821,7 @@ fn test() {
             function play() {
               props.onPlay();
             }
+
             function pause() {
               props.onPause();
             }
@@ -2626,6 +2837,7 @@ fn test() {
         r"function MyComponent(props) {
           useEffect(() => {
             props.onChange();
+
             if (props.foo.onChange) {
               props.foo.onChange();
             }
@@ -2650,12 +2862,14 @@ fn test() {
         r"function MyComponent(props) {
           useEffect(() => {
             externalCall(props);
+
             props.onChange();
           }, []);
         }",
         r"function MyComponent(props) {
           useEffect(() => {
             props.onChange();
+
             externalCall(props);
           }, []);
         }",
@@ -2669,11 +2883,17 @@ fn test() {
             if (value4) {
               value = {};
             }
+
             value2 = 100;
+
             value = 43;
+
             value4 = true;
+
             console.log(value2);
+
             console.log(value3);
+
             setTimeout(() => {
               asyncValue = 100;
             });
@@ -2686,10 +2906,15 @@ fn test() {
           let asyncValue;
           useEffect(() => {
             value = {};
+
             value2 = 100;
+
             value = 43;
+
             console.log(value2);
+
             console.log(value3);
+
             setTimeout(() => {
               asyncValue = 100;
             });
@@ -2699,7 +2924,9 @@ fn test() {
           const myRef = useRef();
           useEffect(() => {
             const handleMove = () => {};
+
             myRef.current.addEventListener('mousemove', handleMove);
+
             return () => myRef.current.removeEventListener('mousemove', handleMove);
           }, []);
           return <div ref={myRef} />;
@@ -2708,7 +2935,9 @@ fn test() {
           const myRef = useRef();
           useEffect(() => {
             const handleMove = () => {};
+
             myRef?.current?.addEventListener('mousemove', handleMove);
+
             return () => myRef?.current?.removeEventListener('mousemove', handleMove);
           }, []);
           return <div ref={myRef} />;
@@ -2717,7 +2946,9 @@ fn test() {
           const myRef = useRef();
           useEffect(() => {
             const handleMove = () => {};
+
             myRef.current.addEventListener('mousemove', handleMove);
+
             return () => myRef.current.removeEventListener('mousemove', handleMove);
           });
           return <div ref={myRef} />;
@@ -2725,18 +2956,24 @@ fn test() {
         r"function useMyThing(myRef) {
           useEffect(() => {
             const handleMove = () => {};
+
             myRef.current.addEventListener('mousemove', handleMove);
+
             return () => myRef.current.removeEventListener('mousemove', handleMove);
           }, [myRef]);
         }",
         r"function useMyThing(myRef) {
           useEffect(() => {
             const handleMouse = () => {};
+
             myRef.current.addEventListener('mousemove', handleMouse);
+
             myRef.current.addEventListener('mousein', handleMouse);
+
             return function() {
               setTimeout(() => {
                 myRef.current.removeEventListener('mousemove', handleMouse);
+
                 myRef.current.removeEventListener('mousein', handleMouse);
               });
             }
@@ -2745,6 +2982,7 @@ fn test() {
         r"function useMyThing(myRef, active) {
           useEffect(() => {
             const handleMove = () => {};
+
             if (active) {
               myRef.current.addEventListener('mousemove', handleMove);
               return function() {
@@ -2772,8 +3010,11 @@ fn test() {
           const local4 = {};
           useEffect(() => {
             console.log(local1);
+
             console.log(local2);
+
             console.log(local3);
+
             console.log(local4);
           }, [local1, local3]);
         }",
@@ -2783,54 +3024,63 @@ fn test() {
           }, [window]);
         }",
         r"import MutableStore from 'store';
+
         function MyComponent() {
           useEffect(() => {
             console.log(MutableStore.hello);
           }, [MutableStore.hello]);
         }",
         r"import MutableStore from 'store';
+
         let z = {};
 
         function MyComponent(props) {
           let x = props.foo;
           {
             let y = props.bar;
+
             useEffect(() => {
               console.log(MutableStore.hello.world, props.foo, x, y, z, global.stuff);
             }, [MutableStore.hello.world, props.foo, x, y, z, global.stuff]);
           }
         }",
         r"import MutableStore from 'store';
+
         let z = {};
 
         function MyComponent(props) {
           let x = props.foo;
           {
             let y = props.bar;
+
             useEffect(() => {
               // nothing
             }, [MutableStore.hello.world, props.foo, x, y, z, global.stuff]);
           }
         }",
         r"import MutableStore from 'store';
+
         let z = {};
 
         function MyComponent(props) {
           let x = props.foo;
           {
             let y = props.bar;
+
             const fn = useCallback(() => {
               // nothing
             }, [MutableStore.hello.world, props.foo, x, y, z, global.stuff]);
           }
         }",
         r"import MutableStore from 'store';
+
         let z = {};
 
         function MyComponent(props) {
           let x = props.foo;
           {
             let y = props.bar;
+
             const fn = useCallback(() => {
               // nothing
             }, [MutableStore?.hello?.world, props.foo, x, y, z, global?.stuff]);
@@ -2843,15 +3093,19 @@ fn test() {
 
           function handleNext1(value) {
             let value2 = value * taint;
+
             setState(value2);
+
             console.log('hello');
           }
           const handleNext2 = (value) => {
             setState(taint(value));
+
             console.log('hello');
           };
           let handleNext3 = function(value) {
             setTimeout(() => console.log(taint));
+
             dispatch({ type: 'x', value });
           };
           useEffect(() => {
@@ -2874,15 +3128,19 @@ fn test() {
 
           function handleNext1(value) {
             let value2 = value * taint;
+
             setState(value2);
+
             console.log('hello');
           }
           const handleNext2 = (value) => {
             setState(taint(value));
+
             console.log('hello');
           };
           let handleNext3 = function(value) {
             console.log(taint);
+
             dispatch({ type: 'x', value });
           };
           useEffect(() => {
@@ -2905,15 +3163,19 @@ fn test() {
 
           function handleNext1(value) {
             let value2 = value * taint;
+
             setState(value2);
+
             console.log('hello');
           }
           const handleNext2 = (value) => {
             setState(taint(value));
+
             console.log('hello');
           };
           let handleNext3 = function(value) {
             console.log(taint);
+
             dispatch({ type: 'x', value });
           };
           useEffect(() => {
@@ -2993,14 +3255,17 @@ fn test() {
           };
           useEffect(() => {
             handleNext1();
+
             return Store.subscribe(() => handleNext1());
           }, [handleNext1]);
           useLayoutEffect(() => {
             handleNext2();
+
             return Store.subscribe(() => handleNext2());
           }, [handleNext2]);
           useMemo(() => {
             handleNext3();
+
             return Store.subscribe(() => handleNext3());
           }, [handleNext3]);
         }",
@@ -3016,21 +3281,26 @@ fn test() {
           };
           useEffect(() => {
             handleNext1();
+
             return Store.subscribe(() => handleNext1());
           }, [handleNext1]);
           useLayoutEffect(() => {
             handleNext2();
+
             return Store.subscribe(() => handleNext2());
           }, [handleNext2]);
           useMemo(() => {
             handleNext3();
+
             return Store.subscribe(() => handleNext3());
           }, [handleNext3]);
           return (
             <div
               onClick={() => {
                 handleNext1();
+
                 setTimeout(handleNext2);
+
                 setTimeout(() => {
                   handleNext3();
                 });
@@ -3047,10 +3317,12 @@ fn test() {
           }
           useEffect(() => {
             return Store.subscribe(handleNext1);
+
             return Store.subscribe(handleNext2);
           }, [handleNext1, handleNext2]);
           useEffect(() => {
             return Store.subscribe(handleNext1);
+
             return Store.subscribe(handleNext2);
           }, [handleNext1, handleNext2]);
         }",
@@ -3073,7 +3345,9 @@ fn test() {
 
           function handleNext(value) {
             let value2 = value * taint;
+
             setState(value2);
+
             console.log('hello');
           }
 
@@ -3088,6 +3362,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(count + 1);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -3101,6 +3376,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(count + increment);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -3114,6 +3390,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(count => count + increment);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -3127,6 +3404,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(count => count + increment);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -3143,6 +3421,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(count => increment(count));
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -3159,6 +3438,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(count => increment(count));
             }, 1000);
+
             return () => clearInterval(id);
           }, [increment]);
 
@@ -3171,6 +3451,7 @@ fn test() {
             let id = setInterval(() => {
               setCount(count => count + increment);
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -3187,6 +3468,7 @@ fn test() {
             let id = setInterval(() => {
               tick();
             }, 1000);
+
             return () => clearInterval(id);
           }, []);
 
@@ -3224,6 +3506,7 @@ fn test() {
           let [podcasts, setPodcasts] = useState(null);
           useEffect(() => {
             console.log(fetchPodcasts);
+
             fetchPodcasts(id).then(setPodcasts);
           }, [id]);
         }",
@@ -3231,6 +3514,7 @@ fn test() {
           let [podcasts, setPodcasts] = useState(null);
           useEffect(() => {
             console.log(fetchPodcasts);
+
             fetchPodcasts?.(id).then(setPodcasts);
           }, [id]);
         }",
@@ -3357,6 +3641,7 @@ fn test() {
           let foo = {}
           useEffect(() => {
             foo.bar.baz = 43;
+
             props.foo.bar.baz = 1;
           }, []);
         }",

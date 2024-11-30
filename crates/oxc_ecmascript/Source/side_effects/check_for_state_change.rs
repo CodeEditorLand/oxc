@@ -40,20 +40,25 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for Expression<'a> {
             Self::UnaryExpression(unary_expr) => {
                 unary_expr.check_for_state_change(check_for_new_objects)
             }
+
             Self::ParenthesizedExpression(p) => {
                 p.expression.check_for_state_change(check_for_new_objects)
             }
+
             Self::ConditionalExpression(p) => {
                 p.test.check_for_state_change(check_for_new_objects)
                     || p.consequent.check_for_state_change(check_for_new_objects)
                     || p.alternate.check_for_state_change(check_for_new_objects)
             }
+
             Self::SequenceExpression(s) => {
                 s.expressions.iter().any(|expr| expr.check_for_state_change(check_for_new_objects))
             }
+
             Self::BinaryExpression(binary_expr) => {
                 binary_expr.check_for_state_change(check_for_new_objects)
             }
+
             Self::ObjectExpression(object_expr) => {
                 if check_for_new_objects {
                     return true;
@@ -64,15 +69,18 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for Expression<'a> {
                     .iter()
                     .any(|property| property.check_for_state_change(check_for_new_objects))
             }
+
             Self::ArrayExpression(array_expr) => {
                 if check_for_new_objects {
                     return true;
                 }
+
                 array_expr
                     .elements
                     .iter()
                     .any(|element| element.check_for_state_change(check_for_new_objects))
             }
+
             _ => true,
         }
     }
@@ -83,6 +91,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for UnaryExpression<'a> {
         if is_simple_unary_operator(self.operator) {
             return self.argument.check_for_state_change(check_for_new_objects);
         }
+
         true
     }
 }
@@ -90,6 +99,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for UnaryExpression<'a> {
 impl<'a, 'b> CheckForStateChange<'a, 'b> for BinaryExpression<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         let left = self.left.check_for_state_change(check_for_new_objects);
+
         let right = self.right.check_for_state_change(check_for_new_objects);
 
         left || right
@@ -103,6 +113,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for ArrayExpressionElement<'a> {
             match_expression!(Self) => {
                 self.to_expression().check_for_state_change(check_for_new_objects)
             }
+
             Self::Elision(_) => false,
         }
     }
@@ -152,6 +163,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for ForStatementLeft<'a> {
             match_assignment_target!(Self) => {
                 self.to_assignment_target().check_for_state_change(check_for_new_objects)
             }
+
             ForStatementLeft::VariableDeclaration(variable_declaration) => {
                 variable_declaration.check_for_state_change(check_for_new_objects)
             }
@@ -189,6 +201,7 @@ impl CheckForStateChange<'_, '_> for BindingPattern<'_> {
                         .as_ref()
                         .is_some_and(|rest| rest.check_for_state_change(check_for_new_objects))
             }
+
             BindingPatternKind::ArrayPattern(array_pattern) => {
                 array_pattern.elements.iter().any(|element| {
                     element.as_ref().is_some_and(|element| {
@@ -199,6 +212,7 @@ impl CheckForStateChange<'_, '_> for BindingPattern<'_> {
                     .as_ref()
                     .is_some_and(|rest| rest.check_for_state_change(check_for_new_objects))
             }
+
             BindingPatternKind::AssignmentPattern(assignment_pattern) => {
                 assignment_pattern.left.check_for_state_change(check_for_new_objects)
                     && assignment_pattern.right.check_for_state_change(check_for_new_objects)
@@ -227,30 +241,38 @@ impl CheckForStateChange<'_, '_> for AssignmentTarget<'_> {
             AssignmentTarget::TSAsExpression(ts_as_expression) => {
                 ts_as_expression.expression.check_for_state_change(check_for_new_objects)
             }
+
             AssignmentTarget::TSSatisfiesExpression(ts_satisfies_expression) => {
                 ts_satisfies_expression.expression.check_for_state_change(check_for_new_objects)
             }
+
             AssignmentTarget::TSNonNullExpression(ts_non_null_expression) => {
                 ts_non_null_expression.expression.check_for_state_change(check_for_new_objects)
             }
+
             AssignmentTarget::TSTypeAssertion(ts_type_assertion) => {
                 ts_type_assertion.expression.check_for_state_change(check_for_new_objects)
             }
+
             AssignmentTarget::TSInstantiationExpression(ts_instantiation_expression) => {
                 ts_instantiation_expression.expression.check_for_state_change(check_for_new_objects)
             }
+
             AssignmentTarget::ComputedMemberExpression(computed_member_expression) => {
                 computed_member_expression.object.check_for_state_change(check_for_new_objects)
                     || computed_member_expression
                         .expression
                         .check_for_state_change(check_for_new_objects)
             }
+
             AssignmentTarget::StaticMemberExpression(static_member_expression) => {
                 static_member_expression.object.check_for_state_change(check_for_new_objects)
             }
+
             AssignmentTarget::PrivateFieldExpression(private_field_expression) => {
                 private_field_expression.object.check_for_state_change(check_for_new_objects)
             }
+
             AssignmentTarget::ArrayAssignmentTarget(array_assignment_target) => {
                 array_assignment_target.elements.iter().any(|element| {
                     element.as_ref().is_some_and(|element| {
@@ -261,6 +283,7 @@ impl CheckForStateChange<'_, '_> for AssignmentTarget<'_> {
                     .as_ref()
                     .is_some_and(|rest| rest.check_for_state_change(check_for_new_objects))
             }
+
             AssignmentTarget::ObjectAssignmentTarget(object_assignment_target) => {
                 object_assignment_target
                     .properties
@@ -310,6 +333,7 @@ impl CheckForStateChange<'_, '_> for AssignmentTargetMaybeDefault<'_> {
             match_assignment_target!(Self) => {
                 self.to_assignment_target().check_for_state_change(check_for_new_objects)
             }
+
             Self::AssignmentTargetWithDefault(assignment_target_with_default) => {
                 assignment_target_with_default.binding.check_for_state_change(check_for_new_objects)
                     && assignment_target_with_default

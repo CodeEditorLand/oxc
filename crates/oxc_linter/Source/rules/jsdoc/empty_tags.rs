@@ -104,9 +104,11 @@ impl Rule for EmptyTags {
             if EMPTY_TAGS.contains(tag_name) {
                 return true;
             }
+
             if !self.0.tags.is_empty() && self.0.tags.contains(&tag_name.to_string()) {
                 return true;
             }
+
             false
         };
 
@@ -124,6 +126,7 @@ impl Rule for EmptyTags {
                 }
 
                 let comment = tag.comment();
+
                 if comment.parsed().is_empty() {
                     continue;
                 }

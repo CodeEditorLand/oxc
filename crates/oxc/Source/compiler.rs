@@ -42,6 +42,7 @@ impl Compiler {
         source_path: &Path,
     ) -> Result<String, Vec<OxcDiagnostic>> {
         self.compile(source_text, source_type, source_path);
+
         if self.errors.is_empty() {
             Ok(mem::take(&mut self.printed))
         } else {
@@ -127,9 +128,11 @@ pub trait CompilerInterface {
         /* Parse */
 
         let mut parser_return = self.parse(&allocator, source_text, source_type);
+
         if self.after_parse(&mut parser_return).is_break() {
             return;
         }
+
         if !parser_return.errors.is_empty() {
             self.handle_errors(parser_return.errors);
         }
@@ -144,15 +147,19 @@ pub trait CompilerInterface {
         /* Semantic */
 
         let mut semantic_return = self.semantic(&program, source_path);
+
         if !semantic_return.errors.is_empty() {
             self.handle_errors(semantic_return.errors);
+
             return;
         }
+
         if self.after_semantic(&mut program, &mut semantic_return).is_break() {
             return;
         }
 
         let stats = semantic_return.semantic.stats();
+
         let (mut symbols, mut scopes) = semantic_return.semantic.into_symbol_table_and_scope_tree();
 
         /* Transform */
@@ -163,6 +170,7 @@ pub trait CompilerInterface {
 
             if !transformer_return.errors.is_empty() {
                 self.handle_errors(transformer_return.errors);
+
                 return;
             }
 
@@ -174,6 +182,7 @@ pub trait CompilerInterface {
         }
 
         let inject_options = self.inject_options();
+
         let define_options = self.define_options();
 
         // Symbols and scopes are out of sync.
@@ -191,13 +200,16 @@ pub trait CompilerInterface {
                 scopes,
                 &mut program,
             );
+
             symbols = ret.symbols;
+
             scopes = ret.scopes;
         }
 
         if let Some(options) = define_options {
             let ret =
                 ReplaceGlobalDefines::new(&allocator, options).build(symbols, scopes, &mut program);
+
             Compressor::new(&allocator, CompressOptions::dead_code_elimination())
                 .build_with_symbols_and_scopes(ret.symbols, ret.scopes, &mut program);
             // symbols = ret.symbols;
@@ -218,6 +230,7 @@ pub trait CompilerInterface {
 
         if let Some(options) = self.codegen_options() {
             let ret = self.codegen(&program, source_path, mangler, options);
+
             self.after_codegen(ret);
         }
     }
@@ -254,13 +267,16 @@ pub trait CompilerInterface {
         source_path: &Path,
     ) {
         let ret = IsolatedDeclarations::new(allocator, options).build(program);
+
         self.handle_errors(ret.errors);
+
         let ret = self.codegen(
             &ret.program,
             source_path,
             None,
             self.codegen_options().unwrap_or_default(),
         );
+
         self.after_isolated_declarations(ret);
     }
 
@@ -299,9 +315,11 @@ pub trait CompilerInterface {
         options: CodegenOptions,
     ) -> CodegenReturn {
         let mut options = options;
+
         if self.enable_sourcemap() {
             options.source_map_path = Some(source_path.to_path_buf());
         }
+
         CodeGenerator::new().with_options(options).with_mangler(mangler).build(program)
     }
 }

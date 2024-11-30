@@ -137,6 +137,7 @@ declare_oxc_lint!(
     ///      "vitest/prefer-hooks-in-order": "error"
     ///   }
     /// }
+
     PreferHooksInOrder,
     style,
 );
@@ -148,21 +149,25 @@ impl Rule for PreferHooksInOrder {
         for node in ctx.nodes() {
             if let AstKind::CallExpression(call_expr) = node.kind() {
                 let possible_jest_node = &PossibleJestNode { node, original: None };
+
                 let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
                     parse_jest_fn_call(call_expr, possible_jest_node, ctx)
                 else {
                     previous_hook_orders.remove(&node.scope_id());
+
                     continue;
                 };
 
                 if !matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Hook)) {
                     previous_hook_orders.remove(&node.scope_id());
+
                     continue;
                 }
 
                 let previous_hook_order = previous_hook_orders.get(&node.scope_id());
 
                 let hook_name = jest_fn_call.name.as_ref();
+
                 let Some(hook_order) = get_hook_order(hook_name) else {
                     continue;
                 };
@@ -177,9 +182,11 @@ impl Rule for PreferHooksInOrder {
                             (hook_name, call_expr.span),
                             (previous_hook_name, *previous_hook_span),
                         ));
+
                         continue;
                     }
                 }
+
                 previous_hook_orders.insert(node.scope_id(), (hook_order, call_expr.span));
             };
         }
@@ -219,8 +226,11 @@ fn test() {
         (
             "
                 beforeAll(() => {});
+
                 beforeEach(() => {});
+
                 afterEach(() => {});
+
                 afterAll(() => {});
             ",
             None,
@@ -229,7 +239,9 @@ fn test() {
             "
                 describe('foo', () => {
                     someSetupFn();
+
                     beforeEach(() => {});
+
                     afterEach(() => {});
 
                     test('bar', () => {
@@ -242,6 +254,7 @@ fn test() {
         (
             "
                 beforeAll(() => {});
+
                 afterAll(() => {});
             ",
             None,
@@ -249,6 +262,7 @@ fn test() {
         (
             "
                 beforeEach(() => {});
+
                 afterEach(() => {});
             ",
             None,
@@ -256,6 +270,7 @@ fn test() {
         (
             "
                 beforeAll(() => {});
+
                 afterEach(() => {});
             ",
             None,
@@ -263,6 +278,7 @@ fn test() {
         (
             "
                 beforeAll(() => {});
+
                 beforeEach(() => {});
             ",
             None,
@@ -270,6 +286,7 @@ fn test() {
         (
             "
                 afterEach(() => {});
+
                 afterAll(() => {});
             ",
             None,
@@ -277,6 +294,7 @@ fn test() {
         (
             "
                 beforeAll(() => {});
+
                 beforeAll(() => {});
             ",
             None,
@@ -285,6 +303,7 @@ fn test() {
             "
                 describe('my test', () => {
                     afterEach(() => {});
+
                     afterAll(() => {});
                 });
             ",
@@ -297,6 +316,7 @@ fn test() {
 
                     describe('when something is true', () => {
                         beforeAll(() => {});
+
                         beforeEach(() => {});
                     });
                 });
@@ -361,11 +381,13 @@ fn test() {
             "
                 describe('my test', () => {
                     afterEach(() => {});
+
                     afterAll(() => {});
 
                     doSomething();
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
             ",
@@ -375,11 +397,13 @@ fn test() {
             "
                 describe('my test', () => {
                     afterEach(() => {});
+
                     afterAll(() => {});
 
                     it('is a test', () => {});
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
             ",
@@ -392,31 +416,38 @@ fn test() {
 
                     describe('when something is true', () => {
                         beforeAll(() => {});
+
                         beforeEach(() => {});
 
                         it('does something', () => {});
 
                         beforeAll(() => {});
+
                         beforeEach(() => {});
                     });
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
 
                 describe('my test', () => {
                     beforeAll(() => {});
+
                     beforeEach(() => {});
+
                     afterAll(() => {});
 
                     describe('when something is true', () => {
                         it('does something', () => {});
 
                         beforeAll(() => {});
+
                         beforeEach(() => {});
                     });
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
             ",
@@ -428,6 +459,7 @@ fn test() {
                     beforeAll(() => {
                         createMyDatabase();
                     });
+
                     afterAll(() => {
                         removeMyDatabase();
                     });
@@ -440,21 +472,26 @@ fn test() {
 
                     describe('when something is true', () => {
                         beforeAll(() => {});
+
                         beforeEach(() => {});
 
                         it('does something', () => {});
 
                         beforeAll(() => {});
+
                         beforeEach(() => {});
                     });
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
 
                 describe('my test', () => {
                     beforeAll(() => {});
+
                     beforeEach(() => {});
+
                     afterAll(() => {});
 
                     withDatabase();
@@ -463,10 +500,12 @@ fn test() {
                         it('does something', () => {});
 
                         beforeAll(() => {});
+
                         beforeEach(() => {});
                     });
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
             ",
@@ -477,6 +516,7 @@ fn test() {
                 describe('A file with a lot of test', () => {
                     beforeAll(() => {
                         setupTheDatabase();
+
                         createMocks();
                     });
 
@@ -486,21 +526,25 @@ fn test() {
 
                     beforeEach(() => {
                         cleanTheDatabase();
+
                         resetSomeThings();
                     });
 
                     afterEach(() => {
                         cleanTheDatabase();
+
                         resetSomeThings();
                     });
 
                     afterAll(() => {
                         closeTheDatabase();
+
                         stop();
                     });
 
                     it('does something', () => {
                         const thing = getThing();
+
                         expect(thing).toBe('something');
                     });
 
@@ -510,8 +554,11 @@ fn test() {
 
                     describe('Also have tests in here', () => {
                         afterAll(() => {});
+
                         it('tests something', () => {});
+
                         it('tests something else', () => {});
+
                         beforeAll(()=>{});
                     });
                 });
@@ -527,6 +574,7 @@ fn test() {
                     afterAll(() => {
                         removeMyDatabase();
                     });
+
                     beforeAll(() => {
                         createMyDatabase();
                     });
@@ -539,6 +587,7 @@ fn test() {
                 afterAll(() => {
                     removeMyDatabase();
                 });
+
                 beforeAll(() => {
                     createMyDatabase();
                 });
@@ -548,6 +597,7 @@ fn test() {
         (
             "
                 afterAll(() => {});
+
                 beforeAll(() => {});
             ",
             None,
@@ -555,6 +605,7 @@ fn test() {
         (
             "
                 afterEach(() => {});
+
                 beforeEach(() => {});
             ",
             None,
@@ -562,6 +613,7 @@ fn test() {
         (
             "
                 afterEach(() => {});
+
                 beforeAll(() => {});
             ",
             None,
@@ -569,6 +621,7 @@ fn test() {
         (
             "
                 beforeEach(() => {});
+
                 beforeAll(() => {});
             ",
             None,
@@ -576,6 +629,7 @@ fn test() {
         (
             "
                 afterAll(() => {});
+
                 afterEach(() => {});
             ",
             None,
@@ -592,7 +646,9 @@ fn test() {
         (
             "
                 afterAll(() => {});
+
                 afterAll(() => {});
+
                 afterEach(() => {});
             ",
             None,
@@ -601,6 +657,7 @@ fn test() {
             "
                 describe('my test', () => {
                     afterAll(() => {});
+
                     afterEach(() => {});
                 });
             ",
@@ -610,11 +667,13 @@ fn test() {
             "
                 describe('my test', () => {
                     afterAll(() => {});
+
                     afterEach(() => {});
 
                     doSomething();
 
                     beforeEach(() => {});
+
                     beforeAll(() => {});
                 });
             ",
@@ -624,11 +683,13 @@ fn test() {
             "
                 describe('my test', () => {
                     afterAll(() => {});
+
                     afterEach(() => {});
 
                     it('is a test', () => {});
 
                     beforeEach(() => {});
+
                     beforeAll(() => {});
                 });
             ",
@@ -641,6 +702,7 @@ fn test() {
 
                     describe('when something is true', () => {
                         beforeEach(() => {});
+
                         beforeAll(() => {});
                     });
                 });
@@ -651,13 +713,18 @@ fn test() {
             "
                 describe('my test', () => {
                     beforeAll(() => {});
+
                     afterAll(() => {});
+
                     beforeAll(() => {});
 
                     describe('when something is true', () => {
                         beforeAll(() => {});
+
                         afterEach(() => {});
+
                         beforeEach(() => {});
+
                         afterEach(() => {});
                     });
                 });
@@ -668,7 +735,9 @@ fn test() {
             "
                 describe('my test', () => {
                     beforeAll(() => {});
+
                     beforeAll(() => {});
+
                     afterAll(() => {});
 
                     it('foo nested', () => {
@@ -677,6 +746,7 @@ fn test() {
 
                     describe('when something is true', () => {
                         beforeAll(() => {});
+
                         afterEach(() => {});
 
                         it('foo nested', () => {
@@ -685,6 +755,7 @@ fn test() {
 
                         describe('deeply nested', () => {
                             afterAll(() => {});
+
                             afterAll(() => {});
                             // This comment does nothing
                             afterEach(() => {});
@@ -694,6 +765,7 @@ fn test() {
                             });
                         })
                         beforeEach(() => {});
+
                         afterEach(() => {});
                     });
                 });
@@ -706,8 +778,10 @@ fn test() {
                     const setupDatabase = () => {
                         beforeEach(() => {
                             initDatabase();
+
                             fillWithData();
                         });
+
                         beforeAll(() => {
                             setupMocks();
                         });
@@ -719,6 +793,7 @@ fn test() {
 
                     describe('my nested test', () => {
                         afterAll(() => {});
+
                         afterEach(() => {});
 
                         it('foo nested', () => {
@@ -793,14 +868,19 @@ fn test() {
         r"describe(() => {})",
         r"
             beforeAll(() => {});
+
             beforeEach(() => {});
+
             afterEach(() => {});
+
             afterAll(() => {});
         ",
         r"
             describe('foo', () => {
                 someSetupFn();
+
                 beforeEach(() => {});
+
                 afterEach(() => {});
 
                 test('bar', () => {
@@ -810,53 +890,64 @@ fn test() {
         ",
         r"
             beforeAll(() => {});
+
             afterAll(() => {});
         ",
         r"
             beforeEach(() => {});
+
             afterEach(() => {});
         ",
         r"
             beforeAll(() => {});
+
             afterEach(() => {});
         ",
         r"
             beforeAll(() => {});
+
             beforeEach(() => {});
         ",
         r"
             afterEach(() => {});
+
             afterAll(() => {});
         ",
         r"
             beforeAll(() => {});
+
             beforeAll(() => {});
         ",
         r"
             describe('my test', () => {
                 afterEach(() => {});
+
                 afterAll(() => {});
             });
         ",
         r"
             describe('my test', () => {
                 afterEach(() => {});
+
                 afterAll(() => {});
 
                 doSomething();
 
                 beforeAll(() => {});
+
                 beforeEach(() => {});
             });
         ",
         r"
             describe('my test', () => {
                 afterEach(() => {});
+
                 afterAll(() => {});
 
                 it('is a test', () => {});
 
                 beforeAll(() => {});
+
                 beforeEach(() => {});
             });
         ",
@@ -866,6 +957,7 @@ fn test() {
 
                 describe('when something is true', () => {
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
             });
@@ -876,31 +968,38 @@ fn test() {
 
                 describe('when something is true', () => {
                     beforeAll(() => {});
+
                     beforeEach(() => {});
 
                     it('does something', () => {});
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
 
                 beforeAll(() => {});
+
                 beforeEach(() => {});
             });
 
             describe('my test', () => {
                 beforeAll(() => {});
+
                 beforeEach(() => {});
+
                 afterAll(() => {});
 
                 describe('when something is true', () => {
                     it('does something', () => {});
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
 
                 beforeAll(() => {});
+
                 beforeEach(() => {});
             });
         ",
@@ -909,6 +1008,7 @@ fn test() {
                 beforeAll(() => {
                     createMyDatabase();
                 });
+
                 afterAll(() => {
                     removeMyDatabase();
                 });
@@ -921,21 +1021,26 @@ fn test() {
 
                 describe('when something is true', () => {
                     beforeAll(() => {});
+
                     beforeEach(() => {});
 
                     it('does something', () => {});
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
 
                 beforeAll(() => {});
+
                 beforeEach(() => {});
             });
 
             describe('my test', () => {
                 beforeAll(() => {});
+
                 beforeEach(() => {});
+
                 afterAll(() => {});
 
                 withDatabase();
@@ -944,10 +1049,12 @@ fn test() {
                     it('does something', () => {});
 
                     beforeAll(() => {});
+
                     beforeEach(() => {});
                 });
 
                 beforeAll(() => {});
+
                 beforeEach(() => {});
             });
         ",
@@ -1006,6 +1113,7 @@ fn test() {
             describe('A file with a lot of test', () => {
                 beforeAll(() => {
                     setupTheDatabase();
+
                     createMocks();
                 });
 
@@ -1015,21 +1123,25 @@ fn test() {
 
                 beforeEach(() => {
                     cleanTheDatabase();
+
                     resetSomeThings();
                 });
 
                 afterEach(() => {
                     cleanTheDatabase();
+
                     resetSomeThings();
                 });
 
                 afterAll(() => {
                     closeTheDatabase();
+
                     stop();
                 });
 
                 it('does something', () => {
                     const thing = getThing();
+
                     expect(thing).toBe('something');
                 });
 
@@ -1039,8 +1151,11 @@ fn test() {
 
                 describe('Also have tests in here', () => {
                     afterAll(() => {});
+
                     it('tests something', () => {});
+
                     it('tests something else', () => {});
+
                     beforeAll(()=>{});
                 });
             });
@@ -1053,6 +1168,7 @@ fn test() {
                 afterAll(() => {
                     removeMyDatabase();
                 });
+
                 beforeAll(() => {
                     createMyDatabase();
                 });
@@ -1062,28 +1178,34 @@ fn test() {
             afterAll(() => {
                 removeMyDatabase();
             });
+
             beforeAll(() => {
                 createMyDatabase();
             });
         ",
         r"
             afterAll(() => {});
+
             beforeAll(() => {});
         ",
         r"
             afterEach(() => {});
+
             beforeEach(() => {});
         ",
         r"
             afterEach(() => {});
+
             beforeAll(() => {});
         ",
         r"
             beforeEach(() => {});
+
             beforeAll(() => {});
         ",
         r"
             afterAll(() => {});
+
             afterEach(() => {});
         ",
         r"
@@ -1094,34 +1216,41 @@ fn test() {
         ",
         r"
             afterAll(() => {});
+
             afterAll(() => {});
+
             afterEach(() => {});
         ",
         r"
             describe('my test', () => {
                 afterAll(() => {});
+
                 afterEach(() => {});
             });
         ",
         r"
             describe('my test', () => {
                 afterAll(() => {});
+
                 afterEach(() => {});
 
                 doSomething();
 
                 beforeEach(() => {});
+
                 beforeAll(() => {});
             });
         ",
         r"
             describe('my test', () => {
                 afterAll(() => {});
+
                 afterEach(() => {});
 
                 it('is a test', () => {});
 
                 beforeEach(() => {});
+
                 beforeAll(() => {});
             });
         ",
@@ -1131,6 +1260,7 @@ fn test() {
 
                 describe('when something is true', () => {
                     beforeEach(() => {});
+
                     beforeAll(() => {});
                 });
             });
@@ -1138,13 +1268,18 @@ fn test() {
         r"
             describe('my test', () => {
                 beforeAll(() => {});
+
                 afterAll(() => {});
+
                 beforeAll(() => {});
 
                 describe('when something is true', () => {
                     beforeAll(() => {});
+
                     afterEach(() => {});
+
                     beforeEach(() => {});
+
                     afterEach(() => {});
                 });
             });
@@ -1152,7 +1287,9 @@ fn test() {
         r"
             describe('my test', () => {
                 beforeAll(() => {});
+
                 beforeAll(() => {});
+
                 afterAll(() => {});
 
                 it('foo nested', () => {
@@ -1161,6 +1298,7 @@ fn test() {
 
                 describe('when something is true', () => {
                     beforeAll(() => {});
+
                     afterEach(() => {});
 
                     it('foo nested', () => {
@@ -1169,6 +1307,7 @@ fn test() {
                     
                     describe('deeply nested', () => { 
                         afterAll(() => {});
+
                         afterAll(() => {});
                         // This comment does nothing
                         afterEach(() => {});
@@ -1178,6 +1317,7 @@ fn test() {
                         });
                     })
                     beforeEach(() => {});
+
                     afterEach(() => {});
                 });
             });
@@ -1187,8 +1327,10 @@ fn test() {
                 const setupDatabase = () => {
                     beforeEach(() => {
                         initDatabase();
+
                         fillWithData();
                     });
+
                     beforeAll(() => {
                         setupMocks();
                     });
@@ -1200,6 +1342,7 @@ fn test() {
             
                 describe('my nested test', () => {
                     afterAll(() => {});
+
                     afterEach(() => {});
 
                     it('foo nested', () => {
@@ -1262,6 +1405,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest.into_iter().map(|x| (x, None)));
+
     fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
 
     Tester::new(PreferHooksInOrder::NAME, pass, fail)

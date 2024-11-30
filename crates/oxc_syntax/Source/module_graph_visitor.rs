@@ -53,6 +53,7 @@ impl<'a, T> ModuleGraphVisitorBuilder<'a, T> {
     #[must_use]
     pub fn max_depth(mut self, max_depth: u32) -> Self {
         self.max_depth = max_depth;
+
         self
     }
 
@@ -60,6 +61,7 @@ impl<'a, T> ModuleGraphVisitorBuilder<'a, T> {
     #[must_use]
     pub fn filter<F: (Fn(ModulePair, &ModuleRecord) -> bool) + 'a>(mut self, filter: F) -> Self {
         self.filter = Some(Box::new(filter));
+
         self
     }
 
@@ -70,6 +72,7 @@ impl<'a, T> ModuleGraphVisitorBuilder<'a, T> {
         event: F,
     ) -> Self {
         self.event = Some(Box::new(event));
+
         self
     }
 
@@ -77,6 +80,7 @@ impl<'a, T> ModuleGraphVisitorBuilder<'a, T> {
     #[must_use]
     pub fn enter<F: FnMut(ModulePair, &ModuleRecord) + 'a>(mut self, enter: F) -> Self {
         self.enter = Some(Box::new(enter));
+
         self
     }
 
@@ -84,6 +88,7 @@ impl<'a, T> ModuleGraphVisitorBuilder<'a, T> {
     #[must_use]
     pub fn leave<F: FnMut(ModulePair, &ModuleRecord) + 'a>(mut self, leave: F) -> Self {
         self.leave = Some(Box::new(leave));
+
         self
     }
 
@@ -99,10 +104,15 @@ impl<'a, T> ModuleGraphVisitorBuilder<'a, T> {
             depth: 0,
             max_depth: self.max_depth,
         };
+
         let filter = self.filter.unwrap_or_else(|| Box::new(|_, _| true));
+
         let event = self.event.unwrap_or_else(|| Box::new(|_, _, _| {}));
+
         let enter = self.enter.unwrap_or_else(|| Box::new(|_, _| {}));
+
         let leave = self.leave.unwrap_or_else(|| Box::new(|_, _| {}));
+
         let result =
             visitor.filter_fold_while(initial_value, module, filter, visit, event, enter, leave);
 
@@ -200,12 +210,14 @@ impl ModuleGraphVisitor {
                 }
             };
         }
+
         for module_record_ref in &module_record.loaded_modules {
             if self.depth > self.max_depth {
                 return VisitFoldWhile::Stop(accumulator.into_inner());
             }
 
             let path = &module_record_ref.resolved_absolute_path;
+
             if !self.traversed.insert(path.clone()) {
                 continue;
             }
@@ -217,9 +229,11 @@ impl ModuleGraphVisitor {
             self.depth += 1;
 
             event(ModuleGraphVisitorEvent::Enter, module_record_ref.pair(), module_record);
+
             enter(module_record_ref.pair(), module_record);
 
             accumulate!(fold(accumulator.into_inner(), module_record_ref.pair(), module_record));
+
             accumulate!(self.filter_fold_recursive(
                 accumulator,
                 module_record_ref.value(),
@@ -231,6 +245,7 @@ impl ModuleGraphVisitor {
             ));
 
             event(ModuleGraphVisitorEvent::Leave, module_record_ref.pair(), module_record);
+
             leave(module_record_ref.pair(), module_record);
 
             self.depth -= 1;

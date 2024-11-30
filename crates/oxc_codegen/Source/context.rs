@@ -6,7 +6,9 @@ bitflags! {
     pub struct Context: u8 {
         /// [In]
         const FORBID_IN   = 1 << 0;
+
         const FORBID_CALL = 1 << 1;
+
         const TYPESCRIPT  = 1 << 2;
     }
 }
@@ -26,6 +28,7 @@ impl Context {
     #[must_use]
     pub fn with_typescript(mut self) -> Self {
         self |= Self::TYPESCRIPT;
+
         self
     }
 

@@ -102,6 +102,7 @@ mod test {
     #[test]
     fn test_api() {
         let bump = Bump::new();
+
         let allocator: Allocator = bump.into();
         #[allow(clippy::explicit_deref_methods)]
         {

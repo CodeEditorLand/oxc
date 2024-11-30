@@ -25,8 +25,11 @@ pub fn isolated_declaration(
     options: Option<IsolatedDeclarationsOptions>,
 ) -> IsolatedDeclarationsResult {
     let source_path = Path::new(&filename);
+
     let source_type = SourceType::from_path(source_path).unwrap_or_default().with_typescript(true);
+
     let allocator = Allocator::default();
+
     let options = options.unwrap_or_default();
 
     let ret = Parser::new(&allocator, &source_text, source_type).parse();
@@ -47,6 +50,7 @@ pub fn isolated_declaration(
         .build(&transformed_ret.program);
 
     let errors = ret.errors.into_iter().chain(transformed_ret.errors).collect();
+
     let errors = wrap_diagnostics(source_path, source_type, &source_text, errors);
 
     IsolatedDeclarationsResult {

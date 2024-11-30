@@ -23,13 +23,16 @@ impl<'a> ParserImpl<'a> {
     #[inline]
     pub(crate) fn start_span(&self) -> Span {
         let token = self.cur_token();
+
         Span::new(token.start, 0)
     }
 
     #[inline]
     pub(crate) fn end_span(&self, mut span: Span) -> Span {
         span.end = self.prev_token_end;
+
         debug_assert!(span.end >= span.start);
+
         span
     }
 
@@ -88,6 +91,7 @@ impl<'a> ParserImpl<'a> {
         if n == 0 {
             return self.cur_token();
         }
+
         self.lexer.lookahead(n)
     }
 
@@ -116,6 +120,7 @@ impl<'a> ParserImpl<'a> {
     fn test_escaped_keyword(&mut self, kind: Kind) {
         if self.cur_token().escaped() && kind.is_all_keyword() {
             let span = self.cur_token().span();
+
             self.error(diagnostics::escaped_keyword(span));
         }
     }
@@ -124,7 +129,9 @@ impl<'a> ParserImpl<'a> {
     /// Checks if the current token is escaped if it is a keyword
     fn advance(&mut self, kind: Kind) {
         self.test_escaped_keyword(kind);
+
         self.prev_token_end = self.token.end;
+
         self.token = self.lexer.next_token();
     }
 
@@ -132,7 +139,9 @@ impl<'a> ParserImpl<'a> {
     /// Checks if the current token is escaped if it is a keyword
     fn advance_for_jsx_child(&mut self, kind: Kind) {
         self.test_escaped_keyword(kind);
+
         self.prev_token_end = self.token.end;
+
         self.token = self.lexer.next_jsx_child();
     }
 
@@ -141,8 +150,10 @@ impl<'a> ParserImpl<'a> {
     pub(crate) fn eat(&mut self, kind: Kind) -> bool {
         if self.at(kind) {
             self.advance(kind);
+
             return true;
         }
+
         false
     }
 
@@ -171,19 +182,24 @@ impl<'a> ParserImpl<'a> {
     pub(crate) fn asi(&mut self) -> Result<()> {
         if !self.can_insert_semicolon() {
             let span = Span::new(self.prev_token_end, self.prev_token_end);
+
             return Err(diagnostics::auto_semicolon_insertion(span));
         }
+
         if self.at(Kind::Semicolon) {
             self.advance(Kind::Semicolon);
         }
+
         Ok(())
     }
 
     pub(crate) fn can_insert_semicolon(&self) -> bool {
         let kind = self.cur_kind();
+
         if kind == Kind::Semicolon {
             return true;
         }
+
         kind == Kind::RCurly || kind.is_eof() || self.cur_token().is_on_new_line
     }
 
@@ -191,8 +207,10 @@ impl<'a> ParserImpl<'a> {
     pub(crate) fn expect_without_advance(&mut self, kind: Kind) -> Result<()> {
         if !self.at(kind) {
             let range = self.cur_token().span();
+
             return Err(diagnostics::expect_token(kind.to_str(), self.cur_kind().to_str(), range));
         }
+
         Ok(())
     }
 
@@ -201,7 +219,9 @@ impl<'a> ParserImpl<'a> {
     #[inline]
     pub(crate) fn expect(&mut self, kind: Kind) -> Result<()> {
         self.expect_without_advance(kind)?;
+
         self.advance(kind);
+
         Ok(())
     }
 
@@ -209,7 +229,9 @@ impl<'a> ParserImpl<'a> {
     /// # Errors
     pub(crate) fn expect_jsx_child(&mut self, kind: Kind) -> Result<()> {
         self.expect_without_advance(kind)?;
+
         self.advance_for_jsx_child(kind);
+
         Ok(())
     }
 
@@ -217,15 +239,20 @@ impl<'a> ParserImpl<'a> {
     /// # Errors
     pub(crate) fn expect_jsx_attribute_value(&mut self, kind: Kind) -> Result<()> {
         self.lexer.set_context(LexerContext::JsxAttributeValue);
+
         self.expect(kind)?;
+
         self.lexer.set_context(LexerContext::Regular);
+
         Ok(())
     }
 
     /// Tell lexer to read a regex
     pub(crate) fn read_regex(&mut self) -> Result<(u32, RegExpFlags, bool)> {
         let (token, pattern_end, flags, flags_error) = self.lexer.next_regex(self.cur_kind())?;
+
         self.token = token;
+
         Ok((pattern_end, flags, flags_error))
     }
 
@@ -245,8 +272,10 @@ impl<'a> ParserImpl<'a> {
 
     pub(crate) fn re_lex_right_angle(&mut self) -> Kind {
         let kind = self.cur_kind();
+
         if kind == Kind::RAngle {
             self.token = self.lexer.next_right_angle();
+
             self.token.kind
         } else {
             kind
@@ -255,8 +284,10 @@ impl<'a> ParserImpl<'a> {
 
     pub(crate) fn re_lex_l_angle(&mut self) -> Kind {
         let kind = self.cur_kind();
+
         if matches!(kind, Kind::ShiftLeft | Kind::ShiftLeftEq | Kind::LtEq) {
             self.token = self.lexer.re_lex_as_typescript_l_angle(kind);
+
             self.token.kind
         } else {
             kind
@@ -265,8 +296,10 @@ impl<'a> ParserImpl<'a> {
 
     pub(crate) fn re_lex_ts_r_angle(&mut self) -> Kind {
         let kind = self.cur_kind();
+
         if matches!(kind, Kind::ShiftRight | Kind::ShiftRight3) {
             self.token = self.lexer.re_lex_as_typescript_r_angle(kind);
+
             self.token.kind
         } else {
             kind
@@ -287,8 +320,11 @@ impl<'a> ParserImpl<'a> {
             checkpoint;
 
         self.lexer.rewind(lexer);
+
         self.token = cur_token;
+
         self.prev_token_end = prev_span_end;
+
         self.errors.truncate(errors_lens);
     }
 
@@ -298,21 +334,29 @@ impl<'a> ParserImpl<'a> {
         func: impl FnOnce(&mut ParserImpl<'a>) -> Result<T>,
     ) -> Option<T> {
         let checkpoint = self.checkpoint();
+
         let ctx = self.ctx;
+
         let result = func(self);
+
         if let Ok(result) = result {
             Some(result)
         } else {
             self.ctx = ctx;
+
             self.rewind(checkpoint);
+
             None
         }
     }
 
     pub(crate) fn lookahead<U>(&mut self, predicate: impl Fn(&mut ParserImpl<'a>) -> U) -> U {
         let checkpoint = self.checkpoint();
+
         let answer = predicate(self);
+
         self.rewind(checkpoint);
+
         answer
     }
 
@@ -323,14 +367,19 @@ impl<'a> ParserImpl<'a> {
         F: FnOnce(&mut Self) -> T,
     {
         let ctx = self.ctx;
+
         self.ctx = ctx.difference(remove_flags).union(add_flags);
+
         let result = cb(self);
+
         self.ctx = ctx;
+
         result
     }
 
     pub(crate) fn consume_decorators(&mut self) -> Vec<'a, Decorator<'a>> {
         let decorators = std::mem::take(&mut self.state.decorators);
+
         self.ast.vec_from_iter(decorators)
     }
 
@@ -344,19 +393,25 @@ impl<'a> ParserImpl<'a> {
         F: Fn(&mut Self) -> Result<Option<T>>,
     {
         self.expect(open)?;
+
         let mut list = self.ast.vec();
+
         loop {
             let kind = self.cur_kind();
+
             if kind == close || kind == Kind::Eof {
                 break;
             }
+
             if let Some(e) = f(self)? {
                 list.push(e);
             } else {
                 break;
             }
         }
+
         self.expect(close)?;
+
         Ok(list)
     }
 
@@ -371,25 +426,33 @@ impl<'a> ParserImpl<'a> {
         F: Fn(&mut Self) -> Result<T>,
     {
         let mut list = self.ast.vec();
+
         let mut first = true;
+
         loop {
             let kind = self.cur_kind();
+
             if kind == close || kind == Kind::Eof {
                 break;
             }
+
             if first {
                 first = false;
             } else {
                 if !trailing_separator && self.at(separator) && self.peek_at(close) {
                     break;
                 }
+
                 self.expect(separator)?;
+
                 if self.at(close) {
                     break;
                 }
             }
+
             list.push(f(self)?);
         }
+
         Ok(list)
     }
 
@@ -405,17 +468,23 @@ impl<'a> ParserImpl<'a> {
         B: GetSpan,
     {
         let mut list = self.ast.vec();
+
         let mut rest = None;
+
         let mut first = true;
+
         loop {
             let kind = self.cur_kind();
+
             if kind == close || kind == Kind::Eof {
                 break;
             }
+
             if first {
                 first = false;
             } else {
                 self.expect(Kind::Comma)?;
+
                 if self.at(close) {
                     break;
                 }
@@ -429,6 +498,7 @@ impl<'a> ParserImpl<'a> {
                 list.push(parse_element(self)?);
             }
         }
+
         Ok((list, rest))
     }
 }

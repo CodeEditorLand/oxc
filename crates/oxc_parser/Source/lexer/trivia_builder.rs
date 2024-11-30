@@ -53,26 +53,34 @@ impl TriviaBuilder {
     pub fn handle_newline(&mut self) {
         // The last unprocessed comment is on a newline.
         let len = self.comments.len();
+
         if self.processed < len {
             self.comments[len - 1].followed_by_newline = true;
+
             if !self.saw_newline {
                 self.processed = self.comments.len();
             }
         }
+
         self.saw_newline = true;
     }
 
     pub fn handle_token(&mut self, token: Token) {
         let len = self.comments.len();
+
         self.previous_kind = token.kind;
+
         if self.processed < len {
             // All unprocessed preceding comments are leading comments attached to this token start.
             for comment in &mut self.comments[self.processed..] {
                 comment.position = CommentPosition::Leading;
+
                 comment.attached_to = token.start;
             }
+
             self.processed = len;
         }
+
         self.saw_newline = false;
     }
 
@@ -117,12 +125,15 @@ impl TriviaBuilder {
         let mut comment = comment;
         // This newly added comment may be preceded by a newline.
         comment.preceded_by_newline = self.saw_newline;
+
         if comment.is_line() {
             // A line comment is always followed by a newline. This is never set in `handle_newline`.
             comment.followed_by_newline = true;
+
             if self.should_be_treated_as_trailing_comment() {
                 self.processed = self.comments.len() + 1; // +1 to include this comment.
             }
+
             self.saw_newline = true;
         }
 
@@ -133,14 +144,20 @@ impl TriviaBuilder {
 #[cfg(test)]
 mod test {
     use crate::Parser;
+
     use oxc_allocator::Allocator;
+
     use oxc_ast::{Comment, CommentKind, CommentPosition};
+
     use oxc_span::{SourceType, Span};
 
     fn get_comments(source_text: &str) -> Vec<Comment> {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default();
+
         let ret = Parser::new(&allocator, source_text, source_type).parse();
+
         ret.program.comments.iter().copied().collect::<Vec<_>>()
     }
 
@@ -152,7 +169,9 @@ mod test {
         /* Leading 3 */ token /* Trailing 1 */ // Trailing 2
         // Leading of EOF token
         ";
+
         let comments = get_comments(source_text);
+
         let expected = [
             Comment {
                 span: Span::new(9, 24),
@@ -205,6 +224,7 @@ mod test {
         ];
 
         assert_eq!(comments.len(), expected.len());
+
         for (comment, expected) in comments.iter().copied().zip(expected) {
             assert_eq!(comment, expected, "{}", comment.content_span().source_text(source_text));
         }
@@ -216,7 +236,9 @@ mod test {
 /* Leading 1 */
 token /* Trailing 1 */
         ";
+
         let comments = get_comments(source_text);
+
         let expected = vec![
             Comment {
                 span: Span::new(20, 35),
@@ -235,6 +257,7 @@ token /* Trailing 1 */
                 followed_by_newline: true,
             },
         ];
+
         assert_eq!(comments, expected);
     }
 
@@ -249,7 +272,9 @@ token /* Trailing 1 */
  **/
  token
         ";
+
         let comments = get_comments(source_text);
+
         let expected = vec![
             Comment {
                 span: Span::new(1, 14),
@@ -268,6 +293,7 @@ token /* Trailing 1 */
                 followed_by_newline: true,
             },
         ];
+
         assert_eq!(comments, expected);
     }
 
@@ -276,11 +302,14 @@ token /* Trailing 1 */
         let source_text = "
             const v1 = // Leading comment 1
             foo();
+
             function foo(param =// Leading comment 2
             new Foo()
             ) {}
         ";
+
         let comments = get_comments(source_text);
+
         let expected = vec![
             Comment {
                 span: Span::new(24, 44),
@@ -299,6 +328,7 @@ token /* Trailing 1 */
                 followed_by_newline: true,
             },
         ];
+
         assert_eq!(comments, expected);
     }
 
@@ -310,7 +340,9 @@ token /* Trailing 1 */
             (// Leading comment 2
                 arguments)
         ";
+
         let comments = get_comments(source_text);
+
         let expected = vec![
             Comment {
                 span: Span::new(18, 38),
@@ -329,6 +361,7 @@ token /* Trailing 1 */
                 followed_by_newline: true,
             },
         ];
+
         assert_eq!(comments, expected);
     }
 }

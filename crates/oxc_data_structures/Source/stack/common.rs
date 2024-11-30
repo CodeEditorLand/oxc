@@ -13,10 +13,15 @@ use super::{NonNull, StackCapacity};
 pub trait StackCommon<T>: StackCapacity<T> {
     // Getter + setter methods defined by implementer
     fn start(&self) -> NonNull<T>;
+
     fn end(&self) -> NonNull<T>;
+
     fn cursor(&self) -> NonNull<T>;
+
     fn set_start(&mut self, start: NonNull<T>);
+
     fn set_end(&mut self, end: NonNull<T>);
+
     fn set_cursor(&mut self, cursor: NonNull<T>);
 
     // Defined by implementer
@@ -35,6 +40,7 @@ pub trait StackCommon<T>: StackCapacity<T> {
     unsafe fn allocate(capacity_bytes: usize) -> (NonNull<T>, NonNull<T>) {
         // SAFETY: Caller guarantees `capacity_bytes` satisfies requirements
         let layout = Self::layout_for(capacity_bytes);
+
         let (start, end) = allocate(layout);
 
         // SAFETY: `layout_for` produces a layout with `T`'s alignment, so pointers are aligned for `T`
@@ -65,7 +71,9 @@ pub trait StackCommon<T>: StackCapacity<T> {
         // So new capacity in bytes must be a multiple of `size_of::<T>()`.
         // `MAX_CAPACITY_BYTES <= isize::MAX`.
         let old_start_ptr = self.start().cast::<u8>();
+
         let old_layout = Self::layout_for(self.capacity_bytes());
+
         let (start, end, current) = grow(old_start_ptr, old_layout, Self::MAX_CAPACITY_BYTES);
 
         // Update pointers.
@@ -74,7 +82,9 @@ pub trait StackCommon<T>: StackCapacity<T> {
         // Old capacity and new capacity in bytes are both multiples of `size_of::<T>()`,
         // so distances `end - start` and `current - start` are both multiples of `size_of::<T>()`.
         self.set_start(start.cast::<T>());
+
         self.set_end(end.cast::<T>());
+
         self.set_cursor(current.cast::<T>());
     }
 
@@ -91,6 +101,7 @@ pub trait StackCommon<T>: StackCapacity<T> {
         // `start` and `end` are boundaries of that allocation (`allocate` and `grow` ensure that).
         // So `start` and `layout` accurately describe the current allocation.
         let layout = Self::layout_for(self.capacity_bytes());
+
         alloc::dealloc(self.start().as_ptr().cast::<u8>(), layout);
     }
 
@@ -149,6 +160,7 @@ pub trait StackCommon<T>: StackCapacity<T> {
         #[expect(clippy::cast_sign_loss)]
         unsafe {
             assert_unchecked!(self.cursor() >= self.start());
+
             self.cursor().offset_from(self.start()) as usize
         }
     }
@@ -166,6 +178,7 @@ pub trait StackCommon<T>: StackCapacity<T> {
         #[expect(clippy::cast_sign_loss)]
         unsafe {
             assert_unchecked!(self.end() >= self.start());
+
             self.end().offset_from(self.start()) as usize
         }
     }
@@ -183,6 +196,7 @@ pub trait StackCommon<T>: StackCapacity<T> {
         #[expect(clippy::cast_sign_loss)]
         unsafe {
             assert_unchecked!(self.end() >= self.start());
+
             self.end().byte_offset_from(self.start()) as usize
         }
     }
@@ -216,6 +230,7 @@ pub trait StackCommon<T>: StackCapacity<T> {
 unsafe fn allocate(layout: Layout) -> (/* start */ NonNull<u8>, /* end */ NonNull<u8>) {
     // SAFETY: Caller guarantees `layout` has non-zero-size
     let ptr = alloc::alloc(layout);
+
     if ptr.is_null() {
         alloc::handle_alloc_error(layout);
     }
@@ -244,11 +259,15 @@ unsafe fn grow(
     // Get new capacity
     // Capacity in bytes cannot be larger than `isize::MAX`, so `* 2` cannot overflow
     let old_capacity_bytes = old_layout.size();
+
     let mut new_capacity_bytes = old_capacity_bytes * 2;
+
     if new_capacity_bytes > max_capacity_bytes {
         assert!(old_capacity_bytes < max_capacity_bytes, "Cannot grow beyond `Self::MAX_CAPACITY`");
+
         new_capacity_bytes = max_capacity_bytes;
     }
+
     debug_assert!(new_capacity_bytes > old_capacity_bytes);
 
     // Reallocate.
@@ -265,12 +284,16 @@ unsafe fn grow(
     // `layout_for` produces a layout with `T`'s alignment, so `new_ptr` is aligned for `T`.
     let new_start = unsafe {
         let old_ptr = old_start.as_ptr();
+
         let new_ptr = alloc::realloc(old_ptr, old_layout, new_capacity_bytes);
+
         if new_ptr.is_null() {
             let new_layout =
                 Layout::from_size_align_unchecked(old_capacity_bytes, old_layout.align());
+
             alloc::handle_alloc_error(new_layout);
         }
+
         NonNull::new_unchecked(new_ptr)
     };
 
@@ -288,6 +311,7 @@ unsafe fn grow(
     // SAFETY: We checked that `new_ptr` is non-null.
     // `old_capacity_bytes < new_capacity_bytes` (ensured above), so `new_cursor` must be in bounds.
     let new_end = new_start.add(new_capacity_bytes);
+
     let new_cursor = new_start.add(old_capacity_bytes);
 
     (new_start, new_end, new_cursor)

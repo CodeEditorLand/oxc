@@ -37,6 +37,7 @@ impl Rule for EmptyBraceSpaces {
         match node.kind() {
             AstKind::StaticBlock(static_block) => {
                 let start = static_block.span.start;
+
                 let end = static_block.span.end;
 
                 let static_leading_count = get_static_leading_count(static_block.span, ctx);
@@ -51,18 +52,23 @@ impl Rule for EmptyBraceSpaces {
                     );
                 }
             }
+
             AstKind::ObjectExpression(obj) => {
                 remove_empty_braces_spaces(ctx, obj.properties.is_empty(), obj.span);
             }
+
             AstKind::FunctionBody(fb) => {
                 remove_empty_braces_spaces(ctx, fb.is_empty(), fb.span);
             }
+
             AstKind::Class(class) => {
                 remove_empty_braces_spaces(ctx, class.body.body.is_empty(), class.body.span);
             }
+
             AstKind::BlockStatement(block_stmt) => {
                 remove_empty_braces_spaces(ctx, block_stmt.body.is_empty(), block_stmt.span);
             }
+
             _ => (),
         };
     }
@@ -70,6 +76,7 @@ impl Rule for EmptyBraceSpaces {
 
 fn remove_empty_braces_spaces(ctx: &LintContext, is_empty_body: bool, span: Span) {
     let start = span.start;
+
     let end = span.end;
 
     if is_empty_body && end - start > 2 && !ctx.semantic().has_comments_between(span) {

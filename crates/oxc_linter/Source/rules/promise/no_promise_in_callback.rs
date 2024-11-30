@@ -65,6 +65,7 @@ impl Rule for NoPromiseInCallback {
         };
 
         let mut ancestors = ctx.nodes().ancestors(node.id());
+
         if ancestors.any(|node| is_callback_function(node, ctx)) {
             ctx.diagnostic(no_promise_in_callback_diagnostic(call_expr.callee.span()));
         }
@@ -85,6 +86,7 @@ fn is_callback_function<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> bool {
         AstKind::ArrowFunctionExpression(arrow_function) => {
             is_error_first_callback(&arrow_function.params)
         }
+
         _ => false,
     }
 }
@@ -109,6 +111,7 @@ fn is_within_promise_handler<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> b
     let Some(parent) = ctx.nodes().parent_node(node.id()) else {
         return false;
     };
+
     if !matches!(ctx.nodes().kind(parent.id()), AstKind::Argument(_)) {
         return false;
     };

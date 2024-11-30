@@ -46,12 +46,15 @@ impl Rule for NoRenderReturnValue {
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(member_expr) = call_expr.callee.as_member_expression() else {
             return;
         };
+
         let Expression::Identifier(ident) = member_expr.object() else {
             return;
         };
+
         if ident.name == "ReactDOM" {
             if let Some((property_span, property_name)) = member_expr.static_property_info() {
                 if property_name == "render" {
@@ -69,6 +72,7 @@ impl Rule for NoRenderReturnValue {
                         }
 
                         let scope_id = parent_node.scope_id();
+
                         if ctx.scopes().get_flags(scope_id).is_arrow() {
                             if let AstKind::ArrowFunctionExpression(e) =
                                 ctx.nodes().kind(ctx.scopes().get_node_id(scope_id))
@@ -100,6 +104,7 @@ fn test() {
         (
             "
         	        let node;
+
         	        ReactDOM.render(<div ref={ref => node = ref}/>, document.body);
         	      ",
             None,

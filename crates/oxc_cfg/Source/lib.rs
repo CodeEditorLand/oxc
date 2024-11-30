@@ -15,6 +15,7 @@ use petgraph::{
 
 pub mod graph {
     pub use petgraph::*;
+
     pub mod visit {
         pub use petgraph::visit::*;
 
@@ -110,12 +111,14 @@ impl ControlFlowGraph {
     /// # Panics
     pub fn basic_block(&self, id: BlockNodeId) -> &BasicBlock {
         let ix = *self.graph.node_weight(id).expect("expected a valid node id in self.graph");
+
         self.basic_blocks.get(ix).expect("expected a valid node id in self.basic_blocks")
     }
 
     /// # Panics
     pub fn basic_block_mut(&mut self, id: BlockNodeId) -> &mut BasicBlock {
         let ix = *self.graph.node_weight(id).expect("expected a valid node id in self.graph");
+
         self.basic_blocks.get_mut(ix).expect("expected a valid node id in self.basic_blocks")
     }
 
@@ -132,13 +135,17 @@ impl ControlFlowGraph {
         if from == to {
             return true;
         }
+
         let graph = &self.graph;
+
         set_depth_first_search(&self.graph, Some(from), |event| match event {
             DfsEvent::TreeEdge(a, b) => {
                 let filter_result = filter(a);
+
                 if !matches!(filter_result, Control::Continue) {
                     return filter_result;
                 }
+
                 let unreachable = !graph.edges_connecting(a, b).any(|edge| {
                     !matches!(edge.weight(), EdgeType::NewFunction | EdgeType::Unreachable)
                 });
@@ -151,6 +158,7 @@ impl ControlFlowGraph {
                     Control::Continue
                 }
             }
+
             _ => Control::Continue,
         })
         .break_value()
@@ -175,6 +183,7 @@ impl ControlFlowGraph {
         }
 
         let basic_block = self.basic_block(node);
+
         let mut backedges = self
             .graph
             .edges_directed(node, Direction::Incoming)

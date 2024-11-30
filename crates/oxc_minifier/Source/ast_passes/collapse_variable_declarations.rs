@@ -19,6 +19,7 @@ impl<'a> CompressorPass<'a> for CollapseVariableDeclarations {
 
     fn build(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.changed = false;
+
         oxc_traverse::walk_program(self, program, ctx);
     }
 }
@@ -48,10 +49,12 @@ impl<'a> CollapseVariableDeclarations {
     ) -> Option<VariableDeclarationKind> {
         if let Statement::VariableDeclaration(cur_decl) = stmt {
             let is_not_require_call = !Self::is_require_call(cur_decl);
+
             if kind.map_or(true, |k| cur_decl.kind == k) && is_not_require_call {
                 return Some(cur_decl.kind);
             }
         }
+
         None
     }
 
@@ -61,6 +64,7 @@ impl<'a> CollapseVariableDeclarations {
         }
 
         let mut prev: usize = stmts.len() - 1;
+
         let mut items = std::vec::Vec::<usize>::new();
 
         while prev > 0 {
@@ -73,13 +77,16 @@ impl<'a> CollapseVariableDeclarations {
             {
                 continue;
             }
+
             let Some(Statement::VariableDeclaration(cur_decl)) = stmts.get_mut(cur) else {
                 continue;
             };
 
             let mut decls = ctx.ast.move_vec(&mut cur_decl.declarations);
+
             if let Some(Statement::VariableDeclaration(prev_decl)) = stmts.get_mut(prev) {
                 items.push(cur);
+
                 prev_decl.declarations.append(&mut decls);
             }
         }
@@ -89,6 +96,7 @@ impl<'a> CollapseVariableDeclarations {
         }
 
         let mut item_iter = items.iter().rev();
+
         let mut next_item = item_iter.next();
 
         let mut new_stmts = ctx.ast.vec_with_capacity(stmts.len() - items.len());
@@ -97,13 +105,16 @@ impl<'a> CollapseVariableDeclarations {
             if let Some(item) = next_item {
                 if *item == index {
                     next_item = item_iter.next();
+
                     continue;
                 }
             }
+
             new_stmts.push(stmt);
         }
 
         *stmts = new_stmts;
+
         self.changed = true;
     }
 }
@@ -117,7 +128,9 @@ mod test {
 
     fn test(source_text: &str, expected: &str) {
         let allocator = Allocator::default();
+
         let mut pass = super::CollapseVariableDeclarations::new();
+
         tester::test(&allocator, source_text, expected, &mut pass);
     }
 
@@ -131,8 +144,11 @@ mod test {
         test_same(
             "
     Object.defineProperty(exports, '__esModule', { value: true });
+
     var compilerDom = require('@vue/compiler-dom');
+
     var runtimeDom = require('@vue/runtime-dom');
+
     var shared = require('@vue/shared');
     ",
         );
@@ -179,15 +195,20 @@ mod test {
     #[test]
     fn test_aggressive_redeclaration_in_for() {
         test_same("for(var x = 1; x = 2; x = 3) {x = 4}");
+
         test_same("for(var x = 1; y = 2; z = 3) {var a = 4}");
+
         test_same("var x; for(x = 1; x = 2; z = 3) {x = 4}");
     }
 
     #[test]
     fn test_issue397() {
         test_same("var x; x = 5; var z = 7;");
+
         test("var x; var y = 3; x = 5;", "var x, y = 3; x = 5;");
+
         test("var a = 1; var x; var y = 3; x = 5;", "var a = 1, x, y = 3; x = 5;");
+
         test("var x; var y = 3; x = 5; var z = 7;", "var x, y = 3; x = 5; var z = 7;");
     }
 
@@ -229,7 +250,9 @@ mod test {
     #[test]
     fn test_aggressive_redeclaration_of_let_in_for() {
         test_same("for(let x = 1; x = 2; x = 3) {x = 4}");
+
         test_same("for(let x = 1; y = 2; z = 3) {let a = 4}");
+
         test_same("let x; for(x = 1; x = 2; z = 3) {x = 4}");
     }
 
@@ -263,6 +286,7 @@ mod test {
     #[test]
     fn test_uncollapsable_declarations() {
         test_same("let x = 1; var y = 2; const z = 3");
+
         test_same("let x = 1; var y = 2; let z = 3;");
     }
 
@@ -270,6 +294,7 @@ mod test {
     fn test_mixed_declaration_types() {
         // lets, vars, const declarations consecutive
         test("let x = 1; let z = 3; var y = 2;", "let x = 1, z = 3; var y = 2;");
+
         test("let x = 1; let y = 2; var z = 3; var a = 4;", "let x = 1, y = 2; var z = 3, a = 4");
     }
 }

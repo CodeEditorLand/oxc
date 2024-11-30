@@ -57,9 +57,11 @@ impl Rule for PreferEqualityMatcher {
 impl PreferEqualityMatcher {
     pub fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(jest_fn_call) = parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
@@ -68,10 +70,13 @@ impl PreferEqualityMatcher {
         let Some(expect_parent) = jest_fn_call.head.parent else {
             return;
         };
+
         let expr = expect_parent.get_inner_expression();
+
         let Expression::CallExpression(call_expr) = expr else {
             return;
         };
+
         let Some(argument) = call_expr.arguments.first() else {
             return;
         };

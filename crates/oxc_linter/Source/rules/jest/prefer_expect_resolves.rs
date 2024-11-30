@@ -85,23 +85,29 @@ impl Rule for PreferExpectResolves {
 impl PreferExpectResolves {
     fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(jest_expect_fn_call) =
             parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
         };
+
         let Some(Expression::CallExpression(call_expr)) = jest_expect_fn_call.head.parent else {
             return;
         };
+
         let Some(argument) = call_expr.arguments.first() else {
             return;
         };
+
         let Argument::AwaitExpression(await_expr) = argument else {
             return;
         };
+
         let Some(ident) = call_expr.callee.get_identifier_reference() else {
             return;
         };
@@ -118,9 +124,12 @@ impl PreferExpectResolves {
         ident_span: Span,
     ) -> RuleFix<'a> {
         let mut formatter = fixer.codegen();
+
         let first = call_expr.arguments.first().unwrap();
+
         let Argument::AwaitExpression(await_expr) = first else {
             // return formatter.into_source_text();
+
             return fixer.replace(call_expr.span, formatter);
         };
 
@@ -136,11 +145,17 @@ impl PreferExpectResolves {
         );
 
         formatter.print_str("await");
+
         formatter.print_ascii_byte(b' ');
+
         formatter.print_str(&jest_expect_fn_call.local);
+
         formatter.print_ascii_byte(b'(');
+
         formatter.print_str(fixer.source_range(arg_span));
+
         formatter.print_str(".resolves");
+
         fixer.replace(call_expr.span, formatter)
     }
 }
@@ -163,6 +178,7 @@ fn tests() {
             "
                 it('is true', async () => {
                     const myPromise = Promise.resolve(true);
+
                     await expect(myPromise).resolves.toBe(true);
                 });
             ",
@@ -193,6 +209,7 @@ fn tests() {
             "
                 it('is true', async () => {
                     const myPromise = Promise.resolve(true);
+
                     expect(await myPromise).toBe(true);
                 });
             ",
@@ -204,6 +221,7 @@ fn tests() {
 
                 it('is true', async () => {
                     const myPromise = Promise.resolve(true);
+
                     pleaseExpect(await myPromise).toBe(true);
                 });
             ",
@@ -229,12 +247,14 @@ fn tests() {
             "
                 it('is true', async () => {
                     const myPromise = Promise.resolve(true);
+
                     expect(await myPromise).toBe(true);
                 });
             ",
             "
                 it('is true', async () => {
                     const myPromise = Promise.resolve(true);
+
                     await expect(myPromise).resolves.toBe(true);
                 });
             ",
@@ -246,6 +266,7 @@ fn tests() {
 
                 it('is true', async () => {
                     const myPromise = Promise.resolve(true);
+
                     pleaseExpect(await myPromise).toBe(true);
                 });
             ",
@@ -254,6 +275,7 @@ fn tests() {
 
                 it('is true', async () => {
                     const myPromise = Promise.resolve(true);
+
                     await pleaseExpect(myPromise).resolves.toBe(true);
                 });
             ",

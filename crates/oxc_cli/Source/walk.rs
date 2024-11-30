@@ -47,6 +47,7 @@ struct WalkCollector {
 impl Drop for WalkCollector {
     fn drop(&mut self) {
         let paths = std::mem::take(&mut self.paths);
+
         self.sender.send(paths).unwrap();
     }
 }
@@ -60,8 +61,10 @@ impl ignore::ParallelVisitor for WalkCollector {
                 {
                     self.paths.push(entry.path().to_path_buf().into_boxed_path());
                 }
+
                 ignore::WalkState::Continue
             }
+
             Err(_err) => ignore::WalkState::Skip,
         }
     }
@@ -91,13 +94,17 @@ impl Walk {
 
             if !options.ignore_pattern.is_empty() {
                 let mut override_builder = OverrideBuilder::new(Path::new("/"));
+
                 for pattern in &options.ignore_pattern {
                     // Meaning of ignore pattern is reversed
                     // <https://docs.rs/ignore/latest/ignore/overrides/struct.OverrideBuilder.html#method.add>
                     let pattern = format!("!{pattern}");
+
                     override_builder.add(&pattern).unwrap();
                 }
+
                 let overrides = override_builder.build().unwrap();
+
                 inner.overrides(overrides);
             }
         }
@@ -106,19 +113,25 @@ impl Walk {
         // * it is super rare to have symlinked source code
         let inner =
             inner.ignore(false).git_global(false).follow_links(options.symlinks).build_parallel();
+
         Self { inner, extensions: Extensions::default() }
     }
 
     pub fn paths(self) -> Vec<Box<Path>> {
         let (sender, receiver) = mpsc::channel::<Vec<Box<Path>>>();
+
         let mut builder = WalkBuilder { sender, extensions: self.extensions };
+
         self.inner.visit(&mut builder);
+
         drop(builder);
+
         receiver.into_iter().flatten().collect()
     }
 
     pub fn with_extensions(mut self, extensions: Extensions) -> Self {
         self.extensions = extensions;
+
         self
     }
 
@@ -126,19 +139,25 @@ impl Walk {
         let Some(file_type) = dir_entry.file_type() else {
             return false;
         };
+
         if file_type.is_dir() {
             return false;
         }
+
         let Some(file_name) = dir_entry.path().file_name() else {
             return false;
         };
+
         if [".min.", "-min.", "_min."].iter().any(|e| file_name.to_string_lossy().contains(e)) {
             return false;
         }
+
         let Some(extension) = dir_entry.path().extension() else {
             return false;
         };
+
         let extension = extension.to_string_lossy();
+
         extensions.0.contains(&extension.as_ref())
     }
 }
@@ -148,12 +167,15 @@ mod test {
     use std::{env, ffi::OsString};
 
     use super::{Extensions, Walk};
+
     use crate::IgnoreOptions;
 
     #[test]
     fn test_walk_with_extensions() {
         let fixture = env::current_dir().unwrap().join("fixtures/walk_dir");
+
         let fixtures = vec![fixture.clone()];
+
         let ignore_options = IgnoreOptions {
             no_ignore: false,
             ignore_path: OsString::from(".gitignore"),
@@ -167,6 +189,7 @@ mod test {
             .into_iter()
             .map(|path| path.strip_prefix(&fixture).unwrap().to_string_lossy().to_string())
             .collect::<Vec<_>>();
+
         paths.sort();
 
         assert_eq!(paths, vec!["bar.vue", "foo.js"]);

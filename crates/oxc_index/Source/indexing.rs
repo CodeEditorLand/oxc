@@ -11,9 +11,11 @@ pub trait IdxSliceIndex<I: Idx, T>: private_slice_index::Sealed {
     type Output: ?Sized;
 
     fn get(self, slice: &IndexSlice<I, [T]>) -> Option<&Self::Output>;
+
     fn get_mut(self, slice: &mut IndexSlice<I, [T]>) -> Option<&mut Self::Output>;
 
     fn index(self, slice: &IndexSlice<I, [T]>) -> &Self::Output;
+
     fn index_mut(self, slice: &mut IndexSlice<I, [T]>) -> &mut Self::Output;
 }
 
@@ -121,6 +123,7 @@ where
     I: Idx,
 {
     type Range: core::ops::RangeBounds<usize>;
+
     fn into_range(self) -> Self::Range;
 }
 

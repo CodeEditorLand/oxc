@@ -27,6 +27,7 @@ pub(super) fn create_variable_declaration<'a>(
     ctx: &mut TraverseCtx<'a>,
 ) -> Statement<'a> {
     let kind = VariableDeclarationKind::Var;
+
     let declarator = ctx.ast.variable_declarator(
         SPAN,
         kind,
@@ -34,6 +35,7 @@ pub(super) fn create_variable_declaration<'a>(
         Some(init),
         false,
     );
+
     Statement::from(ctx.ast.declaration_variable(SPAN, kind, ctx.ast.vec1(declarator), false))
 }
 

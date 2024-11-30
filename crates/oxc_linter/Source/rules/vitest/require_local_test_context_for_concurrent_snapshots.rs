@@ -33,6 +33,7 @@ fn is_test_or_describe_node(member_expr: &MemberExpression) -> bool {
             }
         }
     }
+
     false
 }
 
@@ -102,6 +103,7 @@ impl Rule for RequireLocalTestContextForConcurrentSnapshots {
 impl RequireLocalTestContextForConcurrentSnapshots {
     fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         if let AstKind::CallExpression(call_expr) = node.kind() {
             if !is_type_of_jest_fn_call(call_expr, possible_jest_node, ctx, &[JestFnKind::Expect]) {
                 return;

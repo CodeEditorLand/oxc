@@ -47,22 +47,26 @@ impl Rule for NumberArgOutOfRange {
 		if let Some(member) = expr.callee.get_member_expr() {
 			if let Some(Argument::NumericLiteral(literal)) = expr.arguments.first() {
 				let value = literal.value;
+
 				match member.static_property_name() {
 					Some(name @ "toString") => {
 						if !(2.0_f64..=36.0_f64).contains(&value) {
 							let name = CompactStr::from(name);
+
 							ctx.diagnostic(NumberArgOutOfRangeDiagnostic(name, 2, 36, expr.span));
 						}
 					},
 					Some(name @ ("toFixed" | "toExponential")) => {
 						if !(0.0_f64..=20.0_f64).contains(&value) {
 							let name = CompactStr::from(name);
+
 							ctx.diagnostic(NumberArgOutOfRangeDiagnostic(name, 0, 20, expr.span));
 						}
 					},
 					Some(name @ "toPrecision") => {
 						if !(1.0_f64..=21.0_f64).contains(&value) {
 							let name = CompactStr::from(name);
+
 							ctx.diagnostic(NumberArgOutOfRangeDiagnostic(name, 1, 21, expr.span));
 						}
 					},

@@ -28,6 +28,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let class_name_binding = class_name_binding.clone();
 
         let mut replacer = StaticInitializerVisitor::new(class_name_binding, self, ctx);
+
         replacer.visit_expression(value);
     }
 }
@@ -88,7 +89,9 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
             // `this`
             Expression::ThisExpression(this_expr) => {
                 let span = this_expr.span;
+
                 self.replace_this_with_class_name(expr, span);
+
                 return;
             }
             // `delete this`
@@ -97,7 +100,9 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
                     && matches!(&unary_expr.argument, Expression::ThisExpression(_))
                 {
                     let span = unary_expr.span;
+
                     self.replace_delete_this_with_true(expr, span);
+
                     return;
                 }
             }
@@ -125,6 +130,7 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
             Expression::TaggedTemplateExpression(_) => {
                 self.class_properties.transform_tagged_template_expression(expr, self.ctx);
             }
+
             _ => {}
         }
 
@@ -134,6 +140,7 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
     #[inline]
     fn visit_assignment_target(&mut self, target: &mut AssignmentTarget<'a>) {
         self.class_properties.transform_assignment_target(target, self.ctx);
+
         walk_mut::walk_assignment_target(self, target);
     }
 
@@ -147,7 +154,9 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
     fn visit_function(&mut self, func: &mut Function<'a>, flags: ScopeFlags) {
         if self.class_has_private_props {
             self.this_depth += 1;
+
             walk_mut::walk_function(self, func, flags);
+
             self.this_depth -= 1;
         }
     }
@@ -156,7 +165,9 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
     fn visit_static_block(&mut self, block: &mut StaticBlock<'a>) {
         if self.class_has_private_props {
             self.this_depth += 1;
+
             walk_mut::walk_static_block(self, block);
+
             self.this_depth -= 1;
         }
     }
@@ -165,7 +176,9 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
     fn visit_ts_module_block(&mut self, block: &mut TSModuleBlock<'a>) {
         if self.class_has_private_props {
             self.this_depth += 1;
+
             walk_mut::walk_ts_module_block(self, block);
+
             self.this_depth -= 1;
         }
     }
@@ -183,6 +196,7 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
         // Don't visit `type_annotation` field because can't contain `this` or private props.
         // TODO: Are decorators in scope?
         self.visit_decorators(&mut prop.decorators);
+
         if prop.computed {
             self.visit_property_key(&mut prop.key);
         }
@@ -190,7 +204,9 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
         if self.class_has_private_props {
             if let Some(value) = &mut prop.value {
                 self.this_depth += 1;
+
                 self.visit_expression(value);
+
                 self.this_depth -= 1;
             }
         }
@@ -201,6 +217,7 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
         // Treat `key` and `value` in same way as `visit_property_definition` above.
         // TODO: Are decorators in scope?
         self.visit_decorators(&mut prop.decorators);
+
         if prop.computed {
             self.visit_property_key(&mut prop.key);
         }
@@ -208,7 +225,9 @@ impl<'a, 'ctx, 'v> VisitMut<'a> for StaticInitializerVisitor<'a, 'ctx, 'v> {
         if self.class_has_private_props {
             if let Some(value) = &mut prop.value {
                 self.this_depth += 1;
+
                 self.visit_expression(value);
+
                 self.this_depth -= 1;
             }
         }

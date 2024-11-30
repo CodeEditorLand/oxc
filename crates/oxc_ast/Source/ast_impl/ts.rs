@@ -35,6 +35,7 @@ impl<'a> TSType<'a> {
             TSType::TSTypeReference(reference) => {
                 Some(TSTypeName::get_first_name(&reference.type_name))
             }
+
             TSType::TSQualifiedName(qualified) => Some(TSTypeName::get_first_name(&qualified.left)),
             TSType::TSTypeQuery(query) => match &query.expr_name {
                 TSTypeQueryExprName::IdentifierReference(ident) => Some((*ident).clone()),
@@ -101,6 +102,7 @@ impl<'a> TSTypeName<'a> {
                 return true;
             }
         }
+
         false
     }
 
@@ -287,9 +289,11 @@ impl<'a> Decorator<'a> {
             expr @ match_member_expression!(Expression) => {
                 expr.to_member_expression().static_property_name()
             }
+
             Expression::CallExpression(call) => {
                 call.callee.get_member_expr().and_then(MemberExpression::static_property_name)
             }
+
             _ => None,
         }
     }

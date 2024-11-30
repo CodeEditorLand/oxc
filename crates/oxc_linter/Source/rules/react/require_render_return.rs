@@ -53,12 +53,15 @@ impl Rule for RequireRenderReturn {
         if !matches!(node.kind(), AstKind::ArrowFunctionExpression(_) | AstKind::Function(_)) {
             return;
         }
+
         let Some(parent) = ctx.nodes().parent_node(node.id()) else {
             return;
         };
+
         if !is_render_fn(parent) {
             return;
         }
+
         if !is_in_es6_component(parent, ctx) && !is_in_es5_component(parent, ctx) {
             return;
         }
@@ -68,12 +71,15 @@ impl Rule for RequireRenderReturn {
                 AstKind::MethodDefinition(method) => {
                     ctx.diagnostic(require_render_return_diagnostic(method.key.span()));
                 }
+
                 AstKind::PropertyDefinition(property) => {
                     ctx.diagnostic(require_render_return_diagnostic(property.key.span()));
                 }
+
                 AstKind::ObjectProperty(property) => {
                     ctx.diagnostic(require_render_return_diagnostic(property.key.span()));
                 }
+
                 _ => {}
             };
         }
@@ -96,6 +102,7 @@ const STOP_WALKING_ON_THIS_PATH: bool = false;
 
 fn contains_return_statement(node: &AstNode, ctx: &LintContext) -> bool {
     let cfg = ctx.cfg();
+
     let state = neighbors_filtered_by_edge_weight(
         cfg.graph(),
         node.cfg_id(),
@@ -123,9 +130,11 @@ fn contains_return_statement(node: &AstNode, ctx: &LintContext) -> bool {
                     InstructionKind::Return(ReturnInstructionKind::NotImplicitUndefined) => {
                         return (FoundReturn::Yes, STOP_WALKING_ON_THIS_PATH);
                     }
+
                     InstructionKind::Unreachable | InstructionKind::Throw => {
                         return (FoundReturn::No, STOP_WALKING_ON_THIS_PATH);
                     }
+
                     InstructionKind::Return(ReturnInstructionKind::ImplicitUndefined)
                     | InstructionKind::ImplicitReturn
                     | InstructionKind::Break(_)
@@ -152,6 +161,7 @@ fn is_render_fn(node: &AstNode) -> bool {
                 return true;
             }
         }
+
         AstKind::PropertyDefinition(property) => {
             if property.key.is_specific_static_name(RENDER_METHOD_NAME)
                 && property.value.as_ref().is_some_and(Expression::is_function)
@@ -159,6 +169,7 @@ fn is_render_fn(node: &AstNode) -> bool {
                 return true;
             }
         }
+
         AstKind::ObjectProperty(property) => {
             if property.key.is_specific_static_name(RENDER_METHOD_NAME)
                 && property.value.is_function()
@@ -166,18 +177,22 @@ fn is_render_fn(node: &AstNode) -> bool {
                 return true;
             }
         }
+
         _ => {}
     }
+
     false
 }
 
 fn is_in_es5_component<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> bool {
     let Some(ancestors_0) = ctx.nodes().parent_node(node.id()) else { return false };
+
     if !matches!(ancestors_0.kind(), AstKind::ObjectExpression(_)) {
         return false;
     }
 
     let Some(ancestors_1) = ctx.nodes().parent_node(ancestors_0.id()) else { return false };
+
     if !matches!(ancestors_1.kind(), AstKind::Argument(_)) {
         return false;
     }
@@ -189,11 +204,13 @@ fn is_in_es5_component<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) 
 
 fn is_in_es6_component<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> bool {
     let Some(parent) = ctx.nodes().parent_node(node.id()) else { return false };
+
     if !matches!(parent.kind(), AstKind::ClassBody(_)) {
         return false;
     }
 
     let Some(grandparent) = ctx.nodes().parent_node(parent.id()) else { return false };
+
     is_es6_component(grandparent)
 }
 
@@ -297,6 +314,7 @@ fn test() {
         r"var Hello = createReactClass({});",
         r"
 			        var render = require('./render');
+
 			        var Hello = createReactClass({
 			          render
 			        });

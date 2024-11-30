@@ -88,6 +88,7 @@ impl Rule for PreferIncludes {
             if num_lit.raw != "0" {
                 return;
             }
+
             ctx.diagnostic(prefer_includes_diagnostic(
                 call_expr_method_callee_info(left_call_expr).unwrap().0,
             ));

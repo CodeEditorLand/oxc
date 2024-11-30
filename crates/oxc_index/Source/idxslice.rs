@@ -104,8 +104,11 @@ impl<I: Idx, T> IndexSlice<I, [T]> {
 
         unsafe {
             let len = self.len();
+
             let b = Box::into_raw(self);
+
             let xs = Vec::from_raw_parts(b.cast::<T>(), len, len);
+
             IndexVec::from_vec(xs)
         }
     }
@@ -144,6 +147,7 @@ impl<I: Idx, T> IndexSlice<I, [T]> {
         // TODO: should this still be a panic even when `I` has disabled
         // checking?
         assert!(!self.is_empty());
+
         I::from_usize(self.len() - 1)
     }
 
@@ -643,6 +647,7 @@ impl<I: Idx, T> IndexSlice<I, [T]> {
             None
         } else {
             let split = self.split_at_mut(I::from_usize(1));
+
             Some((&mut split.0[I::from_usize(0)], split.1))
         }
     }
@@ -654,6 +659,7 @@ impl<I: Idx, T> IndexSlice<I, [T]> {
             None
         } else {
             let last = self.last_idx();
+
             Some((&self[last], &self[..last]))
         }
     }
@@ -665,7 +671,9 @@ impl<I: Idx, T> IndexSlice<I, [T]> {
             None
         } else {
             let last = self.last_idx();
+
             let split = self.split_at_mut(last);
+
             Some((&mut split.1[I::from_usize(0)], split.0))
         }
     }
@@ -738,6 +746,7 @@ where
 
 impl<'a, I: Idx, T> IntoIterator for &'a IndexSlice<I, [T]> {
     type IntoIter = slice::Iter<'a, T>;
+
     type Item = &'a T;
 
     #[inline]
@@ -748,6 +757,7 @@ impl<'a, I: Idx, T> IntoIterator for &'a IndexSlice<I, [T]> {
 
 impl<'a, I: Idx, T> IntoIterator for &'a mut IndexSlice<I, [T]> {
     type IntoIter = slice::IterMut<'a, T>;
+
     type Item = &'a mut T;
 
     #[inline]
@@ -824,11 +834,13 @@ impl<I: Idx, A> FromIterator<A> for Box<IndexSlice<I, [A]>> {
 
 impl<I: Idx, A> IntoIterator for Box<IndexSlice<I, [A]>> {
     type IntoIter = vec::IntoIter<A>;
+
     type Item = A;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         let v: IndexVec<I, A> = self.into();
+
         v.into_iter()
     }
 }

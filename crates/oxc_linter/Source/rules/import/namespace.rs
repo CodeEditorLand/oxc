@@ -105,6 +105,7 @@ declare_oxc_lint!(
 impl Rule for Namespace {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         Self {
             allow_computed: obj
                 .and_then(|v| v.get("allowComputed"))
@@ -115,22 +116,26 @@ impl Rule for Namespace {
 
     fn run_once(&self, ctx: &LintContext<'_>) {
         let module_record = ctx.module_record();
+
         module_record.import_entries.iter().for_each(|entry| {
             let (source, module) = match &entry.import_name {
                 ImportImportName::NamespaceObject => {
                     let source = entry.module_request.name();
+
                     if let Some(module) = module_record.loaded_modules.get(source) {
                         (source.to_string(), Arc::clone(module.value()))
                     } else {
                         return;
                     }
                 }
+
                 ImportImportName::Name(name) => {
                     let Some(loaded_module) =
                         module_record.loaded_modules.get(entry.module_request.name())
                     else {
                         return;
                     };
+
                     let Some(source) = get_module_request_name(name.name(), &loaded_module) else {
                         return;
                     };
@@ -142,6 +147,7 @@ impl Rule for Namespace {
 
                     (source, Arc::clone(loaded_module.value()))
                 }
+
                 ImportImportName::Default(_) => {
                     // TODO: Hard to confirm if it's a namespace object
                     return;
@@ -182,6 +188,7 @@ impl Rule for Namespace {
                                 ctx,
                             );
                         }
+
                         AstKind::JSXMemberExpressionObject(_) => {
                             if let Some(AstKind::JSXMemberExpression(expr)) =
                                 ctx.nodes().parent_kind(node.id())
@@ -194,6 +201,7 @@ impl Rule for Namespace {
                                 );
                             }
                         }
+
                         AstKind::VariableDeclarator(decl) => {
                             let BindingPatternKind::ObjectPattern(pattern) = &decl.id.kind else {
                                 return;
@@ -207,6 +215,7 @@ impl Rule for Namespace {
                                 ctx,
                             );
                         }
+
                         _ => {}
                     }
                 }
@@ -237,6 +246,7 @@ fn get_module_request_name(name: &str, module_record: &ModuleRecord) -> Option<S
 
                 false
             }
+
             ExportImportName::Name(name_span) => {
                 name_span.name().as_str() == name
                     && module_record.import_entries.iter().any(|entry| {
@@ -244,6 +254,7 @@ fn get_module_request_name(name: &str, module_record: &ModuleRecord) -> Option<S
                             && entry.import_name.is_namespace_object()
                     })
             }
+
             _ => false,
         })
     {
@@ -267,13 +278,18 @@ fn check_deep_namespace_for_node(
     ctx: &LintContext<'_>,
 ) -> Option<()> {
     let expr = node.kind().as_member_expression()?;
+
     let (span, name) = expr.static_property_info()?;
 
     if let Some(module_source) = get_module_request_name(name, module) {
         let parent_node = ctx.nodes().parent_node(node.id())?;
+
         let module_record = module.loaded_modules.get(module_source.as_str())?;
+
         let mut namespaces = namespaces.to_owned();
+
         namespaces.push(name.into());
+
         check_deep_namespace_for_node(parent_node, source, &namespaces, module_record.value(), ctx);
     } else {
         check_binding_exported(
@@ -308,7 +324,9 @@ fn check_deep_namespace_for_object_pattern(
         if let BindingPatternKind::ObjectPattern(pattern) = &property.value.kind {
             if let Some(module_source) = get_module_request_name(&name, module) {
                 let mut next_namespaces = namespaces.to_owned();
+
                 next_namespaces.push(name.to_string());
+
                 check_deep_namespace_for_object_pattern(
                     pattern,
                     source,
@@ -316,6 +334,7 @@ fn check_deep_namespace_for_object_pattern(
                     module.loaded_modules.get(module_source.as_str()).unwrap().value(),
                     ctx,
                 );
+
                 continue;
             }
         }
@@ -354,6 +373,7 @@ fn check_binding_exported(
     {
         return;
     }
+
     ctx.diagnostic(get_diagnostic());
 }
 
@@ -372,14 +392,19 @@ fn test() {
         (r"import * as elements from './jsx';", None),
         (
             r#"import * as foo from "./jsx/re-export.js";
+
         console.log(foo.jsxFoo);"#,
             None,
         ),
         (
             r#"import * as foo from "./jsx/bar/index.js";
+
         console.log(foo.Baz1);
+
         console.log(foo.Baz2);
+
         console.log(foo.Qux1);
+
         console.log(foo.Qux2);"#,
             None,
         ),
@@ -388,6 +413,7 @@ fn test() {
         (r#"import * as names from "./named-exports"; const { d: c } = names"#, None),
         (
             r#"import * as names from "./named-exports";
+
         const { c } = foo,
         { length } = "names",
         alt = names;"#,

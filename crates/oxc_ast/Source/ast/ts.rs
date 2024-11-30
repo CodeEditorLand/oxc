@@ -1625,8 +1625,10 @@ pub struct TSInstantiationExpression<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 pub enum ImportOrExportKind {
     /// `import { foo } from './foo'`;
+
     Value = 0,
     /// `import type { foo } from './foo'`;
+
     Type = 1,
 }
 

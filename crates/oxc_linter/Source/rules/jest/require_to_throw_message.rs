@@ -58,6 +58,7 @@ impl Rule for RequireToThrowMessage {
 impl RequireToThrowMessage {
     pub fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
@@ -98,7 +99,9 @@ fn test() {
             "
                 test('string', async () => {
                     const throwErrorAsync = async () => { throw new Error('a') };
+
                     await expect(throwErrorAsync()).rejects.toThrow('a');
+
                     await expect(throwErrorAsync()).rejects.toThrowError('a');
                 })
             ",
@@ -111,8 +114,11 @@ fn test() {
             "
                 test('Template literal', async () => {
                     const a = 'a';
+
                     const throwErrorAsync = async () => { throw new Error('a') };
+
                     await expect(throwErrorAsync()).rejects.toThrow(`${a}`);
+
                     await expect(throwErrorAsync()).rejects.toThrowError(`${a}`);
                 })
             ",
@@ -125,7 +131,9 @@ fn test() {
             "
                 test('Regex', async () => {
                     const throwErrorAsync = async () => { throw new Error('a') };
+
                     await expect(throwErrorAsync()).rejects.toThrow(/^a$/);
+
                     await expect(throwErrorAsync()).rejects.toThrowError(/^a$/);
                 })
             ",
@@ -138,8 +146,11 @@ fn test() {
             "
                 test('Function', async () => {
                     const throwErrorAsync = async () => { throw new Error('a') };
+
                     const fn = () => { return 'a'; };
+
                     await expect(throwErrorAsync()).rejects.toThrow(fn());
+
                     await expect(throwErrorAsync()).rejects.toThrowError(fn());
                 })
             ",
@@ -152,7 +163,9 @@ fn test() {
             "
                 test('Allow no message for `not`', async () => {
                     const throwErrorAsync = async () => { throw new Error('a') };
+
                     await expect(throwErrorAsync()).resolves.not.toThrow();
+
                     await expect(throwErrorAsync()).resolves.not.toThrowError();
                 })
             ",
@@ -171,7 +184,9 @@ fn test() {
             "
                 test('empty rejects.toThrow', async () => {
                     const throwErrorAsync = async () => { throw new Error('a') };
+
                     await expect(throwErrorAsync()).rejects.toThrow();
+
                     await expect(throwErrorAsync()).rejects.toThrowError();
                 })
             ",

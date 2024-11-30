@@ -80,14 +80,17 @@ impl Rule for BanTypes {
                     "Function" => {
                         ctx.diagnostic(function(typ.span));
                     }
+
                     _ => {}
                 }
             }
+
             AstKind::TSTypeLiteral(typ) => {
                 if typ.members.is_empty() {
                     ctx.diagnostic(type_literal(typ.span));
                 }
             }
+
             _ => {}
         }
     }

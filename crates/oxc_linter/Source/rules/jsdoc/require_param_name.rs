@@ -59,6 +59,7 @@ impl Rule for RequireParamName {
         };
 
         let settings = &ctx.settings().jsdoc;
+
         let resolved_param_tag_name = settings.resolve_tag_name("param");
 
         for jsdoc in jsdocs

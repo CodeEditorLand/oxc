@@ -114,7 +114,9 @@ fn test() {
             <App
                 a="a"
                 {...this.props}
+
                 a={{foo: 'bar'}}
+
                 b="b"
             />;
         "#,

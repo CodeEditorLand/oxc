@@ -96,6 +96,7 @@ impl Rule for PreferDateNow {
                     }
                 }
             }
+
             AstKind::UnaryExpression(unary_expr) => {
                 if !matches!(
                     unary_expr.operator,
@@ -103,12 +104,14 @@ impl Rule for PreferDateNow {
                 ) {
                     return;
                 }
+
                 if is_new_date(&unary_expr.argument) {
                     ctx.diagnostic_with_fix(prefer_date_now(unary_expr.argument.span()), |fixer| {
                         fixer.replace(unary_expr.span, "Date.now()")
                     });
                 }
             }
+
             AstKind::AssignmentExpression(assignment_expr) => {
                 if !matches!(
                     assignment_expr.operator,
@@ -125,6 +128,7 @@ impl Rule for PreferDateNow {
                     ctx.diagnostic(prefer_date_now(assignment_expr.right.span()));
                 }
             }
+
             AstKind::BinaryExpression(bin_expr) => {
                 if !matches!(
                     bin_expr.operator,
@@ -140,10 +144,12 @@ impl Rule for PreferDateNow {
                 if is_new_date(&bin_expr.left) {
                     ctx.diagnostic(prefer_date_now(bin_expr.left.span()));
                 }
+
                 if is_new_date(&bin_expr.right) {
                     ctx.diagnostic(prefer_date_now(bin_expr.right.span()));
                 }
             }
+
             _ => {}
         }
     }
@@ -157,6 +163,7 @@ fn is_new_date(expr: &Expression) -> bool {
     if let Expression::Identifier(ident) = &new_expr.callee {
         return ident.name == "Date" && new_expr.arguments.is_empty();
     }
+
     false
 }
 

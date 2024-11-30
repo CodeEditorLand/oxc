@@ -122,6 +122,7 @@ impl Rule for RequireParam {
         };
 
         let config = &self.0;
+
         let settings = &ctx.settings().jsdoc;
 
         // If config disabled checking, skip
@@ -132,16 +133,19 @@ impl Rule for RequireParam {
                         return;
                     }
                 }
+
                 MethodDefinitionKind::Set => {
                     if !config.check_setters {
                         return;
                     }
                 }
+
                 MethodDefinitionKind::Constructor => {
                     if !config.check_constructors {
                         return;
                     }
                 }
+
                 MethodDefinitionKind::Method => {}
             }
         }
@@ -161,10 +165,12 @@ impl Rule for RequireParam {
 
         // Collected JSDoc `@param` tags
         let tags_to_check = collect_tags(&jsdocs, settings.resolve_tag_name("param"));
+
         let shallow_tags =
             tags_to_check.iter().filter(|(name, _)| !name.contains('.')).collect::<Vec<_>>();
 
         let mut regex_cache = REGEX_CACHE.lock().unwrap();
+
         let check_types_regex =
             regex_cache.entry(config.check_types_pattern.clone()).or_insert_with(|| {
                 Regex::new(config.check_types_pattern.as_str())
@@ -172,6 +178,7 @@ impl Rule for RequireParam {
             });
 
         let mut violations = vec![];
+
         for (idx, param) in params_to_check.iter().enumerate() {
             match param {
                 ParamKind::Single(param) => {
@@ -183,6 +190,7 @@ impl Rule for RequireParam {
                         violations.push(param.span);
                     }
                 }
+
                 ParamKind::Nested(params) => {
                     // If false, skip nested root
                     if !config.check_destructured_roots {
@@ -205,20 +213,25 @@ impl Rule for RequireParam {
                     }
 
                     let root_name = matched_param_tag.map_or("", |(name, _)| name);
+
                     let mut not_checking_names = FxHashSet::default();
+
                     for param in params {
                         if !config.check_rest_property && param.is_rest {
                             continue;
                         }
 
                         let full_param_name = format!("{root_name}.{}", param.name);
+
                         for (name, type_part) in &tags_to_check {
                             if !is_name_equal(name, &full_param_name) {
                                 continue;
                             }
+
                             let Some(r#type) = type_part else {
                                 continue;
                             };
+
                             if check_types_regex.is_match(r#type) {
                                 continue;
                             }
@@ -247,6 +260,7 @@ impl Rule for RequireParam {
                 .iter()
                 .map(|span| LabeledSpan::new_with_span(None, *span))
                 .collect::<Vec<_>>();
+
             ctx.diagnostic(
                 OxcDiagnostic::warn("Missing JSDoc `@param` declaration for function parameters.")
                     .with_help("Add `@param` tag with name.")
@@ -291,6 +305,7 @@ fn should_ignore_as_custom_skip(jsdoc: &JSDoc) -> bool {
 /// e.g. `foo."bar"`
 fn is_name_equal(a: &str, b: &str) -> bool {
     let mut a_chars = a.chars().filter(|&c| c != '"');
+
     let mut b_chars = b.chars().filter(|&c| c != '"');
 
     loop {
@@ -539,6 +554,7 @@ fn test() {
 			         */
 			        public constructor({options, client}: {
 			            options: O;
+
 			            client: unknown;
 			        }, defaultOptions: D) {
 			
@@ -569,6 +585,7 @@ fn test() {
 			         */
 			        public constructor({ options, client: { name } }: {
 			            options: O;
+
 			            client: { name: string };
 			        }, defaultOptions: D) {
 			
@@ -719,6 +736,7 @@ fn test() {
 			       */
 			      function foo(this: T, bar: number): number {
 			        console.log(this.name);
+
 			        return bar;
 			      }
 			      ", None, None), // {        "parser": typescriptEslintParser      },
@@ -729,6 +747,7 @@ fn test() {
 			       */
 			      function foo(this: T, bar: number): number {
 			        console.log(this.name);
+
 			        return bar;
 			      }
 			      ", None, None), // {        "parser": typescriptEslintParser      },

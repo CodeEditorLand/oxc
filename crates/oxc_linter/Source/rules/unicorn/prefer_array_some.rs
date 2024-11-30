@@ -104,6 +104,7 @@ impl Rule for PreferArraySome {
                     },
                 );
             }
+
             AstKind::BinaryExpression(bin_expr) => {
                 // `.{findIndex,findLastIndex}(…) !== -1`
                 // `.{findIndex,findLastIndex}(…) != -1`
@@ -266,6 +267,7 @@ impl Rule for PreferArraySome {
                     },
                 );
             }
+
             _ => {}
         }
     }
@@ -284,9 +286,11 @@ fn is_node_value_not_function(expr: &Expression) -> bool {
     ) {
         return true;
     }
+
     if expr.is_literal() {
         return true;
     }
+
     if matches!(
         expr,
         Expression::AssignmentExpression(_)
@@ -298,6 +302,7 @@ fn is_node_value_not_function(expr: &Expression) -> bool {
     ) {
         return true;
     }
+
     if expr.is_undefined() {
         return true;
     }

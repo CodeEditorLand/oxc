@@ -85,6 +85,7 @@ impl From<&syn::Variant> for EnumVariantDef {
                 syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(lit), .. }) => {
                     lit.base10_parse().expect("invalid base10 enum discriminant")
                 }
+
                 _ => panic!("invalid enum discriminant"),
             }),
             fields: variant.fields.iter().map(Into::into).collect(),

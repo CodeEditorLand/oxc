@@ -30,6 +30,7 @@ impl<'a> LiteralParser<'a> {
 
     pub fn parse(self) -> Result<ast::Pattern<'a>> {
         let parse_string_literal = false;
+
         let Options { pattern_span_offset, flags_span_offset } = self.options;
 
         let (unicode_mode, unicode_sets_mode) = if let Some(flags_text) = self.flags_text {
@@ -41,6 +42,7 @@ impl<'a> LiteralParser<'a> {
         };
 
         let pattern_text = if self.pattern_text.is_empty() { "(?:)" } else { self.pattern_text };
+
         let reader = Reader::initialize(pattern_text, unicode_mode, parse_string_literal)?; // For literal, never expect to throw
 
         PatternParser::new(
@@ -77,6 +79,7 @@ impl<'a> ConstructorParser<'a> {
 
     pub fn parse(self) -> Result<ast::Pattern<'a>> {
         let parse_string_literal = true;
+
         let Options { pattern_span_offset, flags_span_offset } = self.options;
 
         let (unicode_mode, unicode_sets_mode) = if let Some(flags_text) = self.flags_text {
@@ -85,6 +88,7 @@ impl<'a> ConstructorParser<'a> {
                     let span_start = flags_span_offset;
                     #[allow(clippy::cast_possible_truncation)]
                     let span_end = flags_span_offset + flags_text.len() as u32;
+
                     diagnostics::invalid_input(Span::new(span_start, span_end))
                 })?;
 
@@ -98,11 +102,13 @@ impl<'a> ConstructorParser<'a> {
         } else {
             self.pattern_text
         };
+
         let reader =
             Reader::initialize(pattern_text, unicode_mode, parse_string_literal).map_err(|_| {
                 let span_start = pattern_span_offset;
                 #[allow(clippy::cast_possible_truncation)]
                 let span_end = pattern_span_offset + pattern_text.len() as u32;
+
                 diagnostics::invalid_input(Span::new(span_start, span_end))
             })?;
 

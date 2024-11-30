@@ -23,20 +23,27 @@ impl<'a> IsolatedDeclarations<'a> {
                 let Some(name) = method.key.static_name() else {
                     return;
                 };
+
                 match method.kind {
                     TSMethodSignatureKind::Method => {}
+
                     TSMethodSignatureKind::Set => {
                         let Some(first_param) = method.params.items.first_mut() else {
                             return;
                         };
 
                         let entry = method_annotations.entry(name.clone()).or_default();
+
                         entry.0 |= first_param.pattern.type_annotation.is_none();
+
                         entry.1 = Some(&mut first_param.pattern.type_annotation);
                     }
+
                     TSMethodSignatureKind::Get => {
                         let entry = method_annotations.entry(name.clone()).or_default();
+
                         entry.0 |= method.return_type.is_none();
+
                         entry.2 = Some(&mut method.return_type);
                     }
                 };

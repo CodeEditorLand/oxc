@@ -63,9 +63,12 @@ impl Rule for PreferPrototypeMethods {
         if call_expr.optional {
             return;
         }
+
         match call_expr.callee.without_parentheses() {
             Expression::StaticMemberExpression(member_expr) if !member_expr.optional => {}
+
             Expression::PrivateFieldExpression(member_expr) if !member_expr.optional => {}
+
             _ => return,
         };
 
@@ -90,9 +93,11 @@ impl Rule for PreferPrototypeMethods {
         let Some(method_expr) = method_expr else {
             return;
         };
+
         let Some(method_expr) = method_expr.as_member_expression() else {
             return;
         };
+
         let object_expr = method_expr.object().without_parentheses();
 
         if !is_empty_array_expression(object_expr) && !is_empty_object_expression(object_expr) {
@@ -115,8 +120,10 @@ impl Rule for PreferPrototypeMethods {
             ),
             |fixer| {
                 let span = object_expr.span();
+
                 let need_padding = span.start >= 1
                     && ctx.source_text().as_bytes()[span.start as usize - 1].is_ascii_alphabetic();
+
                 fixer.replace(
                     span,
                     format!(

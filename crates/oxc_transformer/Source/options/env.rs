@@ -120,6 +120,7 @@ impl EnvOptions {
     /// * When the query failed to parse.
     pub fn from_target_list<S: AsRef<str>>(list: &[S]) -> Result<Self, String> {
         let mut es_target = None;
+
         let mut engine_targets = EngineTargets::default();
 
         for s in list {
@@ -129,18 +130,24 @@ impl EnvOptions {
                 if let Some(target) = es_target {
                     return Err(format!("'{target}' is already specified."));
                 }
+
                 es_target = Some(target);
             } else {
                 // Parse `chromeXX`, `edgeXX` etc.
                 let (engine, version) = Engine::parse_name_and_version(s)?;
+
                 if engine_targets.insert(engine, version).is_some() {
                     return Err(format!("'{s}' is already specified."));
                 }
             }
         }
+
         engine_targets.insert(Engine::Es, es_target.unwrap_or(ESTarget::default()).version());
+
         let mut env_options = EnvOptions::from(engine_targets);
+
         env_options.es2022.class_properties = None;
+
         Ok(env_options)
     }
 }
@@ -155,6 +162,7 @@ impl From<EngineTargets> for EnvOptions {
     #[allow(clippy::enum_glob_use)]
     fn from(o: EngineTargets) -> Self {
         use ESFeature::*;
+
         Self {
             module: Module::default(),
             regexp: RegExpOptions {

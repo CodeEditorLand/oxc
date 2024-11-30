@@ -52,22 +52,27 @@ impl Rule for NoFindDomNode {
             if ident.name == "findDOMNode" {
                 ctx.diagnostic(no_find_dom_node_diagnostic(ident.span));
             }
+
             return;
         }
 
         let Some(member_expr) = call_expr.callee.get_member_expr() else {
             return;
         };
+
         let member = member_expr.object();
+
         if !member.is_specific_id("React")
             && !member.is_specific_id("ReactDOM")
             && !member.is_specific_id("ReactDom")
         {
             return;
         }
+
         let Some((span, "findDOMNode")) = member_expr.static_property_info() else {
             return;
         };
+
         ctx.diagnostic(no_find_dom_node_diagnostic(span));
     }
 
@@ -97,6 +102,7 @@ fn test() {
             var Hello = createReactClass({
               componentDidMount: function() {
                 someNonMemberFunction(arg);
+
                 this.someFunc = React.findDOMNode;
               },
               render: function() {

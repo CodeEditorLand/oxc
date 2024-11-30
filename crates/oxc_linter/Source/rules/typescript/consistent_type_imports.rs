@@ -116,6 +116,7 @@ impl Rule for ConsistentTypeImports {
                     .and_then(serde_json::Value::as_bool)
                     .map(DisallowTypeAnnotations::new)
                     .unwrap_or_default();
+
                 let fix_style = config.get("fixStyle").and_then(serde_json::Value::as_str).map_or(
                     FixStyle::SeparateTypeImports,
                     |fix_style| match fix_style {
@@ -123,6 +124,7 @@ impl Rule for ConsistentTypeImports {
                         _ => FixStyle::SeparateTypeImports,
                     },
                 );
+
                 let prefer = config.get("prefer").and_then(serde_json::Value::as_str).map_or(
                     Prefer::TypeImports,
                     |prefer| match prefer {
@@ -134,6 +136,7 @@ impl Rule for ConsistentTypeImports {
                 ConsistentTypeImportsConfig { disallow_type_annotations, fix_style, prefer }
             },
         );
+
         Self(Box::new(config))
     }
 
@@ -143,6 +146,7 @@ impl Rule for ConsistentTypeImports {
             // `type Foo = import('foo')`
             if let AstKind::TSImportType(import_type) = node.kind() {
                 ctx.diagnostic(no_import_type_annotations_diagnostic(import_type.span));
+
                 return;
             }
         }
@@ -179,8 +183,10 @@ impl Rule for ConsistentTypeImports {
                         );
                     }
                 }
+
                 _ => {}
             }
+
             return;
         }
 
@@ -204,10 +210,12 @@ impl Rule for ConsistentTypeImports {
         if let Some(specifiers) = &import_decl.specifiers {
             for specifier in specifiers {
                 let symbol_id = specifier.local().symbol_id();
+
                 let no_type_qualifier = match specifier {
                     ImportDeclarationSpecifier::ImportSpecifier(specifier) => {
                         specifier.import_kind.is_value()
                     }
+
                     ImportDeclarationSpecifier::ImportDefaultSpecifier(_)
                     | ImportDeclarationSpecifier::ImportNamespaceSpecifier(_) => true,
                 };
@@ -230,6 +238,7 @@ impl Rule for ConsistentTypeImports {
 
             // ['foo', 'bar', 'baz' ] => "foo, bar, and baz".
             let type_imports = format_word_list(&type_names);
+
             let type_names = type_names.iter().map(std::convert::AsRef::as_ref).collect::<Vec<_>>();
 
             let fixer_fn = |fixer: RuleFixer<'_, 'a>| {
@@ -245,6 +254,7 @@ impl Rule for ConsistentTypeImports {
                     Ok(fixes) => fixes,
                     Err(err) => {
                         debug_assert!(false, "Failed to fix: {err}");
+
                         fixer.noop()
                     }
                 }
@@ -256,6 +266,7 @@ impl Rule for ConsistentTypeImports {
                 if import_decl.with_clause.is_none() {
                     ctx.diagnostic_with_fix(type_over_value_diagnostic(import_decl.span), fixer_fn);
                 }
+
                 return;
             }
 
@@ -282,6 +293,7 @@ fn format_word_list<'a>(words: &[Cow<'a, str>]) -> Cow<'a, str> {
         2 => Cow::Owned(format!("{} and {}", words[0], words[1])),
         _ => {
             let mut result = String::with_capacity(words.len() * 2);
+
             for (i, word) in words.iter().enumerate() {
                 if i == words.len() - 1 {
                     result.push_str(&format!("and {word}"));
@@ -289,6 +301,7 @@ fn format_word_list<'a>(words: &[Cow<'a, str>]) -> Cow<'a, str> {
                     result.push_str(&format!("{word}, "));
                 }
             }
+
             Cow::Owned(result)
         }
     }
@@ -302,6 +315,7 @@ fn is_only_has_type_references(symbol_id: SymbolId, ctx: &LintContext) -> bool {
     if peekable_iter.peek().is_none() {
         return false;
     }
+
     peekable_iter.all(Reference::is_type)
 }
 
@@ -317,6 +331,7 @@ type FixerResult<T> = Result<T, Box<dyn Error>>;
 
 fn fixer_error<S: Into<String>, T>(message: S) -> FixerResult<T> {
     let s: String = message.into();
+
     Err(s.into())
 }
 
@@ -324,6 +339,7 @@ fn fixer_error<S: Into<String>, T>(message: S) -> FixerResult<T> {
 #[allow(clippy::unnecessary_cast, clippy::cast_possible_truncation)]
 fn fix_to_type_import_declaration<'a>(options: &FixOptions<'a, '_>) -> FixerResult<RuleFix<'a>> {
     let FixOptions { fixer, import_decl, type_names, fix_style, ctx } = options;
+
     let fixer = fixer.for_multifix();
 
     let GroupedSpecifiers { namespace_specifier, named_specifiers, default_specifier } =
@@ -374,6 +390,7 @@ fn fix_to_type_import_declaration<'a>(options: &FixOptions<'a, '_>) -> FixerResu
             );
         }
     }
+
     let type_names_specifiers = named_specifiers
         .iter()
         .filter(|specifier| type_names.iter().contains(&specifier.local.name.as_str()))
@@ -384,6 +401,7 @@ fn fix_to_type_import_declaration<'a>(options: &FixOptions<'a, '_>) -> FixerResu
         get_fixes_named_specifiers(options, &type_names_specifiers, &named_specifiers)?;
 
     let mut rule_fixes = fixer.new_fix_with_capacity(4);
+
     let mut after_fixes = fixer.new_fix_with_capacity(4);
 
     if !type_names_specifiers.is_empty() {
@@ -398,10 +416,12 @@ fn fix_to_type_import_declaration<'a>(options: &FixOptions<'a, '_>) -> FixerResu
                 type_names,
                 fix_style: options.fix_style,
             };
+
             let fix = fix_insert_named_specifiers_in_named_specifier_list(
                 &new_options,
                 &fixes_named_specifiers.type_named_specifiers_text,
             )?;
+
             if type_only_named_import.span.end <= import_decl.span.start {
                 rule_fixes.push(fix);
             } else {
@@ -416,11 +436,13 @@ fn fix_to_type_import_declaration<'a>(options: &FixOptions<'a, '_>) -> FixerResu
                         .iter()
                         .map(|spec| {
                             let insert_text = ctx.source_range(spec.span());
+
                             format!("type {insert_text}")
                         })
                         .join(", "),
                     ctx.source_range(import_decl.source.span),
                 );
+
                 rule_fixes.push(fixer.insert_text_before(*import_decl, text));
             } else {
                 rule_fixes.push(fixer.insert_text_before(
@@ -477,6 +499,7 @@ fn fix_to_type_import_declaration<'a>(options: &FixOptions<'a, '_>) -> FixerResu
                 let import_text = ctx.source_range(import_decl.span);
                 // import Type, { Foo } from 'foo'
                 //let import_text = ctx.source_range(import_decl.span);
+
                 let comma = try_find_char(import_text, ',')?;
                 // import Type , { ... } from 'foo'
                 //        ^^^^^ pick
@@ -484,6 +507,7 @@ fn fix_to_type_import_declaration<'a>(options: &FixOptions<'a, '_>) -> FixerResu
                     default_specifier.span.start,
                     import_decl.span().start + comma,
                 ));
+
                 rule_fixes.push(fixer.insert_text_before(
                     *import_decl,
                     format!(
@@ -496,6 +520,7 @@ fn fix_to_type_import_declaration<'a>(options: &FixOptions<'a, '_>) -> FixerResu
                     find_first_non_white_space(&import_text[(comma + 1) as usize..])
                 {
                     let after_token = comma as usize + 1 + after_token.0;
+
                     rule_fixes.push(fixer.delete_range(Span::new(
                         default_specifier.span.start,
                         import_decl.span().start + after_token as u32,
@@ -516,7 +541,9 @@ fn fix_insert_named_specifiers_in_named_specifier_list<'a>(
     insert_text: &str,
 ) -> FixerResult<RuleFix<'a>> {
     let FixOptions { fixer, import_decl, ctx, .. } = options;
+
     let import_text = ctx.source_range(import_decl.span);
+
     let close_brace = try_find_char(import_text, '}')?;
 
     let first_non_whitespace_before_close_brace =
@@ -524,6 +551,7 @@ fn fix_insert_named_specifiers_in_named_specifier_list<'a>(
 
     let span =
         Span::new(import_decl.span().start + close_brace, import_decl.span().start + close_brace);
+
     if first_non_whitespace_before_close_brace.is_some_and(|ch| !matches!(ch, ',' | '{')) {
         Ok(fixer.insert_text_before(&span, format!(",{insert_text}")))
     } else {
@@ -545,12 +573,14 @@ fn get_type_only_named_import<'a>(
     source: &str,
 ) -> Option<&'a ImportDeclaration<'a>> {
     let root = ctx.nodes().root_node()?;
+
     let program = root.kind().as_program()?;
 
     for stmt in &program.body {
         let Statement::ImportDeclaration(import_decl) = stmt else {
             return None;
         };
+
         if import_decl.import_kind.is_type()
             && import_decl.source.value == source
             && import_decl.specifiers.as_ref().is_some_and(|specs| {
@@ -572,6 +602,7 @@ fn get_fixes_named_specifiers<'a>(
     all_named_specifiers: &[&ImportSpecifier<'a>],
 ) -> FixerResult<FixNamedSpecifiers<'a>> {
     let FixOptions { fixer, import_decl, ctx, .. } = options;
+
     let fixer = fixer.for_multifix();
 
     if all_named_specifiers.is_empty() {
@@ -579,18 +610,24 @@ fn get_fixes_named_specifiers<'a>(
     }
 
     let mut type_named_specifiers_text: Vec<&str> = vec![];
+
     let mut remove_type_named_specifiers = fixer.new_fix_with_capacity(1);
 
     if subset_named_specifiers.len() == all_named_specifiers.len() {
         // import Foo, {Type1, Type2} from 'foo'
         // import DefType, {Type1, Type2} from 'foo'
         let import_text = ctx.source_range(import_decl.span);
+
         let open_brace_token = try_find_char(import_text, '{')? as usize;
+
         let Some(comma_token) = import_text[..open_brace_token].rfind(',') else {
             return Err(format!("Missing comma token in import declaration: {import_text}").into());
         };
+
         let close_brace_token = try_find_char(import_text, '}')? as usize;
+
         let open_brace_token_end = open_brace_token + 1;
+
         let close_brace_token_end = close_brace_token + 1;
 
         // import DefType, {...} from 'foo'
@@ -603,14 +640,17 @@ fn get_fixes_named_specifiers<'a>(
         type_named_specifiers_text.push(&import_text[open_brace_token_end..close_brace_token]);
     } else {
         let mut named_specifier_groups = vec![];
+
         let mut group = vec![];
 
         for specifier in all_named_specifiers {
             let name = specifier.local.name.as_str();
+
             if subset_named_specifiers.iter().any(|s| s.local.name == name) {
                 group.push(*specifier);
             } else if !group.is_empty() {
                 named_specifier_groups.push(group);
+
                 group = vec![];
             }
         }
@@ -624,6 +664,7 @@ fn get_fixes_named_specifiers<'a>(
                 get_named_specifier_ranges(&named_specifiers, all_named_specifiers, options)?;
 
             remove_type_named_specifiers.push(fixer.delete(&remove_range));
+
             type_named_specifiers_text.push(ctx.source_range(text_range));
         }
     }
@@ -646,15 +687,21 @@ fn get_named_specifier_ranges(
     if named_specifier_group.is_empty() {
         return fixer_error("Named specifier group is empty");
     }
+
     let first = named_specifier_group[0];
+
     let last = named_specifier_group[named_specifier_group.len() - 1];
 
     let mut remove_range = Span::new(first.span().start, last.span().end);
+
     let mut text_range = Span::new(first.span().start, last.span().end);
 
     let import_text = ctx.source_range(import_decl.span);
+
     let open_brace_token_start = try_find_char(import_text, '{')?;
+
     let open_brace_token_start = open_brace_token_start as usize;
+
     if let Some(comma) = import_text
         [open_brace_token_start..(first.span().start - import_decl.span().start) as usize]
         .rfind(',')
@@ -704,10 +751,12 @@ fn get_named_specifier_ranges(
 // return (utf8_index, char)
 fn find_first_non_white_space(text: &str) -> Option<(usize, char)> {
     let mut utf8_idx = 0;
+
     for ch in text.chars() {
         if !ch.is_whitespace() {
             return Some((utf8_idx, ch));
         }
+
         utf8_idx += ch.len_utf8();
     }
 
@@ -720,6 +769,7 @@ fn find_first_non_white_space(text: &str) -> Option<(usize, char)> {
 // specifiers.
 fn try_find_char(text: &str, c: char) -> Result<u32, Box<dyn Error>> {
     let index = text.find(c);
+
     if let Some(index) = index {
         Ok(u32::try_from(index).unwrap_or_default())
     } else {
@@ -731,6 +781,7 @@ fn fix_inline_type_import_declaration<'a>(
     options: &FixOptions<'a, '_>,
 ) -> FixerResult<RuleFix<'a>> {
     let FixOptions { fixer, import_decl, type_names, ctx, .. } = options;
+
     let fixer = fixer.for_multifix();
 
     let mut rule_fixes = fixer.new_fix_with_capacity(0);
@@ -760,8 +811,11 @@ fn fix_insert_type_specifier_for_import_declaration<'a>(
     is_default_import: bool,
 ) -> FixerResult<RuleFix<'a>> {
     let FixOptions { fixer, import_decl, ctx, .. } = options;
+
     let fixer = fixer.for_multifix();
+
     let import_source = ctx.source_range(import_decl.span);
+
     let mut rule_fixes = fixer.new_fix_with_capacity(1);
 
     // "import { Foo, Bar } from 'foo'" => "import type { Foo, Bar } from 'foo'"
@@ -775,13 +829,16 @@ fn fix_insert_type_specifier_for_import_declaration<'a>(
             // `import foo, {} from 'foo'`
             // `import foo, { bar } from 'foo'`
             let comma_token = try_find_char(import_source, ',')?;
+
             let closing_brace_token = try_find_char(import_source, '}')?;
+
             let base = import_decl.span.start;
             // import foo, {} from 'foo'
             //           ^^^^ delete
             rule_fixes.push(
                 fixer.delete(&Span::new(base + comma_token, base + (closing_brace_token + 1))),
             );
+
             if import_decl.specifiers.as_ref().is_some_and(|specifiers| specifiers.len() > 1) {
                 // import type {} from 'asdf'
                 let Some(specifiers_text) =
@@ -835,7 +892,9 @@ struct GroupedSpecifiers<'a, 'b> {
 
 fn classify_specifier<'a, 'b>(import_decl: &'b ImportDeclaration<'a>) -> GroupedSpecifiers<'a, 'b> {
     let mut namespace_specifier = None;
+
     let mut named_specifiers = vec![];
+
     let mut default_specifier = None;
 
     let Some(specifiers) = &import_decl.specifiers else {
@@ -847,9 +906,11 @@ fn classify_specifier<'a, 'b>(import_decl: &'b ImportDeclaration<'a>) -> Grouped
             ImportDeclarationSpecifier::ImportNamespaceSpecifier(namespace) => {
                 namespace_specifier = Some(namespace);
             }
+
             ImportDeclarationSpecifier::ImportSpecifier(named) => {
                 named_specifiers.push(named);
             }
+
             ImportDeclarationSpecifier::ImportDefaultSpecifier(default) => {
                 default_specifier = Some(default);
             }
@@ -868,6 +929,7 @@ fn fix_remove_type_specifier_from_import_declaration<'a>(
     ctx: &LintContext<'a>,
 ) -> RuleFix<'a> {
     let import_source = ctx.source_range(import_decl_span);
+
     let new_import_source = import_source
         // `    type Foo from 'foo'`
         .strip_prefix("import")
@@ -894,6 +956,7 @@ fn fix_remove_type_specifier_from_import_specifier<'a>(
     ctx: &LintContext<'a>,
 ) -> RuleFix<'a> {
     let specifier_source = ctx.source_range(specifier_span);
+
     let new_specifier_source = specifier_source.strip_prefix("type ");
 
     fixer.replace(specifier_span, new_specifier_source.unwrap_or(specifier_source))
@@ -905,6 +968,7 @@ fn test() {
 
     fn remove_common_prefix_space(str: &str) -> String {
         let first_content_line = str.lines().find(|line| line.trim() != "").unwrap();
+
         let prefix_space =
             first_content_line.chars().take_while(|c| c.is_whitespace()).collect::<String>();
 
@@ -2096,6 +2160,7 @@ fn test() {
         (
             "
                 import Foo from 'foo';
+
                 class A {
                   @deco
                   foo(): Foo {}
@@ -2106,6 +2171,7 @@ fn test() {
         (
             "
                 import Foo from 'foo';
+
                 class A {
                   foo(@deco foo: Foo) {}
                 }
@@ -2115,6 +2181,7 @@ fn test() {
         (
             "
                 import Foo from 'foo';
+
                 class A {
                   @deco
                   set foo(value: Foo) {}
@@ -2125,6 +2192,7 @@ fn test() {
         (
             "
                 import Foo from 'foo';
+
                 class A {
                   @deco
                   get foo() {}
@@ -2137,6 +2205,7 @@ fn test() {
         (
             "
                 import Foo from 'foo';
+
                 class A {
                   @deco
                   get foo() {}
@@ -2185,6 +2254,7 @@ fn test() {
             import type {
               StorageProvider,
             } from '../../../fundamentals';
+
             import {
               Config,
               OnEvent,
@@ -2207,7 +2277,9 @@ fn test() {
             import { defineParallelPlugin,DefineParallelPluginResult } from './plugin'
 
             type A = TransformResult;
+
             type B = DefineParallelPluginResult;
+
             const c = defineParallelPlugin()
             ",
             None,
@@ -2218,20 +2290,28 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             let foo: Foo;
+
             type Bar = Foo;
+
             interface Baz {
               foo: Foo;
             }
+
             function fn(a: Foo): Foo {}
                       ",
             "
             import type Foo from 'foo';
+
             let foo: Foo;
+
             type Bar = Foo;
+
             interface Baz {
               foo: Foo;
             }
+
             function fn(a: Foo): Foo {}
                       ",
             None,
@@ -2239,10 +2319,12 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             let foo: Foo;
                       ",
             "
             import type Foo from 'foo';
+
             let foo: Foo;
                       ",
             Some(serde_json::json!([{ "prefer": "type-imports" }])),
@@ -2250,10 +2332,12 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             let foo: Foo;
                       ",
             "
             import type Foo from 'foo';
+
             let foo: Foo;
                       ",
             Some(
@@ -2263,12 +2347,16 @@ fn test() {
         (
             "
             import { A, B } from 'foo';
+
             let foo: A;
+
             let bar: B;
                       ",
             "
             import type { A, B } from 'foo';
+
             let foo: A;
+
             let bar: B;
                       ",
             None,
@@ -2276,12 +2364,16 @@ fn test() {
         (
             "
             import { A as a, B as b } from 'foo';
+
             let foo: a;
+
             let bar: b;
                       ",
             "
             import type { A as a, B as b } from 'foo';
+
             let foo: a;
+
             let bar: b;
                       ",
             None,
@@ -2289,10 +2381,12 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             type Bar = typeof Foo; // TSTypeQuery
                       ",
             "
             import type Foo from 'foo';
+
             type Bar = typeof Foo; // TSTypeQuery
                       ",
             None,
@@ -2300,10 +2394,12 @@ fn test() {
         (
             "
             import foo from 'foo';
+
             type Bar = foo.Bar; // TSQualifiedName
                       ",
             "
             import type foo from 'foo';
+
             type Bar = foo.Bar; // TSQualifiedName
                       ",
             None,
@@ -2311,10 +2407,12 @@ fn test() {
         (
             "
             import foo from 'foo';
+
             type Baz = (typeof foo.bar)['Baz']; // TSQualifiedName & TSTypeQuery
                       ",
             "
             import type foo from 'foo';
+
             type Baz = (typeof foo.bar)['Baz']; // TSQualifiedName & TSTypeQuery
                       ",
             None,
@@ -2322,10 +2420,12 @@ fn test() {
         (
             "
             import * as A from 'foo';
+
             let foo: A.Foo;
                       ",
             "
             import type * as A from 'foo';
+
             let foo: A.Foo;
                       ",
             None,
@@ -2333,13 +2433,18 @@ fn test() {
         (
             "
             import A, { B } from 'foo';
+
             let foo: A;
+
             let bar: B;
                       ",
             "
             import type { B } from 'foo';
+
             import type A from 'foo';
+
             let foo: A;
+
             let bar: B;
                       ",
             None,
@@ -2347,10 +2452,12 @@ fn test() {
         (
             "
             import A, {} from 'foo';
+
             let foo: A;
                       ",
             "
             import type A from 'foo';
+
             let foo: A;
                       ",
             None,
@@ -2358,11 +2465,14 @@ fn test() {
         (
             "
             import { A, B } from 'foo';
+
             const foo: A = B();
                       ",
             "
             import type { A} from 'foo';
+
             import { B } from 'foo';
+
             const foo: A = B();
                       ",
             None,
@@ -2370,13 +2480,18 @@ fn test() {
         (
             "
             import { A, B, C } from 'foo';
+
             const foo: A = B();
+
             let bar: C;
                       ",
             "
             import type { A, C } from 'foo';
+
             import { B } from 'foo';
+
             const foo: A = B();
+
             let bar: C;
                       ",
             None,
@@ -2384,13 +2499,18 @@ fn test() {
         (
             "
             import { A, B, C, D } from 'foo';
+
             const foo: A = B();
+
             type T = { bar: C; baz: D };
                       ",
             "
             import type { A, C, D } from 'foo';
+
             import { B } from 'foo';
+
             const foo: A = B();
+
             type T = { bar: C; baz: D };
                       ",
             None,
@@ -2398,14 +2518,20 @@ fn test() {
         (
             "
             import A, { B, C, D } from 'foo';
+
             B();
+
             type T = { foo: A; bar: C; baz: D };
                       ",
             "
             import type { C, D } from 'foo';
+
             import type A from 'foo';
+
             import { B } from 'foo';
+
             B();
+
             type T = { foo: A; bar: C; baz: D };
                       ",
             None,
@@ -2413,13 +2539,18 @@ fn test() {
         (
             "
             import A, { B } from 'foo';
+
             B();
+
             type T = A;
                       ",
             "
             import type A from 'foo';
+
             import { B } from 'foo';
+
             B();
+
             type T = A;
                       ",
             None,
@@ -2427,18 +2558,28 @@ fn test() {
         (
             "
             import type Already1Def from 'foo';
+
             import type { Already1 } from 'foo';
+
             import A, { B } from 'foo';
+
             import { C, D, E } from 'bar';
+
             import type { Already2 } from 'bar';
+
             type T = { b: B; c: C; d: D };
                       ",
             "
             import type Already1Def from 'foo';
+
             import type { Already1 , B } from 'foo';
+
             import A from 'foo';
+
             import { E } from 'bar';
+
             import type { Already2 , C, D} from 'bar';
+
             type T = { b: B; c: C; d: D };
                       ",
             None,
@@ -2446,11 +2587,14 @@ fn test() {
         (
             "
             import A, { /* comment */ B } from 'foo';
+
             type T = B;
                       ",
             "
             import type { /* comment */ B } from 'foo';
+
             import A from 'foo';
+
             type T = B;
                       ",
             None,
@@ -2458,14 +2602,20 @@ fn test() {
         (
             "
             import { A, B, C } from 'foo';
+
             import { D, E, F, } from 'bar';
+
             type T = A | D;
                       ",
             "
             import type { A} from 'foo';
+
             import { B, C } from 'foo';
+
             import type { D} from 'bar';
+
             import { E, F, } from 'bar';
+
             type T = A | D;
                       ",
             None,
@@ -2473,14 +2623,20 @@ fn test() {
         (
             "
             import { A, B, C } from 'foo';
+
             import { D, E, F, } from 'bar';
+
             type T = B | E;
                       ",
             "
             import type { B} from 'foo';
+
             import { A, C } from 'foo';
+
             import type { E} from 'bar';
+
             import { D, F, } from 'bar';
+
             type T = B | E;
                       ",
             None,
@@ -2488,14 +2644,20 @@ fn test() {
         (
             "
             import { A, B, C } from 'foo';
+
             import { D, E, F, } from 'bar';
+
             type T = C | F;
                       ",
             "
             import type { C } from 'foo';
+
             import { A, B } from 'foo';
+
             import type { F} from 'bar';
+
             import { D, E } from 'bar';
+
             type T = C | F;
                       ",
             None,
@@ -2503,17 +2665,26 @@ fn test() {
         (
             "
             import { Type1, Type2 } from 'named_types';
+
             import Type from 'default_type';
+
             import * as Types from 'namespace_type';
+
             import Default, { Named } from 'default_and_named_type';
+
             type T = Type1 | Type2 | Type | Types.A | Default | Named;
                       ",
             "
             import type { Type1, Type2 } from 'named_types';
+
             import type Type from 'default_type';
+
             import type * as Types from 'namespace_type';
+
             import type { Named } from 'default_and_named_type';
+
             import type Default from 'default_and_named_type';
+
             type T = Type1 | Type2 | Type | Types.A | Default | Named;
                       ",
             None,
@@ -2521,21 +2692,34 @@ fn test() {
         (
             "
             import { Value1, Type1 } from 'named_import';
+
             import Type2, { Value2 } from 'default_import';
+
             import Value3, { Type3 } from 'default_import2';
+
             import Type4, { Type5, Value4 } from 'default_and_named_import';
+
             type T = Type1 | Type2 | Type3 | Type4 | Type5;
                       ",
             "
             import type { Type1 } from 'named_import';
+
             import { Value1 } from 'named_import';
+
             import type Type2 from 'default_import';
+
             import { Value2 } from 'default_import';
+
             import type { Type3 } from 'default_import2';
+
             import Value3 from 'default_import2';
+
             import type { Type5} from 'default_and_named_import';
+
             import type Type4 from 'default_and_named_import';
+
             import { Value4 } from 'default_and_named_import';
+
             type T = Type1 | Type2 | Type3 | Type4 | Type5;
                       ",
             None,
@@ -2543,10 +2727,12 @@ fn test() {
         (
             "
             import type Foo from 'foo';
+
             let foo: Foo;
                       ",
             "
             import Foo from 'foo';
+
             let foo: Foo;
                       ",
             Some(serde_json::json!([{ "prefer": "no-type-imports" }])),
@@ -2554,10 +2740,12 @@ fn test() {
         (
             "
             import type { Foo } from 'foo';
+
             let foo: Foo;
                       ",
             "
             import { Foo } from 'foo';
+
             let foo: Foo;
                       ",
             Some(serde_json::json!([{ "prefer": "no-type-imports" }])),
@@ -2746,16 +2934,20 @@ fn test() {
         (
             "
             import type /*comment*/ * as AllType from 'foo';
+
             import type // comment
             DefType from 'foo';
+
             import type /*comment*/ { Type } from 'foo';
 
             type T = { a: AllType; b: DefType; c: Type };
                       ",
             "
             import /*comment*/ * as AllType from 'foo';
+
             import // comment
             DefType from 'foo';
+
             import /*comment*/ { Type } from 'foo';
 
             type T = { a: AllType; b: DefType; c: Type };
@@ -2765,11 +2957,14 @@ fn test() {
         (
             "
             import Default, * as Rest from 'module';
+
             const a: Rest.A = '';
                       ",
             "
             import type * as Rest from 'module';
+
             import Default from 'module';
+
             const a: Rest.A = '';
                       ",
             Some(serde_json::json!([{ "prefer": "type-imports" }])),
@@ -2777,11 +2972,14 @@ fn test() {
         (
             "
             import Default, * as Rest from 'module';
+
             const a: Default = '';
                       ",
             "
             import type Default from 'module';
+
             import * as Rest from 'module';
+
             const a: Default = '';
                       ",
             Some(serde_json::json!([{ "prefer": "type-imports" }])),
@@ -2789,13 +2987,18 @@ fn test() {
         (
             "
             import Default, * as Rest from 'module';
+
             const a: Default = '';
+
             const b: Rest.A = '';
                       ",
             "
             import type * as Rest from 'module';
+
             import type Default from 'module';
+
             const a: Default = '';
+
             const b: Rest.A = '';
                       ",
             Some(serde_json::json!([{ "prefer": "type-imports" }])),
@@ -2803,11 +3006,14 @@ fn test() {
         (
             "
             import Default, /*comment*/ * as Rest from 'module';
+
             const a: Default = '';
                       ",
             "
             import type Default from 'module';
+
             import /*comment*/ * as Rest from 'module';
+
             const a: Default = '';
                       ",
             Some(serde_json::json!([{ "prefer": "type-imports" }])),
@@ -2815,11 +3021,14 @@ fn test() {
         (
             "
             import Default /*comment1*/, /*comment2*/ { Data } from 'module';
+
             const a: Default = '';
                       ",
             "
             import type Default /*comment1*/ from 'module';
+
             import /*comment2*/ { Data } from 'module';
+
             const a: Default = '';
                       ",
             Some(serde_json::json!([{ "prefer": "type-imports" }])),
@@ -2844,12 +3053,16 @@ fn test() {
         (
             "
             import { type A, B } from 'foo';
+
             type T = A;
+
             const b = B;
                       ",
             "
             import { A, B } from 'foo';
+
             type T = A;
+
             const b = B;
                       ",
             Some(serde_json::json!([{ "prefer": "no-type-imports" }])),
@@ -2857,13 +3070,18 @@ fn test() {
         (
             "
             import { A, B, type C } from 'foo';
+
             type T = A | C;
+
             const b = B;
                       ",
             "
             import type { A} from 'foo';
+
             import { B, type C } from 'foo';
+
             type T = A | C;
+
             const b = B;
                       ",
             Some(serde_json::json!([{ "prefer": "type-imports" }])),
@@ -2871,12 +3089,16 @@ fn test() {
         (
             "
             import { A, B } from 'foo';
+
             let foo: A;
+
             let bar: B;
                       ",
             "
             import { type A, type B } from 'foo';
+
             let foo: A;
+
             let bar: B;
                       ",
             Some(
@@ -2888,12 +3110,14 @@ fn test() {
             import { A, B } from 'foo';
 
             let foo: A;
+
             B();
                       ",
             "
             import { type A, B } from 'foo';
 
             let foo: A;
+
             B();
                       ",
             Some(
@@ -2903,12 +3127,16 @@ fn test() {
         (
             "
             import { A, B } from 'foo';
+
             type T = A;
+
             B();
                       ",
             "
             import { type A, B } from 'foo';
+
             type T = A;
+
             B();
                       ",
             Some(
@@ -2918,14 +3146,20 @@ fn test() {
         (
             "
             import { A } from 'foo';
+
             import { B } from 'foo';
+
             type T = A;
+
             type U = B;
                       ",
             "
             import { type A } from 'foo';
+
             import { type B } from 'foo';
+
             type T = A;
+
             type U = B;
                       ",
             Some(
@@ -2935,14 +3169,20 @@ fn test() {
         (
             "
             import { A } from 'foo';
+
             import B from 'foo';
+
             type T = A;
+
             type U = B;
                       ",
             "
             import { type A } from 'foo';
+
             import type B from 'foo';
+
             type T = A;
+
             type U = B;
                       ",
             Some(
@@ -2952,14 +3192,20 @@ fn test() {
         (
             "
             import A, { B, C } from 'foo';
+
             type T = B;
+
             type U = C;
+
             A();
                       ",
             "
             import A, { type B, type C } from 'foo';
+
             type T = B;
+
             type U = C;
+
             A();
                       ",
             Some(
@@ -2969,15 +3215,22 @@ fn test() {
         (
             "
             import A, { B, C } from 'foo';
+
             type T = B;
+
             type U = C;
+
             type V = A;
                       ",
             "
             import {type B, type C} from 'foo';
+
             import type A from 'foo';
+
             type T = B;
+
             type U = C;
+
             type V = A;
                       ",
             Some(
@@ -2987,15 +3240,22 @@ fn test() {
         (
             "
             import A, { B, C as D } from 'foo';
+
             type T = B;
+
             type U = D;
+
             type V = A;
                       ",
             "
             import {type B, type C as D} from 'foo';
+
             import type A from 'foo';
+
             type T = B;
+
             type U = D;
+
             type V = A;
                       ",
             Some(
@@ -3005,10 +3265,12 @@ fn test() {
         (
             "
             import { /* comment */ A, B } from 'foo';
+
             type T = A;
                       ",
             "
             import { /* comment */ type A, B } from 'foo';
+
             type T = A;
                       ",
             Some(
@@ -3018,10 +3280,12 @@ fn test() {
         (
             "
             import { B, /* comment */ A } from 'foo';
+
             type T = A;
                       ",
             "
             import { B, /* comment */ type A } from 'foo';
+
             type T = A;
                       ",
             Some(
@@ -3031,18 +3295,24 @@ fn test() {
         (
             "
             import { A, B, C } from 'foo';
+
             import type { D } from 'deez';
 
             const foo: A = B();
+
             let bar: C;
+
             let baz: D;
                       ",
             "
             import { type A, B, type C } from 'foo';
+
             import type { D } from 'deez';
 
             const foo: A = B();
+
             let bar: C;
+
             let baz: D;
                       ",
             Some(
@@ -3052,16 +3322,24 @@ fn test() {
         (
             "
             import { A, B, type C } from 'foo';
+
             import type { D } from 'deez';
+
             const foo: A = B();
+
             let bar: C;
+
             let baz: D;
                       ",
             "
             import { type A, B, type C } from 'foo';
+
             import type { D } from 'deez';
+
             const foo: A = B();
+
             let bar: C;
+
             let baz: D;
                       ",
             Some(
@@ -3071,10 +3349,12 @@ fn test() {
         (
             "
             import A from 'foo';
+
             export = {} as A;
                       ",
             "
             import type A from 'foo';
+
             export = {} as A;
                       ",
             Some(
@@ -3084,10 +3364,12 @@ fn test() {
         (
             "
             import { A } from 'foo';
+
             export = {} as A;
                       ",
             "
             import { type A } from 'foo';
+
             export = {} as A;
                       ",
             Some(
@@ -3114,6 +3396,7 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             class A {
                 @deco
                 foo: Foo;
@@ -3121,6 +3404,7 @@ fn test() {
             ",
             "
             import type Foo from 'foo';
+
             class A {
                 @deco
                 foo: Foo;
@@ -3131,6 +3415,7 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             class A {
                 @deco
                 foo(foo: Foo) {}
@@ -3138,6 +3423,7 @@ fn test() {
             ",
             "
             import type Foo from 'foo';
+
             class A {
                 @deco
                 foo(foo: Foo) {}
@@ -3148,6 +3434,7 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             class A {
                 @deco
                 foo(): Foo {}
@@ -3155,6 +3442,7 @@ fn test() {
             ",
             "
             import type Foo from 'foo';
+
             class A {
                 @deco
                 foo(): Foo {}
@@ -3165,12 +3453,14 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             class A {
                 foo(@deco foo: Foo) {}
             }
             ",
             "
             import type Foo from 'foo';
+
             class A {
                 foo(@deco foo: Foo) {}
             }
@@ -3180,6 +3470,7 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             class A {
                 @deco
                 set foo(value: Foo) {}
@@ -3187,6 +3478,7 @@ fn test() {
             ",
             "
             import type Foo from 'foo';
+
             class A {
                 @deco
                 set foo(value: Foo) {}
@@ -3197,6 +3489,7 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             class A {
                 @deco
                 get foo() {}
@@ -3206,6 +3499,7 @@ fn test() {
             ",
             "
             import type Foo from 'foo';
+
             class A {
                 @deco
                 get foo() {}
@@ -3218,6 +3512,7 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             class A {
                 @deco
                 get foo() {}
@@ -3227,6 +3522,7 @@ fn test() {
             ",
             "
             import type Foo from 'foo';
+
             class A {
                 @deco
                 get foo() {}
@@ -3257,13 +3553,18 @@ fn test() {
         (
             "
             import 'foo';
+
             import { Foo, Bar } from 'foo';
+
             function test(foo: Foo) {}
                       ",
             "
             import 'foo';
+
             import type { Foo} from 'foo';
+
             import { Bar } from 'foo';
+
             function test(foo: Foo) {}
                       ",
             None,
@@ -3271,13 +3572,18 @@ fn test() {
         (
             "
             import {} from 'foo';
+
             import { Foo, Bar } from 'foo';
+
             function test(foo: Foo) {}
                       ",
             "
             import {} from 'foo';
+
             import type { Foo} from 'foo';
+
             import { Bar } from 'foo';
+
             function test(foo: Foo) {}
                       ",
             None,
@@ -3285,10 +3591,12 @@ fn test() {
         (
             "
             import Foo from 'foo';
+
             export type T = Foo;
             ",
             "
             import type Foo from 'foo';
+
             export type T = Foo;
             ",
             None,
@@ -3298,6 +3606,7 @@ fn test() {
             import type {
               StorageProvider,
             } from '../../../fundamentals';
+
             import {
               Config,
               OnEvent,
@@ -3317,6 +3626,7 @@ fn test() {
               Config,
               OnEvent,
               URLHelper} from '../../../fundamentals';
+
             import {
               StorageProviderFactory
             } from '../../../fundamentals';
@@ -3336,7 +3646,9 @@ fn test() {
             import { defineParallelPlugin, DefineParallelPluginResult } from './plugin'
 
             type A = TransformResult;
+
             type B = DefineParallelPluginResult;
+
             const c = defineParallelPlugin()
             ",
             "
@@ -3346,7 +3658,9 @@ fn test() {
             import { defineParallelPlugin } from './plugin'
 
             type A = TransformResult;
+
             type B = DefineParallelPluginResult;
+
             const c = defineParallelPlugin()
             ",
             None,

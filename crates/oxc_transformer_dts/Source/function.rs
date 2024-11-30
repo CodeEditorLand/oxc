@@ -13,7 +13,9 @@ impl<'a> TransformerDts<'a> {
             None
         } else {
             let return_type = self.infer_function_return_type(func);
+
             let params = self.transform_formal_parameters(&func.params);
+
             Some(self.ctx.ast.function(
                 func.r#type,
                 func.span,
@@ -36,6 +38,7 @@ impl<'a> TransformerDts<'a> {
         next_param: Option<&FormalParameter<'a>>,
     ) -> FormalParameter<'a> {
         let is_assignment_pattern = param.pattern.kind.is_assignment_pattern();
+
         let mut pattern =
             if let BindingPatternKind::AssignmentPattern(pattern) = &param.pattern.kind {
                 self.ctx.ast.copy(&pattern.left)
@@ -56,6 +59,7 @@ impl<'a> TransformerDts<'a> {
                     let new_type = self
                         .infer_type_from_formal_parameter(param)
                         .unwrap_or_else(|| self.ctx.ast.ts_unknown_keyword(param.span));
+
                     Some(new_type)
                 })
                 .map(|ts_type| {

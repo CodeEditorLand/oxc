@@ -68,25 +68,33 @@ impl Rule for RoleSupportsAriaProps {
         let AstKind::JSXOpeningElement(jsx_el) = node.kind() else {
             return;
         };
+
         let Some(el_type) = get_element_type(ctx, jsx_el) else {
             return;
         };
 
         let role = has_jsx_prop_ignore_case(jsx_el, "role");
+
         let role_value = role.map_or_else(
             || get_implicit_role(jsx_el, &el_type),
             |i| get_string_literal_prop_value(i),
         );
+
         let is_implicit = role_value.is_some() && role.is_none();
+
         if let Some(role_value) = role_value {
             if !VALID_ARIA_ROLES.contains(role_value) {
                 return;
             }
+
             let invalid_props = get_invalid_aria_props_for_role(role_value);
+
             for attr in &jsx_el.attributes {
                 if let JSXAttributeItem::Attribute(attr) = attr {
                     let name = get_jsx_attribute_name(&attr.name);
+
                     let name = name.cow_to_lowercase();
+
                     if invalid_props.contains(&&name.as_ref()) {
                         ctx.diagnostic(if is_implicit {
                             is_implicit_diagnostic(attr.span, &name, role_value, &el_type)

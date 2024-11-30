@@ -63,16 +63,19 @@ impl Rule for NoUnsafeFunctionType {
                     handle_function_type(ident_ref, ctx);
                 }
             }
+
             AstKind::TSClassImplements(implements) => {
                 if let TSTypeName::IdentifierReference(ident_ref) = &implements.expression {
                     handle_function_type(ident_ref, ctx);
                 }
             }
+
             AstKind::TSInterfaceHeritage(heritage) => {
                 if let Expression::Identifier(ident) = &heritage.expression {
                     handle_function_type(ident, ctx);
                 }
             }
+
             _ => {}
         }
     }

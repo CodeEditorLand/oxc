@@ -58,6 +58,7 @@ impl Rule for NoDistractingElements {
         let AstKind::JSXOpeningElement(jsx_el) = node.kind() else {
             return;
         };
+
         let Some(element_type) = get_element_type(ctx, jsx_el) else {
             return;
         };
@@ -71,6 +72,7 @@ impl Rule for NoDistractingElements {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     fn config() -> serde_json::Value {
         serde_json::json!([2,{
             "ignoreNonDOM": true

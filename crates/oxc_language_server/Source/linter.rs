@@ -50,6 +50,7 @@ impl ErrorWithPosition {
         start: usize,
     ) -> Self {
         let labels = error.labels().map_or(vec![], Iterator::collect);
+
         let labels_with_pos: Vec<LabeledSpanWithPosition> = labels
             .iter()
             .map(|labeled_span| LabeledSpanWithPosition {
@@ -65,6 +66,7 @@ impl ErrorWithPosition {
             .collect();
 
         let start_pos = labels_with_pos[0].start_pos;
+
         let end_pos = labels_with_pos[labels_with_pos.len() - 1].end_pos;
 
         Self { miette_err: error, start_pos, end_pos, labels_with_pos, fixed_content }
@@ -75,6 +77,7 @@ impl ErrorWithPosition {
             Some(Severity::Error) => Some(lsp_types::DiagnosticSeverity::ERROR),
             _ => Some(lsp_types::DiagnosticSeverity::WARNING),
         };
+
         let related_information = Some(
             self.labels_with_pos
                 .iter()
@@ -96,6 +99,7 @@ impl ErrorWithPosition {
                 })
                 .collect(),
         );
+
         let range = related_information.as_ref().map_or(
             Range { start: self.start_pos, end: self.end_pos },
             |infos: &Vec<DiagnosticRelatedInformation>| {
@@ -103,17 +107,22 @@ impl ErrorWithPosition {
                     start: Position { line: u32::MAX, character: u32::MAX },
                     end: Position { line: u32::MAX, character: u32::MAX },
                 };
+
                 for info in infos {
                     if cmp_range(&ret_range, &info.location.range) == std::cmp::Ordering::Greater {
                         ret_range = info.location.range;
                     }
                 }
+
                 ret_range
             },
         );
+
         let code = self.miette_err.code().map(|item| item.to_string());
+
         let code_description = code.as_ref().and_then(|code| {
             let (scope, number) = parse_diagnostic_code(code)?;
+
             Some(CodeDescription {
                 href: Url::from_str(&format!(
                     "{LINT_DOC_LINK_PREFIX}/{}/{number}",
@@ -122,6 +131,7 @@ impl ErrorWithPosition {
                 .ok()?,
             })
         });
+
         let message = self.miette_err.help().map_or_else(
             || self.miette_err.to_string(),
             |help| format!("{}\nhelp: {}", self.miette_err, help),
@@ -186,10 +196,12 @@ impl IsolatedLintHandler {
                     errors.into_iter().map(|e| e.into_diagnostic_report(&p)).collect();
                 // a diagnostics connected from related_info to original diagnostic
                 let mut inverted_diagnostics = vec![];
+
                 for d in &diagnostics {
                     let Some(ref related_info) = d.diagnostic.related_information else {
                         continue;
                     };
+
                     let related_information = Some(vec![DiagnosticRelatedInformation {
                         location: lsp_types::Location {
                             uri: lsp_types::Url::from_file_path(path).unwrap(),
@@ -197,10 +209,12 @@ impl IsolatedLintHandler {
                         },
                         message: "original diagnostic".to_string(),
                     }]);
+
                     for r in related_info {
                         if r.location.range == d.diagnostic.range {
                             continue;
                         }
+
                         inverted_diagnostics.push(DiagnosticReport {
                             diagnostic: lsp_types::Diagnostic {
                                 range: r.location.range,
@@ -217,7 +231,9 @@ impl IsolatedLintHandler {
                         });
                     }
                 }
+
                 diagnostics.append(&mut inverted_diagnostics);
+
                 diagnostics
             }))
         } else {
@@ -232,27 +248,35 @@ impl IsolatedLintHandler {
     ) -> Option<(PathBuf, Vec<ErrorWithPosition>)> {
         if !Loader::can_load(path) {
             debug!("extension not supported yet.");
+
             return None;
         }
+
         let source_text = source_text.map_or_else(
             || fs::read_to_string(path).unwrap_or_else(|_| panic!("Failed to read {path:?}")),
             |source_text| source_text,
         );
+
         let javascript_sources = match self.loader.load_str(path, &source_text) {
             Ok(s) => s,
             Err(e) => {
                 debug!("failed to load {path:?}: {e}");
+
                 return None;
             }
         };
 
         debug!("lint {path:?}");
+
         let mut diagnostics = vec![];
+
         for source in javascript_sources {
             let JavaScriptSource {
                 source_text: javascript_source_text, source_type, start, ..
             } = source;
+
             let allocator = Allocator::default();
+
             let ret = Parser::new(&allocator, javascript_source_text, source_type)
                 .with_options(ParseOptions {
                     allow_return_outside_function: true,
@@ -269,6 +293,7 @@ impl IsolatedLintHandler {
                         fixed_content: None,
                     })
                     .collect();
+
                 return Some(Self::wrap_diagnostics(path, &source_text, reports, start));
             };
 
@@ -287,11 +312,14 @@ impl IsolatedLintHandler {
                         fixed_content: None,
                     })
                     .collect();
+
                 return Some(Self::wrap_diagnostics(path, &source_text, reports, start));
             };
 
             let mut semantic = semantic_ret.semantic;
+
             semantic.set_irregular_whitespaces(ret.irregular_whitespaces);
+
             let result = self.linter.run(path, Rc::new(semantic));
 
             let reports = result
@@ -316,8 +344,10 @@ impl IsolatedLintHandler {
                     ErrorReport { error: Error::from(msg.error), fixed_content }
                 })
                 .collect::<Vec<ErrorReport>>();
+
             let (_, errors_with_position) =
                 Self::wrap_diagnostics(path, &source_text, reports, start);
+
             diagnostics.extend(errors_with_position);
         }
 
@@ -326,6 +356,7 @@ impl IsolatedLintHandler {
 
     fn should_lint_path(path: &Path) -> bool {
         static WANTED_EXTENSIONS: OnceLock<FxHashSet<&'static str>> = OnceLock::new();
+
         let wanted_exts = WANTED_EXTENSIONS.get_or_init(|| {
             VALID_EXTENSIONS.iter().chain(LINT_PARTIAL_LOADER_EXT.iter()).copied().collect()
         });
@@ -342,6 +373,7 @@ impl IsolatedLintHandler {
         start: u32,
     ) -> (PathBuf, Vec<ErrorWithPosition>) {
         let source = Arc::new(NamedSource::new(path.to_string_lossy(), source_text.to_owned()));
+
         let diagnostics = reports
             .into_iter()
             .map(|report| {
@@ -362,6 +394,7 @@ fn offset_to_position(offset: usize, source_text: &str) -> Option<Position> {
     let rope = Rope::from_str(source_text);
     // Get line number and byte offset of start of line
     let line_index = rope.try_byte_to_line(offset).ok()?;
+
     let line_offset = rope.try_line_to_byte(line_index).ok()?;
 
     // Get column number
@@ -377,6 +410,7 @@ pub struct ServerLinter {
 impl ServerLinter {
     pub fn new() -> Self {
         let linter = Linter::default().with_fix(FixKind::SafeFix);
+
         Self { linter: Arc::new(linter) }
     }
 
@@ -402,6 +436,8 @@ fn parse_diagnostic_code(code: &str) -> Option<(&str, &str)> {
     if !code.ends_with(')') {
         return None;
     }
+
     let right_parenthesis_pos = code.rfind('(')?;
+
     Some((&code[0..right_parenthesis_pos], &code[right_parenthesis_pos + 1..code.len() - 1]))
 }

@@ -25,11 +25,13 @@ fn get_result(
     options: Option<TransformOptions>,
 ) -> TestResult {
     let allocator = Allocator::default();
+
     let options = options.unwrap_or_else(get_default_transformer_options);
 
     // First pass
     let transformed1 = {
         let mut ret1 = Parser::new(&allocator, source_text, source_type).parse();
+
         let _ = Transformer::new(
             &allocator,
             source_path,
@@ -39,13 +41,16 @@ fn get_result(
             options.clone(),
         )
         .build(&mut ret1.program);
+
         CodeGenerator::new().build(&ret1.program).source_text
     };
 
     // Second pass with only JavaScript parsing
     let transformed2 = {
         let source_type = SourceType::default().with_module(source_type.is_module());
+
         let mut ret2 = Parser::new(&allocator, &transformed1, source_type).parse();
+
         let _ = Transformer::new(
             &allocator,
             source_path,
@@ -55,6 +60,7 @@ fn get_result(
             options,
         )
         .build(&mut ret2.program);
+
         CodeGenerator::new().build(&ret2.program).source_text
     };
 
@@ -106,9 +112,13 @@ impl Case for TransformerTest262Case {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let source_type = SourceType::default().with_module(is_module);
+
         let result = get_result(source_text, source_type, self.path(), None);
+
         self.base.set_result(result);
     }
 }
@@ -140,8 +150,11 @@ impl Case for TransformerBabelCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type, self.path(), None);
+
         self.base.set_result(result);
     }
 }
@@ -173,26 +186,34 @@ impl Case for TransformerTypeScriptCase {
 
     fn execute(&mut self, source_type: SourceType) -> TestResult {
         let mut options = get_default_transformer_options();
+
         let mut source_type = source_type;
         // handle @jsx: react, `react` of behavior is match babel following
         // options
         if self.base.settings.jsx.last().is_some_and(|jsx| jsx == "react") {
             source_type = source_type.with_module(true);
+
             options.react.runtime = ReactJsxRuntime::Classic;
         }
+
         get_result(self.base.code(), source_type, self.path(), Some(options))
     }
 
     fn run(&mut self) {
         let units = self.base.units.clone();
+
         for unit in units {
             self.base.code = unit.content.to_string();
+
             let result = self.execute(unit.source_type);
+
             if result != TestResult::Passed {
                 self.base.result = result;
+
                 return;
             }
         }
+
         self.base.result = TestResult::Passed;
     }
 }
@@ -224,6 +245,7 @@ impl Case for TransformerMiscCase {
 
     fn run(&mut self) {
         let result = get_result(self.base.code(), self.base.source_type(), self.path(), None);
+
         self.base.set_result(result);
     }
 }

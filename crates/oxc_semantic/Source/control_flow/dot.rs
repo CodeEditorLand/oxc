@@ -60,7 +60,9 @@ impl DisplayDot for ControlFlowGraph {
 				&[Config::EdgeNoLabel, Config::NodeNoLabel],
 				&|_graph, edge| {
 					let weight = edge.weight();
+
 					let label = format!("label = \"{weight:?}\" ");
+
 					if matches!(weight, EdgeType::Unreachable)
 						|| self.basic_block(edge.source()).unreachable
 					{
@@ -81,7 +83,9 @@ impl DisplayDot for BasicBlock {
 	fn display_dot(&self) -> String {
 		self.instructions().iter().fold(String::new(), |mut acc, it| {
 			acc.push_str(it.display_dot().as_str());
+
 			acc.push('\n');
+
 			acc
 		})
 	}
@@ -120,7 +124,9 @@ impl DebugDot for ControlFlowGraph {
 				&[Config::EdgeNoLabel, Config::NodeNoLabel],
 				&|_graph, edge| {
 					let weight = edge.weight();
+
 					let label = format!("label = \"{weight:?}\" ");
+
 					if matches!(weight, EdgeType::Unreachable)
 						|| self.basic_block(edge.source()).unreachable
 					{
@@ -141,7 +147,9 @@ impl DebugDot for BasicBlock {
 	fn debug_dot(&self, ctx:DebugDotContext) -> String {
 		self.instructions().iter().fold(String::new(), |mut acc, it| {
 			acc.push_str(it.debug_dot(ctx).as_str());
+
 			acc.push('\n');
+
 			acc
 		})
 	}
@@ -183,6 +191,7 @@ impl DebugDot for Instruction {
 						ctx.0.kind(self.node_id.unwrap())
 					)
 				};
+
 				format!("break <{}>", label.name)
 			},
 			InstructionKind::Break(LabeledInstruction::Unlabeled) => "break".to_string(),
@@ -197,6 +206,7 @@ impl DebugDot for Instruction {
 						ctx.0.kind(self.node_id.unwrap())
 					)
 				};
+
 				format!("continue <{}>", label.name)
 			},
 			InstructionKind::Continue(LabeledInstruction::Unlabeled) => "continue".to_string(),

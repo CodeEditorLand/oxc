@@ -150,6 +150,7 @@ impl<'a> AstKind<'a> {
             match_member_expression!(Expression) => {
                 Self::MemberExpression(e.to_member_expression())
             }
+
             Expression::NewExpression(e) => Self::NewExpression(e),
             Expression::ObjectExpression(e) => Self::ObjectExpression(e),
             Expression::ParenthesizedExpression(e) => Self::ParenthesizedExpression(e),
@@ -182,8 +183,11 @@ impl<'a> AstKind<'a> {
         use std::borrow::Cow;
 
         const COMPUTED: Cow<'static, str> = Cow::Borrowed("<computed>");
+
         const UNKNOWN: Cow<'static, str> = Cow::Borrowed("<unknown>");
+
         const ANONYMOUS: Cow<'static, str> = Cow::Borrowed("<anonymous>");
+
         const DESTRUCTURE: Cow<'static, str> = Cow::Borrowed("<destructure>");
 
         #[inline]
@@ -254,9 +258,11 @@ impl<'a> AstKind<'a> {
             Self::BinaryExpression(b) => {
                 format!("BinaryExpression({})", b.operator.as_str()).into()
             }
+
             Self::CallExpression(c) => {
                 format!("CallExpression({})", c.callee_name().unwrap_or(&COMPUTED)).into()
             }
+
             Self::ChainExpression(_) => "ChainExpression".into(),
             Self::ConditionalExpression(_) => "ConditionalExpression".into(),
             Self::LogicalExpression(_) => "LogicalExpression".into(),
@@ -267,10 +273,13 @@ impl<'a> AstKind<'a> {
                     match_member_expression!(Expression) => {
                         n.callee.to_member_expression().static_property_name()
                     }
+
                     _ => None,
                 };
+
                 format!("NewExpression({})", callee.unwrap_or(&COMPUTED)).into()
             }
+
             Self::ObjectExpression(_) => "ObjectExpression".into(),
             Self::ParenthesizedExpression(_) => "ParenthesizedExpression".into(),
             Self::SequenceExpression(_) => "SequenceExpression".into(),
@@ -285,6 +294,7 @@ impl<'a> AstKind<'a> {
             Self::ObjectProperty(p) => {
                 format!("ObjectProperty({})", p.key.name().unwrap_or(COMPUTED)).into()
             }
+
             Self::PropertyKey(p) => format!("PropertyKey({})", p.name().unwrap_or(COMPUTED)).into(),
             Self::Argument(_) => "Argument".into(),
             Self::ArrayExpressionElement(_) => "ArrayExpressionElement".into(),
@@ -292,6 +302,7 @@ impl<'a> AstKind<'a> {
             Self::SimpleAssignmentTarget(a) => {
                 format!("SimpleAssignmentTarget({})", a.get_identifier().unwrap_or(&UNKNOWN)).into()
             }
+
             Self::AssignmentTargetPattern(_) => "AssignmentTargetPattern".into(),
             Self::ArrayAssignmentTarget(_) => "ArrayAssignmentTarget".into(),
             Self::ObjectAssignmentTarget(_) => "ObjectAssignmentTarget".into(),

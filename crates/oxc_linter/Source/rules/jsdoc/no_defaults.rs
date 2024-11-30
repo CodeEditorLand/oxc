@@ -76,7 +76,9 @@ impl Rule for NoDefaults {
         };
 
         let settings = &ctx.settings().jsdoc;
+
         let resolved_param_tag_name = settings.resolve_tag_name("param");
+
         let config = &self.0;
 
         for jsdoc in jsdocs
@@ -90,6 +92,7 @@ impl Rule for NoDefaults {
                 if tag_name != resolved_param_tag_name {
                     continue;
                 }
+
                 let (_, Some(name_part), _) = tag.type_name_comment() else {
                     continue;
                 };

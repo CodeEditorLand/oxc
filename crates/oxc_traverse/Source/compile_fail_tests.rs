@@ -71,7 +71,9 @@ impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
     ) {
         if let Ancestor::ProgramDirectives(program) = ctx.parent() {
             let body = program.body();
+
             let stmt = &body[0];
+
             self.stmt = Some(stmt);
         }
     }
@@ -118,6 +120,7 @@ impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let parent = ctx.ancestors().next().unwrap();
+
         if let Ancestor::ProgramDirectives(program) = parent {
             self.program = Some(program);
         }
@@ -143,9 +146,12 @@ impl<'a, 'b> Traverse<'a> for Trans<'a, 'b> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let parent = ctx.ancestors().next().unwrap();
+
         if let Ancestor::ProgramDirectives(program) = parent {
             let body = program.body();
+
             let stmt = &body[0];
+
             self.stmt = Some(stmt);
         }
     }

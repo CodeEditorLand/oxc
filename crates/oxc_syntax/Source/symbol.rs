@@ -76,6 +76,7 @@ bitflags! {
         const BlockScopedVariable     = 1 << 1;
         /// A const variable (const)
         const ConstVariable           = 1 << 2;
+
         const Class                   = 1 << 3;
         /// `try {} catch(catch_variable) {}`
         const CatchVariable           = 1 << 4;
@@ -87,22 +88,31 @@ bitflags! {
         const TypeImport              = 1 << 7;
         // Type specific symbol flags
         const TypeAlias               = 1 << 8;
+
         const Interface               = 1 << 9;
+
         const RegularEnum             = 1 << 10;
+
         const ConstEnum               = 1 << 11;
+
         const EnumMember              = 1 << 12;
+
         const TypeParameter           = 1 << 13;
+
         const NameSpaceModule         = 1 << 14;
+
         const ValueModule             = 1 << 15;
         // In a dts file or there is a declare flag
         const Ambient                 = 1 << 16;
 
         const Enum = Self::ConstEnum.bits() | Self::RegularEnum.bits();
+
         const Variable = Self::FunctionScopedVariable.bits() | Self::BlockScopedVariable.bits();
 
         const BlockScoped = Self::BlockScopedVariable.bits() | Self::Enum.bits() | Self::Class.bits();
 
         const Value = Self::Variable.bits() | Self::Class.bits() | Self::Enum.bits() | Self::EnumMember.bits() | Self::ValueModule.bits();
+
         const Type =  Self::Class.bits() | Self::Interface.bits() | Self::Enum.bits() | Self::EnumMember.bits() | Self::TypeParameter.bits()  |  Self::TypeAlias.bits();
 
         /// Variables can be redeclared, but can not redeclare a block-scoped declaration with the
@@ -114,14 +124,19 @@ bitflags! {
         const BlockScopedVariableExcludes = Self::Value.bits();
 
         const ClassExcludes = (Self::Value.bits() | Self::TypeAlias.bits()) & !(Self::ValueModule.bits() | Self::Interface.bits() | Self::Function.bits());
+
         const ImportBindingExcludes = Self::Import.bits() | Self::TypeImport.bits();
         // Type specific excludes
         const TypeAliasExcludes = Self::Type.bits();
+
         const InterfaceExcludes = Self::Type.bits() & !(Self::Interface.bits() | Self::Class.bits());
+
         const TypeParameterExcludes = Self::Type.bits() & !Self::TypeParameter.bits();
+
         const ConstEnumExcludes = (Self::Type.bits() | Self::Value.bits()) & !Self::ConstEnum.bits();
         // TODO: include value module in regular enum excludes
         const RegularEnumExcludes = (Self::Value.bits() | Self::Type.bits()) & !(Self::RegularEnum.bits() | Self::ValueModule.bits() );
+
         const EnumMemberExcludes = Self::EnumMember.bits();
 
     }

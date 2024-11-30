@@ -69,6 +69,7 @@ impl<'a, 'ctx> Traverse<'a> for ES2020<'a, 'ctx> {
                 "Big integer literals are not available in the configured target environment.",
             )
             .with_label(node.span);
+
             self.ctx.error(warning);
         }
     }

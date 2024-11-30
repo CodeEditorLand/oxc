@@ -167,6 +167,7 @@ declare_oxc_lint!(
     ///      "vitest/consistent-test-it": "error"
     ///   }
     /// }
+
     ConsistentTestIt,
     style,
     fix
@@ -199,7 +200,9 @@ impl Rule for ConsistentTestIt {
 
     fn run_once(&self, ctx: &LintContext) {
         let mut describe_nesting_hash: FxHashMap<ScopeId, i32> = FxHashMap::default();
+
         let mut possible_jest_nodes = collect_possible_jest_call_node(ctx);
+
         possible_jest_nodes.sort_by_key(|n| n.node.id());
 
         for possible_jest_node in &possible_jest_nodes {
@@ -216,9 +219,11 @@ impl ConsistentTestIt {
         ctx: &LintContext<'a>,
     ) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
             parse_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
@@ -227,16 +232,21 @@ impl ConsistentTestIt {
 
         if matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Describe)) {
             let scope_id = node.scope_id();
+
             let current_count = describe_nesting_hash.get(&scope_id).unwrap_or(&0);
+
             describe_nesting_hash.insert(scope_id, *current_count + 1);
+
             return;
         }
 
         let is_test = matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Test));
+
         let fn_to_str = self.within_fn.as_str();
 
         if is_test && describe_nesting_hash.is_empty() && !jest_fn_call.name.ends_with(fn_to_str) {
             let opposite_test_keyword = Self::get_opposite_test_case(self.within_fn);
+
             if let Some((span, prefer_test_name)) = Self::get_prefer_test_name_and_span(
                 call_expr.callee.get_inner_expression(),
                 &jest_fn_call.name,
@@ -256,6 +266,7 @@ impl ConsistentTestIt {
             && !jest_fn_call.name.ends_with(describe_to_str)
         {
             let opposite_test_keyword = Self::get_opposite_test_case(self.within_describe);
+
             if let Some((span, prefer_test_name)) = Self::get_prefer_test_name_and_span(
                 call_expr.callee.get_inner_expression(),
                 &jest_fn_call.name,
@@ -293,11 +304,14 @@ impl ConsistentTestIt {
                     Some('f') => Cow::Owned(format!("f{fix_jest_name}")),
                     _ => Cow::Borrowed(fix_jest_name),
                 };
+
                 Some((ident.span(), prefer_test_name))
             }
+
             Expression::StaticMemberExpression(expr) => {
                 Self::get_prefer_test_name_and_span(&expr.object, test_name, fix_jest_name)
             }
+
             Expression::CallExpression(call_expr) => Self::get_prefer_test_name_and_span(
                 call_expr.callee.get_inner_expression(),
                 test_name,
@@ -570,20 +584,24 @@ fn test() {
         (
             "
                 import { it } from '@jest/globals';
+
                 it(\"foo\")
             ",
             "
                 import { it } from '@jest/globals';
+
                 test(\"foo\")
             ",
         ),
         (
             "
                 import { it as testThisThing } from '@jest/globals';
+
                 testThisThing(\"foo\")
             ",
             "
                 import { it as testThisThing } from '@jest/globals';
+
                 test(\"foo\")
             ",
         ),
@@ -608,12 +626,14 @@ fn test() {
             "
                 describe.each()(\"%s\", () => {
                     test(\"is valid, but should not be\", () => {});
+
                     it(\"is not valid, but should be\", () => {});
                 });
             ",
             "
                 describe.each()(\"%s\", () => {
                     it(\"is valid, but should not be\", () => {});
+
                     it(\"is not valid, but should be\", () => {});
                 });
             ",
@@ -622,12 +642,14 @@ fn test() {
             "
                 describe.only.each()(\"%s\", () => {
                     test(\"is valid, but should not be\", () => {});
+
                     it(\"is not valid, but should be\", () => {});
                 });
             ",
             "
                 describe.only.each()(\"%s\", () => {
                     it(\"is valid, but should not be\", () => {});
+
                     it(\"is not valid, but should be\", () => {});
                 });
             ",
@@ -670,20 +692,24 @@ fn test() {
         (
             "
                 import { xtest as dontTestThis } from '@jest/globals';
+
                 describe(\"suite\", () => { dontTestThis(\"foo\") });
             ",
             "
                 import { xtest as dontTestThis } from '@jest/globals';
+
                 describe(\"suite\", () => { xit(\"foo\") });
             ",
         ),
         (
             "
                 import { describe as context, xtest as dontTestThis } from '@jest/globals';
+
                 context(\"suite\", () => { dontTestThis(\"foo\") });
             ",
             "
                 import { describe as context, xtest as dontTestThis } from '@jest/globals';
+
                 context(\"suite\", () => { xit(\"foo\") });
             ",
         ),
@@ -711,20 +737,24 @@ fn test() {
         (
             "
                 import { xtest as dontTestThis } from '@jest/globals';
+
                 describe(\"suite\", () => { dontTestThis(\"foo\") });
             ",
             "
                 import { xtest as dontTestThis } from '@jest/globals';
+
                 describe(\"suite\", () => { xit(\"foo\") });
             ",
         ),
         (
             "
                 import { describe as context, xtest as dontTestThis } from '@jest/globals';
+
                 context(\"suite\", () => { dontTestThis(\"foo\") });
             ",
             "
                 import { describe as context, xtest as dontTestThis } from '@jest/globals';
+
                 context(\"suite\", () => { xit(\"foo\") });
             ",
         ),
@@ -794,6 +824,7 @@ fn test() {
                 it('foo', () => {
                         expect(true).toBe(false);
                     });
+
                 function myTest() { if ('bar') {} }
             ",
             Some(serde_json::json!([{ "fn": "it" }])),
@@ -910,7 +941,9 @@ fn test() {
     ];
 
     pass.extend(pass_vitest);
+
     fail.extend(fail_vitest);
+
     fix.extend(fix_vitest);
 
     Tester::new(ConsistentTestIt::NAME, pass, fail)

@@ -48,6 +48,7 @@ impl Rule for NoShadowRestrictedNames {
         if name == "undefined" {
             // Allow to declare `undefined` variable but not allow to assign value to it.
             let node_id = ctx.semantic().symbols().get_declaration(symbol_id);
+
             if let AstKind::VariableDeclarator(declarator) = ctx.nodes().kind(node_id) {
                 if declarator.init.is_none()
                     && ctx
@@ -61,6 +62,7 @@ impl Rule for NoShadowRestrictedNames {
         }
 
         let span = ctx.symbols().get_span(symbol_id);
+
         ctx.diagnostic(no_shadow_restricted_names_diagnostic(name, span));
 
         for &span in ctx.symbols().get_redeclarations(symbol_id) {

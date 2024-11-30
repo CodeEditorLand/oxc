@@ -52,7 +52,9 @@ impl ReactPerfRule for JsxNoJsxAsProp {
         _symbol_id: SymbolId,
     ) -> Option<(/* decl */ Span, /* init */ Option<Span>)> {
         let decl = kind.as_variable_declarator()?;
+
         let init_span = decl.init.as_ref().and_then(check_expression)?;
+
         Some((decl.id.span(), Some(init_span)))
     }
 }
@@ -63,9 +65,11 @@ fn check_expression(expr: &Expression) -> Option<Span> {
         Expression::LogicalExpression(expr) => {
             check_expression(&expr.left).or_else(|| check_expression(&expr.right))
         }
+
         Expression::ConditionalExpression(expr) => {
             check_expression(&expr.consequent).or_else(|| check_expression(&expr.alternate))
         }
+
         _ => None,
     }
 }

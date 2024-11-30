@@ -5,8 +5,10 @@ impl<'a> Lexer<'a> {
     pub(super) fn read_dot(&mut self) -> Kind {
         if self.peek_2_bytes() == Some([b'.', b'.']) {
             self.consume_2_chars();
+
             return Kind::Dot3;
         }
+
         if self.peek_byte().is_some_and(|b| b.is_ascii_digit()) {
             self.decimal_literal_after_decimal_point()
         } else {
@@ -19,19 +21,24 @@ impl<'a> Lexer<'a> {
         match self.peek_byte() {
             Some(b'<') => {
                 self.consume_char();
+
                 if self.next_ascii_byte_eq(b'=') {
                     Some(Kind::ShiftLeftEq)
                 } else {
                     Some(Kind::ShiftLeft)
                 }
             }
+
             Some(b'=') => {
                 self.consume_char();
+
                 Some(Kind::LtEq)
             }
+
             Some(b'!') if self.source_type.is_script() && self.remaining().starts_with("!--") => {
                 None
             }
+
             _ => Some(Kind::LAngle),
         }
     }
@@ -41,6 +48,7 @@ impl<'a> Lexer<'a> {
         match self.peek_byte() {
             Some(b'-') => {
                 self.consume_char();
+
                 if self.token.is_on_new_line
                     && self.source_type.is_script()
                     && self.next_ascii_byte_eq(b'>')
@@ -50,17 +58,22 @@ impl<'a> Lexer<'a> {
                     Some(Kind::Minus2)
                 }
             }
+
             Some(b'=') => {
                 self.consume_char();
+
                 Some(Kind::MinusEq)
             }
+
             _ => Some(Kind::Minus),
         }
     }
 
     pub(crate) fn next_right_angle(&mut self) -> Token {
         let kind = self.read_right_angle();
+
         self.lookahead.clear();
+
         self.finish_next(kind)
     }
 

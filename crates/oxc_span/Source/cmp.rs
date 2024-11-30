@@ -79,6 +79,7 @@ impl<'a, T: ContentEq> ContentEq for oxc_allocator::Vec<'a, T> {
 mod content_eq_auto_impls {
     #![allow(clippy::float_cmp)]
     use super::ContentEq;
+
     macro_rules! content_eq_impl {
         ($($t:ty)*) => ($(
             impl ContentEq for $t {

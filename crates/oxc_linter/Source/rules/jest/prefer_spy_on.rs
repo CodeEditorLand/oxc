@@ -63,6 +63,7 @@ impl Rule for PreferSpyOn {
         };
 
         let left = &assign_expr.left;
+
         let right = &assign_expr.right;
 
         let Some(left_assign) = left
@@ -76,11 +77,13 @@ impl Rule for PreferSpyOn {
             Expression::CallExpression(call_expr) => {
                 Self::check_and_fix(assign_expr, call_expr, left_assign, node, ctx);
             }
+
             _ => {
                 if let Some(mem_expr) = right.as_member_expression() {
                     let Expression::CallExpression(call_expr) = mem_expr.object() else {
                         return;
                     };
+
                     Self::check_and_fix(assign_expr, call_expr, left_assign, node, ctx);
                 }
             }
@@ -101,6 +104,7 @@ impl PreferSpyOn {
         else {
             return;
         };
+
         let Some(first_fn_member) = jest_fn_call.members.first() else {
             return;
         };
@@ -114,6 +118,7 @@ impl PreferSpyOn {
             |fixer| {
                 let (end, has_mock_implementation) = if jest_fn_call.members.len() > 1 {
                     let second = &jest_fn_call.members[1];
+
                     let has_mock_implementation = jest_fn_call
                         .members
                         .iter()
@@ -126,8 +131,10 @@ impl PreferSpyOn {
                         false,
                     )
                 };
+
                 let content =
                     Self::build_code(call_expr, left_assign, has_mock_implementation, fixer);
+
                 fixer.replace(Span::new(assign_expr.span.start, end), content)
             },
         );
@@ -140,22 +147,32 @@ impl PreferSpyOn {
         fixer: RuleFixer<'_, 'a>,
     ) -> String {
         let mut formatter = fixer.codegen();
+
         formatter.print_str("jest.spyOn(");
 
         match left_assign {
             MemberExpression::ComputedMemberExpression(cmp_mem_expr) => {
                 formatter.print_expression(&cmp_mem_expr.object);
+
                 formatter.print_ascii_byte(b',');
+
                 formatter.print_ascii_byte(b' ');
+
                 formatter.print_expression(&cmp_mem_expr.expression);
             }
+
             MemberExpression::StaticMemberExpression(static_mem_expr) => {
                 let name = &static_mem_expr.property.name;
+
                 formatter.print_expression(&static_mem_expr.object);
+
                 formatter.print_ascii_byte(b',');
+
                 formatter.print_ascii_byte(b' ');
+
                 formatter.print_str(format!("\'{name}\'").as_str());
             }
+
             MemberExpression::PrivateFieldExpression(_) => (),
         }
 
@@ -172,6 +189,7 @@ impl PreferSpyOn {
         }
 
         formatter.print_ascii_byte(b')');
+
         formatter.into_source_text()
     }
 
@@ -185,11 +203,14 @@ impl PreferSpyOn {
         match &call_expr.callee {
             expr if expr.is_member_expression() => {
                 let mem_expr = expr.to_member_expression();
+
                 if let Some(call_expr) = Self::find_mem_expr(mem_expr) {
                     return Self::get_jest_fn_call(call_expr);
                 }
+
                 None
             }
+
             Expression::CallExpression(call_expr) => Self::get_jest_fn_call(call_expr),
             _ => None,
         }
@@ -198,9 +219,11 @@ impl PreferSpyOn {
     fn find_mem_expr<'a>(mut mem_expr: &'a MemberExpression<'a>) -> Option<&'a CallExpression<'a>> {
         loop {
             let object = mem_expr.object();
+
             if let Expression::CallExpression(call_expr) = object {
                 return Some(call_expr);
             }
+
             if let Some(object_mem_expr) = object.as_member_expression() {
                 mem_expr = object_mem_expr;
             } else {

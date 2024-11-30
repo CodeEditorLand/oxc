@@ -149,6 +149,7 @@ impl FixOptions {
             if kind.is_none() {
                 kind.set(FixKind::Fix, true);
             }
+
             kind.set(FixKind::Dangerous, true);
         }
 
@@ -350,18 +351,31 @@ impl OverrideToggle {
 impl EnablePlugins {
     pub fn apply_overrides(&self, plugins: &mut LintPlugins) {
         self.react_plugin.inspect(|yes| plugins.set(LintPlugins::REACT, yes));
+
         self.unicorn_plugin.inspect(|yes| plugins.set(LintPlugins::UNICORN, yes));
+
         self.oxc_plugin.inspect(|yes| plugins.set(LintPlugins::OXC, yes));
+
         self.typescript_plugin.inspect(|yes| plugins.set(LintPlugins::TYPESCRIPT, yes));
+
         self.import_plugin.inspect(|yes| plugins.set(LintPlugins::IMPORT, yes));
+
         self.jsdoc_plugin.inspect(|yes| plugins.set(LintPlugins::JSDOC, yes));
+
         self.jest_plugin.inspect(|yes| plugins.set(LintPlugins::JEST, yes));
+
         self.vitest_plugin.inspect(|yes| plugins.set(LintPlugins::VITEST, yes));
+
         self.jsx_a11y_plugin.inspect(|yes| plugins.set(LintPlugins::JSX_A11Y, yes));
+
         self.nextjs_plugin.inspect(|yes| plugins.set(LintPlugins::NEXTJS, yes));
+
         self.react_perf_plugin.inspect(|yes| plugins.set(LintPlugins::REACT_PERF, yes));
+
         self.promise_plugin.inspect(|yes| plugins.set(LintPlugins::PROMISE, yes));
+
         self.node_plugin.inspect(|yes| plugins.set(LintPlugins::NODE, yes));
+
         self.security_plugin.inspect(|yes| plugins.set(LintPlugins::SECURITY, yes));
 
         // Without this, jest plugins adapted to vitest will not be enabled.
@@ -374,40 +388,49 @@ impl EnablePlugins {
 #[cfg(test)]
 mod plugins {
     use super::{EnablePlugins, OverrideToggle};
+
     use oxc_linter::LintPlugins;
 
     #[test]
     fn test_override_default() {
         let mut plugins = LintPlugins::default();
+
         let enable = EnablePlugins::default();
 
         enable.apply_overrides(&mut plugins);
+
         assert_eq!(plugins, LintPlugins::default());
     }
 
     #[test]
     fn test_overrides() {
         let mut plugins = LintPlugins::default();
+
         let enable = EnablePlugins {
             react_plugin: OverrideToggle::Enable,
             unicorn_plugin: OverrideToggle::Disable,
             ..EnablePlugins::default()
         };
+
         let expected =
             LintPlugins::default().union(LintPlugins::REACT).difference(LintPlugins::UNICORN);
 
         enable.apply_overrides(&mut plugins);
+
         assert_eq!(plugins, expected);
     }
 
     #[test]
     fn test_override_vitest() {
         let mut plugins = LintPlugins::default();
+
         let enable =
             EnablePlugins { vitest_plugin: OverrideToggle::Enable, ..EnablePlugins::default() };
+
         let expected = LintPlugins::default() | LintPlugins::VITEST | LintPlugins::JEST;
 
         enable.apply_overrides(&mut plugins);
+
         assert_eq!(plugins, expected);
     }
 }
@@ -418,25 +441,30 @@ mod warning_options {
 
     fn get_warning_options(arg: &str) -> WarningOptions {
         let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
+
         lint_command().run_inner(args.as_slice()).unwrap().warning_options
     }
 
     #[test]
     fn default() {
         let options = get_warning_options(".");
+
         assert!(!options.quiet);
+
         assert_eq!(options.max_warnings, None);
     }
 
     #[test]
     fn quiet() {
         let options = get_warning_options("--quiet .");
+
         assert!(options.quiet);
     }
 
     #[test]
     fn max_warnings() {
         let options = get_warning_options("--max-warnings 10 .");
+
         assert_eq!(options.max_warnings, Some(10));
     }
 }
@@ -451,15 +479,20 @@ mod lint_options {
 
     fn get_lint_options(arg: &str) -> LintCommand {
         let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
+
         lint_command().run_inner(args.as_slice()).unwrap()
     }
 
     #[test]
     fn default() {
         let options = get_lint_options(".");
+
         assert_eq!(options.paths, vec![PathBuf::from(".")]);
+
         assert!(!options.fix_options.fix);
+
         assert!(!options.list_rules);
+
         assert_eq!(options.output_options.format, OutputFormat::Default);
     }
 
@@ -467,20 +500,30 @@ mod lint_options {
     #[allow(clippy::similar_names)]
     fn multiple_paths() {
         let temp_dir = tempfile::tempdir().expect("Could not create a temp dir");
+
         let file_foo = temp_dir.path().join("foo.js");
+
         File::create(&file_foo).expect("Could not create foo.js temp file");
+
         let file_name_foo =
             file_foo.to_str().expect("Could not get path string for foo.js temp file");
+
         let file_bar = temp_dir.path().join("bar.js");
+
         File::create(&file_bar).expect("Could not create bar.js temp file");
+
         let file_name_bar =
             file_bar.to_str().expect("Could not get path string for bar.js temp file");
+
         let file_baz = temp_dir.path().join("baz");
+
         File::create(&file_baz).expect("Could not create baz temp file");
+
         let file_name_baz = file_baz.to_str().expect("Could not get path string for baz temp file");
 
         let options =
             get_lint_options(format!("{file_name_foo} {file_name_bar} {file_name_baz}").as_str());
+
         assert_eq!(options.paths, [file_foo, file_bar, file_baz]);
     }
 
@@ -489,19 +532,29 @@ mod lint_options {
     #[allow(clippy::similar_names)]
     fn wildcard_expansion() {
         let temp_dir = tempfile::tempdir().expect("Could not create a temp dir");
+
         let file_foo = temp_dir.path().join("foo.js");
+
         File::create(&file_foo).expect("Could not create foo.js temp file");
+
         let file_bar = temp_dir.path().join("bar.js");
+
         File::create(&file_bar).expect("Could not create bar.js temp file");
+
         let file_baz = temp_dir.path().join("baz");
+
         File::create(&file_baz).expect("Could not create baz temp file");
 
         let js_files_wildcard = temp_dir.path().join("*.js");
+
         let options = get_lint_options(
             js_files_wildcard.to_str().expect("could not get js files wildcard path"),
         );
+
         assert!(options.paths.contains(&file_foo));
+
         assert!(options.paths.contains(&file_bar));
+
         assert!(!options.paths.contains(&file_baz));
     }
 
@@ -513,6 +566,7 @@ mod lint_options {
                 bpaf::ParseFailure::Stderr(doc) => {
                     assert_eq!("`../parent_dir`: PATH must not contain \"..\"", format!("{doc}"));
                 }
+
                 _ => unreachable!(),
             },
         }
@@ -521,6 +575,7 @@ mod lint_options {
     #[test]
     fn fix() {
         let options = get_lint_options("--fix test.js");
+
         assert!(options.fix_options.fix);
     }
 
@@ -528,6 +583,7 @@ mod lint_options {
     fn filter() {
         let options =
             get_lint_options("-D suspicious --deny pedantic -A no-debugger --allow no-var src");
+
         assert_eq!(
             options.filter,
             [
@@ -542,14 +598,18 @@ mod lint_options {
     #[test]
     fn format() {
         let options = get_lint_options("-f json");
+
         assert_eq!(options.output_options.format, OutputFormat::Json);
+
         assert!(options.paths.is_empty());
     }
 
     #[test]
     fn format_error() {
         let args = "-f asdf".split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
+
         let result = lint_command().run_inner(args.as_slice());
+
         assert!(result.is_err_and(
             |err| err.unwrap_stderr() == "couldn't parse `asdf`: 'asdf' is not a known format"
         ));
@@ -558,6 +618,7 @@ mod lint_options {
     #[test]
     fn list_rules() {
         let options = get_lint_options("--rules");
+
         assert!(options.list_rules);
     }
 }

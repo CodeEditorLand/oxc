@@ -71,6 +71,7 @@ impl Rule for PreferRegexpTest {
                 }
                 (v.property.span, &v.property.name)
             }
+
             _ => return,
         };
 
@@ -91,6 +92,7 @@ impl Rule for PreferRegexpTest {
                     return;
                 }
             }
+
             AstKind::ConditionalExpression(conditional_expr) => {
                 let Expression::CallExpression(call_expr2) = &conditional_expr.test else {
                     return;
@@ -119,10 +121,12 @@ impl Rule for PreferRegexpTest {
                     return;
                 }
             }
+
             AstKind::WhileStatement(_)
             | AstKind::DoWhileStatement(_)
             | AstKind::IfStatement(_)
             | AstKind::UnaryExpression(_) => {}
+
             _ => return,
         }
 
@@ -147,6 +151,7 @@ impl Rule for PreferRegexpTest {
                     return;
                 }
             }
+
             _ => unreachable!("match or test {:?}", name),
         }
 

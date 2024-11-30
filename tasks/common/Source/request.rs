@@ -14,12 +14,14 @@ fn detect_proxy() -> Option<ureq::Proxy> {
   }
 
     try_env!("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy");
+
     None
 }
 
 /// build a agent with proxy automatically detected
 pub fn agent() -> ureq::Agent {
     let builder = ureq::AgentBuilder::new();
+
     if let Some(proxy) = detect_proxy() {
         builder.proxy(proxy).build()
     } else {

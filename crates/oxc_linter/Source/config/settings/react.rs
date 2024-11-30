@@ -98,16 +98,21 @@ fn get_component_attrs_by_name<'c>(
             CustomComponent::NameOnly(comp_name) if comp_name == name => {
                 return Some(Cow::Owned(vec![]));
             }
+
             CustomComponent::ObjectWithOneAttr { name: comp_name, attribute }
+
                 if comp_name == name =>
             {
                 return Some(Cow::Owned(vec![attribute.clone()]));
             }
+
             CustomComponent::ObjectWithManyAttrs { name: comp_name, attributes }
+
                 if comp_name == name =>
             {
                 return Some(Cow::Borrowed(attributes));
             }
+
             _ => {}
         };
     }

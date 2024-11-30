@@ -47,12 +47,15 @@ impl Rule for UninvokedArrayCallback {
 		let AstKind::NewExpression(new_expr) = node.kind() else {
 			return;
 		};
+
 		if !new_expr.callee.is_specific_id("Array") {
 			return;
 		}
+
 		if new_expr.arguments.len() != 1 {
 			return;
 		}
+
 		if !matches!(new_expr.arguments.first(), Some(Argument::NumericLiteral(_))) {
 			return;
 		}
@@ -70,6 +73,7 @@ impl Rule for UninvokedArrayCallback {
 		else {
 			return;
 		};
+
 		if !matches!(
 			call_expr.arguments.first(),
 			Some(Argument::FunctionExpression(_) | Argument::ArrowFunctionExpression(_))
@@ -82,6 +86,7 @@ impl Rule for UninvokedArrayCallback {
 			MemberExpression::StaticMemberExpression(expr) => expr.property.span,
 			MemberExpression::PrivateFieldExpression(expr) => expr.field.span,
 		};
+
 		ctx.diagnostic(UninvokedArrayCallbackDiagnostic(property_span, new_expr.span));
 	}
 }

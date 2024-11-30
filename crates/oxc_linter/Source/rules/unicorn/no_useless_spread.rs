@@ -75,6 +75,7 @@ fn iterable_to_array_in_yield_star(span:Span) -> OxcDiagnostic {
 
 fn clone(span:Span, is_array:bool, method_name:Option<&str>) -> OxcDiagnostic {
 	let noun = if is_array { "array" } else { "object" };
+
 	OxcDiagnostic::warn(format!("Using a spread operator here creates a new {noun} unnecessarily."))
 		.with_help(if let Some(method_name) = method_name {
 			format!(
@@ -196,6 +197,7 @@ impl Rule for NoUselessSpread {
 				let Some(spread_elem) = as_single_obj_spread(obj_expr) else {
 					return;
 				};
+
 				check_useless_clone(obj_expr.span, false, spread_elem, ctx);
 			},
 			_ => unreachable!(),
@@ -212,6 +214,7 @@ fn check_useless_spread_in_list<'a>(node:&AstNode<'a>, ctx:&LintContext<'a>) -> 
 	let AstKind::SpreadElement(spread_elem) = parent.kind() else {
 		return false;
 	};
+
 	let Some(parent_parent) = outermost_paren_parent(parent, ctx) else {
 		return false;
 	};
@@ -221,10 +224,12 @@ fn check_useless_spread_in_list<'a>(node:&AstNode<'a>, ctx:&LintContext<'a>) -> 
 	match node.kind() {
 		AstKind::ObjectExpression(_) => {
 			// { ...{ } }
+
 			if matches!(parent_parent.kind(), AstKind::ObjectExpression(_)) {
 				ctx.diagnostic_with_fix(spread_in_list(span, "object"), |fixer| {
 					fix_by_removing_object_spread(fixer, spread_elem)
 				});
+
 				true
 			} else {
 				false
@@ -235,11 +240,13 @@ fn check_useless_spread_in_list<'a>(node:&AstNode<'a>, ctx:&LintContext<'a>) -> 
 				// ...[ ...[] ]
 				AstKind::ArrayExpressionElement(_) => {
 					let diagnostic = spread_in_list(span, "array");
+
 					if let Some(outer_array) = ctx.nodes().parent_kind(parent_parent.id()) {
 						diagnose_array_in_array_spread(ctx, diagnostic, &outer_array, array_expr);
 					} else {
 						ctx.diagnostic(diagnostic);
 					}
+
 					true
 				},
 				// foo(...[ ])
@@ -247,6 +254,7 @@ fn check_useless_spread_in_list<'a>(node:&AstNode<'a>, ctx:&LintContext<'a>) -> 
 					ctx.diagnostic_with_fix(spread_in_arguments(span), |fixer| {
 						fix_by_removing_array_spread(fixer, array_expr, spread_elem)
 					});
+
 					true
 				},
 				_ => false,
@@ -267,8 +275,10 @@ fn diagnose_array_in_array_spread<'a>(
 ) {
 	let AstKind::ArrayExpression(outer_array) = outer_array else {
 		ctx.diagnostic(diagnostic);
+
 		return;
 	};
+
 	match outer_array.elements.len() {
 		0 => unreachable!(),
 		1 => {
@@ -279,33 +289,46 @@ fn diagnose_array_in_array_spread<'a>(
 		_ => {
 			// If all elements are array spreads, we can merge them all together
 			let mut spreads:Vec<&'a ArrayExpression> = vec![];
+
 			for el in &outer_array.elements {
 				let ArrayExpressionElement::SpreadElement(spread) = el else {
 					ctx.diagnostic(diagnostic);
+
 					return;
 				};
+
 				let Expression::ArrayExpression(arr) = &spread.argument else {
 					ctx.diagnostic(diagnostic);
+
 					return;
 				};
+
 				spreads.push(arr.as_ref());
 			}
 
 			// [ ...[a, b, c], ...[d, e, f] ] -> [a, b, c, d, e, f]
 			ctx.diagnostic_with_fix(diagnostic, |fixer| {
 				let mut codegen = fixer.codegen();
+
 				codegen.print_char(b'[');
+
 				let elements =
 					spreads.iter().flat_map(|arr| arr.elements.iter()).collect::<Vec<_>>();
+
 				let n = elements.len();
+
 				for (i, el) in elements.into_iter().enumerate() {
 					codegen.print_expression(el.to_expression());
+
 					if i < n - 1 {
 						codegen.print_char(b',');
+
 						codegen.print_char(b' ');
 					}
 				}
+
 				codegen.print_char(b']');
+
 				fixer.replace(outer_array.span, codegen)
 			});
 		},
@@ -328,6 +351,7 @@ fn check_useless_iterable_to_array<'a>(
 		let Some(parent) = outermost_paren_parent(parent, ctx) else {
 			return false;
 		};
+
 		parent
 	} else {
 		parent
@@ -337,8 +361,10 @@ fn check_useless_iterable_to_array<'a>(
 		AstKind::ForOfStatement(for_of_stmt) => {
 			if for_of_stmt.right.without_parentheses().span() == array_expr.span {
 				ctx.diagnostic(iterable_to_array_in_for_of(span));
+
 				return true;
 			}
+
 			false
 		},
 		AstKind::YieldExpression(yield_expr) => {
@@ -346,8 +372,10 @@ fn check_useless_iterable_to_array<'a>(
 				&& yield_expr.argument.as_ref().is_some_and(|arg| arg.span() == array_expr.span)
 			{
 				ctx.diagnostic(iterable_to_array_in_yield_star(span));
+
 				return true;
 			}
+
 			false
 		},
 
@@ -357,10 +385,12 @@ fn check_useless_iterable_to_array<'a>(
 			{
 				return false;
 			}
+
 			ctx.diagnostic_with_fix(
 				iterable_to_array(span, get_new_expr_ident_name(new_expr).unwrap_or("unknown")),
 				|fixer| fix_by_removing_array_spread(fixer, &new_expr.arguments[0], spread_elem),
 			);
+
 			true
 		},
 		AstKind::CallExpression(call_expr) => {
@@ -389,6 +419,7 @@ fn check_useless_iterable_to_array<'a>(
 				),
 				|fixer| fix_by_removing_array_spread(fixer, array_expr, spread_elem),
 			);
+
 			true
 		},
 		_ => false,
@@ -407,6 +438,7 @@ fn check_useless_clone<'a>(
 	ctx:&LintContext<'a>,
 ) -> bool {
 	let span = Span::new(spread_elem.span.start, spread_elem.span.start + 3);
+
 	let target = spread_elem.argument.get_inner_expression();
 
 	// already diagnosed by first check
@@ -415,15 +447,19 @@ fn check_useless_clone<'a>(
 	}
 
 	let hint = target.const_eval();
+
 	let hint_matches_expr = if is_array { hint.is_array() } else { hint.is_object() };
+
 	if hint_matches_expr {
 		let name = diagnostic_name(ctx, target);
 
 		ctx.diagnostic_with_fix(clone(span, is_array, name), |fixer| {
 			fix_by_removing_array_spread(fixer, &array_or_obj_span, spread_elem)
 		});
+
 		return true;
 	}
+
 	false
 }
 
@@ -438,6 +474,7 @@ fn diagnostic_name<'a>(ctx:&LintContext<'a>, expr:&Expression<'a>) -> Option<&'a
 		Expression::AwaitExpression(expr) => diagnostic_name(ctx, &expr.argument),
 		Expression::SequenceExpression(expr) => {
 			let span_with_parens = expr.span().expand(1);
+
 			pretty_snippet(ctx.source_range(span_with_parens))
 		},
 		_ => pretty_snippet(ctx.source_range(expr.span())),
@@ -470,6 +507,7 @@ fn fix_by_removing_object_spread<'a>(
 	// by another property
 	// e.g. ` a, b, ` -> `a, b`
 	let mut end_shrink_amount = 0;
+
 	for c in fixer.source_range(*replacement_span).chars().rev() {
 		if c.is_whitespace() || c == ',' {
 			end_shrink_amount += 1;
@@ -477,6 +515,7 @@ fn fix_by_removing_object_spread<'a>(
 			break;
 		}
 	}
+
 	let replacement_span = replacement_span.shrink_right(end_shrink_amount);
 
 	fixer.replace_with(&spread.span, &replacement_span)
@@ -487,6 +526,7 @@ fn as_single_array_spread<'a, 's>(node:&'s ArrayExpression<'a>) -> Option<&'s Sp
 	if node.elements.len() != 1 {
 		return None;
 	}
+
 	match &node.elements[0] {
 		ArrayExpressionElement::SpreadElement(spread) => Some(spread.as_ref()),
 		_ => None,
@@ -497,6 +537,7 @@ fn as_single_obj_spread<'a, 's>(node:&'s ObjectExpression<'a>) -> Option<&'s Spr
 	if node.properties.len() != 1 {
 		return None;
 	}
+
 	match &node.properties[0] {
 		ObjectPropertyKind::SpreadProperty(spread) => Some(spread.as_ref()),
 		ObjectPropertyKind::ObjectProperty(_) => None,
@@ -765,6 +806,7 @@ fn test() {
 			"arr.reduce((a, b) => a.push(b), [])",
 		),
 	];
+
 	Tester::new(NoUselessSpread::NAME, pass, fail)
 		.expect_fix(fix)
 		.test_and_snapshot();

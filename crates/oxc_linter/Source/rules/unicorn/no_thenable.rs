@@ -71,16 +71,19 @@ impl Rule for NoThenable {
                     }
                 });
             }
+
             AstKind::PropertyDefinition(def) => {
                 if let Some(span) = contains_then(&def.key, ctx) {
                     ctx.diagnostic(class(span));
                 }
             }
+
             AstKind::MethodDefinition(def) => {
                 if let Some(span) = contains_then(&def.key, ctx) {
                     ctx.diagnostic(class(span));
                 }
             }
+
             AstKind::ModuleDeclaration(ModuleDeclaration::ExportNamedDeclaration(decl)) => {
                 // check declaration
                 if let Some(ref decl) = decl.declaration {
@@ -90,6 +93,7 @@ impl Rule for NoThenable {
                                 check_binding_pattern(&decl.id.kind, ctx);
                             }
                         }
+
                         Declaration::FunctionDeclaration(decl) => {
                             if let Some(bind) = decl.id.as_ref() {
                                 if bind.name == "then" {
@@ -97,6 +101,7 @@ impl Rule for NoThenable {
                                 }
                             };
                         }
+
                         Declaration::ClassDeclaration(decl) => {
                             if let Some(bind) = decl.id.as_ref() {
                                 if bind.name == "then" {
@@ -104,6 +109,7 @@ impl Rule for NoThenable {
                                 }
                             };
                         }
+
                         _ => {}
                     }
                 }
@@ -114,6 +120,7 @@ impl Rule for NoThenable {
                     }
                 }
             }
+
             AstKind::CallExpression(expr) => check_call_expression(expr, ctx),
             // foo.then = ...
             AstKind::AssignmentExpression(AssignmentExpression { left, .. }) => match left {
@@ -122,11 +129,13 @@ impl Rule for NoThenable {
                         ctx.diagnostic(class(span));
                     }
                 }
+
                 AssignmentTarget::StaticMemberExpression(expr) => {
                     if expr.property.name == "then" {
                         ctx.diagnostic(class(expr.span));
                     }
                 }
+
                 _ => {}
             },
             _ => {}
@@ -148,6 +157,7 @@ fn check_call_expression(expr: &CallExpression, ctx: &LintContext) {
                     }) && me.static_property_name() == Some("defineProperty")
                         && !me.optional()
                 }
+
                 _ => false,
             }
     } {
@@ -170,6 +180,7 @@ fn check_call_expression(expr: &CallExpression, ctx: &LintContext) {
                         && me.static_property_name() == Some("fromEntries")
                         && !me.optional()
                 }
+
                 _ => false,
             }
     } {
@@ -198,24 +209,29 @@ fn check_binding_pattern(pat: &BindingPatternKind, ctx: &LintContext) {
                 ctx.diagnostic(export(bind.span));
             }
         }
+
         BindingPatternKind::ObjectPattern(obj) => {
             for prop in &obj.properties {
                 check_binding_pattern(&prop.value.kind, ctx);
             }
+
             if let Some(elem) = obj.rest.as_ref() {
                 check_binding_pattern(&elem.argument.kind, ctx);
             }
         }
+
         BindingPatternKind::ArrayPattern(arr) => {
             for pat in &arr.elements {
                 if let Some(pat) = pat.as_ref() {
                     check_binding_pattern(&pat.kind, ctx);
                 }
             }
+
             if let Some(elem) = arr.rest.as_ref() {
                 check_binding_pattern(&elem.argument.kind, ctx);
             }
         }
+
         BindingPatternKind::AssignmentPattern(assign) => {
             check_binding_pattern(&assign.left.kind, ctx);
         }
@@ -231,14 +247,19 @@ fn check_expression(expr: &Expression, ctx: &LintContext<'_>) -> Option<oxc_span
                 None
             }
         }
+
         Expression::TemplateLiteral(lit) => {
             lit.quasi().and_then(|quasi| if quasi == "then" { Some(lit.span) } else { None })
         }
+
         Expression::Identifier(ident) => {
             let symbols = ctx.semantic().symbols();
+
             let reference_id = ident.reference_id();
+
             symbols.get_reference(reference_id).symbol_id().and_then(|symbol_id| {
                 let decl = ctx.semantic().nodes().get_node(symbols.get_declaration(symbol_id));
+
                 let var_decl = decl.kind().as_variable_declarator()?;
 
                 match var_decl.init {
@@ -249,10 +270,12 @@ fn check_expression(expr: &Expression, ctx: &LintContext<'_>) -> Option<oxc_span
                             None
                         }
                     }
+
                     _ => None,
                 }
             })
         }
+
         _ => None,
     }
 }

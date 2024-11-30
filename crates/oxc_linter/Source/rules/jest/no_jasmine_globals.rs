@@ -45,6 +45,7 @@ const COMMON_HELP_TEXT: &str = "prefer use Jest own API";
 impl Rule for NoJasmineGlobals {
     fn run_once(&self, ctx: &LintContext) {
         let symbol_table = ctx.symbols();
+
         let jasmine_references = ctx
             .scopes()
             .root_unresolved_references()
@@ -54,6 +55,7 @@ impl Rule for NoJasmineGlobals {
         for (name, reference_ids) in jasmine_references {
             for &reference_id in reference_ids {
                 let reference = symbol_table.get_reference(reference_id);
+
                 if let Some((error, help)) = get_non_jasmine_property_messages(name) {
                     ctx.diagnostic(no_jasmine_globals_diagnostic(
                         error,
@@ -91,9 +93,11 @@ fn diagnostic_assign_expr<'a>(expr: &'a AssignmentExpression<'a>, ctx: &LintCont
                     no_jasmine_globals_diagnostic(COMMON_ERROR_TEXT, COMMON_HELP_TEXT, span),
                     |fixer| {
                         let content = format!("jest.setTimeout({})", number_literal.value);
+
                         fixer.replace(expr.span, content)
                     },
                 );
+
                 return;
             }
         }
@@ -118,6 +122,7 @@ fn diagnostic_call_expr<'a>(expr: &'a CallExpression<'a>, ctx: &LintContext) {
             },
             |jasmine_property| {
                 let (error, help) = jasmine_property.details();
+
                 if jasmine_property.available_in_jest_expect() {
                     ctx.diagnostic_with_fix(
                         no_jasmine_globals_diagnostic(error, help, span),
@@ -136,11 +141,15 @@ fn get_jasmine_property_name<'a>(member_expr: &'a MemberExpression<'a>) -> Optio
         Expression::Identifier(ident) => Some(ident.name.as_str()),
         _ => None,
     };
+
     let is_jasmine_object = name.is_some_and(|name| name == "jasmine");
+
     if !is_jasmine_object {
         return None;
     }
+
     let (span, property_name) = member_expr.static_property_info()?;
+
     Some((span, property_name))
 }
 
@@ -192,6 +201,7 @@ impl JasmineProperty {
             Self::Anything => {
                 ("Illegal usage of `anything`", "prefer use Jest own API `expect.anything`")
             }
+
             Self::ArrayContaining => (
                 "Illegal usage of `arrayContaining`",
                 "prefer use Jest own API `expect.arrayContaining`",
@@ -207,6 +217,7 @@ impl JasmineProperty {
             Self::AddMatchers => {
                 ("Illegal usage of `addMatchers`", "prefer use Jest own API `expect.extend`")
             }
+
             Self::CreateSpy => {
                 ("Illegal usage of `createSpy`", "prefer use Jest own API `jest.fn`")
             }

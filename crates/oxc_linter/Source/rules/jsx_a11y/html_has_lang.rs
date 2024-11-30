@@ -93,6 +93,7 @@ fn is_valid_lang_prop(item: &JSXAttributeItem) -> bool {
                 !t.expressions.is_empty()
                     || t.quasis.iter().filter(|q| !q.value.raw.is_empty()).count() > 0
             }
+
             _ => true,
         },
         Some(JSXAttributeValue::StringLiteral(str)) => !str.value.as_str().is_empty(),

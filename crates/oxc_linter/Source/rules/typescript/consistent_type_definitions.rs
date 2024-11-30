@@ -69,6 +69,7 @@ impl Rule for ConsistentTypeDefinitions {
                 _ => ConsistentTypeDefinitionsConfig::Interface,
             },
         );
+
         Self { config }
     }
 
@@ -81,6 +82,7 @@ impl Rule for ConsistentTypeDefinitions {
                     let start = if decl.declare { decl.span.start + 8 } else { decl.span.start };
 
                     let name_span_start = &decl.id.span.start;
+
                     let mut name_span_end = &decl.id.span.end;
 
                     if let Some(params) = &decl.type_parameters {
@@ -92,6 +94,7 @@ impl Rule for ConsistentTypeDefinitions {
 
                     if let TSType::TSTypeLiteral(type_ann) = &decl.type_annotation {
                         let body_span = type_ann.span;
+
                         let body =
                             &ctx.source_text()[body_span.start as usize..body_span.end as usize];
 
@@ -110,6 +113,7 @@ impl Rule for ConsistentTypeDefinitions {
                         );
                     }
                 }
+
                 _ => {}
             },
 
@@ -118,6 +122,7 @@ impl Rule for ConsistentTypeDefinitions {
                     if self.config == ConsistentTypeDefinitionsConfig::Type =>
                 {
                     let name_span_start = &decl.id.span.start;
+
                     let mut name_span_end = &decl.id.span.end;
 
                     if let Some(params) = &decl.type_parameters {
@@ -128,6 +133,7 @@ impl Rule for ConsistentTypeDefinitions {
                         &ctx.source_text()[*name_span_start as usize..*name_span_end as usize];
 
                     let body_span = &decl.body.span;
+
                     let body = &ctx.source_text()[body_span.start as usize..body_span.end as usize];
 
                     let extends_vec = {
@@ -149,6 +155,7 @@ impl Rule for ConsistentTypeDefinitions {
                         String::new()
                     } else {
                         let joined_extends = extends_vec.join(" & ");
+
                         format!(" & {joined_extends}")
                     };
 
@@ -166,6 +173,7 @@ impl Rule for ConsistentTypeDefinitions {
                         },
                     );
                 }
+
                 _ => {}
             },
 
@@ -175,6 +183,7 @@ impl Rule for ConsistentTypeDefinitions {
                 let start = if decl.declare { decl.span.start + 8 } else { decl.span.start };
 
                 let name_span_start = &decl.id.span.start;
+
                 let mut name_span_end = &decl.id.span.end;
 
                 if let Some(params) = &decl.type_parameters {
@@ -184,6 +193,7 @@ impl Rule for ConsistentTypeDefinitions {
                 let name = &ctx.source_text()[*name_span_start as usize..*name_span_end as usize];
 
                 let body_span = &decl.body.span;
+
                 let body = &ctx.source_text()[body_span.start as usize..body_span.end as usize];
 
                 let extends_vec = {
@@ -199,10 +209,12 @@ impl Rule for ConsistentTypeDefinitions {
 
                     concatenated_names
                 };
+
                 let extends = if extends_vec.is_empty() {
                     String::new()
                 } else {
                     let joined_extends = extends_vec.join(" & ");
+
                     format!(" & {joined_extends}")
                 };
 
@@ -220,6 +232,7 @@ impl Rule for ConsistentTypeDefinitions {
                     },
                 );
             }
+
             _ => {}
         }
     }
@@ -441,12 +454,14 @@ fn test() {
             "
 export default interface Test {
     baz(): string;
+
     foo(): number;
 }
             ",
             "
 type Test = {
     baz(): string;
+
     foo(): number;
 }
 export default Test
@@ -457,12 +472,14 @@ export default Test
             "
 export default interface Custom extends T {
     baz(): string;
+
     foo(): number;
 }
             ",
             "
 type Custom = {
     baz(): string;
+
     foo(): number;
 } & T
 export default Custom
@@ -473,12 +490,14 @@ export default Custom
             "
 export declare type Test = {
     foo: string;
+
     bar: string;
 };
             ",
             "
 export declare interface Test {
     foo: string;
+
     bar: string;
 }
             ",
@@ -488,12 +507,14 @@ export declare interface Test {
             "
 export declare interface Test {
     foo: string;
+
     bar: string;
 }
             ",
             "
 export declare type Test = {
     foo: string;
+
     bar: string;
 }
             ",

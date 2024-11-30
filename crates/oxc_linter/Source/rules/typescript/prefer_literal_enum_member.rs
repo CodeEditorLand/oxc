@@ -62,9 +62,11 @@ impl Rule for PreferLiteralEnumMember {
         let AstKind::TSEnumMember(decl) = node.kind() else {
             return;
         };
+
         let Some(initializer) = &decl.initializer else {
             return;
         };
+
         if initializer.is_literal() {
             return;
         }
@@ -275,6 +277,7 @@ fn test() {
         (
             "
         	const variable = 'Test';
+
         	enum InvalidVariable {
         	  A = 'TestStr',
         	  B = 2,
@@ -296,6 +299,7 @@ fn test() {
         (
             "
         	const Valid = { A: 2 };
+
         	enum InvalidObjectMember {
         	  A = 'TestStr',
         	  B = Valid.A,
@@ -308,6 +312,7 @@ fn test() {
         	enum Valid {
         	  A,
         	}
+
         	enum InvalidEnumMember {
         	  A = 'TestStr',
         	  B = Valid.A,
@@ -318,6 +323,7 @@ fn test() {
         (
             "
         	const obj = { a: 1 };
+
         	enum InvalidSpread {
         	  A = 'TestStr',
         	  B = { ...a },
@@ -342,6 +348,7 @@ fn test() {
         (
             "
         	const x = 1;
+
         	enum Foo {
         	  A = x << 0,
         	  B = x >> 0,

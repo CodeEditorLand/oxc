@@ -148,9 +148,11 @@ fn find_index_param_name_by_position<'a>(
         Argument::ArrowFunctionExpression(arrow_fn_expr) => {
             Some(arrow_fn_expr.params.items.get(position)?.pattern.get_identifier()?.as_str())
         }
+
         Argument::FunctionExpression(regular_fn_expr) => {
             Some(regular_fn_expr.params.items.get(position)?.pattern.get_identifier()?.as_str())
         }
+
         _ => None,
     })
 }
@@ -187,9 +189,11 @@ impl Rule for NoArrayIndexKey {
             AstKind::JSXElement(jsx) => {
                 check_jsx_element(jsx, node, ctx, "key");
             }
+
             AstKind::CallExpression(call_expr) => {
                 check_react_clone_element(call_expr, node, ctx);
             }
+
             _ => (),
         }
     }

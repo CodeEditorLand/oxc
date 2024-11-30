@@ -6,7 +6,9 @@ bitflags::bitflags! {
 	pub struct CtxFlags: u8 {
 		/// Anything above a `FUNCTION` is unreachable.
 		const FUNCTION = 1;
+
 		const BREAK = 1 << 1;
+
 		const CONTINUE = 1 << 2;
 	}
 }
@@ -53,16 +55,20 @@ impl<'a, 'c> CtxCursor for QueryCtx<'a, 'c> {
 	fn mark_break(self, jmp_pos:BasicBlockId) -> Self {
 		self.0.in_break_context(self.1, |ctx| {
 			debug_assert!(ctx.break_jmp.is_none());
+
 			ctx.break_jmp = Some(jmp_pos);
 		});
+
 		self
 	}
 
 	fn mark_continue(self, jmp_pos:BasicBlockId) -> Self {
 		self.0.in_continue_context(self.1, |ctx| {
 			debug_assert!(ctx.continue_jmp.is_none());
+
 			ctx.continue_jmp = Some(jmp_pos);
 		});
+
 		self
 	}
 
@@ -70,6 +76,7 @@ impl<'a, 'c> CtxCursor for QueryCtx<'a, 'c> {
 		self.0.in_break_context(self.1, |ctx| {
 			ctx.r#break(bb);
 		});
+
 		self
 	}
 
@@ -77,6 +84,7 @@ impl<'a, 'c> CtxCursor for QueryCtx<'a, 'c> {
 		self.0.in_continue_context(self.1, |ctx| {
 			ctx.r#continue(bb);
 		});
+
 		self
 	}
 }
@@ -91,6 +99,7 @@ impl<'a, 'c> QueryCtx<'a, 'c> {
 		self.0.ctx_stack.push(Ctx::new(self.1, flags));
 		// SAFETY: we just pushed this `Ctx` into the stack.
 		let ctx = unsafe { self.0.ctx_stack.last_mut().unwrap_unchecked() };
+
 		RefCtxCursor(ctx)
 	}
 
@@ -107,6 +116,7 @@ impl<'a, 'c> QueryCtx<'a, 'c> {
 		let Some(ctx) = self.0.ctx_stack.pop() else {
 			return;
 		};
+
 		self.resolve_ctx(ctx);
 	}
 
@@ -115,7 +125,9 @@ impl<'a, 'c> QueryCtx<'a, 'c> {
 	/// # Panics if there is no ctx on the stack or `expectation` isn't satisfied.
 	pub fn resolve_expect(mut self, expectation:CtxFlags) {
 		let ctx = self.0.ctx_stack.pop().expect("expected a `ctx` on the stack for resolution");
+
 		assert!(ctx.flags.difference(expectation).is_empty());
+
 		self.resolve_ctx(ctx);
 	}
 
@@ -179,12 +191,14 @@ impl<'a, 'c> RefCtxCursor<'a, 'c> {
 	/// Allow break entries in this context.
 	pub fn allow_break(self) -> Self {
 		self.0.flags.insert(CtxFlags::BREAK);
+
 		self
 	}
 
 	/// Allow continue entries in this context.
 	pub fn allow_continue(self) -> Self {
 		self.0.flags.insert(CtxFlags::CONTINUE);
+
 		self
 	}
 }
@@ -192,23 +206,29 @@ impl<'a, 'c> RefCtxCursor<'a, 'c> {
 impl<'a, 'c> CtxCursor for RefCtxCursor<'a, 'c> {
 	fn mark_break(self, jmp_pos:BasicBlockId) -> Self {
 		debug_assert!(self.0.break_jmp.is_none());
+
 		self.0.break_jmp = Some(jmp_pos);
+
 		self
 	}
 
 	fn mark_continue(self, jmp_pos:BasicBlockId) -> Self {
 		debug_assert!(self.0.continue_jmp.is_none());
+
 		self.0.continue_jmp = Some(jmp_pos);
+
 		self
 	}
 
 	fn r#break(self, bb:BasicBlockId) -> Self {
 		self.0.r#break(bb);
+
 		self
 	}
 
 	fn r#continue(self, bb:BasicBlockId) -> Self {
 		self.0.r#continue(bb);
+
 		self
 	}
 }

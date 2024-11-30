@@ -38,6 +38,7 @@ fn no_non_null_assertion_diagnostic(span: Span) -> OxcDiagnostic {
 impl Rule for NoNonNullAssertion {
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         let AstKind::TSNonNullExpression(expr) = node.kind() else { return };
+
         ctx.diagnostic(no_non_null_assertion_diagnostic(expr.span));
     }
 

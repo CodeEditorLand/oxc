@@ -58,12 +58,14 @@ impl<'a> JSXMemberExpressionObject<'a> {
     /// expressions or if semantic analysis was skipped.
     pub fn get_identifier(&self) -> Option<&IdentifierReference<'a>> {
         let mut object = self;
+
         loop {
             match object {
                 JSXMemberExpressionObject::IdentifierReference(ident) => return Some(ident),
                 JSXMemberExpressionObject::MemberExpression(member_expr) => {
                     object = &member_expr.object;
                 }
+
                 JSXMemberExpressionObject::ThisExpression(_) => return None,
             }
         }

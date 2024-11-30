@@ -46,6 +46,7 @@ declare_oxc_lint!(
 
 fn unescape_backslash(input: &str, quote: char) -> String {
     let mut result = String::with_capacity(input.len());
+
     let mut chars = input.chars().peekable();
 
     while let Some(c) = chars.next() {
@@ -53,7 +54,9 @@ fn unescape_backslash(input: &str, quote: char) -> String {
             if let Some(next) = chars.peek() {
                 if *next == '\\' || *next == quote {
                     result.push(*next);
+
                     chars.next();
+
                     continue;
                 }
             }
@@ -79,11 +82,13 @@ impl Rule for PreferStringRaw {
                 AstKind::Directive(_) => {
                     return;
                 }
+
                 AstKind::ImportDeclaration(decl) => {
                     if string_literal.span == decl.source.span {
                         return;
                     }
                 }
+
                 AstKind::ExportNamedDeclaration(decl) => {
                     if let Some(source) = &decl.source {
                         if string_literal.span == source.span {
@@ -91,11 +96,13 @@ impl Rule for PreferStringRaw {
                         }
                     }
                 }
+
                 AstKind::ExportAllDeclaration(decl) => {
                     if string_literal.span == decl.source.span {
                         return;
                     }
                 }
+
                 AstKind::ObjectProperty(prop) => {
                     let PropertyKey::StringLiteral(key) = &prop.key else {
                         return;
@@ -105,6 +112,7 @@ impl Rule for PreferStringRaw {
                         return;
                     }
                 }
+
                 AstKind::PropertyKey(_) => {
                     if let Some(AstKind::ObjectProperty(prop)) =
                         ctx.nodes().parent_node(parent_node.id()).map(AstNode::kind)
@@ -118,6 +126,7 @@ impl Rule for PreferStringRaw {
                         }
                     }
                 }
+
                 AstKind::JSXAttributeItem(attr) => {
                     let Some(attr) = attr.as_attribute() else {
                         return;
@@ -131,6 +140,7 @@ impl Rule for PreferStringRaw {
                         return;
                     }
                 }
+
                 AstKind::TSEnumMember(member) => {
                     if member.span == string_literal.span {
                         return;
@@ -144,6 +154,7 @@ impl Rule for PreferStringRaw {
                         return;
                     }
                 }
+
                 _ => {}
             }
         }
@@ -151,6 +162,7 @@ impl Rule for PreferStringRaw {
         let raw = ctx.source_range(string_literal.span);
 
         let last_char_index = raw.len() - 2;
+
         if raw.char_at(Some(last_char_index as f64)) == Some('\\') {
             return;
         }
@@ -173,6 +185,7 @@ impl Rule for PreferStringRaw {
 
         ctx.diagnostic_with_fix(prefer_string_raw(string_literal.span), |fixer| {
             let end = string_literal.span.start;
+
             let before = ctx.source_range(oxc_span::Span::new(0, end));
 
             let mut fix = format!("String.raw`{unescaped}`");

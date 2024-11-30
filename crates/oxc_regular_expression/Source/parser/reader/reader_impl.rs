@@ -34,6 +34,7 @@ impl<'a> Reader<'a> {
                 },
             )
             .parse()?;
+
             body
         } else {
             parse_regexp_literal(source_text, span_offset, unicode_mode)
@@ -59,18 +60,21 @@ impl<'a> Reader<'a> {
 
     pub fn rewind(&mut self, checkpoint: (usize, u32)) {
         self.index = checkpoint.0;
+
         self.offset = checkpoint.1;
     }
 
     pub fn advance(&mut self) {
         if let Some(unit) = self.units.get(self.index) {
             self.offset = unit.span.end;
+
             self.index += 1;
         }
     }
 
     fn peek_nth(&self, n: usize) -> Option<u32> {
         let nth = self.index + n;
+
         self.units.get(nth).map(|cp| cp.value)
     }
 
@@ -85,17 +89,22 @@ impl<'a> Reader<'a> {
     pub fn eat(&mut self, ch: char) -> bool {
         if self.peek_nth(0) == Some(ch as u32) {
             self.advance();
+
             return true;
         }
+
         false
     }
 
     pub fn eat2(&mut self, ch: char, ch2: char) -> bool {
         if self.peek_nth(0) == Some(ch as u32) && self.peek_nth(1) == Some(ch2 as u32) {
             self.advance();
+
             self.advance();
+
             return true;
         }
+
         false
     }
 
@@ -105,10 +114,14 @@ impl<'a> Reader<'a> {
             && self.peek_nth(2) == Some(ch3 as u32)
         {
             self.advance();
+
             self.advance();
+
             self.advance();
+
             return true;
         }
+
         false
     }
 
@@ -119,11 +132,16 @@ impl<'a> Reader<'a> {
             && self.peek_nth(3) == Some(ch4 as u32)
         {
             self.advance();
+
             self.advance();
+
             self.advance();
+
             self.advance();
+
             return true;
         }
+
         false
     }
 

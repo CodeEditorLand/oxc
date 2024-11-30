@@ -21,16 +21,20 @@ impl<'a> SeparatedList<'a> for ObjectPatternProperties<'a> {
 	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		if p.cur_kind() == Kind::Dot3 {
 			let rest = p.parse_rest_element()?;
+
 			if !matches!(&rest.argument.kind, BindingPatternKind::BindingIdentifier(_)) {
 				p.error(diagnostics::invalid_binding_rest_element(rest.argument.span()));
 			}
+
 			if let Some(r) = self.rest.replace(rest) {
 				p.error(diagnostics::binding_rest_element_last(r.span));
 			}
 		} else {
 			let prop = p.parse_binding_property()?;
+
 			self.elements.push(prop);
 		}
+
 		Ok(())
 	}
 }
@@ -55,15 +59,18 @@ impl<'a> SeparatedList<'a> for ArrayPatternList<'a> {
 			},
 			Kind::Dot3 => {
 				let rest = p.parse_rest_element()?;
+
 				if let Some(r) = self.rest.replace(rest) {
 					p.error(diagnostics::binding_rest_element_last(r.span));
 				}
 			},
 			_ => {
 				let element = p.parse_binding_pattern_with_initializer()?;
+
 				self.elements.push(Some(element));
 			},
 		}
+
 		Ok(())
 	}
 }
@@ -87,12 +94,17 @@ impl<'a> SeparatedList<'a> for FormalParameterList<'a> {
 	// Section 15.1 Parameter Lists
 	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		let span = p.start_span();
+
 		p.eat_decorators()?;
 
 		let modifiers = p.parse_class_element_modifiers(true);
+
 		let accessibility = modifiers.accessibility();
+
 		let readonly = modifiers.contains_readonly();
+
 		let r#override = modifiers.contains_override();
+
 		p.verify_modifiers(
 			&modifiers,
 			ModifierFlags::ACCESSIBILITY
@@ -104,17 +116,21 @@ impl<'a> SeparatedList<'a> for FormalParameterList<'a> {
 		match p.cur_kind() {
 			Kind::This if p.ts_enabled() => {
 				let this_parameter = p.parse_ts_this_parameter()?;
+
 				self.this_param.replace(this_parameter);
 			},
 			Kind::Dot3 => {
 				let rest = p.parse_rest_element()?;
+
 				if let Some(r) = self.rest.replace(rest) {
 					p.error(diagnostics::rest_parameter_last(r.span));
 				}
 			},
 			_ => {
 				let pattern = p.parse_binding_pattern_with_initializer()?;
+
 				let decorators = p.consume_decorators();
+
 				let formal_parameter = p.ast.formal_parameter(
 					p.end_span(span),
 					pattern,
@@ -123,6 +139,7 @@ impl<'a> SeparatedList<'a> for FormalParameterList<'a> {
 					r#override,
 					decorators,
 				);
+
 				self.elements.push(formal_parameter);
 			},
 		}

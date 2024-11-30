@@ -19,6 +19,7 @@ fn no_empty_function_diagnostic<S: AsRef<str>>(
         Some(name) => Cow::Owned(format!("Unexpected empty {fn_kind} `{}`", name.as_ref())),
         None => Cow::Borrowed("Unexpected empty function"),
     };
+
     OxcDiagnostic::warn(message)
         .with_help(format!("Consider removing this {fn_kind} or adding logic to it."))
         .with_label(span)
@@ -65,8 +66,10 @@ impl Rule for NoEmptyFunction {
         let AstKind::FunctionBody(fb) = node.kind() else {
             return;
         };
+
         if fb.is_empty() && !ctx.semantic().has_comments_between(fb.span) {
             let (kind, fn_name) = get_function_name_and_kind(node, ctx);
+
             ctx.diagnostic(no_empty_function_diagnostic(fb.span, kind, fn_name));
         }
     }
@@ -81,20 +84,26 @@ fn get_function_name_and_kind<'a>(
             AstKind::Function(f) => {
                 if let Some(name) = f.name() {
                     let kind = if f.generator { "generator function" } else { "function" };
+
                     return (kind, Some(name.into()));
                 }
+
                 continue;
             }
+
             AstKind::ArrowFunctionExpression(_) => {
                 continue;
             }
+
             AstKind::IdentifierName(IdentifierName { name, .. })
             | AstKind::IdentifierReference(IdentifierReference { name, .. }) => {
                 return ("function", Some(Cow::Borrowed(name.as_str())));
             }
+
             AstKind::PropertyDefinition(prop) => {
                 return ("function", prop.key.name());
             }
+
             AstKind::MethodDefinition(method) => {
                 let kind = match method.kind {
                     MethodDefinitionKind::Method => {
@@ -104,15 +113,19 @@ fn get_function_name_and_kind<'a>(
                             "method"
                         }
                     }
+
                     MethodDefinitionKind::Get => "getter",
                     MethodDefinitionKind::Set => "setter",
                     MethodDefinitionKind::Constructor => "constructor",
                 };
+
                 return (kind, method.key.name());
             }
+
             AstKind::VariableDeclarator(decl) => {
                 return ("function", decl.id.get_identifier().map(Into::into));
             }
+
             _ => return ("function", None),
         }
     }
@@ -160,27 +173,34 @@ fn test() {
             constructor() {
                 // empty
             }
+
             foo() {
                 // empty
             }
             *foo1() {
                 // empty
             }
+
             get bar() {
                 // empty
             }
+
             set bar(value) {
                 // empty
             }
+
             static bar() {
                 // empty
             }
+
             static *barr() {
                 // empty
             }
+
             static get baz() {
                 // empty
             }
+
             static set baz(value) {
                 // empty
             }
@@ -206,20 +226,27 @@ fn test() {
         class A {
             constructor() {
             }
+
             foo() {
             }
             *foo1() {
             }
+
             get fooz() {
             }
+
             set fooz(value) {
             }
+
             static bar() {
             }
+
             static *barr() {
             }
+
             static get baz() {
             }
+
             static set baz(value) {
             }
         }

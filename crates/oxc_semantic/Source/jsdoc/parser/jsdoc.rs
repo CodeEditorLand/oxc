@@ -37,14 +37,18 @@ impl<'a> JSDoc<'a> {
 #[cfg(test)]
 mod test {
     use oxc_allocator::Allocator;
+
     use oxc_parser::Parser;
+
     use oxc_span::SourceType;
 
     use crate::{Semantic, SemanticBuilder};
 
     fn build_semantic<'a>(allocator: &'a Allocator, source_text: &'a str) -> Semantic<'a> {
         let source_type = SourceType::default();
+
         let ret = Parser::new(allocator, source_text, source_type).parse();
+
         SemanticBuilder::new().with_build_jsdoc(true).build(&ret.program).semantic
     }
 
@@ -71,10 +75,13 @@ line2
             ),
         ] {
             let allocator = Allocator::default();
+
             let semantic = build_semantic(&allocator, source_text);
+
             let mut jsdocs = semantic.jsdoc().iter_all();
 
             let jsdoc = jsdocs.next().unwrap();
+
             assert_eq!(jsdoc.span.source_text(source_text), span_text);
         }
     }
@@ -171,13 +178,19 @@ line2
             ),
         ] {
             let allocator = Allocator::default();
+
             let semantic = build_semantic(&allocator, source_text);
+
             let mut jsdocs = semantic.jsdoc().iter_all();
 
             let jsdoc = jsdocs.next().unwrap();
+
             let (comment, tags) = (jsdoc.comment(), jsdoc.tags());
+
             assert_eq!(comment.parsed(), parsed);
+
             assert_eq!(comment.span.source_text(source_text), span_text);
+
             assert_eq!(tags.len(), tag_len);
         }
     }
@@ -185,6 +198,7 @@ line2
     #[test]
     fn parses_practical() {
         let allocator = Allocator::default();
+
         let semantic = build_semantic(
             &allocator,
             "/**
@@ -194,34 +208,49 @@ line2
               */
             ",
         );
+
         let jsdoc = semantic.jsdoc().iter_all().next().unwrap();
 
         assert_eq!(jsdoc.comment().parsed(), "");
+
         let mut tags = jsdoc.tags().iter();
+
         assert_eq!(tags.len(), 3);
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "typedef");
+
         let (type_part, name_part, comment_part) = tag.type_name_comment();
+
         let (type_part, name_part) = (type_part.unwrap(), name_part.unwrap());
+
         assert_eq!(
             (type_part.parsed(), name_part.parsed(), comment_part.parsed()),
             ("Object", "User", "- a User account".to_string())
         );
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "property");
+
         let (type_part, name_part, comment_part) = tag.type_name_comment();
+
         let (type_part, name_part) = (type_part.unwrap(), name_part.unwrap());
+
         assert_eq!(
             (type_part.parsed(), name_part.parsed(), comment_part.parsed()),
             ("string", "displayName", "- the name used to show the user".to_string())
         );
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "property");
+
         let (type_part, name_part, comment_part) = tag.type_name_comment();
+
         let (type_part, name_part) = (type_part.unwrap(), name_part.unwrap());
+
         assert_eq!(
             (type_part.parsed(), name_part.parsed(), comment_part.parsed()),
             ("number", "id", "- a unique id".to_string())
@@ -231,6 +260,7 @@ line2
     #[test]
     fn parses_practical_with_multibyte() {
         let allocator = Allocator::default();
+
         let semantic = build_semantic(
             &allocator,
             "/**
@@ -245,65 +275,92 @@ line2
                   * @returns flattened data
                   */",
         );
+
         let jsdoc = semantic.jsdoc().iter_all().next().unwrap();
 
         assert_eq!(jsdoc.comment().parsed(), "flat tree data on expanded state");
+
         let mut tags = jsdoc.tags().iter();
+
         assert_eq!(tags.len(), 7);
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "export");
+
         assert_eq!(tag.comment().parsed(), "");
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "template");
+
         assert_eq!(tag.comment().parsed(), "T");
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "param");
+
         let (type_part, name_part, comment_part) = tag.type_name_comment();
+
         let (type_part, name_part) = (type_part.unwrap(), name_part.unwrap());
+
         assert_eq!(
             (type_part.parsed(), name_part.parsed(), comment_part.parsed()),
             ("*", "data", ": table data".to_string())
         );
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "param");
+
         let (type_part, name_part, comment_part) = tag.type_name_comment();
+
         let (type_part, name_part) = (type_part.unwrap(), name_part.unwrap());
+
         assert_eq!(
             (type_part.parsed(), name_part.parsed(), comment_part.parsed()),
             ("string", "childrenColumnName", ": 指定树形结构的列名".to_string())
         );
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "param");
+
         let (type_part, name_part, comment_part) = tag.type_name_comment();
+
         let (type_part, name_part) = (type_part.unwrap(), name_part.unwrap());
+
         assert_eq!(
             (type_part.parsed(), name_part.parsed(), comment_part.parsed()),
             ("Set<Key>", "expandedKeys", ": 展开的行对应的keys".to_string())
         );
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "param");
+
         let (type_part, name_part, comment_part) = tag.type_name_comment();
+
         let (type_part, name_part) = (type_part.unwrap(), name_part.unwrap());
+
         assert_eq!(
             (type_part.parsed(), name_part.parsed(), comment_part.parsed()),
             ("GetRowKey<T>", "getRowKey", ": 获取当前rowKey的方法".to_string())
         );
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "returns");
+
         let (type_part, comment_part) = tag.type_comment();
+
         assert_eq!((type_part, comment_part.parsed()), (None, "flattened data".to_string()));
     }
 
     #[test]
     fn parses_with_backticks() {
         let allocator = Allocator::default();
+
         let semantic = build_semantic(
             &allocator,
             "
@@ -318,12 +375,15 @@ line2
              */
             ",
         );
+
         let jsdoc = semantic.jsdoc().iter_all().next().unwrap();
 
         let mut tags = jsdoc.tags().iter();
+
         assert_eq!(tags.len(), 1);
 
         let tag = tags.next().unwrap();
+
         assert_eq!(tag.kind.parsed(), "example");
     }
 }

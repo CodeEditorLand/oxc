@@ -81,6 +81,7 @@ impl Rule for NoConditionalExpect {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
     let node = possible_jest_node.node;
+
     if let AstKind::CallExpression(call_expr) = node.kind() {
         let Some(jest_fn_call) = parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
@@ -92,6 +93,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
 
         // When first visiting the node, we assume it's not in a conditional block.
         let has_condition_or_catch = check_parents(node, &mut visited, InConditional(false), ctx);
+
         if matches!(has_condition_or_catch, InConditional(true)) {
             ctx.diagnostic(no_conditional_expect_diagnostic(jest_fn_call.head.span));
         }
@@ -132,6 +134,7 @@ fn check_parents<'a>(
                 }
             }
         }
+
         AstKind::CatchClause(_)
         | AstKind::SwitchStatement(_)
         | AstKind::IfStatement(_)
@@ -140,11 +143,14 @@ fn check_parents<'a>(
         | AstKind::LogicalExpression(_) => {
             return check_parents(parent_node, visited, InConditional(true), ctx);
         }
+
         AstKind::Function(function) => {
             let Some(ident) = &function.id else {
                 return InConditional(false);
             };
+
             let symbol_table = ctx.semantic().symbols();
+
             let symbol_id = ident.symbol_id();
 
             // Consider cases like:
@@ -159,10 +165,13 @@ fn check_parents<'a>(
                 let Some(parent) = ctx.nodes().parent_node(reference.node_id()) else {
                     return false;
                 };
+
                 matches!(check_parents(parent, visited, in_conditional, ctx), InConditional(true))
             });
+
             return InConditional(boolean);
         }
+
         AstKind::Program(_) => return InConditional(false),
         _ => {}
     }
@@ -195,6 +204,7 @@ fn test() {
             "
                 it('foo', () => {
                     process.env.FAIL && setNum(1);
+
                     expect(num).toBe(2);
                 });
             ",
@@ -204,9 +214,12 @@ fn test() {
             "
                 function getValue() {
                     let num = 2;
+
                     process.env.FAIL && setNum(1);
+
                     return num;
                 }
+
                 it('foo', () => {
                 expect(getValue()).toBe(2);
                 });
@@ -217,6 +230,7 @@ fn test() {
             "
                 it('foo', () => {
                     process.env.FAIL || setNum(1);
+
                     expect(num).toBe(2);
                 });
             ",
@@ -226,9 +240,12 @@ fn test() {
             "
                 function getValue() {
                     let num = 2;
+
                     process.env.FAIL || setNum(1);
+
                     return num;
                 }
+
                 it('foo', () => {
                     expect(getValue()).toBe(2);
                 });
@@ -239,6 +256,7 @@ fn test() {
             "
                 it('foo', () => {
                     const num = process.env.FAIL ? 1 : 2;
+
                     expect(num).toBe(2);
                 });
             ",
@@ -264,9 +282,12 @@ fn test() {
                     switch(process.env.FAIL) {
                         case true:
                         num = 1;
+
                         break;
+
                         case false:
                         num = 2;
+
                         break;
                     }
 
@@ -281,6 +302,7 @@ fn test() {
                     switch(process.env.FAIL) {
                     case true:
                         return 1;
+
                     case false:
                         return 2;
                     }
@@ -312,6 +334,7 @@ fn test() {
                     if(process.env.FAIL) {
                         return 1;
                     }
+
                     return 2;
                 }
 
@@ -360,6 +383,7 @@ fn test() {
                         expect(something).toHaveBeenCalled();
                     }
                 }
+
                 it('foo', getValue);
             ",
             None,
@@ -601,6 +625,7 @@ fn test() {
                     switch(something) {
                     case 'value':
                         break;
+
                     default:
                         expect(something).toHaveBeenCalled();
                     }
@@ -614,6 +639,7 @@ fn test() {
                     switch(something) {
                     case 'value':
                         expect(something).toHaveBeenCalled();
+
                     default:
                         break;
                     }
@@ -627,6 +653,7 @@ fn test() {
                     switch(something) {
                     case 'value':
                         expect(something).toHaveBeenCalled();
+
                     default:
                         break;
                     }
@@ -640,6 +667,7 @@ fn test() {
                     switch(something) {
                     case 'value':
                         expect(something).toHaveBeenCalled();
+
                     default:
                         break;
                     }
@@ -653,6 +681,7 @@ fn test() {
                     switch(something) {
                     case 'value':
                         break;
+
                     default:
                         expect(something).toHaveBeenCalled();
                     }
@@ -974,6 +1003,7 @@ fn test() {
             function getValue() {
                 something || expect(something).toHaveBeenCalled();
             }
+
             it('foo', getValue);
         ",
         "
@@ -996,6 +1026,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest.into_iter().map(|x| (x, None)));
+
     fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
 
     Tester::new(NoConditionalExpect::NAME, pass, fail)

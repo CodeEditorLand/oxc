@@ -30,11 +30,16 @@ impl<'a> Collapse {
 		// Collect all the consecutive ranges that contain joinable vars.
 		// This is required because Rust prevents in-place vec mutation.
 		let mut ranges = vec![];
+
 		let mut range = 0..0;
+
 		let mut i = 1usize;
+
 		let mut capacity = 0usize;
+
 		for window in stmts.windows(2) {
 			let [prev, cur] = window else { unreachable!() };
+
 			if let (
 				Statement::VariableDeclaration(cur_decl),
 				Statement::VariableDeclaration(prev_decl),
@@ -49,18 +54,24 @@ impl<'a> Collapse {
 				{
 					break;
 				}
+
 				if cur_decl.kind == prev_decl.kind {
 					if i - 1 != range.end {
 						range.start = i - 1;
 					}
+
 					range.end = i + 1;
 				}
 			}
+
 			if (range.end != i || i == stmts.len() - 1) && range.start < range.end {
 				capacity += range.end - range.start - 1;
+
 				ranges.push(range.clone());
+
 				range = 0..0;
 			}
+
 			i += 1;
 		}
 
@@ -70,6 +81,7 @@ impl<'a> Collapse {
 
 		// Reconstruct the stmts array by joining consecutive ranges
 		let mut new_stmts = ctx.ast.vec_with_capacity(stmts.len() - capacity);
+
 		for (i, stmt) in stmts.drain(..).enumerate() {
 			if i > 0 && ranges.iter().any(|range| range.contains(&(i - 1)) && range.contains(&i)) {
 				if let Statement::VariableDeclaration(prev_decl) = new_stmts.last_mut().unwrap() {

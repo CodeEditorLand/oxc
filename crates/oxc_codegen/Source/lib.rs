@@ -179,7 +179,9 @@ impl<'a> Codegen<'a> {
     #[must_use]
     pub fn with_options(mut self, options: CodegenOptions) -> Self {
         self.quote = if options.single_quote { b'\'' } else { b'"' };
+
         self.options = options;
+
         self
     }
 
@@ -187,6 +189,7 @@ impl<'a> Codegen<'a> {
     #[must_use]
     pub fn with_mangler(mut self, mangler: Option<Mangler>) -> Self {
         self.mangler = mangler;
+
         self
     }
 
@@ -196,18 +199,27 @@ impl<'a> Codegen<'a> {
     #[must_use]
     pub fn build(mut self, program: &Program<'a>) -> CodegenReturn {
         self.quote = if self.options.single_quote { b'\'' } else { b'"' };
+
         self.source_text = program.source_text;
+
         self.code.reserve(program.source_text.len());
+
         if self.options.print_comments() {
             self.build_comments(&program.comments);
         }
+
         if let Some(path) = &self.options.source_map_path {
             self.sourcemap_builder = Some(SourcemapBuilder::new(path, program.source_text));
         }
+
         program.print(&mut self, Context::default());
+
         self.try_print_eof_legal_comments();
+
         let code = self.code.into_string();
+
         let map = self.sourcemap_builder.map(SourcemapBuilder::into_sourcemap);
+
         CodegenReturn { code, map, legal_comments: self.legal_comments }
     }
 
@@ -302,6 +314,7 @@ impl<'a> Codegen<'a> {
             } else {
                 is_identifier_part(self.last_char().unwrap())
             };
+
             if !is_identifier {
                 return;
             }
@@ -339,9 +352,12 @@ impl<'a> Codegen<'a> {
         if self.options.minify {
             return;
         }
+
         if self.print_next_indent_as_space {
             self.print_hard_space();
+
             self.print_next_indent_as_space = false;
+
             return;
         }
         // SAFETY: this iterator only yields tabs, which are always valid ASCII characters.
@@ -363,6 +379,7 @@ impl<'a> Codegen<'a> {
     fn print_semicolon_if_needed(&mut self) {
         if self.needs_semicolon {
             self.print_semicolon();
+
             self.needs_semicolon = false;
         }
     }
@@ -385,37 +402,52 @@ impl<'a> Codegen<'a> {
     fn print_sequence<T: Gen>(&mut self, items: &[T], ctx: Context) {
         for item in items {
             item.print(self, ctx);
+
             self.print_comma();
         }
     }
 
     fn print_curly_braces<F: FnOnce(&mut Self)>(&mut self, span: Span, single_line: bool, op: F) {
         self.add_source_mapping(span);
+
         self.print_ascii_byte(b'{');
+
         if !single_line {
             self.print_soft_newline();
+
             self.indent();
         }
+
         op(self);
+
         if !single_line {
             self.dedent();
+
             self.print_indent();
         }
+
         self.add_source_mapping_end(span);
+
         self.print_ascii_byte(b'}');
     }
 
     fn print_block_start(&mut self, span: Span) {
         self.add_source_mapping(span);
+
         self.print_ascii_byte(b'{');
+
         self.print_soft_newline();
+
         self.indent();
     }
 
     fn print_block_end(&mut self, span: Span) {
         self.dedent();
+
         self.print_indent();
+
         self.add_source_mapping_end(span);
+
         self.print_ascii_byte(b'}');
     }
 
@@ -423,18 +455,25 @@ impl<'a> Codegen<'a> {
         match stmt {
             Statement::BlockStatement(stmt) => {
                 self.print_soft_space();
+
                 self.print_block_statement(stmt, ctx);
+
                 self.print_soft_newline();
             }
+
             Statement::EmptyStatement(_) => {
                 self.print_semicolon();
+
                 self.print_soft_newline();
             }
+
             stmt => {
                 if need_space && self.options.minify {
                     self.print_hard_space();
                 }
+
                 self.print_next_indent_as_space = true;
+
                 stmt.print(self, ctx);
             }
         }
@@ -444,9 +483,11 @@ impl<'a> Codegen<'a> {
         self.print_curly_braces(stmt.span, stmt.body.is_empty(), |p| {
             for stmt in &stmt.body {
                 p.print_semicolon_if_needed();
+
                 stmt.print(p, ctx);
             }
         });
+
         self.needs_semicolon = false;
     }
 
@@ -467,8 +508,10 @@ impl<'a> Codegen<'a> {
         for (index, item) in items.iter().enumerate() {
             if index != 0 {
                 self.print_comma();
+
                 self.print_soft_space();
             }
+
             item.print(self, ctx);
         }
     }
@@ -478,13 +521,17 @@ impl<'a> Codegen<'a> {
             if index != 0 {
                 self.print_comma();
             }
+
             if self.has_non_annotation_comment(item.span().start) {
                 self.print_expr_comments(item.span().start);
+
                 self.print_indent();
             } else {
                 self.print_soft_newline();
+
                 self.print_indent();
             }
+
             item.print(self, ctx);
         }
     }
@@ -493,8 +540,10 @@ impl<'a> Codegen<'a> {
         for (index, item) in items.iter().enumerate() {
             if index != 0 {
                 self.print_comma();
+
                 self.print_soft_space();
             }
+
             item.print_expr(self, precedence, ctx);
         }
     }
@@ -508,6 +557,7 @@ impl<'a> Codegen<'a> {
                 }
             }
         }
+
         reference.name.as_str()
     }
 
@@ -519,6 +569,7 @@ impl<'a> Codegen<'a> {
                 return unsafe { std::mem::transmute_copy(&name) };
             }
         }
+
         ident.name.as_str()
     }
 
@@ -526,6 +577,7 @@ impl<'a> Codegen<'a> {
         if self.prev_op_end != self.code.len() {
             return;
         }
+
         let Some(prev) = self.prev_op else { return };
         // "+ + y" => "+ +y"
         // "+ ++ y" => "+ ++y"
@@ -535,14 +587,23 @@ impl<'a> Codegen<'a> {
         // "-- >" => "-- >"
         // "< ! --" => "<! --"
         let bin_op_add = Operator::Binary(BinaryOperator::Addition);
+
         let bin_op_sub = Operator::Binary(BinaryOperator::Subtraction);
+
         let un_op_pos = Operator::Unary(UnaryOperator::UnaryPlus);
+
         let un_op_pre_inc = Operator::Update(UpdateOperator::Increment);
+
         let un_op_neg = Operator::Unary(UnaryOperator::UnaryNegation);
+
         let un_op_pre_dec = Operator::Update(UpdateOperator::Decrement);
+
         let un_op_post_dec = Operator::Update(UpdateOperator::Decrement);
+
         let bin_op_gt = Operator::Binary(BinaryOperator::GreaterThan);
+
         let un_op_not = Operator::Unary(UnaryOperator::LogicalNot);
+
         if ((prev == bin_op_add || prev == un_op_pos)
             && (next == bin_op_add || next == un_op_pos || next == un_op_pre_inc))
             || ((prev == bin_op_sub || prev == un_op_neg)
@@ -560,12 +621,16 @@ impl<'a> Codegen<'a> {
 
     fn print_non_negative_float(&mut self, num: f64) {
         use oxc_syntax::number::ToJsString;
+
         if num < 1000.0 && num.fract() == 0.0 {
             self.print_str(&num.to_js_string());
+
             self.need_space_before_dot = self.code_len();
         } else {
             let s = Self::get_minified_number(num);
+
             self.print_str(&s);
+
             if !s.bytes().any(|b| matches!(b, b'.' | b'e' | b'x')) {
                 self.need_space_before_dot = self.code_len();
             }
@@ -577,7 +642,9 @@ impl<'a> Codegen<'a> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_possible_wrap)]
     fn get_minified_number(num: f64) -> String {
         use cow_utils::CowUtils;
+
         use oxc_syntax::number::ToJsString;
+
         if num < 1000.0 && num.fract() == 0.0 {
             return num.to_js_string();
         }
@@ -601,6 +668,7 @@ impl<'a> Codegen<'a> {
             if let Some((i, _)) = s[1..].bytes().enumerate().find(|(_, c)| *c != b'0') {
                 let len = i + 1; // `+1` to include the dot.
                 let digits = &s[len..];
+
                 candidates.push(format!("{digits}e-{}", digits.len() + len - 1));
             }
         } else if s.ends_with('0') {
@@ -626,7 +694,9 @@ impl<'a> Codegen<'a> {
         if wrap {
             self.print_ascii_byte(b'(');
         }
+
         f(self);
+
         if wrap {
             self.print_ascii_byte(b')');
         }
@@ -635,7 +705,9 @@ impl<'a> Codegen<'a> {
     #[inline]
     fn wrap_quote<F: FnMut(&mut Self, u8)>(&mut self, mut f: F) {
         self.print_ascii_byte(self.quote);
+
         f(self, self.quote);
+
         self.print_ascii_byte(self.quote);
     }
 
@@ -643,6 +715,7 @@ impl<'a> Codegen<'a> {
         if span == SPAN {
             return;
         }
+
         if let Some(sourcemap_builder) = self.sourcemap_builder.as_mut() {
             sourcemap_builder.add_source_mapping(self.code.as_bytes(), span.start, None);
         }
@@ -652,6 +725,7 @@ impl<'a> Codegen<'a> {
         if span == SPAN {
             return;
         }
+
         if let Some(sourcemap_builder) = self.sourcemap_builder.as_mut() {
             sourcemap_builder.add_source_mapping(self.code.as_bytes(), span.end, None);
         }
@@ -661,6 +735,7 @@ impl<'a> Codegen<'a> {
         if span == SPAN {
             return;
         }
+
         if let Some(sourcemap_builder) = self.sourcemap_builder.as_mut() {
             sourcemap_builder.add_source_mapping_for_name(self.code.as_bytes(), span, name);
         }

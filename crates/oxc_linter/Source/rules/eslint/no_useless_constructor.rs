@@ -102,9 +102,11 @@ impl Rule for NoUselessConstructor {
         let AstKind::MethodDefinition(constructor) = node.kind() else {
             return;
         };
+
         if !constructor.kind.is_constructor() {
             return;
         }
+
         let Some(body) = &constructor.value.body else {
             return;
         };
@@ -121,11 +123,15 @@ impl Rule for NoUselessConstructor {
             .ancestors(node.id())
             .skip(1)
             .find(|parent| matches!(parent.kind(), AstKind::Class(_)));
+
         debug_assert!(class.is_some(), "Found a constructor outside of a class definition");
+
         let Some(class_node) = class else {
             return;
         };
+
         let AstKind::Class(class) = class_node.kind() else { unreachable!() };
+
         if class.declare {
             return;
         }
@@ -175,6 +181,7 @@ fn lint_redundant_super_call<'a>(
     };
 
     let params = &*constructor.value.params;
+
     let super_args = &super_call.arguments;
 
     if is_only_simple_params(params)
@@ -199,7 +206,9 @@ fn is_single_super_call<'f, 'a: 'f>(body: &'f FunctionBody<'a>) -> Option<&'f Ca
     if body.statements.len() != 1 {
         return None;
     }
+
     let Statement::ExpressionStatement(expr) = &body.statements[0] else { return None };
+
     let Expression::CallExpression(call) = &expr.expression else { return None };
 
     matches!(call.callee, Expression::Super(_)).then(|| call.as_ref())
@@ -222,9 +231,12 @@ fn is_passing_through<'a>(
     if constructor_params.parameters_count() != super_args.len() {
         return false;
     }
+
     if let Some(rest) = &constructor_params.rest {
         let all_but_last = super_args.iter().take(super_args.len() - 1);
+
         let Some(last_arg) = super_args.iter().next_back() else { return false };
+
         constructor_params
             .items
             .iter()
@@ -244,6 +256,7 @@ fn is_matching_identifier_pair<'a>(param: &BindingPattern<'a>, arg: &Argument<'a
         (BindingPatternKind::BindingIdentifier(param), Argument::Identifier(arg)) => {
             param.name == arg.name
         }
+
         _ => false,
     }
 }
@@ -252,6 +265,7 @@ fn is_matching_rest_spread_pair<'a>(rest: &BindingRestElement<'a>, arg: &Argumen
         (BindingPatternKind::BindingIdentifier(param), Argument::SpreadElement(spread)) => {
             matches!(&spread.argument, Expression::Identifier(ident) if param.name == ident.name)
         }
+
         _ => false,
     }
 }
@@ -290,12 +304,15 @@ fn test() {
         "
         class A {
             protected foo: number | undefined;
+
             constructor(foo?: number) {
                 this.foo = foo;
             }
         }
+
         class B extends A {
             protected foo: number;
+
             constructor(foo: number = 0) {
                 super(foo);
             }
@@ -304,10 +321,12 @@ fn test() {
         "
         class A {
             protected foo: number | undefined;
+
             constructor(foo?: number) {
                 this.foo = foo;
             }
         }
+
         class B extends A {
             constructor(foo?: number) {
                 super(foo ?? 0);

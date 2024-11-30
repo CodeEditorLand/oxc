@@ -22,22 +22,30 @@ pub fn as_endpoint_registration<'a, 'n>(
     node: &'n AstKind<'a>,
 ) -> Option<(Option<Atom<'a>>, &'n [Argument<'a>])> {
     let call = node.as_call_expression()?;
+
     let callee = call.callee.as_member_expression()?;
+
     let method_name = callee.static_property_name()?;
+
     if !ROUTER_HANDLER_METHOD_NAMES.contains(method_name) {
         return None;
     }
+
     if call.arguments.is_empty() {
         return None;
     }
+
     let first = call.arguments[0].as_expression()?;
+
     match first {
         Expression::StringLiteral(path) => {
             Some((Some(path.value.clone()), &call.arguments.as_slice()[1..]))
         }
+
         Expression::TemplateLiteral(template) if template.is_no_substitution_template() => {
             Some((template.quasi().clone(), &call.arguments.as_slice()[1..]))
         }
+
         _ => Some((None, call.arguments.as_slice())),
     }
 }
@@ -60,6 +68,7 @@ pub fn is_endpoint_handler(maybe_handler: &Expression<'_>) -> bool {
     if params.rest.is_some() {
         return false;
     }
+
     match params.items.as_slice() {
         [req] => is_req_param(req),
         [req, res] => is_req_param(req) && is_res_param(res),
@@ -71,6 +80,7 @@ pub fn is_endpoint_handler(maybe_handler: &Expression<'_>) -> bool {
         [err, req, res, next] => {
             is_error_param(err) && is_req_param(req) && is_res_param(res) && is_next_param(next)
         }
+
         _ => false,
     }
 }

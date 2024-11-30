@@ -43,6 +43,7 @@ impl TypeDef {
 
     pub fn generates_derive(&self, derive: &str) -> bool {
         let generated_derives = self.generated_derives();
+
         generated_derives.iter().any(|it| it == derive)
     }
 

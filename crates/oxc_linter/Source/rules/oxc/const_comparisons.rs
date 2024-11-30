@@ -110,6 +110,7 @@ impl Rule for ConstComparisons {
 
             if left_cmp_op.direction() == right_cmp_op.direction() {
                 let lhs_str = left_span.source_text(ctx.source_text());
+
                 let rhs_str = logical_expr.right.span().source_text(ctx.source_text());
                 // We already know that either side of `&&` has no effect,
                 // but emit a different error message depending on which side it is
@@ -120,8 +121,11 @@ impl Rule for ConstComparisons {
                 }
             } else if !comparison_is_possible(left_cmp_op.direction(), ordering) {
                 let lhs_str = left_const_expr.span.source_text(ctx.source_text());
+
                 let rhs_str = right_const_expr.span.source_text(ctx.source_text());
+
                 let expr_str = left_expr.span().source_text(ctx.source_text());
+
                 let diagnostic_note = match ordering {
                     Ordering::Less => format!(
                         "since `{lhs_str}` < `{rhs_str}`, the expression evaluates to false for any value of `{expr_str}`"
@@ -131,6 +135,7 @@ impl Rule for ConstComparisons {
                             "`{expr_str}` cannot simultaneously be greater than and less than `{lhs_str}`"
                         )
                     }
+
                     Ordering::Greater => format!(
                         "since `{lhs_str}` > `{rhs_str}`, the expression evaluates to false for any value of `{expr_str}`"
                     ),
@@ -172,6 +177,7 @@ fn comparison_to_const<'a, 'b>(
                 (_, Expression::NumericLiteral(lit)) => {
                     return Some((cmp_op, &bin_expr.left, lit, bin_expr.span));
                 }
+
                 _ => {}
             }
         }
@@ -188,9 +194,12 @@ fn all_and_comparison_to_const<'a, 'b>(
             if logical_expr.operator == LogicalOperator::And =>
         {
             let left_iter = all_and_comparison_to_const(logical_expr.left.without_parentheses());
+
             let right_iter = all_and_comparison_to_const(logical_expr.right.without_parentheses());
+
             Box::new(left_iter.chain(right_iter))
         }
+
         _ => {
             if let Some((cmp_op, expr, lit, span)) = comparison_to_const(expr) {
                 Box::new(std::iter::once((cmp_op, expr, lit, span)))

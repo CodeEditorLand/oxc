@@ -68,15 +68,19 @@ impl CompilerInterface for Driver {
 
     fn after_parse(&mut self, parser_return: &mut ParserReturn) -> ControlFlow<()> {
         let ParserReturn { program, panicked, errors, .. } = parser_return;
+
         self.panicked = *panicked;
+
         if self.check_comments(&program.comments) {
             return ControlFlow::Break(());
         }
+
         if (errors.is_empty() || !*panicked) && program.source_type.is_unambiguous() {
             self.errors.push(OxcDiagnostic::error("SourceType must not be unambiguous."));
         }
         // Make sure serialization doesn't crash; also for code coverage.
         let _serializer = program.serializer();
+
         ControlFlow::Continue(())
     }
 
@@ -88,10 +92,13 @@ impl CompilerInterface for Driver {
         if self.check_semantic {
             if let Some(errors) = check_semantic_ids(program) {
                 self.errors.extend(errors);
+
                 return ControlFlow::Break(());
             }
         };
+
         self.check_regular_expressions(&ret.semantic);
+
         ControlFlow::Continue(())
     }
 
@@ -107,9 +114,11 @@ impl CompilerInterface for Driver {
                 program,
             ) {
                 self.errors.extend(errors);
+
                 return ControlFlow::Break(());
             }
         }
+
         ControlFlow::Continue(())
     }
 
@@ -130,9 +139,13 @@ impl Driver {
         source_type: SourceType,
     ) -> TestResult {
         self.run(source_text, source_type);
+
         let printed1 = self.printed.clone();
+
         self.run(&printed1, source_type);
+
         let printed2 = self.printed.clone();
+
         if printed1 == printed2 {
             TestResult::Passed
         } else {
@@ -142,47 +155,58 @@ impl Driver {
 
     pub fn run(&mut self, source_text: &str, source_type: SourceType) {
         let path = self.path.clone();
+
         self.compile(source_text, source_type, &path);
     }
 
     fn check_comments(&mut self, comments: &[Comment]) -> bool {
         let mut uniq: FxHashSet<Span> = FxHashSet::default();
+
         for comment in comments {
             if !uniq.insert(comment.span) {
                 self.errors
                     .push(OxcDiagnostic::error("Duplicate Comment").with_label(comment.span));
+
                 return true;
             }
         }
+
         false
     }
 
     /// Idempotency test for printing regular expressions.
     fn check_regular_expressions(&mut self, semantic: &Semantic<'_>) {
         let allocator = Allocator::default();
+
         for literal in semantic.nodes().iter().filter_map(|node| node.kind().as_reg_exp_literal()) {
             let Some(pattern) = literal.regex.pattern.as_pattern() else {
                 continue;
             };
+
             let printed1 = pattern.to_string();
+
             let flags = literal.regex.flags.to_string();
+
             match LiteralParser::new(&allocator, &printed1, Some(&flags), Options::default())
                 .parse()
             {
                 Ok(pattern2) => {
                     let printed2 = pattern2.to_string();
+
                     if !pattern2.content_eq(pattern) {
                         self.errors.push(OxcDiagnostic::error(format!(
                         "Regular Expression content mismatch for `{}`: `{pattern}` == `{pattern2}`",
                         literal.span.source_text(semantic.source_text())
                         )));
                     }
+
                     if printed1 != printed2 {
                         self.errors.push(OxcDiagnostic::error(format!(
                             "Regular Expression mismatch: {printed1} {printed2}"
                         )));
                     }
                 }
+
                 Err(error) => {
                     self.errors.push(OxcDiagnostic::error(format!(
                         "Failed to re-parse `{}`, printed as `/{printed1}/{flags}`, {error}",

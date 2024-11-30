@@ -94,11 +94,13 @@ impl<'a> Group<'a> {
 
     pub fn with_break(mut self, yes: bool) -> Self {
         self.should_break = yes;
+
         self
     }
 
     pub fn with_id(mut self, id: GroupId) -> Self {
         self.id = Some(id);
+
         self
     }
 }
@@ -115,6 +117,7 @@ impl<'a> IndentIfBreak<'a> {
 
     pub fn with_id(mut self, id: GroupId) -> Self {
         self.group_id = Some(id);
+
         self
     }
 }
@@ -131,6 +134,7 @@ impl<'a> Fill<'a> {
 
     pub fn drain_out_pair(&mut self) -> (Option<Doc<'a>>, Option<Doc<'a>>) {
         let content = if self.parts.len() > 0 { Some(self.parts.remove(0)) } else { None };
+
         let whitespace = if self.parts.len() > 0 { Some(self.parts.remove(0)) } else { None };
         (content, whitespace)
     }

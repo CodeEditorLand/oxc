@@ -73,6 +73,7 @@ enum ModuleType {
 impl Rule for NoDuplicateImports {
     fn from_configuration(value: serde_json::Value) -> Self {
         let Some(value) = value.get(0) else { return Self { include_exports: false } };
+
         Self {
             include_exports: value
                 .get("includeExports")
@@ -83,19 +84,24 @@ impl Rule for NoDuplicateImports {
 
     fn run_once(&self, ctx: &LintContext) {
         let module_record = ctx.module_record();
+
         let mut import_map: FxHashMap<&CompactStr, Vec<(ImportType, Span, ModuleType)>> =
             FxHashMap::default();
+
         let mut current_span: Option<Span> = None;
+
         let mut side_effect_import_map: FxHashMap<&CompactStr, Vec<Span>> = FxHashMap::default();
 
         for entry in &module_record.import_entries {
             let source = entry.module_request.name();
+
             let span = entry.module_request.span();
 
             let same_statement = if let Some(curr_span) = current_span {
                 curr_span == span
             } else {
                 current_span = Some(span);
+
                 true
             };
 
@@ -107,12 +113,14 @@ impl Rule for NoDuplicateImports {
 
             if let Some(existing) = import_map.get(source) {
                 let can_merge = can_merge_imports(&import_type, existing, same_statement);
+
                 if can_merge {
                     ctx.diagnostic(no_duplicate_imports_diagnostic(
                         source,
                         span,
                         existing.first().unwrap().1,
                     ));
+
                     continue;
                 }
             }
@@ -136,6 +144,7 @@ impl Rule for NoDuplicateImports {
             if spans.len() > 1 {
                 for span in spans {
                     let i = spans.iter().position(|s| s == span).unwrap();
+
                     if i > 0 {
                         ctx.diagnostic(no_duplicate_imports_diagnostic(
                             source,
@@ -151,6 +160,7 @@ impl Rule for NoDuplicateImports {
             for entry in &module_record.star_export_entries {
                 if let Some(module_request) = &entry.module_request {
                     let source = module_request.name();
+
                     let span = entry.span;
 
                     if entry.import_name.is_all_but_default() {
@@ -164,24 +174,30 @@ impl Rule for NoDuplicateImports {
                                     span,
                                     existing.first().unwrap().1,
                                 ));
+
                                 continue;
                             }
                         }
+
                         if let Some(existing) = side_effect_import_map.get(source) {
                             ctx.diagnostic(no_duplicate_exports_diagnostic(
                                 source,
                                 span,
                                 *existing.first().unwrap(),
                             ));
+
                             continue;
                         }
+
                         import_map.entry(source).or_default().push((
                             ImportType::AllButDefault,
                             span,
                             ModuleType::Export,
                         ));
+
                         continue;
                     }
+
                     if let Some(existing) = import_map.get(source) {
                         if existing.iter().any(|(t, _, _)| {
                             matches!(t, ImportType::Named | ImportType::SideEffect)
@@ -191,6 +207,7 @@ impl Rule for NoDuplicateImports {
                                 span,
                                 existing.first().unwrap().1,
                             ));
+
                             continue;
                         }
                     }
@@ -206,6 +223,7 @@ impl Rule for NoDuplicateImports {
             for entry in &module_record.indirect_export_entries {
                 if let Some(module_request) = &entry.module_request {
                     let source = module_request.name();
+
                     let span = entry.span;
 
                     if let Some(existing) = import_map.get(source) {
@@ -218,6 +236,7 @@ impl Rule for NoDuplicateImports {
                                     span,
                                     existing.first().unwrap().1,
                                 ));
+
                                 continue;
                             }
 
@@ -237,9 +256,11 @@ impl Rule for NoDuplicateImports {
                                 span,
                                 existing.first().unwrap().1,
                             ));
+
                             continue;
                         }
                     }
+
                     import_map.entry(source).or_default().push((
                         ImportType::Named,
                         span,
@@ -261,11 +282,15 @@ fn can_merge_imports(
     }
 
     let namespace = existing.iter().find(|(t, _, _)| matches!(t, ImportType::Namespace));
+
     let named = existing.iter().find(|(t, _, _)| matches!(t, ImportType::Named));
+
     let default = existing.iter().find(|(t, _, _)| matches!(t, ImportType::Default));
 
     let has_namespace = namespace.is_some();
+
     let has_named = named.is_some();
+
     let has_default = default.is_some();
 
     if matches!(current_type, ImportType::Named) && has_named {
@@ -286,6 +311,7 @@ fn can_merge_imports(
         if has_namespace {
             return true;
         }
+
         if has_default && !same_statement {
             return true;
         }
@@ -295,9 +321,11 @@ fn can_merge_imports(
         if has_default {
             return true;
         }
+
         if has_named && !same_statement {
             return true;
         }
+
         if has_namespace {
             return true;
         }
@@ -317,6 +345,7 @@ fn test() {
     let pass = vec![
         (
             r#"import os from "os";
+
     		import fs from "fs";"#,
             None,
         ),
@@ -326,71 +355,85 @@ fn test() {
         (r#"import "foo""#, None),
         (
             r#"import os from "os";
+
         export { something } from "os";"#,
             None,
         ),
         (
             r#"import * as bar from "os";
+
         import { baz } from "os";"#,
             None,
         ),
         (
             r#"import foo, * as bar from "os";
+
         import { baz } from "os";"#,
             None,
         ),
         (
             r#"import foo, { bar } from "os";
+
         import * as baz from "os";"#,
             None,
         ),
         (
             r#"import os from "os";
+
         export { hello } from "hello";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import os from "os";
+
         export * from "hello";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import os from "os";
+
         export { hello as hi } from "hello";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import os from "os";
+
         export default function(){};"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import { merge } from "lodash-es";
+
         export { merge as lodashMerge }"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"export { something } from "os";
+
         export * as os from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import { something } from "os";
+
         export * as os from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import * as os from "os";
+
         export { something } from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import os from "os";
+
         export * from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"export { something } from "os";
+
         export * from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
@@ -399,11 +442,13 @@ fn test() {
     let fail = vec![
         (
             r#"import "fs";
+
         import "fs""#,
             None,
         ),
         (
             r#"import { merge } from "lodash-es";
+
         import { find } from "lodash-es";"#,
             None,
         ),
@@ -442,26 +487,31 @@ fn test() {
         ),
         (
             r#"import os from "os";
+
         export * as os from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"export * as os from "os";
+
         import os from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import * as modns from "mod";
+
         export * as  modns from "mod";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"export * from "os";
+
         export * from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),
         (
             r#"import "os";
+
         export * from "os";"#,
             Some(serde_json::json!([{ "includeExports": true }])),
         ),

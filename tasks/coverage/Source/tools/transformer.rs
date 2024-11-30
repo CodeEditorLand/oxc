@@ -27,15 +27,19 @@ fn get_result(
         codegen: true,
         ..Driver::default()
     };
+
     let transformed1 = {
         driver.run(source_text, source_type);
+
         driver.printed.clone()
     };
     // Second pass with only JavaScript syntax
     let transformed2 = {
         driver.run(&transformed1, SourceType::default().with_module(source_type.is_module()));
+
         driver.printed.clone()
     };
+
     if transformed1 == transformed2 {
         TestResult::Passed
     } else {
@@ -82,9 +86,13 @@ impl Case for TransformerTest262Case {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let source_type = SourceType::default().with_module(is_module);
+
         let result = get_result(source_text, source_type, self.path(), None);
+
         self.base.set_result(result);
     }
 }
@@ -116,8 +124,11 @@ impl Case for TransformerBabelCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type, self.path(), None);
+
         self.base.set_result(result);
     }
 }
@@ -149,25 +160,33 @@ impl Case for TransformerTypeScriptCase {
 
     fn execute(&mut self, source_type: SourceType) -> TestResult {
         let mut options = get_default_transformer_options();
+
         let mut source_type = source_type;
         // handle @jsx: react, `react` of behavior is match babel following options
         if self.base.settings.jsx.last().is_some_and(|jsx| jsx == "react") {
             source_type = source_type.with_module(true);
+
             options.jsx.runtime = JsxRuntime::Classic;
         }
+
         get_result(self.base.code(), source_type, self.path(), Some(options))
     }
 
     fn run(&mut self) {
         let units = self.base.units.clone();
+
         for unit in units {
             self.base.code = unit.content.to_string();
+
             let result = self.execute(unit.source_type);
+
             if result != TestResult::Passed {
                 self.base.result = result;
+
                 return;
             }
         }
+
         self.base.result = TestResult::Passed;
     }
 }
@@ -199,6 +218,7 @@ impl Case for TransformerMiscCase {
 
     fn run(&mut self) {
         let result = get_result(self.base.code(), self.base.source_type(), self.path(), None);
+
         self.base.set_result(result);
     }
 }

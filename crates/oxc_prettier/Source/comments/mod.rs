@@ -24,6 +24,7 @@ impl Comment {
 
     pub fn with_line_suffix(mut self, yes: bool) -> Self {
         self.has_line_suffix = yes;
+
         self
     }
 
@@ -31,9 +32,11 @@ impl Comment {
         if flags.contains(CommentFlags::Block) && !self.is_block {
             return false;
         }
+
         if flags.contains(CommentFlags::Line) && self.is_block {
             return false;
         }
+
         true
     }
 }
@@ -46,6 +49,7 @@ pub struct DanglingCommentsPrintOptions {
 impl DanglingCommentsPrintOptions {
     pub(crate) fn with_ident(mut self, ident: bool) -> Self {
         self.ident = ident;
+
         self
     }
 }

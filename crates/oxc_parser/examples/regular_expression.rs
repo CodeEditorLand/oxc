@@ -12,22 +12,29 @@ use oxc_span::SourceType;
 fn main() {
     // 1. Get the file content and parse
     let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
+
     let path = Path::new(&name);
 
     let source_text: Arc<str> = Arc::from(fs::read_to_string(path).unwrap());
+
     let source_type = SourceType::from_path(path).unwrap();
 
     let allocator = Allocator::default();
+
     let options = ParseOptions { parse_regular_expression: true, ..ParseOptions::default() };
 
     let parser_ret =
         Parser::new(&allocator, source_text.as_ref(), source_type).with_options(options).parse();
+
     if !parser_ret.errors.is_empty() {
         println!("Parsing failed:");
+
         for error in parser_ret.errors {
             let error = error.with_source_code(Arc::clone(&source_text));
+
             println!("{error:?}");
         }
+
         return;
     }
 
@@ -51,8 +58,10 @@ impl<'a> Visit<'a> for RegularExpressionVisitor {
                 println!("🍀 {}", re.span.source_text(self.source_text.as_ref()));
 
                 println!("{re:#?}");
+
                 println!();
             }
+
             AstKind::NewExpression(new_expr)
                 if new_expr
                     .callee
@@ -85,12 +94,17 @@ impl<'a> Visit<'a> for RegularExpressionVisitor {
 
                 if let Err(error) = parsed {
                     let error = error.with_source_code(Arc::clone(&self.source_text));
+
                     println!("{error:?}");
+
                     return;
                 }
+
                 println!("{parsed:#?}");
+
                 println!();
             }
+
             _ => {}
         }
     }

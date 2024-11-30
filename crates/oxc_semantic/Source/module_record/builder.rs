@@ -23,6 +23,7 @@ impl ModuleRecordBuilder {
         for stmt in &program.body {
             if let Some(module_decl) = stmt.as_module_declaration() {
                 self.module_record.not_esm = false;
+
                 self.visit_module_declaration(module_decl);
             }
         }
@@ -92,6 +93,7 @@ impl ModuleRecordBuilder {
                         .find(|entry| entry.local_name.name() == name.name()),
                     _ => None,
                 };
+
                 match found_import_entry {
                     // i. If ee.[[LocalName]] is not an element of importedBoundNames, then
                     None => {
@@ -125,12 +127,14 @@ impl ModuleRecordBuilder {
                                         ImportImportName::Default(_) => {
                                             ExportImportName::Name(ie.local_name.clone())
                                         }
+
                                         ImportImportName::NamespaceObject => unreachable!(),
                                     },
                                     export_name: ee.export_name.clone(),
                                     span: ee.span,
                                     ..ExportEntry::default()
                                 };
+
                                 self.append_indirect_export_entry(export_entry);
                             }
                         }
@@ -140,6 +144,7 @@ impl ModuleRecordBuilder {
             } else if ee.import_name.is_all_but_default() {
                 // i. Assert: ee.[[ExportName]] is null.
                 debug_assert!(ee.export_name.is_null());
+
                 self.append_star_export_entry(ee);
                 // c. Else,
             } else {
@@ -154,15 +159,19 @@ impl ModuleRecordBuilder {
             ModuleDeclaration::ImportDeclaration(import_decl) => {
                 self.visit_import_declaration(import_decl);
             }
+
             ModuleDeclaration::ExportAllDeclaration(export_all_decl) => {
                 self.visit_export_all_declaration(export_all_decl);
             }
+
             ModuleDeclaration::ExportDefaultDeclaration(export_default_decl) => {
                 self.visit_export_default_declaration(export_default_decl);
             }
+
             ModuleDeclaration::ExportNamedDeclaration(export_named_decl) => {
                 self.visit_export_named_declaration(export_named_decl);
             }
+
             ModuleDeclaration::TSExportAssignment(_)
             | ModuleDeclaration::TSNamespaceExportDeclaration(_) => { /* noop */ }
         }
@@ -193,6 +202,7 @@ impl ModuleRecordBuilder {
                         decl.import_kind.is_type(),
                     ),
                 };
+
                 self.add_import_entry(ImportEntry {
                     module_request: module_request.clone(),
                     import_name,
@@ -201,6 +211,7 @@ impl ModuleRecordBuilder {
                 });
             }
         }
+
         self.add_module_request(
             &module_request,
             decl.import_kind.is_type(),
@@ -210,6 +221,7 @@ impl ModuleRecordBuilder {
 
     fn visit_export_all_declaration(&mut self, decl: &ExportAllDeclaration) {
         let module_request = NameSpan::new(decl.source.value.to_compact_str(), decl.source.span);
+
         let export_entry = ExportEntry {
             module_request: Some(module_request.clone()),
             import_name: decl
@@ -225,10 +237,13 @@ impl ModuleRecordBuilder {
             span: decl.span,
             ..ExportEntry::default()
         };
+
         self.add_export_entry(export_entry);
+
         if let Some(exported_name) = &decl.exported {
             self.add_export_binding(exported_name.name().to_compact_str(), exported_name.span());
         }
+
         self.add_module_request(
             &module_request,
             decl.export_kind.is_type(),
@@ -241,32 +256,39 @@ impl ModuleRecordBuilder {
         if decl.declaration.is_typescript_syntax() {
             return;
         }
+
         let exported_name = &decl.exported;
+
         let exported_name_span = decl.exported.span();
+
         self.add_default_export(exported_name_span);
 
         let local_name = match &decl.declaration {
             ExportDefaultDeclarationKind::Identifier(ident) => {
                 ExportLocalName::Default(NameSpan::new(ident.name.to_compact_str(), ident.span))
             }
+
             ExportDefaultDeclarationKind::FunctionDeclaration(func) => {
                 func.id.as_ref().map_or_else(
                     || ExportLocalName::Null,
                     |id| ExportLocalName::Name(NameSpan::new(id.name.to_compact_str(), id.span)),
                 )
             }
+
             ExportDefaultDeclarationKind::ClassDeclaration(class) => class.id.as_ref().map_or_else(
                 || ExportLocalName::Null,
                 |id| ExportLocalName::Name(NameSpan::new(id.name.to_compact_str(), id.span)),
             ),
             _ => ExportLocalName::Null,
         };
+
         let export_entry = ExportEntry {
             export_name: ExportExportName::Default(exported_name.span()),
             local_name,
             span: decl.declaration.span(),
             ..ExportEntry::default()
         };
+
         self.add_export_entry(export_entry);
     }
 
@@ -296,8 +318,10 @@ impl ModuleRecordBuilder {
             decl.bound_names(&mut |ident| {
                 let export_name =
                     ExportExportName::Name(NameSpan::new(ident.name.to_compact_str(), ident.span));
+
                 let local_name =
                     ExportLocalName::Name(NameSpan::new(ident.name.to_compact_str(), ident.span));
+
                 let export_entry = ExportEntry {
                     span: decl.span(),
                     module_request: module_request.clone(),
@@ -305,7 +329,9 @@ impl ModuleRecordBuilder {
                     export_name,
                     local_name,
                 };
+
                 self.add_export_entry(export_entry);
+
                 self.add_export_binding(ident.name.to_compact_str(), ident.span);
             });
         }
@@ -315,6 +341,7 @@ impl ModuleRecordBuilder {
                 specifier.exported.name().to_compact_str(),
                 specifier.exported.span(),
             ));
+
             let import_name = if module_request.is_some() {
                 ExportImportName::Name(NameSpan::new(
                     specifier.local.name().to_compact_str(),
@@ -323,6 +350,7 @@ impl ModuleRecordBuilder {
             } else {
                 ExportImportName::Null
             };
+
             let local_name = if module_request.is_some() {
                 ExportLocalName::Null
             } else {
@@ -331,6 +359,7 @@ impl ModuleRecordBuilder {
                     specifier.local.span(),
                 ))
             };
+
             let export_entry = ExportEntry {
                 span: specifier.span,
                 module_request: module_request.clone(),
@@ -338,7 +367,9 @@ impl ModuleRecordBuilder {
                 export_name,
                 local_name,
             };
+
             self.add_export_entry(export_entry);
+
             self.add_export_binding(
                 specifier.exported.name().to_compact_str(),
                 specifier.exported.span(),

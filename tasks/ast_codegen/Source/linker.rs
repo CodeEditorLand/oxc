@@ -10,6 +10,7 @@ pub trait Linker<'a> {
 
 pub trait Unresolved {
     fn unresolved(&self) -> bool;
+
     fn resolved(&self) -> bool {
         !self.unresolved()
     }
@@ -53,6 +54,7 @@ impl<'a> Linker<'a> for CodegenCtx {
                 unresolved.push_front(next);
             }
         }
+
         Ok(&())
     }
 }
@@ -79,18 +81,24 @@ pub fn linker(ty: &mut RType, ctx: &CodegenCtx) -> Result<bool> {
         .map(|it| match it {
             Inherit::Unlinked(ref sup) => {
                 let linkee = ctx.find(&Cow::Owned(sup.to_string())).unwrap();
+
                 let linkee = linkee.borrow();
+
                 let inherit_value = format!(r#""{}""#, linkee.ident().unwrap());
+
                 let variants = match &*linkee {
                     RType::Enum(enum_) => {
                         if enum_.meta.inherits.unresolved() {
                             return Err(it);
                         }
+
                         enum_.item.variants.clone().into_iter().map(|mut v| {
                             v.attrs = vec![parse_quote!(#[inherit = #inherit_value])];
+
                             v
                         })
                     }
+
                     _ => {
                         panic!(
                             "invalid inheritance, you can only inherit from enums and in \
@@ -98,15 +106,19 @@ pub fn linker(ty: &mut RType, ctx: &CodegenCtx) -> Result<bool> {
                         )
                     }
                 };
+
                 ty.item.variants.extend(variants.clone());
+
                 Ok(Inherit::Linked {
                     super_: linkee.as_type().unwrap(),
                     variants: variants.collect(),
                 })
             }
+
             Inherit::Linked { .. } => Ok(it),
         })
         .collect::<Vec<std::result::Result<Inherit, Inherit>>>();
+
     let unresolved = inherits.iter().any(std::result::Result::is_err);
 
     ty.meta.inherits = inherits.into_iter().map(|it| it.unwrap_or_else(|it| it)).collect();

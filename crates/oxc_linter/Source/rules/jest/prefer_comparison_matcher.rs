@@ -72,27 +72,34 @@ impl Rule for PreferComparisonMatcher {
 impl PreferComparisonMatcher {
     fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(parse_expect_jest_fn) =
             parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
         };
+
         let Some(matcher) = parse_expect_jest_fn.matcher() else {
             return;
         };
+
         let Some(parent_node) = parse_expect_jest_fn.head.parent else {
             return;
         };
+
         let Expression::CallExpression(parent_call_expr) = parent_node else {
             return;
         };
+
         let Some(Argument::BinaryExpression(binary_expr)) = parent_call_expr.arguments.first()
         else {
             return;
         };
+
         let Some(first_matcher_arg) =
             parse_expect_jest_fn.args.first().and_then(Argument::as_expression)
         else {
@@ -105,13 +112,17 @@ impl PreferComparisonMatcher {
 
         let has_not_modifier =
             parse_expect_jest_fn.modifiers().iter().any(|modifier| modifier.is_name_equal("not"));
+
         let Expression::BooleanLiteral(matcher_arg_value) =
             first_matcher_arg.get_inner_expression()
         else {
             return;
         };
+
         let negated = matcher_arg_value.value == has_not_modifier;
+
         let preferred_matcher = Self::determine_matcher(binary_expr.operator, negated);
+
         let Some(prefer_matcher_name) = preferred_matcher else {
             return;
         };
@@ -124,8 +135,10 @@ impl PreferComparisonMatcher {
             // and the same as `arg_span_end`.
             let call_span_end =
                 fixer.source_range(Span::new(binary_expr.span.end, parent_call_expr.span.end));
+
             let arg_span_end =
                 fixer.source_range(Span::new(matcher_arg_value.span.end, call_expr.span.end));
+
             let content = Self::building_code(
                 binary_expr,
                 call_span_end,
@@ -135,6 +148,7 @@ impl PreferComparisonMatcher {
                 prefer_matcher_name,
                 fixer,
             );
+
             fixer.replace(call_expr.span, content)
         });
     }
@@ -184,11 +198,17 @@ impl PreferComparisonMatcher {
         fixer: RuleFixer<'_, 'a>,
     ) -> String {
         let mut content = fixer.codegen();
+
         content.print_str(local_name);
+
         content.print_ascii_byte(b'(');
+
         content.print_expression(&binary_expr.left);
+
         content.print_str(call_span_end);
+
         content.print_ascii_byte(b'.');
+
         for modifier in modifiers {
             let Some(modifier_name) = modifier.name() else {
                 continue;
@@ -196,13 +216,19 @@ impl PreferComparisonMatcher {
 
             if !modifier_name.eq("not") {
                 content.print_str(&modifier_name);
+
                 content.print_ascii_byte(b'.');
             }
         }
+
         content.print_str(prefer_matcher_name);
+
         content.print_ascii_byte(b'(');
+
         content.print_expression(&binary_expr.right);
+
         content.print_str(arg_span_end);
+
         content.into_source_text()
     }
 }
@@ -216,10 +242,12 @@ fn test() {
         generate_fn: fn(operator: &str, matcher: &str) -> Vec<String>,
     ) -> Vec<String> {
         let equality_matchers = vec!["toBe", "toEqual", "toStrictEqual"];
+
         let mut cases: Vec<String> = Vec::new();
 
         for equality_matcher in &equality_matchers {
             let case = generate_fn(operator, equality_matcher);
+
             cases.extend(case);
         }
 
@@ -351,6 +379,7 @@ fn test() {
         preferred_matcher_when_negated: &str,
     ) -> Vec<(String, String)> {
         let equality_matchers = vec!["toBe", "toEqual", "toStrictEqual"];
+
         let mut cases: Vec<(String, String)> = Vec::new();
 
         for equality_matcher in &equality_matchers {
@@ -360,6 +389,7 @@ fn test() {
                 preferred_matcher,
                 preferred_matcher_when_negated,
             );
+
             cases.extend(case);
         }
 
@@ -367,8 +397,11 @@ fn test() {
     }
 
     let valid_greater_cases = generate_test_cases(">", generate_valid_string_literal_cases);
+
     let valid_less_cases = generate_test_cases("<", generate_valid_string_literal_cases);
+
     let valid_greater_equal_cases = generate_test_cases(">=", generate_valid_string_literal_cases);
+
     let valid_less_equal_cases = generate_test_cases("<=", generate_valid_string_literal_cases);
 
     let mut pass = vec![
@@ -424,9 +457,13 @@ fn test() {
     }
 
     let invalid_greater_cases = generate_test_cases(">", generate_fail_cases);
+
     let invalid_less_cases = generate_test_cases("<", generate_fail_cases);
+
     let invalid_greater_equal_cases = generate_test_cases(">=", generate_fail_cases);
+
     let invalid_less_equal_cases = generate_test_cases("<=", generate_fail_cases);
+
     let mut fail = vec![];
 
     for case in &invalid_greater_cases {
@@ -446,10 +483,14 @@ fn test() {
     }
 
     let fix_greater_cases = building_fix_cases(">", "toBeGreaterThan", "toBeLessThanOrEqual");
+
     let fix_less_cases = building_fix_cases("<", "toBeLessThan", "toBeGreaterThanOrEqual");
+
     let fix_greater_equal_cases =
         building_fix_cases(">=", "toBeGreaterThanOrEqual", "toBeLessThan");
+
     let fix_less_equal_cases = building_fix_cases("<=", "toBeLessThanOrEqual", "toBeGreaterThan");
+
     let mut fix = vec![];
 
     for (case, fixer) in &fix_greater_cases {

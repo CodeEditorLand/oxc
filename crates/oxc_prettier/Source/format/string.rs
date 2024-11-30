@@ -7,6 +7,7 @@ fn get_preferred_quote(raw: &str, prefer_single_quote: bool) -> char {
         if prefer_single_quote { ('\'', '"') } else { ('"', '\'') };
 
     let mut preferred_quote_count = 0;
+
     let mut alternate_quote_count = 0;
 
     for character in raw.chars() {
@@ -26,10 +27,13 @@ fn get_preferred_quote(raw: &str, prefer_single_quote: bool) -> char {
 
 fn make_string<'a>(p: &Prettier<'a>, raw_text: &str, enclosing_quote: char) -> String<'a> {
     let other_quote = if enclosing_quote == '"' { '\'' } else { '"' };
+
     let mut result = String::new_in(p.allocator);
+
     result.push(enclosing_quote);
 
     let mut chars = raw_text.chars().peekable();
+
     while let Some(c) = chars.next() {
         match c {
             '\\' => {
@@ -37,21 +41,27 @@ fn make_string<'a>(p: &Prettier<'a>, raw_text: &str, enclosing_quote: char) -> S
                     if next_char != other_quote {
                         result.push('\\');
                     }
+
                     result.push(next_char);
+
                     chars.next();
                 } else {
                     result.push('\\');
                 }
             }
+
             _ if c == enclosing_quote => {
                 result.push('\\');
+
                 result.push(c);
             }
+
             _ => result.push(c),
         }
     }
 
     result.push(enclosing_quote);
+
     result
 }
 
@@ -61,5 +71,6 @@ pub(super) fn print_string<'a>(
     prefer_single_quote: bool,
 ) -> &'a str {
     let enclosing_quote = get_preferred_quote(raw_text, prefer_single_quote);
+
     make_string(p, raw_text, enclosing_quote).into_bump_str()
 }

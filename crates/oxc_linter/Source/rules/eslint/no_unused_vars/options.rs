@@ -281,6 +281,7 @@ where
             Self::Default => {
                 Cow::Owned(format!(" Unused {symbol_kind_plural} should start with a '_'."))
             }
+
             Self::Some(reg) => {
                 Cow::Owned(format!(" Unused {symbol_kind_plural} should match /{reg}/."))
             }
@@ -406,9 +407,12 @@ where
     A: AsRef<str>,
 {
     let expected = expected.into_iter();
+
     let initial_capacity = expected.size_hint().0 * 8;
+
     let expected =
         expected.fold(String::with_capacity(initial_capacity), |acc, s| acc + " or " + s);
+
     let actual = actual.as_ref();
 
     invalid_option_error(option_name, format!("Expected {expected}, got {actual}"))
@@ -419,6 +423,7 @@ fn invalid_option_error<M: Into<Cow<'static, str>>>(
     message: M,
 ) -> OxcDiagnostic {
     let message = message.into();
+
     OxcDiagnostic::error(format!("Invalid '{option_name}' option for no-unused-vars: {message}"))
 }
 
@@ -501,13 +506,17 @@ fn parse_unicode_rule(value: Option<&Value>, name: &str) -> IgnorePattern<Regex>
 
 impl TryFrom<Value> for NoUnusedVarsOptions {
     type Error = OxcDiagnostic;
+
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         let Some(config) = value.get(0) else { return Ok(Self::default()) };
+
         match config {
             Value::String(vars) => {
                 let vars: VarsOption = vars.try_into()?;
+
                 Ok(Self { vars, ..Default::default() })
             }
+
             Value::Object(config) => {
                 let vars = config
                     .get("vars")
@@ -580,6 +589,7 @@ impl TryFrom<Value> for NoUnusedVarsOptions {
                     report_used_ignore_pattern,
                 })
             }
+
             Value::Null => Ok(Self::default()),
             _ => Err(OxcDiagnostic::error(
                 "Invalid 'vars' option for no-unused-vars: Expected a string or an object, got {config}"
@@ -597,24 +607,36 @@ mod tests {
     #[test]
     fn test_options_default() {
         let rule = NoUnusedVarsOptions::default();
+
         assert_eq!(rule.vars, VarsOption::All);
+
         assert!(rule.vars_ignore_pattern.is_default());
+
         assert_eq!(rule.args, ArgsOption::AfterUsed);
+
         assert!(rule.args_ignore_pattern.is_default());
+
         assert_eq!(rule.caught_errors, CaughtErrors::all());
+
         assert!(rule.caught_errors_ignore_pattern.is_none());
+
         assert!(rule.destructured_array_ignore_pattern.is_none());
+
         assert!(!rule.ignore_rest_siblings);
+
         assert!(!rule.ignore_class_with_static_init_block);
+
         assert!(!rule.report_used_ignore_pattern);
     }
 
     #[test]
     fn test_options_from_string() {
         let rule: NoUnusedVarsOptions = json!(["all"]).try_into().unwrap();
+
         assert_eq!(rule.vars, VarsOption::All);
 
         let rule: NoUnusedVarsOptions = json!(["local"]).try_into().unwrap();
+
         assert_eq!(rule.vars, VarsOption::Local);
     }
 
@@ -637,14 +659,23 @@ mod tests {
         .unwrap();
 
         assert_eq!(rule.vars, VarsOption::Local);
+
         assert!(rule.vars_ignore_pattern.is_default());
+
         assert_eq!(rule.args, ArgsOption::All);
+
         assert!(rule.args_ignore_pattern.is_default());
+
         assert_eq!(rule.caught_errors, CaughtErrors::all());
+
         assert!(rule.caught_errors_ignore_pattern.is_default());
+
         assert!(rule.destructured_array_ignore_pattern.is_default());
+
         assert!(rule.ignore_rest_siblings);
+
         assert!(!rule.ignore_class_with_static_init_block);
+
         assert!(rule.report_used_ignore_pattern);
     }
 
@@ -659,6 +690,7 @@ mod tests {
         .unwrap();
         // option object provided, no default varsIgnorePattern
         assert!(rule.vars_ignore_pattern.is_none());
+
         assert!(rule.args_ignore_pattern.is_default());
 
         let rule: NoUnusedVarsOptions = json!([
@@ -671,6 +703,7 @@ mod tests {
 
         // option object provided, no default argsIgnorePattern
         assert!(matches!(rule.vars_ignore_pattern, IgnorePattern::Default));
+
         assert!(rule.args_ignore_pattern.is_none());
     }
 
@@ -683,6 +716,7 @@ mod tests {
         ])
         .try_into()
         .unwrap();
+
         assert!(rule.ignore_rest_siblings);
         // an options object is provided, so no default pattern is set.
         assert!(rule.vars_ignore_pattern.is_none());
@@ -691,17 +725,24 @@ mod tests {
     #[test]
     fn test_options_from_null() {
         let option_values = [json!(null), json!([null])];
+
         for json in option_values {
             let opts = NoUnusedVarsOptions::try_from(json).unwrap();
+
             let default = NoUnusedVarsOptions::default();
+
             assert_eq!(opts.vars, default.vars);
+
             assert!(default.vars_ignore_pattern.is_default());
 
             assert_eq!(opts.args, default.args);
+
             assert!(default.args_ignore_pattern.is_default());
 
             assert_eq!(opts.caught_errors, default.caught_errors);
+
             assert!(opts.caught_errors_ignore_pattern.is_none());
+
             assert!(default.caught_errors_ignore_pattern.is_none());
 
             assert_eq!(opts.ignore_rest_siblings, default.ignore_rest_siblings);
@@ -711,10 +752,12 @@ mod tests {
     #[test]
     fn test_parse_unicode_regex() {
         let pat = json!("^[iI]gnore");
+
         parse_unicode_rule(Some(&pat), "varsIgnorePattern")
             .expect("json strings should get parsed into a regex");
 
         let pat = json!("^_");
+
         assert!(parse_unicode_rule(Some(&pat), "varsIgnorePattern").is_default());
     }
 
@@ -729,8 +772,10 @@ mod tests {
             json!([{ "vars": "invalid" }]),
             json!([{ "args": "invalid" }]),
         ];
+
         for options in invalid_options {
             let result: Result<NoUnusedVarsOptions, OxcDiagnostic> = options.try_into();
+
             assert!(result.is_err());
         }
     }

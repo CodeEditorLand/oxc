@@ -20,6 +20,7 @@ pub(super) fn print_assignment_expression<'a>(
     assignment_expr: &AssignmentExpression<'a>,
 ) -> Doc<'a> {
     let left_doc = assignment_expr.left.format(p);
+
     print_assignment(
         p,
         AssignmentLikeNode::AssignmentExpression(assignment_expr),
@@ -34,6 +35,7 @@ pub(super) fn print_variable_declarator<'a>(
     variable_declarator: &VariableDeclarator<'a>,
 ) -> Doc<'a> {
     let left_doc = variable_declarator.id.format(p);
+
     print_assignment(
         p,
         AssignmentLikeNode::VariableDeclarator(variable_declarator),
@@ -60,6 +62,7 @@ impl<'a, 'b> From<ClassMemberish<'a, 'b>> for AssignmentLikeNode<'a, 'b> {
             ClassMemberish::PropertyDefinition(property_def) => {
                 Self::PropertyDefinition(property_def)
             }
+
             ClassMemberish::AccessorProperty(accessor_prop) => {
                 Self::AccessorProperty(accessor_prop)
             }
@@ -83,6 +86,7 @@ pub(super) fn print_assignment<'a>(
         Layout::BreakAfterOperator => {
             group!(p, group!(p, left_doc), op, group!(p, indent!(p, line!(), right_doc)))
         }
+
         Layout::NeverBreakAfterOperator => {
             group!(p, group!(p, left_doc), op, space!(), group!(p, right_doc))
         }
@@ -92,18 +96,23 @@ pub(super) fn print_assignment<'a>(
 
             let after_op = {
                 let mut parts = p.vec();
+
                 parts.push(indent!(p, line!()));
+
                 Doc::Group(Group::new(parts).with_id(group_id))
             };
 
             let right_doc = {
                 let mut parts = p.vec();
+
                 parts.push(group!(p, right_doc));
+
                 Doc::IndentIfBreak(IndentIfBreak::new(parts).with_id(group_id))
             };
 
             group!(p, group!(p, left_doc), op, after_op, right_doc)
         }
+
         Layout::BreakLhs => {
             group!(p, left_doc, op, space!(), group!(p, right_doc))
         }
@@ -112,12 +121,15 @@ pub(super) fn print_assignment<'a>(
         Layout::Chain => {
             array!(p, group!(p, left_doc), op, line!(), right_doc)
         }
+
         Layout::ChainTail => {
             array!(p, group!(p, left_doc), op, indent!(p, line!(), right_doc))
         }
+
         Layout::ChainTailArrowChain => {
             array!(p, group!(p, left_doc), op, right_doc)
         }
+
         Layout::OnlyLeft => left_doc,
     }
 }
@@ -172,6 +184,7 @@ fn choose_layout<'a>(
                 }
             }
         }
+
         return Layout::ChainTail;
     }
 
@@ -247,6 +260,7 @@ fn is_complex_destructuring(expr: &AssignmentLikeNode) -> bool {
 
             false
         }
+
         AssignmentLikeNode::VariableDeclarator(variable_declarator) => {
             if let BindingPatternKind::ObjectPattern(object_pat) = &variable_declarator.id.kind {
                 if object_pat.properties.len() > 2
@@ -264,6 +278,7 @@ fn is_complex_destructuring(expr: &AssignmentLikeNode) -> bool {
 
             false
         }
+
         _ => false,
     }
 }
@@ -282,8 +297,10 @@ fn is_arrow_function_variable_declarator(expr: &AssignmentLikeNode) -> bool {
             if let Some(Expression::ArrowFunctionExpression(_)) = &variable_declarator.init {
                 return true;
             }
+
             false
         }
+
         AssignmentLikeNode::AssignmentExpression(_)
         | AssignmentLikeNode::PropertyDefinition(_)
         | AssignmentLikeNode::ObjectProperty(_)
@@ -325,11 +342,13 @@ fn should_break_after_operator<'a>(
                 Expression::LogicalExpression(_) | Expression::BinaryExpression(_)
             ) && !should_inline_logical_expression(&conditional_expr.test);
         }
+
         Expression::ClassExpression(class_expr) => {
             if class_expr.decorators.len() > 0 {
                 return true;
             }
         }
+
         _ => {}
     }
 
@@ -357,7 +376,9 @@ fn should_break_after_operator<'a>(
 
 fn is_poorly_breakable_member_or_call_chain<'a>(p: &Prettier<'a>, expr: &Expression<'a>) -> bool {
     let mut is_chain_expression = false;
+
     let mut is_ident_or_this_expr = false;
+
     let mut call_expressions = vec![];
 
     let mut expression = Some(expr);
@@ -367,18 +388,26 @@ fn is_poorly_breakable_member_or_call_chain<'a>(p: &Prettier<'a>, expr: &Express
             Expression::TSNonNullExpression(non_null_expr) => Some(&non_null_expr.expression),
             Expression::CallExpression(call_expr) => {
                 is_chain_expression = true;
+
                 let callee = &call_expr.callee;
+
                 call_expressions.push(call_expr);
+
                 Some(callee)
             }
+
             match_member_expression!(Expression) => {
                 is_chain_expression = true;
+
                 Some(node.to_member_expression().object())
             }
+
             Expression::Identifier(_) | Expression::ThisExpression(_) => {
                 is_ident_or_this_expr = true;
+
                 break;
             }
+
             _ => {
                 break;
             }

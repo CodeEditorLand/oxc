@@ -141,8 +141,11 @@ mod test {
             "bar": "writable",
             "baz": "off",
         });
+
         assert!(globals.is_enabled("foo"));
+
         assert!(globals.is_enabled("bar"));
+
         assert!(!globals.is_enabled("baz"));
     }
 
@@ -152,7 +155,9 @@ mod test {
             "foo": "readable",
             "bar": "writeable",
         });
+
         assert!(globals.is_enabled("foo"));
+
         assert!(globals.is_enabled("bar"));
     }
 
@@ -162,7 +167,9 @@ mod test {
             "foo": true,
             "bar": false,
         });
+
         assert!(globals.is_enabled("foo"));
+
         assert!(globals.is_enabled("bar"));
     }
 }

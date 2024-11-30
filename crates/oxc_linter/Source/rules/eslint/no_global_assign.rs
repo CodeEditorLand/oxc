@@ -59,9 +59,11 @@ impl Rule for NoGlobalAssign {
 
     fn run_once(&self, ctx: &LintContext) {
         let symbol_table = ctx.symbols();
+
         for (name, reference_id_list) in ctx.scopes().root_unresolved_references() {
             for &reference_id in reference_id_list {
                 let reference = symbol_table.get_reference(reference_id);
+
                 if reference.is_write()
                     && !self.excludes.contains(name)
                     && ctx.env_contains_var(name)

@@ -33,6 +33,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let owned_expr = ctx.ast.move_expression(expr);
+
         let Expression::PrivateFieldExpression(field_expr) = owned_expr else { unreachable!() };
         *expr = self.transform_private_field_expression_impl(field_expr, ctx);
     }
@@ -47,6 +48,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let Some((prop, class_name_binding, is_declaration)) = prop_details else {
             return Expression::PrivateFieldExpression(field_expr);
         };
+
         let prop_ident = prop.binding.create_read_expression(ctx);
 
         // TODO: Move this to top of function once `lookup_private_property` does not return `Option`
@@ -64,6 +66,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 // `_prop._`
                 ctx.symbols_mut()
                     .delete_resolved_reference(class_name_binding.symbol_id, reference_id);
+
                 Self::create_underscore_member_expression(prop_ident, span, ctx)
             } else {
                 // `_assertClassBrand(Class, object, _prop)._`
@@ -100,6 +103,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         if is_declaration {
             if let Expression::Identifier(ident) = object {
                 let reference_id = ident.reference_id();
+
                 if let Some(symbol_id) = ctx.symbols().get_reference(reference_id).symbol_id() {
                     if symbol_id == class_name_binding.symbol_id {
                         return Some(reference_id);
@@ -127,6 +131,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let Expression::CallExpression(call_expr) = expr else { unreachable!() };
+
         if matches!(&call_expr.callee, Expression::PrivateFieldExpression(_)) {
             self.transform_call_expression_impl(expr, ctx);
         };
@@ -141,12 +146,15 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         // This function is much too large inline, because `transform_static_assignment_expression`
         // and `transform_instance_assignment_expression` are inlined into it.
         let Expression::CallExpression(call_expr) = expr else { unreachable!() };
+
         let Expression::PrivateFieldExpression(field_expr) = &mut call_expr.callee else {
             unreachable!()
         };
+
         let prop_details = self.lookup_private_property(&field_expr.field);
         // TODO: Should never be `None` - only because implementation is incomplete.
         let Some((prop, class_name_binding, is_declaration)) = prop_details else { return };
+
         let prop_ident = prop.binding.create_read_expression(ctx);
 
         let object = ctx.ast.move_expression(&mut field_expr.object);
@@ -159,6 +167,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             // `object.#prop(arg)` -> `_assertClassBrand(Class, object, _prop)._.call(object, arg)`
             // or shortcut `_prop._.call(object, arg)`
             let class_name_binding = class_name_binding.as_ref().unwrap();
+
             let class_ident = class_name_binding.create_read_expression(ctx);
 
             // If `object` is reference to class name, there's no need for the class brand assertion
@@ -218,6 +227,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let Expression::AssignmentExpression(assign_expr) = expr else { unreachable!() };
+
         if matches!(&assign_expr.left, AssignmentTarget::PrivateFieldExpression(_)) {
             self.transform_assignment_expression_impl(expr, ctx);
         };
@@ -232,6 +242,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         // This function is much too large inline, because `transform_static_assignment_expression`
         // and `transform_instance_assignment_expression` are inlined into it.
         let Expression::AssignmentExpression(assign_expr) = expr else { unreachable!() };
+
         let AssignmentTarget::PrivateFieldExpression(field_expr) = &mut assign_expr.left else {
             unreachable!()
         };
@@ -249,6 +260,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
         if prop.is_static {
             let class_name_binding = class_name_binding.as_ref().unwrap().clone();
+
             self.transform_static_assignment_expression(
                 expr,
                 prop_binding,
@@ -287,7 +299,9 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let Expression::AssignmentExpression(assign_expr) = expr else { unreachable!() };
+
         let operator = assign_expr.operator;
+
         let AssignmentTarget::PrivateFieldExpression(field_expr) = &mut assign_expr.left else {
             unreachable!()
         };
@@ -311,6 +325,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         if let Some(reference_id) = object_reference_id {
             // Replace left side of assignment with `_prop._`
             let field_expr_span = field_expr.span;
+
             assign_expr.left = Self::create_underscore_member_expr_target(
                 prop_binding.create_read_expression(ctx),
                 field_expr_span,
@@ -333,13 +348,18 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 if let Some(operator) = operator.to_binary_operator() {
                     // `Class.#prop += value` -> `_prop._ = _prop._ + value`
                     let value = ctx.ast.move_expression(&mut assign_expr.right);
+
                     assign_expr.operator = AssignmentOperator::Assign;
+
                     assign_expr.right = ctx.ast.expression_binary(SPAN, prop_obj, operator, value);
                 } else if let Some(operator) = operator.to_logical_operator() {
                     // `Class.#prop &&= value` -> `_prop._ && (_prop._ = 1)`
                     let span = assign_expr.span;
+
                     assign_expr.span = SPAN;
+
                     assign_expr.operator = AssignmentOperator::Assign;
+
                     let right = ctx.ast.move_expression(expr);
                     *expr = ctx.ast.expression_logical(span, prop_obj, operator, right);
                 } else {
@@ -354,14 +374,18 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 SPAN,
                 ctx,
             );
+
             let old_assignee = mem::replace(&mut assign_expr.left, assignee);
+
             let field_expr = match old_assignee {
                 AssignmentTarget::PrivateFieldExpression(field_expr) => field_expr.unbox(),
                 _ => unreachable!(),
             };
+
             let object = field_expr.object;
 
             let class_ident = class_name_binding.create_read_expression(ctx);
+
             let value = ctx.ast.move_expression(&mut assign_expr.right);
 
             if operator == AssignmentOperator::Assign {
@@ -371,12 +395,14 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 assign_expr.right = self.create_assert_class_brand(class_ident, object, value, ctx);
             } else {
                 let class_ident = class_name_binding.create_read_expression(ctx);
+
                 let value = ctx.ast.move_expression(&mut assign_expr.right);
 
                 // Make 2 copies of `object`
                 let (object1, object2) = self.duplicate_object(object, ctx);
 
                 let prop_ident = prop_binding.create_read_expression(ctx);
+
                 let class_ident2 = class_name_binding.create_read_expression(ctx);
 
                 if let Some(operator) = operator.to_binary_operator() {
@@ -411,10 +437,14 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                     // Mutate existing assignment expression to `_prop._ = _assertClassBrand(Class, object, value)`
                     // and take ownership of it
                     let span = assign_expr.span;
+
                     assign_expr.span = SPAN;
+
                     assign_expr.operator = AssignmentOperator::Assign;
+
                     assign_expr.right =
                         self.create_assert_class_brand(class_ident2, object2, value, ctx);
+
                     let right = ctx.ast.move_expression(expr);
                     // `_assertClassBrand(Class, object, _prop)._ && (_prop._ = _assertClassBrand(Class, object, value))`
                     *expr = ctx.ast.expression_logical(span, left, operator, right);
@@ -453,7 +483,9 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             Expression::AssignmentExpression(assign_expr) => assign_expr.unbox(),
             _ => unreachable!(),
         };
+
         let AssignmentExpression { span, operator, right: value, left } = assign_expr;
+
         let object = match left {
             AssignmentTarget::PrivateFieldExpression(field_expr) => field_expr.unbox().object,
             _ => unreachable!(),
@@ -566,6 +598,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let Expression::UpdateExpression(update_expr) = expr else { unreachable!() };
+
         if matches!(&update_expr.argument, SimpleAssignmentTarget::PrivateFieldExpression(_)) {
             self.transform_update_expression_impl(expr, ctx);
         };
@@ -581,6 +614,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         // This function is much too large inline, because `transform_static_assignment_expression`
         // and `transform_instance_assignment_expression` are inlined into it.
         let Expression::UpdateExpression(update_expr) = expr else { unreachable!() };
+
         let field_expr = match &mut update_expr.argument {
             SimpleAssignmentTarget::PrivateFieldExpression(field_expr) => field_expr.as_mut(),
             _ => unreachable!(),
@@ -589,10 +623,13 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let prop_details = self.lookup_private_property(&field_expr.field);
         // TODO: Should never be `None` - only because implementation is incomplete.
         let Some((prop, class_name_binding, is_declaration)) = prop_details else { return };
+
         let prop_ident = prop.binding.create_read_expression(ctx);
+
         let prop_ident2 = prop.binding.create_read_expression(ctx);
 
         let temp_var_name_base = get_var_name_from_node(field_expr);
+
         let temp_binding = ctx.generate_uid_in_current_scope(
             &temp_var_name_base,
             SymbolFlags::FunctionScopedVariable,
@@ -649,12 +686,16 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             };
             // `_object$prop = _assertClassBrand(Class, object, _prop)._`
             self.ctx.var_declarations.insert_var(&temp_binding, None, ctx);
+
             let assignment = create_assignment(&temp_binding, get_expr, ctx);
 
             // `++_object$prop` / `_object$prop++` (reusing existing `UpdateExpression`)
             let UpdateExpression { span, prefix, .. } = **update_expr;
+
             update_expr.span = SPAN;
+
             update_expr.argument = temp_binding.create_read_write_simple_target(ctx);
+
             let update_expr = ctx.ast.move_expression(expr);
 
             if prefix {
@@ -668,6 +709,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 // `_assertClassBrand(Class, object, <value>)`
                 if object_reference_id.is_none() {
                     let class_ident = class_name_binding.create_read_expression(ctx);
+
                     value = self.create_assert_class_brand(class_ident, object, value, ctx);
                 }
 
@@ -686,7 +728,9 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                     &temp_var_name_base,
                     SymbolFlags::FunctionScopedVariable,
                 );
+
                 self.ctx.var_declarations.insert_var(&temp_binding2, None, ctx);
+
                 let assignment2 = create_assignment(&temp_binding2, update_expr, ctx);
 
                 // `(_object$prop = _assertClassBrand(Class, object, _prop)._, _object$prop2 = _object$prop++, _object$prop)`
@@ -702,6 +746,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 // `_assertClassBrand(Class, object, <value>)`
                 if object_reference_id.is_none() {
                     let class_ident = class_name_binding.create_read_expression(ctx);
+
                     value = self.create_assert_class_brand(class_ident, object, value, ctx);
                 }
 
@@ -731,12 +776,16 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
             // `_object$prop = _classPrivateFieldGet(_prop, object)`
             self.ctx.var_declarations.insert_var(&temp_binding, None, ctx);
+
             let assignment = create_assignment(&temp_binding, get_call, ctx);
 
             // `++_object$prop` / `_object$prop++` (reusing existing `UpdateExpression`)
             let UpdateExpression { span, prefix, .. } = **update_expr;
+
             update_expr.span = SPAN;
+
             update_expr.argument = temp_binding.create_read_write_simple_target(ctx);
+
             let update_expr = ctx.ast.move_expression(expr);
 
             if prefix {
@@ -754,7 +803,9 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                     &temp_var_name_base,
                     SymbolFlags::FunctionScopedVariable,
                 );
+
                 self.ctx.var_declarations.insert_var(&temp_binding2, None, ctx);
+
                 let assignment2 = create_assignment(&temp_binding2, update_expr, ctx);
 
                 // `(_object$prop = _classPrivateFieldGet(_prop, object), _object$prop2 = _object$prop++, _object$prop)`
@@ -876,10 +927,13 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let temp_var_binding = match &object {
             Expression::Identifier(ident) => {
                 let reference = ctx.symbols_mut().get_reference_mut(ident.reference_id());
+
                 if let Some(symbol_id) = reference.symbol_id() {
                     // Reading bound identifier cannot have side effects, so no need for temp var
                     let binding = BoundIdentifier::new(ident.name.clone(), symbol_id);
+
                     let object1 = binding.create_spanned_read_expression(ident.span, ctx);
+
                     return (object1, object);
                 }
 
@@ -888,11 +942,14 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
                 ctx.generate_uid_in_current_scope(&ident.name, SymbolFlags::FunctionScopedVariable)
             }
+
             Expression::ThisExpression(this) => {
                 // Reading `this` cannot have side effects, so no need for temp var
                 let object1 = ctx.ast.expression_this(this.span);
+
                 return (object1, object);
             }
+
             _ => ctx.generate_uid_in_current_scope_based_on_node(
                 &object,
                 SymbolFlags::FunctionScopedVariable,
@@ -902,6 +959,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         self.ctx.var_declarations.insert_var(&temp_var_binding, None, ctx);
 
         let object1 = create_assignment(&temp_var_binding, object, ctx);
+
         let object2 = temp_var_binding.create_read_expression(ctx);
 
         (object1, object2)
@@ -974,6 +1032,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let func_call = self.create_assert_class_brand(class_ident, object, prop_ident, ctx);
+
         Self::create_underscore_member_expression(func_call, span, ctx)
     }
 

@@ -8,6 +8,7 @@ use crate::{codegen::EarlyCtx, TypeId};
 
 pub trait NormalizeError<T> {
     fn normalize(self) -> crate::Result<T>;
+
     fn normalize_with<E>(self, err: E) -> crate::Result<T>
     where
         E: ToString;
@@ -48,6 +49,7 @@ pub trait TokenStreamExt {
 
 pub trait TypeExt {
     fn get_ident(&self) -> TypeIdentResult;
+
     fn analyze(&self, ctx: &EarlyCtx) -> TypeAnalysis;
 }
 
@@ -146,14 +148,19 @@ impl TypeExt for Type {
         match self {
             Type::Path(TypePath { path, .. }) => {
                 let seg1 = path.segments.first().unwrap();
+
                 match &seg1.arguments {
                     PathArguments::None => TypeIdentResult::Ident(&seg1.ident),
                     PathArguments::AngleBracketed(it) => {
                         let args = &it.args.iter().collect_vec();
+
                         assert!(args.len() < 3, "Max path arguments here is 2, eg `Box<'a, Adt>`");
+
                         if let Some(second) = args.get(1) {
                             let GenericArgument::Type(second) = second else { panic!() };
+
                             let inner = second.get_ident();
+
                             if seg1.ident == "Box" {
                                 TypeIdentResult::boxed(inner)
                             } else if seg1.ident == "Vec" {
@@ -165,24 +172,29 @@ impl TypeExt for Type {
                             match args.first() {
                                 Some(GenericArgument::Type(it)) => {
                                     let inner = it.get_ident();
+
                                     if seg1.ident == "Option" {
                                         TypeIdentResult::option(inner)
                                     } else {
                                         TypeIdentResult::complex(inner)
                                     }
                                 }
+
                                 Some(GenericArgument::Lifetime(_)) => {
                                     TypeIdentResult::Ident(&seg1.ident)
                                 }
+
                                 _ => panic!("unsupported type!"),
                             }
                         }
                     }
+
                     PathArguments::Parenthesized(_) => {
                         panic!("Parenthesized path arguments aren't supported!")
                     }
                 }
             }
+
             Type::Reference(typ) => TypeIdentResult::reference(typ.elem.get_ident()),
             _ => panic!("Unsupported type."),
         }
@@ -191,32 +203,46 @@ impl TypeExt for Type {
     fn analyze(&self, ctx: &EarlyCtx) -> TypeAnalysis {
         fn analyze<'a>(res: &'a TypeIdentResult) -> Option<(&'a Ident, TypeWrapper)> {
             let mut wrapper = TypeWrapper::None;
+
             let ident = match res {
                 TypeIdentResult::Ident(inner) => inner,
                 TypeIdentResult::Complex(inner) => {
                     wrapper = TypeWrapper::Complex;
+
                     let (inner, _) = analyze(inner)?;
+
                     inner
                 }
+
                 TypeIdentResult::Box(inner) => {
                     wrapper = TypeWrapper::Box;
+
                     let (inner, inner_kind) = analyze(inner)?;
+
                     assert!(inner_kind == TypeWrapper::None,);
+
                     inner
                 }
+
                 TypeIdentResult::Vec(inner) => {
                     wrapper = TypeWrapper::Vec;
+
                     let (inner, inner_kind) = analyze(inner)?;
+
                     if inner_kind == TypeWrapper::Opt {
                         wrapper = TypeWrapper::VecOpt;
                     } else if inner_kind != TypeWrapper::None {
                         panic!();
                     }
+
                     inner
                 }
+
                 TypeIdentResult::Option(inner) => {
                     wrapper = TypeWrapper::Opt;
+
                     let (inner, inner_kind) = analyze(inner)?;
+
                     if inner_kind == TypeWrapper::Vec {
                         wrapper = TypeWrapper::OptVec;
                     } else if inner_kind == TypeWrapper::Box {
@@ -224,18 +250,24 @@ impl TypeExt for Type {
                     } else if inner_kind != TypeWrapper::None {
                         panic!();
                     }
+
                     inner
                 }
+
                 TypeIdentResult::Reference(_) => return None,
             };
+
             Some((ident, wrapper))
         }
+
         let type_ident = self.get_ident();
+
         let Some((type_ident, wrapper)) = analyze(&type_ident) else {
             return TypeAnalysis { type_id: None, wrapper: TypeWrapper::Ref, typ: self.clone() };
         };
 
         let type_id = ctx.type_id(&type_ident.to_string());
+
         TypeAnalysis { type_id, wrapper, typ: self.clone() }
     }
 }
@@ -243,11 +275,13 @@ impl TypeExt for Type {
 impl<T: AsRef<str>> StrExt for T {
     fn to_plural(self) -> String {
         let txt = self.as_ref();
+
         if txt.is_empty() {
             return String::default();
         }
 
         let mut txt = txt.to_string();
+
         if txt.ends_with("child") {
             txt.push_str("ren");
         } else {
@@ -255,13 +289,17 @@ impl<T: AsRef<str>> StrExt for T {
                 Some('s') => {
                     txt.push_str("es");
                 }
+
                 Some('y') => {
                     txt.pop();
+
                     txt.push_str("ies");
                 }
+
                 _ => txt.push('s'),
             }
         }
+
         txt
     }
 }
@@ -275,6 +313,7 @@ impl TokenStreamExt for TokenStream {
                     Group::new(group.delimiter(), group.stream().replace_ident(needle, replace))
                         .to_token_stream()
                 }
+
                 _ => it.to_token_stream(),
             })
             .collect()
@@ -302,6 +341,7 @@ where
 {
     fn to_ident(&self) -> Ident {
         let name = self.as_ref();
+
         if RESERVED_NAMES.contains(&name) {
             format_ident!("r#{name}")
         } else {

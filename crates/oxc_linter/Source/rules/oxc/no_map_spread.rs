@@ -28,14 +28,19 @@ fn no_map_spread_diagnostic(
     returned_span: Option<Span>,
 ) -> OxcDiagnostic {
     let spans = spread.spread_spans();
+
     assert!(!spans.is_empty());
+
     let mut spread_labels = spread.spread_spans().into_iter();
+
     let first_message = if spans.len() == 1 {
         "It should be mutated in place"
     } else {
         "They should be mutated in place"
     };
+
     let first = spread_labels.next().unwrap().label(first_message);
+
     let others = spread_labels.map(LabeledSpan::from);
 
     let returned_label = returned_span
@@ -334,6 +339,7 @@ impl Rule for NoMapSpread {
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(mapper) = get_map_callback(call_expr) else {
             return;
         };
@@ -347,7 +353,9 @@ impl Rule for NoMapSpread {
             // returns a reference with a lifetime of 'self instead of 'a.
             spreads.push(unsafe { std::mem::transmute::<Spread<'a, '_>, Spread<'a, 'a>>(spread) });
         });
+
         let returned_span = visitor.and_then(|v| v.return_span);
+
         if spreads.is_empty() {
             return;
         }
@@ -355,6 +363,7 @@ impl Rule for NoMapSpread {
         match leftmost_identifier_reference(&call_expr.callee) {
             Ok(ident) => {
                 let reference_id = ident.reference_id();
+
                 if self.is_ignored_map_call(ctx, ident.name.as_str(), reference_id, call_expr.span)
                 {
                     return;
@@ -365,6 +374,7 @@ impl Rule for NoMapSpread {
             Err(Expression::ThisExpression(_)) => {
                 return;
             }
+
             Err(_) => {}
         }
 
@@ -378,8 +388,10 @@ impl Rule for NoMapSpread {
 
         for spread in spreads {
             let diagnostic = no_map_spread_diagnostic(map_call_site, &spread, returned_span);
+
             if let Some(obj) = spread.as_object() {
                 debug_assert!(!obj.properties.is_empty());
+
                 if obj.properties.first().is_some_and(ObjectPropertyKind::is_spread) {
                     ctx.diagnostic_with_suggestion(diagnostic, |fixer| {
                         fix_spread_to_object_assign(fixer, obj)
@@ -421,6 +433,7 @@ impl NoMapSpread {
 
         if self.ignore_args {
             let declaration = ctx.nodes().get_node(ctx.symbols().get_declaration(symbol_id));
+
             if matches!(declaration.kind(), AstKind::FormalParameter(_)) {
                 return true;
             }
@@ -439,7 +452,9 @@ fn has_reads_after(
     span: Span,
 ) -> bool {
     let symbols = ctx.symbols();
+
     let nodes = ctx.nodes();
+
     symbols
         // skip the reference within the spread itself
         .get_resolved_reference_ids(symbol_id)
@@ -459,6 +474,7 @@ fn get_map_callback<'a, 'b>(call_expr: &'b CallExpression<'a>) -> Option<&'b Exp
     }
 
     let arg = call_expr.arguments.first()?.as_expression()?.get_inner_expression();
+
     match arg {
         Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_) => Some(arg),
         _ => None,
@@ -470,8 +486,11 @@ fn fix_spread_to_object_assign<'a>(
     obj: &ObjectExpression<'a>,
 ) -> RuleFix<'a> {
     use oxc_allocator::{Allocator, CloneIn};
+
     use oxc_ast::AstBuilder;
+
     use oxc_codegen::CodegenOptions;
+
     use oxc_span::SPAN;
 
     if obj.properties.len() <= 1 {
@@ -479,15 +498,20 @@ fn fix_spread_to_object_assign<'a>(
     }
 
     let alloc = Allocator::default();
+
     let ast = AstBuilder::new(&alloc);
 
     // almost always overshoots, but will not re-alloc, so it's more performant
     // than creating an empty vec.
     // let mut args = ast.vec_with_capacity::<Argument>(obj.properties.len());
+
     let mut curr_obj_properties = ast.vec::<ObjectPropertyKind>();
+
     let mut codegen =
         fixer.codegen().with_options(CodegenOptions { minify: true, ..Default::default() });
+
     let mut is_first = true;
+
     codegen.print_str("Object.assign(");
 
     for prop in &obj.properties {
@@ -495,22 +519,28 @@ fn fix_spread_to_object_assign<'a>(
             ObjectPropertyKind::ObjectProperty(_) => {
                 curr_obj_properties.push(prop.clone_in(&alloc));
             }
+
             ObjectPropertyKind::SpreadProperty(spread) => {
                 if !curr_obj_properties.is_empty() {
                     let properties = std::mem::replace(&mut curr_obj_properties, ast.vec());
+
                     let obj_arg = ast.expression_object(SPAN, properties, None);
+
                     if is_first {
                         is_first = false;
                     } else {
                         codegen.print_str(", ");
                     }
+
                     codegen.print_expression(&obj_arg);
                 }
+
                 if is_first {
                     is_first = false;
                 } else {
                     codegen.print_str(", ");
                 }
+
                 codegen.print_expression(&spread.argument);
             }
         }
@@ -520,10 +550,14 @@ fn fix_spread_to_object_assign<'a>(
         if !is_first {
             codegen.print_str(", ");
         }
+
         let properties = std::mem::replace(&mut curr_obj_properties, ast.vec());
+
         let obj_arg = ast.expression_object(SPAN, properties, None);
+
         codegen.print_expression(&obj_arg);
     }
+
     codegen.print_ascii_byte(b')');
 
     // TODO: expand replaced span to outer paren parent to replace wrapped
@@ -604,6 +638,7 @@ where
                 };
                 (v, f.body.as_ref())
             }
+
             Expression::FunctionExpression(f) => {
                 let v = Self {
                     ctx,
@@ -612,13 +647,16 @@ where
                     is_in_return: false,
                     return_span: None,
                 };
+
                 let body = f.body.as_ref().map(AsRef::as_ref)?;
                 (v, body)
             }
+
             _ => unreachable!(),
         };
 
         visitor.visit_function_body(body);
+
         Some(visitor)
     }
 
@@ -639,6 +677,7 @@ where
     fn enter_node(&mut self, kind: AstKind<'a>) {
         if let AstKind::ReturnStatement(stmt) = kind {
             self.is_in_return = true;
+
             self.return_span = stmt.argument.as_ref().map(GetSpan::span);
         }
     }
@@ -656,6 +695,7 @@ where
         if !self.is_in_return {
             return;
         }
+
         match expr.get_inner_expression() {
             // base cases
             Expression::ObjectExpression(obj) => self.visit_object_expression(obj),
@@ -663,13 +703,16 @@ where
             // recursive cases
             Expression::ConditionalExpression(cond) => {
                 self.visit_expression(&cond.consequent);
+
                 self.visit_expression(&cond.alternate);
             }
+
             Expression::SequenceExpression(expr) => {
                 if let Some(last) = expr.expressions.last() {
                     self.visit_expression(last);
                 }
             }
+
             Expression::LogicalExpression(expr) => self.visit_logical_expression(expr),
 
             // check if identifier is a reference to a spread-initialized
@@ -680,6 +723,7 @@ where
                 else {
                     return;
                 };
+
                 let declaration_scope = self.ctx.symbols().get_scope_id(symbol_id);
 
                 // symbol is not declared within the mapper callback
@@ -695,8 +739,10 @@ where
                 // walk the declaration
                 let declaration_node =
                     self.ctx.nodes().get_node(self.ctx.symbols().get_declaration(symbol_id));
+
                 self.visit_kind(declaration_node.kind());
             }
+
             _ => {}
         }
     }
@@ -727,6 +773,7 @@ where
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     use serde_json::json;
 
     let pass = vec![
@@ -785,6 +832,7 @@ fn test() {
         (
             "let a = b.map(x => {
             let y = { ...x };
+
             if (y.foo) {
                 return y;
             } else {

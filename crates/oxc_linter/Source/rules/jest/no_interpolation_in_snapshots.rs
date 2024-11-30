@@ -66,12 +66,15 @@ impl Rule for NoInterpolationInSnapshots {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
     let node = possible_jest_node.node;
+
     let AstKind::CallExpression(call_expr) = node.kind() else {
         return;
     };
+
     let Some(jest_fn_call) = parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx) else {
         return;
     };
+
     let Some(matcher) = jest_fn_call.matcher() else {
         return;
     };

@@ -62,6 +62,7 @@ impl Rule for ClickEventsHaveKeyEvents {
         let Some(element_type) = get_element_type(ctx, jsx_opening_el) else {
             return;
         };
+
         if !HTML_TAG.contains(&element_type) {
             return;
         };

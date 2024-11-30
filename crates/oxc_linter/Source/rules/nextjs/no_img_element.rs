@@ -45,6 +45,7 @@ impl Rule for NoImgElement {
         let Some(parent) = ctx.nodes().parent_node(node.id()) else {
             return;
         };
+
         let Some(parent) = ctx.nodes().parent_node(parent.id()) else {
             return;
         };
@@ -78,6 +79,7 @@ fn test() {
 			                src="/test.png"
 			                alt="Test picture"
 			                width={500}
+
 			                height={500}
 			              />
 			            </div>
@@ -92,6 +94,7 @@ fn test() {
 			                src="/test.png"
 			                alt="Test picture"
 			                width={500}
+
 			                height={500}
 			              />
 			            </picture>
@@ -126,6 +129,7 @@ fn test() {
 			                src="/test.png"
 			                alt="Test picture"
 			                width={500}
+
 			                height={500}
 			              />
 			            </div>

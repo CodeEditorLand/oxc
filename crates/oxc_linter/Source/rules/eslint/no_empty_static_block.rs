@@ -58,6 +58,7 @@ impl Rule for NoEmptyStaticBlock {
                 if ctx.semantic().has_comments_between(static_block.span) {
                     return;
                 }
+
                 ctx.diagnostic_with_suggestion(
                     no_empty_static_block_diagnostic(static_block.span),
                     |fixer| fixer.delete(&static_block.span),

@@ -40,6 +40,7 @@ impl Rule for NoDeleteVar {
         let AstKind::UnaryExpression(expr) = node.kind() else {
             return;
         };
+
         if expr.operator == UnaryOperator::Delete && expr.argument.is_identifier_reference() {
             ctx.diagnostic(no_delete_var_diagnostic(expr.span));
         }

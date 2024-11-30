@@ -71,6 +71,7 @@ impl Rule for ErrorMessage {
         }
 
         let constructor_name = &callee.name;
+
         let message_argument_idx = usize::from(constructor_name.as_str() == "AggregateError");
 
         // If message is `SpreadElement` or there is `SpreadElement` before message
@@ -94,17 +95,21 @@ impl Rule for ErrorMessage {
                     ctx.diagnostic(empty_message(lit.span));
                 }
             }
+
             Argument::TemplateLiteral(template_lit) => {
                 if template_lit.span.source_text(ctx.source_text()).len() == 2 {
                     ctx.diagnostic(empty_message(template_lit.span));
                 }
             }
+
             Argument::ObjectExpression(object_expr) => {
                 ctx.diagnostic(not_string(object_expr.span));
             }
+
             Argument::ArrayExpression(array_expr) => {
                 ctx.diagnostic(not_string(array_expr.span));
             }
+
             _ => {}
         }
     }

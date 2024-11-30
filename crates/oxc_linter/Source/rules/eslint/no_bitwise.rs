@@ -79,6 +79,7 @@ impl Rule for NoBitwise {
                     ctx.diagnostic(no_bitwise_diagnostic(op, bin_expr.span));
                 }
             }
+
             AstKind::UnaryExpression(unary_expr) => {
                 let op = unary_expr.operator.as_str();
 
@@ -89,6 +90,7 @@ impl Rule for NoBitwise {
                     ctx.diagnostic(no_bitwise_diagnostic(op, unary_expr.span));
                 }
             }
+
             AstKind::AssignmentExpression(assign_expr) => {
                 let op = assign_expr.operator.as_str();
 
@@ -99,6 +101,7 @@ impl Rule for NoBitwise {
                     ctx.diagnostic(no_bitwise_diagnostic(op, assign_expr.span));
                 }
             }
+
             _ => {}
         }
     }
@@ -117,6 +120,7 @@ fn is_int32_hint(int32_hint: bool, node: &AstNode) -> bool {
         AstKind::BinaryExpression(bin_expr) => {
             bin_expr.operator == BinaryOperator::BitwiseOR && bin_expr.right.is_number_0()
         }
+
         _ => false,
     }
 }

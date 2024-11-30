@@ -39,6 +39,7 @@ impl Rule for BadMinMaxFunc {
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some((out_min_max, inner_exprs)) = Self::min_max(call_expr) else {
             return;
         };
@@ -60,6 +61,7 @@ impl Rule for BadMinMaxFunc {
                             None
                         }
                     }
+
                     _ => None,
                 };
 

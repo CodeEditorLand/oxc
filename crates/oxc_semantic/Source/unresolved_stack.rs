@@ -36,7 +36,9 @@ impl<'a> UnresolvedReferencesStack<'a> {
 
     pub(crate) fn new() -> Self {
         let mut stack = vec![];
+
         stack.resize_with(Self::INITIAL_SIZE, TempUnresolvedReferences::default);
+
         Self { stack, current_scope_depth: Self::INITIAL_DEPTH }
     }
 
@@ -90,7 +92,9 @@ impl<'a> UnresolvedReferencesStack<'a> {
         unsafe { assert_unchecked!(self.stack.len() > self.current_scope_depth) };
 
         let mut iter = self.stack.iter_mut();
+
         let parent = iter.nth(self.current_scope_depth - 1).unwrap();
+
         let current = iter.next().unwrap();
         (current, parent)
     }
@@ -100,6 +104,7 @@ impl<'a> UnresolvedReferencesStack<'a> {
         // SAFETY: Stack starts with a non-zero size and never shrinks.
         // This assertion removes bounds check in `.next()`.
         unsafe { assert_unchecked!(!self.stack.is_empty()) };
+
         self.stack.into_iter().next().unwrap()
     }
 }

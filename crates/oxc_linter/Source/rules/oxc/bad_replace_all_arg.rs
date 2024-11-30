@@ -71,6 +71,7 @@ impl Rule for BadReplaceAllArg {
             let Some(call_expr_callee) = call_expr.callee.as_member_expression() else {
                 return;
             };
+
             let Some((replace_all_span, _)) = call_expr_callee.static_property_info() else {
                 return;
             };
@@ -88,6 +89,7 @@ fn resolve_flags<'a>(
         Expression::RegExpLiteral(regexp_literal) => {
             Some((regexp_literal.regex.flags, regexp_literal.span))
         }
+
         Expression::NewExpression(new_expr) => {
             if new_expr.callee.is_specific_id("RegExp") {
                 Some((
@@ -98,14 +100,19 @@ fn resolve_flags<'a>(
                 None
             }
         }
+
         Expression::Identifier(ident) => {
             let decl = get_declaration_of_variable(ident, ctx)?;
+
             let var_decl = decl.kind().as_variable_declarator()?;
+
             if let Some(init) = &var_decl.init {
                 return resolve_flags(init, ctx);
             }
+
             None
         }
+
         _ => None,
     }
 }

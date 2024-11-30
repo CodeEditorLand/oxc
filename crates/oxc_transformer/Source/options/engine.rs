@@ -39,6 +39,7 @@ impl Engine {
     /// * Invalid version
     pub fn parse_name_and_version(s: &str) -> Result<(Engine, Version), String> {
         let s = s.cow_to_ascii_lowercase();
+
         for (name, engine) in engines() {
             if let Some(v) = s.strip_prefix(name) {
                 return Version::from_str(v).map(|version| (*engine,version))
@@ -47,6 +48,7 @@ impl Engine {
                     );
             }
         }
+
         Err(format!("Invalid target '{s}'."))
     }
 }
@@ -78,6 +80,7 @@ impl FromStr for Engine {
 
 fn engines() -> &'static FxHashMap<&'static str, Engine> {
     static ENGINES: OnceLock<FxHashMap<&'static str, Engine>> = OnceLock::new();
+
     ENGINES.get_or_init(|| {
         FxHashMap::from_iter([
             ("chrome", Engine::Chrome),

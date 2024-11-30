@@ -83,6 +83,7 @@ impl<'a> ContextHost<'a> {
             DisableDirectivesBuilder::new().build(semantic.source_text(), semantic.comments());
 
         let file_path = file_path.as_ref().to_path_buf().into_boxed_path();
+
         let plugins = config.plugins;
 
         Self {
@@ -103,10 +104,12 @@ impl<'a> ContextHost<'a> {
     #[allow(dead_code)] // will be used in up-stack PR
     pub fn with_config(mut self, config: &Arc<LintConfig>) -> Self {
         let plugins = config.plugins;
+
         self.config = Arc::clone(config);
 
         if self.plugins != plugins {
             self.plugins = plugins;
+
             return self.sniff_for_frameworks();
         }
 
@@ -153,12 +156,14 @@ impl<'a> ContextHost<'a> {
         // The latter drops the reference as soon as the function returns, so
         // this should never panic.
         let mut messages = self.diagnostics.borrow_mut();
+
         std::mem::take(&mut *messages)
     }
 
     /// Creates a new [`LintContext`] for a specific rule.
     pub fn spawn(self: Rc<Self>, rule: &RuleWithSeverity) -> LintContext<'a> {
         let rule_name = rule.name();
+
         let plugin_name = self.map_jest_rule_to_vitest(rule);
 
         LintContext {
@@ -192,6 +197,7 @@ impl<'a> ContextHost<'a> {
     /// For these rules, we use the corresponding jest rules with some adjustments for compatibility.
     fn map_jest_rule_to_vitest(&self, rule: &RuleWithSeverity) -> &'static str {
         let plugin_name = rule.plugin_name();
+
         if self.plugins.has_vitest()
             && plugin_name == "jest"
             && utils::is_jest_rule_adapted_to_vitest(rule.name())
@@ -215,10 +221,12 @@ impl<'a> ContextHost<'a> {
             // let mut test_flags = FrameworkFlags::empty();
 
             let vitest_like = frameworks::has_vitest_imports(self.semantic.module_record());
+
             let jest_like = frameworks::is_jestlike_file(&self.file_path)
                 || frameworks::has_jest_imports(self.semantic.module_record());
 
             self.frameworks.set(FrameworkFlags::Vitest, vitest_like);
+
             self.frameworks.set(FrameworkFlags::Jest, jest_like);
         }
 

@@ -15,6 +15,7 @@ pub fn to_identifier(input: &str) -> Cow<str> {
     let mut capitalize_next = false;
 
     let mut chars = input.chars();
+
     if let Some(first) = chars.next() {
         if is_identifier_start(first) {
             name.push(first);
@@ -28,6 +29,7 @@ pub fn to_identifier(input: &str) -> Cow<str> {
             capitalize_next = true;
         } else if capitalize_next {
             name.push(c.to_ascii_uppercase());
+
             capitalize_next = false;
         } else {
             name.push(c);
@@ -44,14 +46,21 @@ pub fn to_identifier(input: &str) -> Cow<str> {
 #[test]
 fn test() {
     assert_eq!(to_identifier("foo"), "foo");
+
     assert_eq!(to_identifier("fooBar"), "fooBar");
+
     assert_eq!(to_identifier("fooBar1"), "fooBar1");
 
     assert_eq!(to_identifier("foo-bar"), "fooBar");
+
     assert_eq!(to_identifier("foo bar"), "fooBar");
+
     assert_eq!(to_identifier("foo-bar-1"), "fooBar1");
+
     assert_eq!(to_identifier("1foo-bar"), "FooBar");
+
     assert_eq!(to_identifier("1-foo-bar"), "FooBar");
+
     assert_eq!(to_identifier("-- --"), "_");
 
     assert_eq!(to_identifier("_output$headers$x-amzn-requestid"), "_output$headers$xAmznRequestid");

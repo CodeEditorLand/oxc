@@ -42,7 +42,9 @@ impl StatementReturnStatus {
     /// will produce `SomeExplicit` for the whole if statement
     pub fn join(self, rhs: Self) -> Self {
         let must_return = self.must_return() && rhs.must_return();
+
         let explicit = self.may_return_explicit() || rhs.may_return_explicit();
+
         let implicit = self.may_return_implicit() || rhs.may_return_implicit();
 
         Self::create(must_return, explicit, implicit)
@@ -62,7 +64,9 @@ impl StatementReturnStatus {
     /// will produce `AlwaysMixed` for the block statement.
     pub fn union(self, rhs: Self) -> Self {
         let must_return = self.must_return() || rhs.must_return();
+
         let explicit = self.may_return_explicit() || rhs.may_return_explicit();
+
         let implicit = self.may_return_implicit() || rhs.may_return_implicit();
 
         Self::create(must_return, explicit, implicit)
@@ -109,6 +113,7 @@ pub fn check_function_body(function: &FunctionBody) -> StatementReturnStatus {
     //  return; // Error
     // })
     let mut status = StatementReturnStatus::NotReturn;
+
     for stmt in &function.statements {
         status = status.union(check_statement(stmt));
     }
@@ -130,7 +135,9 @@ pub fn check_statement(statement: &Statement) -> StatementReturnStatus {
 
         Statement::IfStatement(stmt) => {
             let test = &stmt.test;
+
             let left = check_statement(&stmt.consequent);
+
             let right =
                 stmt.alternate.as_ref().map_or(StatementReturnStatus::NotReturn, check_statement);
 
@@ -139,7 +146,9 @@ pub fn check_statement(statement: &Statement) -> StatementReturnStatus {
 
         Statement::WhileStatement(stmt) => {
             let test = &stmt.test;
+
             let inner_return = check_statement(&stmt.body);
+
             if test.to_boolean() == Some(true) {
                 inner_return
             } else {
@@ -155,9 +164,11 @@ pub fn check_statement(statement: &Statement) -> StatementReturnStatus {
         // 2. There is a default case that returns
         Statement::SwitchStatement(stmt) => {
             let mut case_statuses = vec![];
+
             let mut default_case_status = StatementReturnStatus::NotReturn;
 
             let mut current_case_status = StatementReturnStatus::NotReturn;
+
             for case in &stmt.cases {
                 let branch_terminated = check_switch_case(case, &mut current_case_status);
 
@@ -167,6 +178,7 @@ pub fn check_statement(statement: &Statement) -> StatementReturnStatus {
                     break;
                 } else if branch_terminated {
                     case_statuses.push(current_case_status);
+
                     current_case_status = StatementReturnStatus::NotReturn;
                 } // Falls through to next case, accumulating lattice
             }
@@ -182,12 +194,15 @@ pub fn check_statement(statement: &Statement) -> StatementReturnStatus {
 
         Statement::TryStatement(stmt) => {
             let mut status = check_block_statement(&stmt.block);
+
             if let Some(catch) = &stmt.handler {
                 status = status.join(check_block_statement(&catch.body));
             }
+
             if let Some(finally) = &stmt.finalizer {
                 status = status.union(check_block_statement(finally));
             }
+
             status
         }
 
@@ -233,7 +248,9 @@ pub fn check_block_statement(block: &BlockStatement) -> StatementReturnStatus {
         }
 
         let current_stmt_status = check_statement(s);
+
         all_statements_status = all_statements_status.union(current_stmt_status);
+
         if all_statements_status.must_return() {
             break;
         }
@@ -245,23 +262,33 @@ pub fn check_block_statement(block: &BlockStatement) -> StatementReturnStatus {
 #[cfg(test)]
 mod tests {
     use oxc_allocator::Allocator;
+
     use oxc_ast::ast::Program;
+
     use oxc_parser::Parser;
+
     use oxc_span::SourceType;
 
     use super::*;
 
     fn parse_statement_and_test(source: &'static str, expected: StatementReturnStatus) {
         let source_type = SourceType::default();
+
         let alloc = Allocator::default();
+
         let parser = Parser::new(&alloc, source, source_type);
+
         let ret = parser.parse();
+
         assert!(ret.errors.is_empty());
 
         // The program is a function declaration with a single statement
         let program = ret.program;
+
         let Program { body, .. } = program;
+
         let stmt = body.first().unwrap();
+
         let Statement::FunctionDeclaration(func) = stmt else { unreachable!() };
 
         let first_statement = &func.body.as_ref().unwrap().statements[0];
@@ -285,14 +312,17 @@ mod tests {
           switch (b) {
             case "A":
               var a = 1;
+
             default:
               return 123;
           }
+
         default:
           return 1;
       }
     }
   "#;
+
         parse_statement_and_test(always_explicit, StatementReturnStatus::AlwaysExplicit);
     }
 
@@ -305,14 +335,17 @@ mod tests {
           switch (b) {
             case "A":
               var a = 1;
+
             default:
               return;
           }
+
         default:
           return;
       }
     }
     "#;
+
         parse_statement_and_test(always_implicit, StatementReturnStatus::AlwaysImplicit);
     }
 
@@ -325,14 +358,17 @@ mod tests {
               switch (b) {
                 case "A":
                   var a = 1;
+
                 default:
                   return 123;
               }
+
             default:
               return;
           }
         }
         "#;
+
         parse_statement_and_test(always_mixed, StatementReturnStatus::AlwaysMixed);
     }
 
@@ -371,12 +407,14 @@ mod tests {
         let always_true = r"
       function foo() {
         if (true) return 1;
+
         else {
           var a = 123;
           console.log(a);
         }
       }
     ";
+
         parse_statement_and_test(always_true, StatementReturnStatus::AlwaysExplicit);
     }
 
@@ -391,6 +429,7 @@ mod tests {
           }
         }
       ";
+
         parse_statement_and_test(always_false, StatementReturnStatus::AlwaysExplicit);
     }
 
@@ -405,6 +444,7 @@ mod tests {
           }
         }
       ";
+
         parse_statement_and_test(non_static, StatementReturnStatus::SomeExplicit);
     }
 
@@ -437,6 +477,7 @@ mod tests {
           }
         }
       ";
+
         parse_statement_and_test(source, StatementReturnStatus::AlwaysImplicit);
     }
 }

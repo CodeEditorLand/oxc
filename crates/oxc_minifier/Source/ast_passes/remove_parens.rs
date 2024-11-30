@@ -14,6 +14,7 @@ impl<'a> RemoveParens<'a> {
 	fn strip_parenthesized_expression(&self, expr:&mut Expression<'a>) {
 		if let Expression::ParenthesizedExpression(paren_expr) = expr {
 			*expr = self.ast.move_expression(&mut paren_expr.expression);
+
 			self.strip_parenthesized_expression(expr);
 		}
 	}
@@ -22,11 +23,13 @@ impl<'a> RemoveParens<'a> {
 impl<'a> VisitMut<'a> for RemoveParens<'a> {
 	fn visit_statements(&mut self, stmts:&mut Vec<'a, Statement<'a>>) {
 		stmts.retain(|stmt| !matches!(stmt, Statement::EmptyStatement(_)));
+
 		walk_mut::walk_statements(self, stmts);
 	}
 
 	fn visit_expression(&mut self, expr:&mut Expression<'a>) {
 		self.strip_parenthesized_expression(expr);
+
 		walk_mut::walk_expression(self, expr);
 	}
 }

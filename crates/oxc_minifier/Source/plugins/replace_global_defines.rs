@@ -64,13 +64,18 @@ impl ReplaceGlobalDefinesConfig {
 	/// * value has a syntax error
 	pub fn new<S:AsRef<str>>(defines:&[(S, S)]) -> Result<Self, Vec<OxcDiagnostic>> {
 		let allocator = Allocator::default();
+
 		let mut identifier_defines = vec![];
+
 		let mut dot_defines = vec![];
+
 		let mut meta_proeperty_defines = vec![];
+
 		for (key, value) in defines {
 			let key = key.as_ref();
 
 			let value = value.as_ref();
+
 			Self::check_value(&allocator, value)?;
 
 			match Self::check_key(key)? {
@@ -102,6 +107,7 @@ impl ReplaceGlobalDefinesConfig {
 				Ordering::Equal
 			}
 		});
+
 		Ok(Self(Arc::new(ReplaceGlobalDefinesConfigImpl {
 			identifier:identifier_defines,
 			dot:dot_defines,
@@ -118,8 +124,10 @@ impl ReplaceGlobalDefinesConfig {
 			if !is_identifier_name(parts[0]) {
 				return Err(vec![OxcDiagnostic::error(format!("`{key}` is not an identifier."))]);
 			}
+
 			return Ok(IdentifierType::Identifier);
 		}
+
 		let normalized_parts_len =
 			if parts[parts.len() - 1] == "*" { parts.len() - 1 } else { parts.len() };
 		// We can ensure now the parts.len() >= 2
@@ -130,6 +138,7 @@ impl ReplaceGlobalDefinesConfig {
 				return Err(vec![OxcDiagnostic::error(format!("`{key}` is not an identifier."))]);
 			}
 		}
+
 		if is_import_meta {
 			Ok(IdentifierType::ImportMeta {
 				parts:parts
@@ -154,6 +163,7 @@ impl ReplaceGlobalDefinesConfig {
 
 	fn check_value(allocator:&Allocator, source_text:&str) -> Result<(), Vec<OxcDiagnostic>> {
 		Parser::new(allocator, source_text, SourceType::default()).parse_expression()?;
+
 		Ok(())
 	}
 }
@@ -179,6 +189,7 @@ pub struct ReplaceGlobalDefines<'a> {
 impl<'a> Traverse<'a> for ReplaceGlobalDefines<'a> {
 	fn enter_expression(&mut self, expr:&mut Expression<'a>, ctx:&mut TraverseCtx<'a>) {
 		self.replace_identifier_defines(expr, ctx);
+
 		self.replace_dot_defines(expr, ctx);
 	}
 }
@@ -195,6 +206,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
 		program:&mut Program<'a>,
 	) -> ReplaceGlobalDefinesReturn {
 		let (symbols, scopes) = traverse_mut(self, self.allocator, program, symbols, scopes);
+
 		ReplaceGlobalDefinesReturn { symbols, scopes }
 	}
 
@@ -213,13 +225,16 @@ impl<'a> ReplaceGlobalDefines<'a> {
 		let Expression::Identifier(ident) = expr else {
 			return;
 		};
+
 		if !ident.is_global_reference(ctx.symbols()) {
 			return;
 		}
+
 		for (key, value) in &self.config.0.identifier {
 			if ident.name.as_str() == key {
 				let value = self.parse_value(value);
 				*expr = value;
+
 				break;
 			}
 		}
@@ -229,17 +244,21 @@ impl<'a> ReplaceGlobalDefines<'a> {
 		let Expression::StaticMemberExpression(member) = expr else {
 			return;
 		};
+
 		for dot_define in &self.config.0.dot {
 			if Self::is_dot_define(ctx.symbols(), dot_define, member) {
 				let value = self.parse_value(&dot_define.value);
 				*expr = value;
+
 				return;
 			}
 		}
+
 		for meta_proeperty_define in &self.config.0.meta_proeperty {
 			if Self::is_meta_property_define(meta_proeperty_define, member) {
 				let value = self.parse_value(&meta_proeperty_define.value);
 				*expr = value;
+
 				return;
 			}
 		}
@@ -252,13 +271,20 @@ impl<'a> ReplaceGlobalDefines<'a> {
 		debug_assert!(!meta_define.parts.is_empty());
 
 		let mut current_part_member_expression = Some(member);
+
 		let mut cur_part_name = &member.property.name;
+
 		let mut is_full_match = true;
+
 		let mut i = meta_define.parts.len() - 1;
+
 		let mut has_matched_part = false;
+
 		loop {
 			let part = &meta_define.parts[i];
+
 			let matched = cur_part_name.as_str() == part;
+
 			if matched {
 				has_matched_part = true;
 			} else {
@@ -279,6 +305,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
 				match &member.object {
 					Expression::StaticMemberExpression(member) => {
 						cur_part_name = &member.property.name;
+
 						Some(member)
 					},
 					Expression::MetaProperty(_) => {
@@ -287,6 +314,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
 							// `import.meta.env.*`
 							return has_matched_part && !is_full_match;
 						}
+
 						return true;
 					},
 					Expression::Identifier(_) => {
@@ -324,6 +352,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
 		debug_assert!(dot_define.parts.len() > 1);
 
 		let mut current_part_member_expression = Some(member);
+
 		let mut cur_part_name = &member.property.name;
 
 		for (i, part) in dot_define.parts.iter().enumerate().rev() {
@@ -339,13 +368,16 @@ impl<'a> ReplaceGlobalDefines<'a> {
 				match &member.object {
 					Expression::StaticMemberExpression(member) => {
 						cur_part_name = &member.property.name;
+
 						Some(member)
 					},
 					Expression::Identifier(ident) => {
 						if !ident.is_global_reference(symbols) {
 							return false;
 						}
+
 						cur_part_name = &ident.name;
+
 						None
 					},
 					_ => None,

@@ -51,6 +51,7 @@ impl Rule for NoAwaitExpressionMember {
 
         if matches!(paren_expr.expression, Expression::AwaitExpression(_)) {
             let node_span = member_expr.span();
+
             ctx.diagnostic(no_await_expression_member_diagnostic(node_span));
         }
     }

@@ -67,6 +67,7 @@ const OXC_EXEC_SNAPSHOT: &str = "oxc_exec.snap.md";
 impl TestRunner {
     pub fn new(options: TestRunnerOptions) -> Self {
         let snapshot = Snapshot::new(&babel_root(), /* show_commit */ true);
+
         Self { options, snapshot }
     }
 
@@ -78,11 +79,16 @@ impl TestRunner {
         ] {
             if self.options.exec {
                 let fixture_root = fixture_root();
+
                 let _ = fs::remove_dir_all(&fixture_root);
+
                 let _ = fs::create_dir(&fixture_root);
             }
+
             let transform_paths = Self::generate_test_cases(root, &self.options);
+
             self.generate_snapshot(root, &snap_root().join(snapshot), transform_paths);
+
             if self.options.exec {
                 self.run_vitest(&snap_root().join(exec_snapshot));
             }
@@ -109,12 +115,14 @@ impl TestRunner {
                             return false;
                         }
                     }
+
                     true
                 })
                 .filter_map(|e| TestCase::new(cwd, e.path()))
                 .filter(|test_case| !test_case.skip_test_case())
                 .map(|mut case| {
                     case.test(options);
+
                     case
                 })
                 .collect::<Vec<_>>();
@@ -125,6 +133,7 @@ impl TestRunner {
                 .into_iter()
                 .filter(|case| case.kind == TestCaseKind::Conformance)
                 .collect::<Vec<_>>();
+
             if !transform_cases.is_empty() {
                 transform_files.insert((*case).to_string(), transform_cases);
             }
@@ -135,18 +144,24 @@ impl TestRunner {
 
     fn generate_snapshot(&self, root: &Path, dest: &Path, paths: IndexMap<String, Vec<TestCase>>) {
         let mut snapshot = String::new();
+
         let mut total = 0;
+
         let mut all_passed = vec![];
+
         let mut all_passed_count = 0;
 
         for (case, test_cases) in paths {
             let case_root = root.join(&case).join("test/fixtures");
+
             let num_of_tests = test_cases.len();
+
             total += num_of_tests;
 
             // Run the test
             let (passed, failed): (Vec<TestCase>, Vec<TestCase>) =
                 test_cases.into_iter().partition(|test_case| test_case.errors.is_empty());
+
             all_passed_count += passed.len();
 
             // Snapshot
@@ -154,23 +169,33 @@ impl TestRunner {
                 all_passed.push(case);
             } else {
                 snapshot.push_str("# ");
+
                 snapshot.push_str(&case);
+
                 snapshot.push_str(&format!(" ({}/{})\n", passed.len(), num_of_tests));
+
                 for test_case in failed {
                     snapshot.push_str("* ");
+
                     snapshot.push_str(&normalize_path(
                         test_case.path.strip_prefix(&case_root).unwrap(),
                     ));
+
                     let errors = test_case.errors;
+
                     if !errors.is_empty() {
                         snapshot.push('\n');
+
                         for error in errors {
                             snapshot.push_str(&error.message);
+
                             snapshot.push('\n');
                         }
+
                         snapshot.push('\n');
                     }
                 }
+
                 snapshot.push('\n');
             }
         }
@@ -178,9 +203,11 @@ impl TestRunner {
         if self.options.filter.is_none() {
             let all_passed =
                 all_passed.into_iter().map(|s| format!("* {s}")).collect::<Vec<_>>().join("\n");
+
             let snapshot = format!(
                 "Passed: {all_passed_count}/{total}\n\n# All Passed:\n{all_passed}\n\n\n{snapshot}"
             );
+
             self.snapshot.save(dest, &snapshot);
         }
     }

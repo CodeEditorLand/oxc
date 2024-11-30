@@ -136,10 +136,12 @@ declare_oxc_lint!(
 impl Rule for AltText {
     fn from_configuration(value: serde_json::Value) -> Self {
         let mut alt_text = AltTextConfig::default();
+
         if let Some(config) = value.get(0) {
             if let Some(elements) = config.get("elements").and_then(|v| v.as_array()) {
                 alt_text =
                     AltTextConfig { img: None, object: None, area: None, input_type_image: None };
+
                 for el in elements {
                     match el.as_str() {
                         Some("img") => alt_text.img = Some(vec![]),
@@ -172,6 +174,7 @@ impl Rule for AltText {
         let AstKind::JSXOpeningElement(jsx_el) = node.kind() else {
             return;
         };
+
         let Some(name) = &get_element_type(ctx, jsx_el) else {
             return;
         };
@@ -180,6 +183,7 @@ impl Rule for AltText {
         if let Some(custom_tags) = &self.img {
             if name == "img" || custom_tags.iter().any(|i| i == name) {
                 img_rule(jsx_el, ctx);
+
                 return;
             }
         }
@@ -189,6 +193,7 @@ impl Rule for AltText {
             if name == "object" || custom_tags.iter().any(|i| i == name) {
                 if let Some(AstKind::JSXElement(parent)) = ctx.nodes().parent_kind(node.id()) {
                     object_rule(jsx_el, parent, ctx);
+
                     return;
                 }
             }
@@ -198,6 +203,7 @@ impl Rule for AltText {
         if let Some(custom_tags) = &self.area {
             if name == "area" || custom_tags.iter().any(|i| i == name) {
                 area_rule(jsx_el, ctx);
+
                 return;
             }
         }
@@ -208,6 +214,7 @@ impl Rule for AltText {
                 && has_jsx_prop_ignore_case(jsx_el, "type").map_or(false, |v| {
                     get_string_literal_prop_value(v).map_or(false, |v| v == "image")
                 });
+
             if has_input_with_type_image || custom_tags.iter().any(|i| i == name) {
                 input_type_image_rule(jsx_el, ctx);
             }
@@ -225,6 +232,7 @@ fn is_valid_alt_prop(item: &JSXAttributeItem<'_>) -> bool {
                 true
             }
         }
+
         _ => true,
     }
 }
@@ -241,6 +249,7 @@ fn aria_label_has_value<'a>(item: &'a JSXAttributeItem<'a>) -> bool {
         Some(JSXAttributeValue::ExpressionContainer(container)) => {
             !container.expression.is_expression() || !container.expression.is_undefined()
         }
+
         _ => true,
     }
 }
@@ -250,11 +259,13 @@ fn img_rule<'a>(node: &'a JSXOpeningElement<'a>, ctx: &LintContext<'a>) {
         if !is_valid_alt_prop(alt_prop) {
             ctx.diagnostic(missing_alt_value(node.span));
         }
+
         return;
     }
 
     if has_jsx_prop_ignore_case(node, "role").map_or(false, is_presentation_role) {
         ctx.diagnostic(prefer_alt(node.span));
+
         return;
     }
 
@@ -262,6 +273,7 @@ fn img_rule<'a>(node: &'a JSXOpeningElement<'a>, ctx: &LintContext<'a>) {
         if !aria_label_has_value(aria_label_prop) {
             ctx.diagnostic(aria_label_value(node.span));
         }
+
         return;
     }
 
@@ -269,6 +281,7 @@ fn img_rule<'a>(node: &'a JSXOpeningElement<'a>, ctx: &LintContext<'a>) {
         if !aria_label_has_value(aria_labelledby_prop) {
             ctx.diagnostic(aria_labelled_by_value(node.span));
         }
+
         return;
     }
 
@@ -282,9 +295,12 @@ fn object_rule<'a>(
 ) {
     let has_aria_label =
         has_jsx_prop_ignore_case(node, "aria-label").map_or(false, aria_label_has_value);
+
     let has_aria_labelledby =
         has_jsx_prop_ignore_case(node, "aria-labelledby").map_or(false, aria_label_has_value);
+
     let has_label = has_aria_label || has_aria_labelledby;
+
     let has_title_attr = has_jsx_prop_ignore_case(node, "title")
         .and_then(get_string_literal_prop_value)
         .map_or(false, |v| !v.is_empty());
@@ -292,18 +308,23 @@ fn object_rule<'a>(
     if has_label || has_title_attr || object_has_accessible_child(ctx, parent) {
         return;
     }
+
     ctx.diagnostic(object(node.span));
 }
 
 fn area_rule<'a>(node: &'a JSXOpeningElement<'a>, ctx: &LintContext<'a>) {
     let has_aria_label =
         has_jsx_prop_ignore_case(node, "aria-label").map_or(false, aria_label_has_value);
+
     let has_aria_labelledby =
         has_jsx_prop_ignore_case(node, "aria-labelledby").map_or(false, aria_label_has_value);
+
     let has_label = has_aria_label || has_aria_labelledby;
+
     if has_label {
         return;
     }
+
     has_jsx_prop_ignore_case(node, "alt").map_or_else(
         || {
             ctx.diagnostic(area(node.span));
@@ -319,12 +340,16 @@ fn area_rule<'a>(node: &'a JSXOpeningElement<'a>, ctx: &LintContext<'a>) {
 fn input_type_image_rule<'a>(node: &'a JSXOpeningElement<'a>, ctx: &LintContext<'a>) {
     let has_aria_label =
         has_jsx_prop_ignore_case(node, "aria-label").map_or(false, aria_label_has_value);
+
     let has_aria_labelledby =
         has_jsx_prop_ignore_case(node, "aria-labelledby").map_or(false, aria_label_has_value);
+
     let has_label = has_aria_label || has_aria_labelledby;
+
     if has_label {
         return;
     }
+
     has_jsx_prop_ignore_case(node, "alt").map_or_else(
         || {
             ctx.diagnostic(input_type_image(node.span));

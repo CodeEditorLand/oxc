@@ -22,6 +22,7 @@ impl Generator for AssertLayouts {
             .iter()
             .map(|def| {
                 let typ = def.to_type_elide();
+
                 assert_type(&typ, def)
             })
             .collect::<(Vec<TokenStream>, Vec<TokenStream>)>();
@@ -80,6 +81,7 @@ fn assert_size_align(ty: &Type, size: usize, align: usize) -> TokenStream {
     quote! {
         ///@@line_break
         assert!(size_of::<#ty>() == #size);
+
         assert!(align_of::<#ty>() == #align);
     }
 }
@@ -95,11 +97,14 @@ fn with_offsets_assertion(
     let assertions = fields.iter().zip(offsets).filter(|(field, _)| field.vis.is_pub()).map(
         |(field, offset)| {
             let field = field.name.as_ref().map(ToIdent::to_ident);
+
             quote! {
                 assert!(offset_of!(#ty, #field) == #offset);
             }
         },
     );
+
     tk.extend(assertions);
+
     tk
 }

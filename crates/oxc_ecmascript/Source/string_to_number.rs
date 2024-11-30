@@ -8,6 +8,7 @@ pub trait StringToNumber {
 impl StringToNumber for &str {
     fn string_to_number(&self) -> f64 {
         let s = *self;
+
         match s {
             "" => return 0.0,
             "-Infinity" => return f64::NEG_INFINITY,
@@ -17,6 +18,7 @@ impl StringToNumber for &str {
                 // Note that alphabetical characters are not case-sensitive.
                 // <https://doc.rust-lang.org/std/primitive.f64.html#method.from_str>
                 let mut bytes = s.trim_start_matches(['-', '+']).bytes();
+
                 if bytes
                     .next()
                     .filter(|c| c.to_ascii_lowercase() == b'i')
@@ -49,6 +51,7 @@ impl StringToNumber for &str {
 
                 // Slow path
                 let mut value: f64 = 0.0;
+
                 for c in bytes {
                     if let Some(digit) = char::from(c).to_digit(radix) {
                         value = value.mul_add(f64::from(radix), f64::from(digit));
@@ -56,6 +59,7 @@ impl StringToNumber for &str {
                         return f64::NAN;
                     }
                 }
+
                 return value;
             }
         }

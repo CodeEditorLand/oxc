@@ -57,9 +57,11 @@ declare_oxc_lint!(
 impl Rule for NoInferrableTypes {
     fn from_configuration(value: serde_json::Value) -> Self {
         use serde_json::Value;
+
         let Some(config) = value.get(0).and_then(Value::as_object) else {
             return Self::default();
         };
+
         Self {
             ignore_parameters: config
                 .get("ignoreParameters")
@@ -83,12 +85,15 @@ impl Rule for NoInferrableTypes {
                     }
                 }
             }
+
             AstKind::Function(function) => {
                 self.check_formal_parameters(&function.params.items, ctx);
             }
+
             AstKind::ArrowFunctionExpression(arrow_function_expression) => {
                 self.check_formal_parameters(&arrow_function_expression.params.items, ctx);
             }
+
             AstKind::PropertyDefinition(property_definition) => {
                 // We ignore `readonly` because of Microsoft/TypeScript#14416
                 // Essentially a readonly property without a type
@@ -100,6 +105,7 @@ impl Rule for NoInferrableTypes {
                 {
                     return;
                 }
+
                 if let (Some(init), Some(type_annotation)) =
                     (&property_definition.value, &property_definition.type_annotation)
                 {
@@ -108,6 +114,7 @@ impl Rule for NoInferrableTypes {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -156,12 +163,14 @@ fn is_inferrable_type(type_annotation: &TSTypeAnnotation, init: &Expression) -> 
             if is_chain_call_expression_with_name(init, "Symbol") {
                 return true;
             }
+
             if let Expression::CallExpression(call_expr) = init.get_inner_expression() {
                 call_expr.callee.get_identifier_reference().map_or(false, |id| id.name == "Symbol")
             } else {
                 false
             }
         }
+
         TSType::TSTypeReference(type_reference) => {
             if let TSTypeName::IdentifierReference(ident) = &type_reference.type_name {
                 if ident.name == "RegExp" {
@@ -171,11 +180,13 @@ fn is_inferrable_type(type_annotation: &TSTypeAnnotation, init: &Expression) -> 
 
             false
         }
+
         TSType::TSUndefinedKeyword(_) => match init.get_inner_expression() {
             Expression::Identifier(id) => id.name == "undefined",
             Expression::UnaryExpression(unary_expr) => {
                 matches!(unary_expr.operator, UnaryOperator::Void)
             }
+
             _ => false,
         },
         _ => false,
@@ -188,12 +199,14 @@ fn is_chain_call_expression_with_name(init: &Expression, name: &str) -> bool {
             return call_expr.callee.get_identifier_reference().map_or(false, |id| id.name == name);
         }
     }
+
     false
 }
 
 fn is_init_bigint(init: &Expression) -> bool {
     let init = {
         let init = init.get_inner_expression();
+
         if let Expression::UnaryExpression(unary_expr) = init {
             if matches!(
                 unary_expr.operator,
@@ -216,6 +229,7 @@ fn is_init_bigint(init: &Expression) -> bool {
         Expression::CallExpression(call_expr) => {
             call_expr.callee.get_identifier_reference().map_or(false, |id| id.name == "BigInt")
         }
+
         Expression::BigIntLiteral(_) => true,
         _ => false,
     }
@@ -225,13 +239,16 @@ fn is_init_boolean(init: &Expression) -> bool {
     if is_chain_call_expression_with_name(init, "Boolean") {
         return true;
     }
+
     match init.get_inner_expression() {
         Expression::UnaryExpression(unary_expr) => {
             matches!(unary_expr.operator, UnaryOperator::LogicalNot)
         }
+
         Expression::CallExpression(call_expr) => {
             call_expr.callee.get_identifier_reference().map_or(false, |id| id.name == "Boolean")
         }
+
         Expression::BooleanLiteral(_) => true,
         _ => false,
     }
@@ -239,12 +256,14 @@ fn is_init_boolean(init: &Expression) -> bool {
 
 fn is_init_null(init: &Expression) -> bool {
     let init = init.get_inner_expression();
+
     matches!(init, Expression::NullLiteral(_))
 }
 
 fn is_init_number(init: &Expression) -> bool {
     let init = {
         let init = init.get_inner_expression();
+
         if let Expression::UnaryExpression(unary_expr) = init {
             if matches!(
                 unary_expr.operator,
@@ -258,14 +277,17 @@ fn is_init_number(init: &Expression) -> bool {
             init
         }
     };
+
     if is_chain_call_expression_with_name(init, "Number") {
         return true;
     }
+
     match init {
         Expression::Identifier(id) => id.name == "Infinity" || id.name == "NaN",
         Expression::CallExpression(call_expr) => {
             call_expr.callee.get_identifier_reference().map_or(false, |id| id.name == "Number")
         }
+
         Expression::NumericLiteral(_) => true,
         _ => false,
     }
@@ -274,10 +296,12 @@ fn is_init_string(init: &Expression) -> bool {
     if is_chain_call_expression_with_name(init, "String") {
         return true;
     }
+
     match init {
         Expression::CallExpression(call_expr) => {
             call_expr.callee.get_identifier_reference().map_or(false, |id| id.name == "String")
         }
+
         Expression::StringLiteral(_) | Expression::TemplateLiteral(_) => true,
         _ => false,
     }
@@ -286,6 +310,7 @@ fn is_init_regexp(init: &Expression) -> bool {
     if is_chain_call_expression_with_name(init, "RegExp") {
         return true;
     }
+
     match init.get_inner_expression() {
         Expression::RegExpLiteral(_) => true,
         Expression::NewExpression(new_expr) => {
@@ -295,6 +320,7 @@ fn is_init_regexp(init: &Expression) -> bool {
                 false
             }
         }
+
         Expression::CallExpression(call_expr) => {
             if let Expression::Identifier(id) = call_expr.callee.get_inner_expression() {
                 id.name == "RegExp"
@@ -302,6 +328,7 @@ fn is_init_regexp(init: &Expression) -> bool {
                 false
             }
         }
+
         _ => false,
     }
 }
@@ -512,6 +539,7 @@ fn test() {
             Some(serde_json::json!([{ "ignoreParameters": false, "ignoreProperties": false, }, ])),
         ),
     ];
+
     Tester::new(NoInferrableTypes::NAME, pass, fail)
         //.expect_fix(fix)
         .test_and_snapshot();

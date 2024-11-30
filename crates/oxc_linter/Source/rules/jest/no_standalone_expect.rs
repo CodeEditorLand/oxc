@@ -73,9 +73,11 @@ impl Rule for NoStandaloneExpect {
 
     fn run_once(&self, ctx: &LintContext<'_>) {
         let possible_jest_nodes = collect_possible_jest_call_node(ctx);
+
         let id_nodes_mapping =
             possible_jest_nodes.iter().fold(FxHashMap::default(), |mut acc, cur| {
                 acc.entry(cur.node.id()).or_insert(cur);
+
                 acc
             });
 
@@ -93,13 +95,16 @@ impl NoStandaloneExpect {
         ctx: &LintContext<'a>,
     ) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(jest_fn_call) = parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
         };
+
         let ParsedExpectFnCall { head, members, .. } = jest_fn_call;
 
         // only report `expect.hasAssertions` & `expect.assertions` member calls
@@ -138,6 +143,7 @@ fn is_correct_place_to_call_expect<'a>(
             AstKind::FunctionBody(_) => {
                 break;
             }
+
             _ => {
                 parent = ctx.nodes().parent_node(parent.id())?;
             }
@@ -145,6 +151,7 @@ fn is_correct_place_to_call_expect<'a>(
     }
 
     let node = parent;
+
     let parent = ctx.nodes().parent_node(node.id())?;
 
     match parent.kind() {
@@ -171,6 +178,7 @@ fn is_correct_place_to_call_expect<'a>(
                 };
             }
         }
+
         AstKind::ArrowFunctionExpression(_) => {
             let grandparent = ctx.nodes().parent_node(parent.id())?;
             // `test('foo', () => expect(1).toBe(1))`
@@ -186,6 +194,7 @@ fn is_correct_place_to_call_expect<'a>(
                 None
             };
         }
+
         _ => {}
     }
 
@@ -211,10 +220,12 @@ fn is_var_declarator_or_test_block<'a>(
             }
 
             let node_name = get_node_name(&call_expr.callee);
+
             if additional_test_block_functions.iter().any(|fn_name| node_name == fn_name) {
                 return true;
             }
         }
+
         AstKind::Argument(_) => {
             if let Some(parent) = ctx.nodes().parent_node(node.id()) {
                 return is_var_declarator_or_test_block(
@@ -225,6 +236,7 @@ fn is_var_declarator_or_test_block<'a>(
                 );
             }
         }
+
         _ => {}
     }
 
@@ -276,6 +288,7 @@ fn test() {
             "
             describe('scenario', () => {
                 const t = Math.random() ? it.only : it;
+
                 t('testing', () => expect(true));
             });
         ",
@@ -303,6 +316,7 @@ fn test() {
             "
                 describe('scenario', () => {
                     const t = Math.random() ? it.only : it;
+
                     t('testing', () => expect(true).toBe(false));
                 });
             ",
@@ -312,6 +326,7 @@ fn test() {
             "
                 describe('scenario', () => {
                     const t = Math.random() ? it.only : it;
+
                     t('testing', () => expect(true).toBe(false));
                 });
             ",
@@ -373,6 +388,7 @@ fn test() {
         (
             "
                 import { expect as pleaseExpect } from '@jest/globals';
+
                 describe('a test', () => { pleaseExpect(1).toBe(1); });
             ",
             None,
@@ -380,6 +396,7 @@ fn test() {
         (
             "
                 import { expect as pleaseExpect } from '@jest/globals';
+
                 beforeEach(() => pleaseExpect.hasAssertions());
             ",
             None,

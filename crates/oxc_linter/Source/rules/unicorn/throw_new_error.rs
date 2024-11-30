@@ -73,17 +73,21 @@ impl Rule for ThrowNewError {
                     return;
                 }
             }
+
             callee @ match_member_expression!(Expression) => {
                 let member_expr = callee.to_member_expression();
+
                 if member_expr.is_computed() {
                     return;
                 }
+
                 if let Some(v) = member_expr.static_property_name() {
                     if !CUSTOM_ERROR_REGEX_PATTERN.is_match(v) {
                         return;
                     }
                 }
             }
+
             _ => return,
         }
 

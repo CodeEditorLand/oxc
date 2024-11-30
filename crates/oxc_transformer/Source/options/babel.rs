@@ -56,27 +56,35 @@ impl BabelOptions {
     /// # Panics
     pub fn from_test_path(path: &Path) -> Self {
         let mut options_json: Option<Self> = None;
+
         for path in path.ancestors().take(3) {
             let file = path.join("options.json");
+
             if !file.exists() {
                 continue;
             }
+
             let file = std::fs::read_to_string(&file).unwrap();
+
             let new_json: Self = serde_json::from_str(&file).unwrap();
+
             if let Some(existing_json) = options_json.as_mut() {
                 if existing_json.source_type.is_none() {
                     if let Some(source_type) = new_json.source_type {
                         existing_json.source_type = Some(source_type);
                     }
                 }
+
                 if existing_json.throws.is_none() {
                     if let Some(throws) = new_json.throws {
                         existing_json.throws = Some(throws);
                     }
                 }
+
                 if existing_json.plugins.is_empty() {
                     existing_json.plugins = new_json.plugins;
                 }
+
                 if existing_json.presets.is_empty() {
                     existing_json.presets = new_json.presets;
                 }
@@ -84,6 +92,7 @@ impl BabelOptions {
                 options_json = Some(new_json);
             }
         }
+
         options_json.unwrap_or_default()
     }
 
@@ -94,7 +103,9 @@ impl BabelOptions {
     pub fn is_typescript(&self) -> bool {
         self.plugins.iter().any(|v| {
             let string_value = v.as_str().is_some_and(|v| v == "typescript");
+
             let array_value = v.get(0).and_then(Value::as_str).is_some_and(|s| s == "typescript");
+
             string_value || array_value
         })
     }
@@ -102,12 +113,14 @@ impl BabelOptions {
     pub fn is_typescript_definition(&self) -> bool {
         self.plugins.iter().filter_map(Value::as_array).any(|p| {
             let typescript = p.first().and_then(Value::as_str).is_some_and(|s| s == "typescript");
+
             let dts = p
                 .get(1)
                 .and_then(Value::as_object)
                 .and_then(|v| v.get("dts"))
                 .and_then(Value::as_bool)
                 .is_some_and(|v| v);
+
             typescript && dts
         })
     }
@@ -147,6 +160,7 @@ impl BabelOptions {
             Value::Array(a) if a.first().and_then(Value::as_str).is_some_and(|s| s == name) => {
                 Some(a.get(1).cloned())
             }
+
             _ => None,
         }
     }

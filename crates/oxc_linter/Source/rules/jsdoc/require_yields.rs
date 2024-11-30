@@ -143,6 +143,7 @@ impl Rule for RequireYields {
                 }
 
                 let jsdoc_tags = jsdocs.iter().flat_map(JSDoc::tags).collect::<Vec<_>>();
+
                 let resolved_yields_tag_name = settings.resolve_tag_name("yields");
 
                 // Without this option, need to check `yield` value.
@@ -151,6 +152,7 @@ impl Rule for RequireYields {
                     && is_missing_yields_tag(&jsdoc_tags, resolved_yields_tag_name)
                 {
                     ctx.diagnostic(missing_yields(func.span));
+
                     return;
                 }
 
@@ -159,6 +161,7 @@ impl Rule for RequireYields {
                 if let Some(span) = is_duplicated_yields_tag(&jsdoc_tags, resolved_yields_tag_name)
                 {
                     ctx.diagnostic(duplicate_yields(span));
+
                     return;
                 }
 
@@ -196,17 +199,22 @@ impl Rule for RequireYields {
 
                 // Find the nearest generator function
                 let mut generator_func_node = None;
+
                 let mut current_node = node;
+
                 while let Some(parent_node) = ctx.nodes().parent_node(current_node.id()) {
                     // If syntax is valid, `yield` should be inside a generator function
                     if let AstKind::Function(func) = parent_node.kind() {
                         if func.generator && (func.is_expression() || func.is_declaration()) {
                             generator_func_node = Some((func, parent_node));
+
                             break;
                         }
                     }
+
                     current_node = parent_node;
                 }
+
                 let Some((generator_func, generator_func_node)) = generator_func_node else {
                     return;
                 };
@@ -233,12 +241,14 @@ impl Rule for RequireYields {
                 }
 
                 let jsdoc_tags = jsdocs.iter().flat_map(JSDoc::tags).collect::<Vec<_>>();
+
                 let resolved_yields_tag_name = settings.resolve_tag_name("yields");
 
                 if is_missing_yields_tag(&jsdoc_tags, resolved_yields_tag_name) {
                     ctx.diagnostic(missing_yields(generator_func.span));
                 }
             }
+
             _ => {}
         }
     }
@@ -260,6 +270,7 @@ fn is_duplicated_yields_tag(
     resolved_yields_tag_name: &str,
 ) -> Option<Span> {
     let mut yields_found = false;
+
     for tag in jsdoc_tags {
         if tag.kind.parsed() == resolved_yields_tag_name {
             if yields_found {
@@ -279,12 +290,14 @@ fn is_missing_yields_tag_with_generator_tag(
     resolved_generator_tag_name: &str,
 ) -> Option<Span> {
     let (mut yields_found, mut generator_found) = (None, None);
+
     for tag in jsdoc_tags {
         let tag_name = tag.kind.parsed();
 
         if tag_name == resolved_yields_tag_name {
             yields_found = Some(tag.kind.span);
         }
+
         if tag_name == resolved_generator_tag_name {
             generator_found = Some(tag.kind.span);
         }

@@ -77,12 +77,14 @@ impl Rule for NoNamedAsDefaultMember {
         let module_record = ctx.module_record();
 
         let mut has_members_map = FxHashMap::default();
+
         for import_entry in &module_record.import_entries {
             let ImportImportName::Default(_) = import_entry.import_name else {
                 continue;
             };
 
             let specifier = import_entry.module_request.name();
+
             let Some(remote_module_record_ref) = module_record.loaded_modules.get(specifier) else {
                 continue;
             };
@@ -106,6 +108,7 @@ impl Rule for NoNamedAsDefaultMember {
         if has_members_map.is_empty() {
             return;
         };
+
         let get_external_module_name_if_has_entry =
             |ident: &IdentifierReference, entry_name: &str| {
                 get_symbol_id_from_ident(ctx, ident)
@@ -123,9 +126,11 @@ impl Rule for NoNamedAsDefaultMember {
             let Expression::Identifier(ident) = member_expr.object() else {
                 return;
             };
+
             let Some(prop_str) = member_expr.static_property_name() else {
                 return;
             };
+
             if let Some(module_name) = get_external_module_name_if_has_entry(ident, prop_str) {
                 ctx.diagnostic(no_named_as_default_member_dignostic(
                     match member_expr {
@@ -147,6 +152,7 @@ impl Rule for NoNamedAsDefaultMember {
                     let Some(Expression::Identifier(ident)) = &decl.init else {
                         continue;
                     };
+
                     let BindingPatternKind::ObjectPattern(object_pattern) = &decl.id.kind else {
                         continue;
                     };
@@ -155,6 +161,7 @@ impl Rule for NoNamedAsDefaultMember {
                         let Some(name) = prop.key.static_name() else {
                             continue;
                         };
+
                         if let Some(module_name) =
                             get_external_module_name_if_has_entry(ident, &name)
                         {
@@ -167,6 +174,7 @@ impl Rule for NoNamedAsDefaultMember {
                         }
                     }
                 }
+
                 _ => {}
             }
         }
@@ -186,11 +194,13 @@ fn test() {
         r"import baz from './named-exports';
         {
             const baz = {};
+
             const a = baz.a;
         }",
         r"import baz from './named-exports';
         {
             const baz = {};
+
             const a = baz.looooooooooooooooooooooooong;
         }",
     ];

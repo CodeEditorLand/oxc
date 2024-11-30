@@ -111,6 +111,7 @@ impl Rule for IframeMissingSandbox {
                     },
                 );
             }
+
             AstKind::CallExpression(call_expr) => {
                 if is_create_element_call(call_expr) {
                     let Some(Argument::StringLiteral(str)) = call_expr.arguments.first() else {
@@ -160,25 +161,32 @@ impl Rule for IframeMissingSandbox {
                     }
                 }
             }
+
             _ => {}
         }
     }
 }
 fn validate_sandbox_value(literal: &StringLiteral, ctx: &LintContext) {
     let attrs = literal.value.split(' ');
+
     let mut has_allow_same_origin = false;
+
     let mut has_allow_scripts = false;
+
     for trimmed_atr in attrs.into_iter().map(str::trim) {
         if !ALLOWED_VALUES.contains(trimmed_atr) {
             ctx.diagnostic(invalid_sandbox_prop(literal.span, trimmed_atr));
         }
+
         if trimmed_atr == "allow-scripts" {
             has_allow_scripts = true;
         }
+
         if trimmed_atr == "allow-same-origin" {
             has_allow_same_origin = true;
         }
     }
+
     if has_allow_scripts && has_allow_same_origin {
         ctx.diagnostic(invalid_sandbox_combination_prop(literal.span));
     }

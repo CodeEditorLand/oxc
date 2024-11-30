@@ -36,7 +36,9 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let Expression::ClassExpression(class) = expr else { unreachable!() };
 
         let class_address = class.address();
+
         let expr_count = self.transform_class_expression_start(class, class_address, ctx);
+
         if expr_count > 0 {
             self.transform_class_expression_finish(expr, expr_count, ctx);
         }
@@ -54,6 +56,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             // in the sequence expression which was substituted for it. So don't transform it again!
             // Returning 0 tells `enter_expression` not to call `transform_class_expression_finish` either.
             self.class_expression_addresses_stack.pop();
+
             return 0;
         }
 
@@ -61,6 +64,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             Some(id) => id.name.as_str(),
             None => "Class",
         });
+
         self.is_declaration = false;
 
         self.transform_class(class, ctx);
@@ -69,6 +73,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let mut expr_count = self.insert_before.len() + self.insert_after_exprs.len();
 
         let private_props = self.private_props_stack.last();
+
         if let Some(private_props) = private_props {
             expr_count += private_props.props.len();
         }
@@ -114,8 +119,10 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         // Babel has these always go first, regardless of order of class elements.
         // Also insert `var _prop;` temp var declarations for private static props.
         let private_props = self.private_props_stack.last();
+
         if let Some(private_props) = private_props {
             let mut weakmap_symbol_id = None;
+
             exprs.extend(private_props.props.values().filter_map(|prop| {
                 // Insert `var _prop;` declaration.
                 // Do it here rather than when binding was created to maintain same order of `var`
@@ -140,9 +147,11 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
         // Insert class + static property assignments + static blocks
         let class_expr = ctx.ast.move_expression(expr);
+
         if let ClassName::Binding(binding) = &self.class_name {
             // `_Class = class {}`
             let assignment = create_assignment(binding, class_expr, ctx);
+
             exprs.push(assignment);
             // Add static property assignments + static blocks
             exprs.extend(self.insert_after_exprs.drain(..));
@@ -180,6 +189,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
         // Class declarations are always named, except for `export default class {}`, which is handled separately
         let ident = class.id.as_ref().unwrap();
+
         self.class_name = ClassName::Binding(BoundIdentifier::from_binding_ident(ident));
 
         self.transform_class_declaration_impl(class, stmt_address, ctx);
@@ -237,6 +247,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         if let Some(private_props) = self.private_props_stack.last() {
             // TODO: Only call `insert_many_before` if some private *instance* props
             let mut weakmap_symbol_id = None;
+
             self.ctx.statement_injector.insert_many_before(
                 &stmt_address,
                 private_props.props.values().filter_map(|prop| {
@@ -282,11 +293,15 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
         // Check if class has any properties and get index of constructor (if class has one)
         let mut instance_prop_count = 0;
+
         let mut has_static_prop_or_static_block = false;
         // TODO: Store `FxIndexMap`s in a pool and re-use them
         let mut private_props = FxIndexMap::default();
+
         let mut constructor_index = None;
+
         let mut index_not_including_removed = 0;
+
         for element in &class.body.body {
             match element {
                 ClassElement::PropertyDefinition(prop) => {
@@ -299,6 +314,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                             ident.name.as_str(),
                             SymbolFlags::FunctionScopedVariable,
                         );
+
                         private_props.insert(
                             ident.name.clone(),
                             PrivateProp { binding, is_static: prop.r#static },
@@ -317,13 +333,16 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
                     continue;
                 }
+
                 ClassElement::StaticBlock(_) => {
                     // Static block only necessitates transforming class if it's being transformed
                     if self.transform_static_blocks {
                         has_static_prop_or_static_block = true;
+
                         continue;
                     }
                 }
+
                 ClassElement::MethodDefinition(method) => {
                     if method.kind == MethodDefinitionKind::Constructor
                         && method.value.body.is_some()
@@ -331,6 +350,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                         constructor_index = Some(index_not_including_removed);
                     }
                 }
+
                 ClassElement::AccessorProperty(_) | ClassElement::TSIndexSignature(_) => {
                     // TODO: Need to handle these?
                 }
@@ -346,6 +366,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 ClassName::Binding(binding) => Some(binding.clone()),
                 ClassName::Name(_) => None,
             };
+
             self.private_props_stack.push(Some(PrivateProps {
                 props: private_props,
                 class_name_binding,
@@ -360,6 +381,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
         // Extract properties and static blocks from class body + substitute computed method keys
         let mut instance_inits = Vec::with_capacity(instance_prop_count);
+
         class.body.body.retain_mut(|element| {
             match element {
                 ClassElement::PropertyDefinition(prop) => {
@@ -368,20 +390,26 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                     } else {
                         self.convert_instance_property(prop, &mut instance_inits, ctx);
                     }
+
                     false
                 }
+
                 ClassElement::StaticBlock(block) => {
                     if self.transform_static_blocks {
                         self.convert_static_block(block, ctx);
+
                         false
                     } else {
                         true
                     }
                 }
+
                 ClassElement::MethodDefinition(method) => {
                     self.substitute_temp_var_for_method_computed_key(method, ctx);
+
                     true
                 }
+
                 ClassElement::AccessorProperty(_) | ClassElement::TSIndexSignature(_) => {
                     // TODO: Need to handle these?
                     true
@@ -434,8 +462,10 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         } else {
             // Convert to assignment or `_defineProperty` call, depending on `loose` option
             let this = ctx.ast.expression_this(SPAN);
+
             self.create_init_assignment(prop, value, this, false, ctx)
         };
+
         instance_inits.push(init_expr);
     }
 
@@ -451,8 +481,10 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let value = match &mut prop.value {
             Some(value) => {
                 self.transform_static_initializer(value, ctx);
+
                 ctx.ast.move_expression(value)
             }
+
             None => ctx.ast.void_0(SPAN),
         };
 
@@ -464,8 +496,11 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 // Binding is initialized in 1st pass in `transform_class` when a static prop is found
                 unreachable!();
             };
+
             let assignee = class_name_binding.create_read_expression(ctx);
+
             let init_expr = self.create_init_assignment(prop, value, assignee, true, ctx);
+
             self.insert_expr_after_class(init_expr, ctx);
         }
     }
@@ -477,13 +512,19 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 ctx.generate_uid_in_current_scope(name, SymbolFlags::Class)
             } else {
                 let flags = SymbolFlags::FunctionScopedVariable;
+
                 let binding = ctx.generate_uid_in_current_scope(name, flags);
+
                 self.ctx.var_declarations.insert_var(&binding, None, ctx);
+
                 binding
             };
+
             self.class_name = ClassName::Binding(binding);
         }
+
         let ClassName::Binding(binding) = &self.class_name else { unreachable!() };
+
         binding
     }
 
@@ -522,16 +563,21 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 if needs_define(&ident.name) {
                     return self.create_init_assignment_not_loose(prop, value, assignee, ctx);
                 }
+
                 ctx.ast.member_expression_static(SPAN, assignee, ident.as_ref().clone(), false)
             }
+
             PropertyKey::StringLiteral(str_lit) if needs_define(&str_lit.value) => {
                 return self.create_init_assignment_not_loose(prop, value, assignee, ctx);
             }
+
             key @ match_expression!(PropertyKey) => {
                 // TODO: This can also be a numeric key (non-computed). Maybe other key types?
                 let key = self.create_computed_key_temp_var(key.to_expression_mut(), ctx);
+
                 ctx.ast.member_expression_computed(SPAN, assignee, key, false)
             }
+
             PropertyKey::PrivateIdentifier(_) => {
                 // Handled in `convert_instance_property` and `convert_static_property`
                 unreachable!();
@@ -559,10 +605,12 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             PropertyKey::StaticIdentifier(ident) => {
                 ctx.ast.expression_string_literal(ident.span, ident.name.clone(), None)
             }
+
             key @ match_expression!(PropertyKey) => {
                 // TODO: This can also be a numeric key (non-computed). Maybe other key types?
                 self.create_computed_key_temp_var(key.to_expression_mut(), ctx)
             }
+
             PropertyKey::PrivateIdentifier(_) => {
                 // Handled in `convert_instance_property` and `convert_static_property`
                 unreachable!();
@@ -586,7 +634,9 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let private_props = self.private_props_stack.last().unwrap();
+
         let prop = &private_props.props[&ident.name];
+
         let arguments = ctx.ast.vec_from_array([
             Argument::from(ctx.ast.expression_this(SPAN)),
             Argument::from(prop.binding.create_read_expression(ctx)),
@@ -615,19 +665,23 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             false,
             false,
         );
+
         let obj = ctx.ast.expression_object(SPAN, ctx.ast.vec1(property), None);
 
         // Insert after class
         let private_props = self.private_props_stack.last().unwrap();
+
         let prop = &private_props.props[&ident.name];
 
         if self.is_declaration {
             // `var _prop = {_: value};`
             let var_decl = create_variable_declaration(&prop.binding, obj, ctx);
+
             self.insert_after_stmts.push(var_decl);
         } else {
             // `_prop = {_: value}`
             let assignment = create_assignment(&prop.binding, obj, ctx);
+
             self.insert_after_exprs.push(assignment);
         }
     }
@@ -669,6 +723,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         // e.g.: `x` here now has read+write `ReferenceFlags`:
         // `C = class C { static { x = 1; } }` -> `C = (_C = class C {}, x = 1, _C)`
         let expr = ClassStaticBlock::convert_block_to_expression(block, ctx);
+
         self.insert_expr_after_class(expr, ctx);
     }
 
@@ -729,11 +784,14 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                                 .get_resolved_references(symbol_id)
                                 .all(|reference| !reference.is_write())
                     }
+
                     None => false,
                 }
             }
+
             _ => false,
         };
+
         if cannot_have_side_effects {
             return key;
         }
@@ -748,6 +806,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         self.ctx.var_declarations.insert_let(&binding, None, ctx);
 
         let assignment = create_assignment(&binding, key, ctx);
+
         self.insert_before.push(assignment);
 
         binding.create_read_expression(ctx)
@@ -767,6 +826,8 @@ fn create_new_weakmap<'a>(
 ) -> Expression<'a> {
     let symbol_id = *symbol_id
         .get_or_insert_with(|| ctx.scopes().find_binding(ctx.current_scope_id(), "WeakMap"));
+
     let ident = ctx.create_ident_expr(SPAN, Atom::from("WeakMap"), symbol_id, ReferenceFlags::Read);
+
     ctx.ast.expression_new(SPAN, ident, ctx.ast.vec(), NONE)
 }

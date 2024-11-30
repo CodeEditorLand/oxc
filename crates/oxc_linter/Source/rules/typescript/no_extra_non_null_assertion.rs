@@ -44,6 +44,7 @@ impl Rule for NoExtraNonNullAssertion {
                     None
                 }
             }
+
             AstKind::MemberExpression(expr) if expr.optional() => {
                 if let Expression::TSNonNullExpression(expr) = expr.object().without_parentheses() {
                     Some(expr)
@@ -51,6 +52,7 @@ impl Rule for NoExtraNonNullAssertion {
                     None
                 }
             }
+
             AstKind::CallExpression(expr) if expr.optional => {
                 if let Expression::TSNonNullExpression(expr) = expr.callee.without_parentheses() {
                     Some(expr)
@@ -58,11 +60,13 @@ impl Rule for NoExtraNonNullAssertion {
                     None
                 }
             }
+
             _ => None,
         };
 
         if let Some(expr) = expr {
             let end = expr.span.end - 1;
+
             ctx.diagnostic(no_extra_non_null_assertion_diagnostic(Span::new(end, end)));
         }
     }

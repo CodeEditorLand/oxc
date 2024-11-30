@@ -62,8 +62,10 @@ impl StickyRegex for Regex {
         start: usize,
     ) -> (Option<Captures<'h>>, usize) {
         let c_opt = self.captures_at(haystack, start);
+
         if let Some(captures) = c_opt {
             let capture = captures.get(0).unwrap();
+
             if capture.start() == start {
                 return (Some(captures), capture.end());
             }
@@ -74,11 +76,13 @@ impl StickyRegex for Regex {
 
 fn quick_test(s: &str) -> bool {
     let mut chars = s.chars().peekable();
+
     while let Some(c) = chars.next() {
         if c == '\\' && chars.peek().is_some_and(|c| *c == '8' || *c == '9') {
             return true;
         }
     }
+
     false
 }
 
@@ -99,11 +103,15 @@ fn check_string(ctx: &LintContext<'_>, string: &str) {
     }
 
     let mut start: usize = 0;
+
     while let (Some(captures), new_start) = NONOCTAL_REGEX.sticky_captures(string, start) {
         let previous_escape = captures.name("previousEscape");
+
         let decimal_escape = captures.name("decimalEscape").unwrap();
+
         let decimal_escape_span =
             Span::new(decimal_escape.start() as u32, decimal_escape.end() as u32);
+
         let decimal_escape_str = decimal_escape.as_str();
 
         if let Some(prev_match) = previous_escape {
@@ -113,6 +121,7 @@ fn check_string(ctx: &LintContext<'_>, string: &str) {
                     "\\u00008",
                     Span::new(prev_match.start() as u32, decimal_escape_span.end),
                 ));
+
                 ctx.diagnostic(replacement(decimal_escape_str, "\\u0038", decimal_escape_span));
             }
         } else {

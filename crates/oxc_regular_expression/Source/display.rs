@@ -62,12 +62,15 @@ impl<'a> Display for Alternative<'a> {
 
         write_join_with(f, "", &self.body, |iter| {
             let next = iter.next()?;
+
             let Some(next) = as_character(next) else {
                 return Some(next.to_string());
             };
 
             let peek = iter.peek().and_then(|it| as_character(it));
+
             let (result, eat) = character_to_string(next, peek);
+
             if eat {
                 iter.next();
             }
@@ -141,6 +144,7 @@ impl<'a> Display for Quantifier<'a> {
             (min, Some(max)) if min == max => write!(f, "{{{min}}}",)?,
             (min, max) => {
                 let max = max.map_or_else(String::default, |it| it.to_string());
+
                 write!(f, "{{{min},{max}}}",)?;
             }
         }
@@ -156,6 +160,7 @@ impl<'a> Display for Quantifier<'a> {
 impl Display for Character {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (string, _) = character_to_string(self, None);
+
         write!(f, "{string}")
     }
 }
@@ -194,11 +199,13 @@ impl<'a> Display for UnicodePropertyEscape<'a> {
         }
 
         write!(f, r"{{")?;
+
         match (&self.name, &self.value) {
             (name, Some(value)) if name == "General_Category" => write!(f, r"{value}")?,
             (name, Some(value)) => write!(f, r"{name}={value}")?,
             _ => write!(f, r"{}", self.name)?,
         }
+
         write!(f, r"}}")
     }
 }
@@ -228,12 +235,15 @@ impl<'a> Display for CharacterClass<'a> {
 
             write_join_with(f, sep, &self.body, |iter| {
                 let next = iter.next()?;
+
                 let Some(next) = as_character(next) else {
                     return Some(next.to_string());
                 };
 
                 let peek = iter.peek().and_then(|it| as_character(it));
+
                 let (result, eat) = character_to_string(next, peek);
+
                 if eat {
                     iter.next();
                 }
@@ -268,7 +278,9 @@ impl Display for CharacterClassRange {
 impl<'a> Display for ClassStringDisjunction<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, r"\q{{")?;
+
         write_join(f, "|", &self.body)?;
+
         write!(f, "}}")
     }
 }
@@ -286,6 +298,7 @@ impl<'a> Display for CapturingGroup<'a> {
         if let Some(name) = &self.name {
             write!(f, "?<{name}>")?;
         }
+
         write!(f, "{}", &self.body)?;
 
         write!(f, ")")
@@ -302,12 +315,15 @@ impl<'a> Display for IgnoreGroup<'a> {
             if flags.ignore_case {
                 write!(f, "{prefix}i")?;
             }
+
             if flags.sticky {
                 write!(f, "{prefix}y")?;
             }
+
             if flags.multiline {
                 write!(f, "{prefix}m")?;
             }
+
             Ok(())
         }
 
@@ -316,6 +332,7 @@ impl<'a> Display for IgnoreGroup<'a> {
         if let Some(enabling) = &self.enabling_modifiers {
             write_flags(f, '\0', enabling)?;
         }
+
         if let Some(disabling) = &self.disabling_modifiers {
             write_flags(f, '-', disabling)?;
         }
@@ -354,7 +371,9 @@ fn character_to_string(
             if let Some(peek) = peek.filter(|peek| is_trail_surrogate(peek.value)) {
                 // Lead+Trail
                 let cp = combine_surrogate_pair(cp, peek.value);
+
                 let ch = char::from_u32(cp).expect("Invalid surrogate pair `Character`!");
+
                 return (format!("{ch}"), true);
             }
 
@@ -364,6 +383,7 @@ fn character_to_string(
     }
 
     let ch = char::from_u32(cp).expect("Invalid `Character`!");
+
     let result = match this.kind {
         // Not a surrogate, like BMP, or all units in unicode mode
         CharacterKind::Symbol => format!("{ch}"),
@@ -376,6 +396,7 @@ fn character_to_string(
         CharacterKind::Identifier => {
             format!(r"\{ch}")
         }
+
         CharacterKind::SingleEscape => match ch {
             '\n' => String::from(r"\n"),
             '\r' => String::from(r"\r"),
@@ -389,26 +410,35 @@ fn character_to_string(
         CharacterKind::Null => String::from(r"\0"),
         CharacterKind::UnicodeEscape => {
             let hex = &format!("{cp:04X}");
+
             if hex.len() <= 4 {
                 format!(r"\u{hex}")
             } else {
                 format!(r"\u{{{hex}}}")
             }
         }
+
         CharacterKind::HexadecimalEscape => {
             let hex = &format!("{cp:02X}");
+
             format!(r"\x{hex}")
         }
+
         CharacterKind::Octal1 => {
             let octal = format!("{cp:o}");
+
             format!(r"\{octal}")
         }
+
         CharacterKind::Octal2 => {
             let octal = format!("{cp:02o}");
+
             format!(r"\{octal}")
         }
+
         CharacterKind::Octal3 => {
             let octal = format!("{cp:03o}");
+
             format!(r"\{octal}")
         }
     };
@@ -435,6 +465,7 @@ where
     F: Fn(&mut Peekable<I::IntoIter>) -> Option<String>,
 {
     let sep = sep.as_ref();
+
     let iter = &mut items.into_iter().peekable();
 
     if let Some(first) = next(iter) {
@@ -585,13 +616,16 @@ mod test {
 
     fn test_display(allocator: &Allocator, (source, expect): &Case) {
         let expect = expect.unwrap_or(source);
+
         let actual = Parser::new(allocator, source, ParserOptions::default()).parse().unwrap();
+
         assert_eq!(expect, actual.to_string());
     }
 
     #[test]
     fn test() {
         let allocator = &Allocator::default();
+
         CASES.iter().for_each(|case| test_display(allocator, case));
     }
 }

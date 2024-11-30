@@ -115,6 +115,7 @@ impl<'a> Lexer<'a> {
 
         // The first token is at the start of file, so is allows on a new line
         let token = Token::new_on_new_line();
+
         Self {
             allocator,
             source,
@@ -139,6 +140,7 @@ impl<'a> Lexer<'a> {
         source_type: SourceType,
     ) -> Self {
         let unique = UniquePromise::new_for_benchmarks();
+
         Self::new(allocator, source_text, source_type, unique)
     }
 
@@ -160,14 +162,18 @@ impl<'a> Lexer<'a> {
     /// Rewinds the lexer to the same state as when the passed in `checkpoint` was created.
     pub fn rewind(&mut self, checkpoint: LexerCheckpoint<'a>) {
         self.errors.truncate(checkpoint.errors_pos);
+
         self.source.set_position(checkpoint.position);
+
         self.token = checkpoint.token;
+
         self.lookahead.clear();
     }
 
     /// Find the nth lookahead token lazily
     pub fn lookahead(&mut self, n: u8) -> Token {
         let n = n as usize;
+
         debug_assert!(n > 0);
 
         if let Some(lookahead) = self.lookahead.get(n - 1) {
@@ -182,7 +188,9 @@ impl<'a> Lexer<'a> {
 
         for _i in self.lookahead.len()..n {
             let kind = self.read_next_token();
+
             let peeked = self.finish_next(kind);
+
             self.lookahead.push_back(Lookahead { position: self.source.position(), token: peeked });
         }
 
@@ -207,19 +215,28 @@ impl<'a> Lexer<'a> {
     pub fn next_token(&mut self) -> Token {
         if let Some(lookahead) = self.lookahead.pop_front() {
             self.source.set_position(lookahead.position);
+
             return lookahead.token;
         }
+
         let kind = self.read_next_token();
+
         self.finish_next(kind)
     }
 
     fn finish_next(&mut self, kind: Kind) -> Token {
         self.token.kind = kind;
+
         self.token.end = self.offset();
+
         debug_assert!(self.token.start <= self.token.end);
+
         let token = self.token;
+
         self.trivia_builder.handle_token(token);
+
         self.token = Token::default();
+
         token
     }
 
@@ -297,12 +314,14 @@ impl<'a> Lexer<'a> {
 
     fn current_offset(&self) -> Span {
         let offset = self.offset();
+
         Span::new(offset, offset)
     }
 
     /// Return `IllegalCharacter` Error or `UnexpectedEnd` if EOF
     fn unexpected_err(&mut self) {
         let offset = self.current_offset();
+
         match self.peek_char() {
             Some(c) => self.error(diagnostics::invalid_character(c, offset)),
             None => self.error(diagnostics::unexpected_end(offset)),
@@ -314,6 +333,7 @@ impl<'a> Lexer<'a> {
     fn read_next_token(&mut self) -> Kind {
         loop {
             let offset = self.offset();
+
             self.token.start = offset;
 
             let Some(byte) = self.peek_byte() else {
@@ -322,6 +342,7 @@ impl<'a> Lexer<'a> {
 
             // SAFETY: `byte` is byte value at current position in source
             let kind = unsafe { handle_byte(byte, self) };
+
             if kind != Kind::Skip {
                 return kind;
             }

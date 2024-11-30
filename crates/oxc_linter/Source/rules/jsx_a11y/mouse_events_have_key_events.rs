@@ -124,9 +124,11 @@ impl Rule for MouseEventsHaveKeyEvents {
                             }
                         }
                     }
+
                     None => {
                         ctx.diagnostic(miss_on_focus(jsx_attr.span(), handler));
                     }
+
                     _ => {}
                 }
 
@@ -146,9 +148,11 @@ impl Rule for MouseEventsHaveKeyEvents {
                             ctx.diagnostic(miss_on_blur(jsx_attr.span(), handler));
                         }
                     }
+
                     None => {
                         ctx.diagnostic(miss_on_blur(jsx_attr.span(), handler));
                     }
+
                     _ => {}
                 }
 

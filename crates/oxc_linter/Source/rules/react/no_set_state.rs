@@ -97,6 +97,7 @@ fn test() {
 			        var Hello = createReactClass({
 			          componentDidUpdate: function() {
 			            someNonMemberFunction(arg);
+
 			            this.someHandler = this.setState;
 			          },
 			          render: function() {
@@ -108,6 +109,7 @@ fn test() {
 			        var Hello = function() {
 			          this.setState({})
 			        };
+
 			        createReactClass({
 			          render: function() {
 			            let x;
@@ -118,6 +120,7 @@ fn test() {
 			        var Hello = function() {
 			          this.setState({})
 			        };
+
 			        class Other extends React.Component {
 			          render() {
 			            let x;

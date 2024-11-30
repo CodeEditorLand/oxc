@@ -74,8 +74,10 @@ impl Rule for NoAnonymousDefaultExport {
                 ExportDefaultDeclarationKind::ArrowFunctionExpression(_) => {
                     Some((export_decl.span, ErrorNodeKind::Function))
                 }
+
                 ExportDefaultDeclarationKind::ParenthesizedExpression(expr) => {
                     let expr = expr.expression.get_inner_expression();
+
                     match expr {
                         Expression::ClassExpression(class_expr) => class_expr
                             .id
@@ -88,6 +90,7 @@ impl Rule for NoAnonymousDefaultExport {
                         _ => None,
                     }
                 }
+
                 _ => None,
             },
             // CommonJS: module.exports
@@ -95,6 +98,7 @@ impl Rule for NoAnonymousDefaultExport {
                 Expression::ClassExpression(class_expr) => {
                     class_expr.id.as_ref().map_or(Some((expr.span, ErrorNodeKind::Class)), |_| None)
                 }
+
                 Expression::FunctionExpression(function_expr) => function_expr
                     .id
                     .as_ref()
@@ -102,6 +106,7 @@ impl Rule for NoAnonymousDefaultExport {
                 Expression::ArrowFunctionExpression(_) => {
                     Some((expr.span, ErrorNodeKind::Function))
                 }
+
                 _ => None,
             },
             _ => None,

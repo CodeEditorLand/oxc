@@ -45,10 +45,13 @@ impl<'a, 'ctx> Jsx<'a, 'ctx> {
         if options.jsx_plugin || options.development {
             options.conform();
         }
+
         let JsxOptions {
             jsx_plugin, display_name_plugin, jsx_self_plugin, jsx_source_plugin, ..
         } = options;
+
         let refresh = options.refresh.clone();
+
         Self {
             implementation: JsxImpl::new(options, ast, ctx),
             display_name: ReactDisplayName::new(ctx),
@@ -67,6 +70,7 @@ impl<'a, 'ctx> Traverse<'a> for Jsx<'a, 'ctx> {
         if self.enable_jsx_plugin {
             program.source_type = program.source_type.with_standard(true);
         }
+
         if self.refresh_plugin {
             self.refresh.enter_program(program, ctx);
         }
@@ -76,6 +80,7 @@ impl<'a, 'ctx> Traverse<'a> for Jsx<'a, 'ctx> {
         if self.refresh_plugin {
             self.refresh.exit_program(program, ctx);
         }
+
         if self.enable_jsx_plugin {
             self.implementation.exit_program(program, ctx);
         } else if self.source_plugin {
@@ -106,6 +111,7 @@ impl<'a, 'ctx> Traverse<'a> for Jsx<'a, 'ctx> {
             if self.self_plugin && self.implementation.jsx_self.can_add_self_attribute(ctx) {
                 self.implementation.jsx_self.enter_jsx_opening_element(elem, ctx);
             }
+
             if self.source_plugin {
                 self.implementation.jsx_source.enter_jsx_opening_element(elem, ctx);
             }
@@ -116,6 +122,7 @@ impl<'a, 'ctx> Traverse<'a> for Jsx<'a, 'ctx> {
         if self.enable_jsx_plugin {
             self.implementation.exit_expression(expr, ctx);
         }
+
         if self.refresh_plugin {
             self.refresh.exit_expression(expr, ctx);
         }

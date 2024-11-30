@@ -12,6 +12,7 @@ impl<'a> VisitMut<'a> for FormalParameterBindingPattern<'a> {
         if let BindingPatternKind::AssignmentPattern(assignment) = kind {
             *kind = assignment.left.kind.clone_in(self.ast.allocator);
         }
+
         walk_binding_pattern_kind(self, kind);
     }
 }
@@ -19,6 +20,7 @@ impl<'a> VisitMut<'a> for FormalParameterBindingPattern<'a> {
 impl<'a> FormalParameterBindingPattern<'a> {
     pub fn remove_assignments_from_kind(ast: AstBuilder<'a>, kind: &mut BindingPatternKind<'a>) {
         let mut visitor = FormalParameterBindingPattern { ast };
+
         visitor.visit_binding_pattern_kind(kind);
     }
 }

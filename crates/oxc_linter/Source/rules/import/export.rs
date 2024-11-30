@@ -50,9 +50,11 @@ declare_oxc_lint!(
 impl Rule for Export {
     fn run_once(&self, ctx: &LintContext<'_>) {
         let module_record = ctx.module_record();
+
         let named_export = &module_record.exported_bindings;
 
         let mut all_export_names = FxHashMap::default();
+
         let mut visited = FxHashSet::default();
 
         module_record.star_export_entries.iter().for_each(|star_export_entry| {
@@ -61,6 +63,7 @@ impl Rule for Export {
             let Some(module_request) = &star_export_entry.module_request else {
                 return;
             };
+
             let Some(remote_module_record_ref) =
                 module_record.loaded_modules.get(module_request.name())
             else {
@@ -100,6 +103,7 @@ impl Rule for Export {
 
             if !spans.is_empty() {
                 spans.push(*span);
+
                 let labels = spans.into_iter().map(LabeledSpan::underline).collect::<Vec<_>>();
 
                 ctx.diagnostic(
@@ -111,9 +115,12 @@ impl Rule for Export {
 
         if !module_record.export_default_duplicated.is_empty() {
             let mut spans = module_record.export_default_duplicated.clone();
+
             if let Some(span) = module_record.export_default {
                 spans.push(span);
+
                 let labels = spans.into_iter().map(LabeledSpan::underline).collect::<Vec<_>>();
+
                 ctx.diagnostic(
                     OxcDiagnostic::warn("Multiple default exports.").with_labels(labels),
                 );
@@ -128,27 +135,33 @@ fn walk_exported_recursive(
     visited: &mut FxHashSet<PathBuf>,
 ) {
     let path = &module_record.resolved_absolute_path;
+
     if path.components().any(|c| match c {
         std::path::Component::Normal(p) => p == std::ffi::OsStr::new("node_modules"),
         _ => false,
     }) {
         return;
     }
+
     if !visited.insert(path.clone()) {
         return;
     }
+
     for name in module_record.exported_bindings.keys() {
         result.insert(name.clone());
     }
+
     for export_entry in &module_record.star_export_entries {
         let Some(module_request) = &export_entry.module_request else {
             continue;
         };
+
         let Some(remote_module_record_ref) =
             module_record.loaded_modules.get(module_request.name())
         else {
             continue;
         };
+
         walk_exported_recursive(remote_module_record_ref.value(), result, visited);
     }
 }
@@ -173,16 +186,21 @@ fn test() {
             // SYNTAX_CASES doesn't need to be tested
             ("
                 import * as A from './named-export-collision/a';
+
                 import * as B from './named-export-collision/b';
+
                 export { A, B };
             "),
             ("
                 export * as A from './named-export-collision/a';
+
                 export * as B from './named-export-collision/b';
             "),
             ("
                 export default function foo(param: string): boolean;
+
                 export default function foo(param: string, param1: number): boolean;
+
                 export default function foo(param: string, param1?: number): boolean {
                     return param && param1;
                 }
@@ -190,47 +208,59 @@ fn test() {
             // Typescript
             ("
                 export const Foo = 1;
+
                 export type Foo = number;
             "),
             ("
                 export const Foo = 1;
+
                 export interface Foo {}
             "),
             ("
                 export function fff(a: string);
+
                 export function fff(a: number);
             "),
             ("
                 export function fff(a: string);
+
                 export function fff(a: number);
+
                 export function fff(a: string|number) {};
             "),
             ("
                 export const Bar = 1;
+
                 export namespace Foo {
                 export const Bar = 1;
                 }
             "),
             ("
                 export type Bar = string;
+
                 export namespace Foo {
                 export type Bar = string;
                 }
             "),
             ("
                 export const Bar = 1;
+
                 export type Bar = string;
+
                 export namespace Foo {
                 export const Bar = 1;
+
                 export type Bar = string;
                 }
             "),
             ("
                 export namespace Foo {
                 export const Foo = 1;
+
                 export namespace Bar {
                     export const Foo = 2;
                 }
+
                 export namespace Baz {
                     export const Foo = 3;
                 }
@@ -238,52 +268,67 @@ fn test() {
             "),
             ("
                 export class Foo { }
+
                 export namespace Foo { }
+
                 export namespace Foo {
                 export class Bar {}
                 }
             "),
             ("
                 export function Foo();
+
                 export namespace Foo { }
             "),
             ("
                 export function Foo(a: string);
+
                 export namespace Foo { }
             "),
             ("
                 export function Foo(a: string);
+
                 export function Foo(a: number);
+
                 export namespace Foo { }
             "),
             ("
                 export enum Foo { }
+
                 export namespace Foo { }
             "),
             (r#"export * from "./file1.ts""#),
             ("
                 export * as A from './named-export-collision/a';
+
                 export * as B from './named-export-collision/b';
             "),
             (r#"
                 declare module "a" {
                     const Foo = 1;
+
                     export {Foo as default};
                 }
+
                 declare module "b" {
                 const Bar = 2;
+
                 export {Bar as default};
                 }
             "#),
             (r#"
                 declare module "a" {
                     const Foo = 1;
+
                     export {Foo as default};
                 }
+
                 const Bar = 2;
+
                 export {Bar as default};
             "#),
         ];
+
         let fail = vec![
             (r#"let foo; export { foo }; export * from "./export-all""#),
             // (r#"export * from "./malformed.js""#),
@@ -293,12 +338,14 @@ fn test() {
             (r#"let foo; export { foo as "foo" }; export * from "./export-all""#),
             ("
                 export type Foo = string;
+
                 export type Foo = number;
             "),
             ("
                 export const a = 1
                 export namespace Foo {
                 export const a = 2;
+
                 export const a = 3;
                 }
             "),
@@ -313,17 +360,22 @@ fn test() {
                 export namespace Foo {
                     export namespace Bar {
                         export const Foo = 1;
+
                             export const Foo = 2;
                     }
+
                     export namespace Baz {
                         export const Bar = 3;
+
                         export const Bar = 4;
                     }
                 }
             "),
             ("
                 export class Foo { }
+
                 export class Foo { }
+
                 export namespace Foo { }
             "),
             // ("
@@ -333,12 +385,16 @@ fn test() {
             // "),
             ("
                 export enum Foo { }
+
                 export class Foo { }
+
                 export namespace Foo { }
             "),
             ("
                 export const Foo = 'bar';
+
                 export class Foo { }
+
                 export namespace Foo { }
             "),
             // ("
@@ -360,9 +416,13 @@ fn test() {
                 //     const Foo = 1;
                 //     export {Foo as default};
                 // }
+
                 const Bar = 2;
+
                 export {Bar as default};
+
                 const Baz = 3;
+
                 export {Baz as default};
             "#),
         ];
@@ -375,7 +435,9 @@ fn test() {
 
     {
         let pass = vec!["export * from './module'"];
+
         let fail = vec![];
+
         Tester::new(Export::NAME, pass, fail)
             .with_import_plugin(true)
             .change_rule_path("export-star-4/index.js")

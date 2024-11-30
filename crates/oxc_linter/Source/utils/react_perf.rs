@@ -72,9 +72,11 @@ where
         let AstKind::JSXAttributeItem(JSXAttributeItem::Attribute(attr)) = node.kind() else {
             return;
         };
+
         let Some(JSXAttributeValue::ExpressionContainer(container)) = attr.value.as_ref() else {
             return;
         };
+
         let Some(expr) = container.expression.as_expression() else {
             return;
         };
@@ -85,6 +87,7 @@ where
         // diagnostic and return true.
         if let Some(attr_span) = self.check_for_violation_on_expr(expr) {
             ctx.diagnostic(react_perf_inline_diagnostic(Self::MESSAGE, attr_span));
+
             return;
         }
 
@@ -94,6 +97,7 @@ where
         let Expression::Identifier(ident) = expr else {
             return;
         };
+
         let Some(symbol_id) = ctx.symbols().get_reference(ident.reference_id()).symbol_id() else {
             return;
         };
@@ -105,6 +109,7 @@ where
         }
 
         let declaration_node = ctx.nodes().get_node(ctx.symbols().get_declaration(symbol_id));
+
         if let Some((decl_span, init_span)) =
             self.check_for_violation_on_ast_kind(&declaration_node.kind(), symbol_id)
         {
@@ -126,6 +131,7 @@ pub fn is_constructor_matching_name(callee: &Expression<'_>, name: &str) -> bool
     let Expression::Identifier(ident) = callee else {
         return false;
     };
+
     ident.name == name
 }
 
@@ -141,28 +147,36 @@ pub fn find_initialized_binding<'a, 'b>(
                     if id.symbol_id() == symbol_id {
                         return Some((id.as_ref(), &assignment.right));
                     }
+
                     None
                 }
+
                 BindingPatternKind::ObjectPattern(obj) => {
                     for prop in &obj.properties {
                         let maybe_initialized_binding =
                             find_initialized_binding(&prop.value, symbol_id);
+
                         if maybe_initialized_binding.is_some() {
                             return maybe_initialized_binding;
                         }
                     }
+
                     None
                 }
+
                 BindingPatternKind::ArrayPattern(arr) => {
                     for el in &arr.elements {
                         let Some(el) = el else {
                             continue;
                         };
+
                         let maybe_initialized_binding = find_initialized_binding(el, symbol_id);
+
                         if maybe_initialized_binding.is_some() {
                             return maybe_initialized_binding;
                         }
                     }
+
                     None
                 }
                 // assignment patterns should not have an assignment pattern on
@@ -170,27 +184,35 @@ pub fn find_initialized_binding<'a, 'b>(
                 BindingPatternKind::AssignmentPattern(_) => None,
             }
         }
+
         BindingPatternKind::ObjectPattern(obj) => {
             for prop in &obj.properties {
                 let maybe_initialized_binding = find_initialized_binding(&prop.value, symbol_id);
+
                 if maybe_initialized_binding.is_some() {
                     return maybe_initialized_binding;
                 }
             }
+
             None
         }
+
         BindingPatternKind::ArrayPattern(arr) => {
             for el in &arr.elements {
                 let Some(el) = el else {
                     continue;
                 };
+
                 let maybe_initialized_binding = find_initialized_binding(el, symbol_id);
+
                 if maybe_initialized_binding.is_some() {
                     return maybe_initialized_binding;
                 }
             }
+
             None
         }
+
         BindingPatternKind::BindingIdentifier(_) => None,
     }
 }

@@ -13,17 +13,24 @@ pub(super) fn print_block<'a>(
     directives: Option<&[Directive<'a>]>,
 ) -> Doc<'a> {
     let mut parts = p.vec();
+
     parts.push(text!("{"));
+
     if let Some(doc) = print_block_body(p, stmts, directives, true, false) {
         parts.push({
             let mut parts = p.vec();
+
             parts.extend(hardline!());
+
             parts.push(doc);
+
             Doc::Indent(parts)
         });
+
         parts.extend(hardline!());
     } else {
         let parent = p.parent_kind();
+
         let parent_parent = p.parent_parent_kind();
 
         if (parent_parent.is_none()
@@ -46,7 +53,9 @@ pub(super) fn print_block<'a>(
             parts.extend(hardline!());
         }
     }
+
     parts.push(text!("}"));
+
     Doc::Array(parts)
 }
 
@@ -58,6 +67,7 @@ pub(super) fn print_block_body<'a>(
     is_root: bool,
 ) -> Option<Doc<'a>> {
     let has_directives = directives.is_some_and(|directives| !directives.is_empty());
+
     let has_body = stmts.iter().any(|stmt| !matches!(stmt, Statement::EmptyStatement(_)));
 
     if !has_body && !has_directives {

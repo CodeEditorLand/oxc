@@ -107,6 +107,7 @@ impl Rule for CatchErrorName {
                             binding_ident.span,
                         ));
                     }
+
                     return;
                 }
 
@@ -151,6 +152,7 @@ impl CatchErrorName {
         ctx: &LintContext,
     ) -> Option<OxcDiagnostic> {
         let expr = arg0.as_expression()?;
+
         let expr = expr.without_parentheses();
 
         if let Expression::ArrowFunctionExpression(arrow_expr) = expr {

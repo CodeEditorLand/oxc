@@ -25,7 +25,9 @@ pub fn parse_jest_fn_call<'a>(
     ctx: &LintContext<'a>,
 ) -> Option<ParsedJestFnCall<'a>> {
     let original = possible_jest_node.original;
+
     let node = possible_jest_node.node;
+
     let callee = &call_expr.callee;
     // If bailed out, we're not jest function
 
@@ -37,7 +39,9 @@ pub fn parse_jest_fn_call<'a>(
         parent_kind: Some(KnownMemberExpressionParentKind::Call),
         grandparent_kind: None,
     };
+
     let mut chain = get_node_chain(&params);
+
     let all_member_expr_except_last =
         chain.iter().rev().skip(1).all(|member| {
             matches!(member.parent_kind, Some(KnownMemberExpressionParentKind::Member))
@@ -60,12 +64,14 @@ pub fn parse_jest_fn_call<'a>(
         }
 
         let name = resolved.original.unwrap_or(resolved.local);
+
         let kind = JestFnKind::from(name);
 
         // every member node must have a member expression as their parent
         // in order to be part of the call chain we're parsing
         let (head, members) = {
             let rest = chain.split_off(1);
+
             let head = chain.into_iter().next().unwrap();
             (head, rest)
         };
@@ -80,6 +86,7 @@ pub fn parse_jest_fn_call<'a>(
                 node,
                 ctx,
             };
+
             return parse_jest_expect_fn_call(options, matches!(kind, JestFnKind::ExpectTypeOf));
         }
 
@@ -103,6 +110,7 @@ pub fn parse_jest_fn_call<'a>(
         }
 
         let mut call_chains = Vec::from([Cow::Borrowed(name)]);
+
         call_chains.extend(members.iter().filter_map(KnownMemberExpressionProperty::name));
 
         if ctx.frameworks().is_jest() && !is_valid_jest_call(&call_chains) {
@@ -129,6 +137,7 @@ fn parse_jest_expect_fn_call<'a>(
     is_type_of: bool,
 ) -> Option<ParsedJestFnCall<'a>> {
     let ExpectFnCallOptions { call_expr, members, name, local, head, node, ctx } = options;
+
     let (modifiers, matcher, mut expect_error) = match find_modifiers_and_matcher(&members) {
         Ok((modifier, matcher)) => (modifier, matcher, None),
         Err(e) => (vec![], None, Some(e)),
@@ -142,6 +151,7 @@ fn parse_jest_expect_fn_call<'a>(
 
     if matches!(expect_error, Some(ExpectError::MatcherNotFound)) {
         let parent = ctx.nodes().parent_node(node.id())?;
+
         if matches!(parent.kind(), AstKind::MemberExpression(_)) {
             expect_error = Some(ExpectError::MatcherNotCalled);
         }
@@ -200,6 +210,7 @@ fn find_modifiers_and_matcher(
             && matches!(member.grandparent_kind, Some(KnownMemberExpressionParentKind::Call))
         {
             let matcher = Some(index);
+
             return Ok((modifiers, matcher));
         }
 
@@ -299,9 +310,11 @@ fn is_valid_jest_call(members: &[Cow<str>]) -> bool {
                 .zip(members.iter())
                 .find_map(|(&chain, member)| {
                     let ordering = chain.cmp(member.as_ref());
+
                     if ordering != Ordering::Equal {
                         return Some(ordering);
                     }
+
                     None
                 })
                 .unwrap_or(Ordering::Equal)
@@ -318,6 +331,7 @@ fn resolve_to_jest_fn<'a>(
     original: Option<&'a str>,
 ) -> Option<ResolvedJestFn<'a>> {
     let ident = resolve_first_ident(&call_expr.callee)?;
+
     Some(ResolvedJestFn { local: ident.name.as_str(), original })
 }
 
@@ -327,6 +341,7 @@ fn resolve_first_ident<'a>(expr: &'a Expression<'a>) -> Option<&'a IdentifierRef
         match_member_expression!(Expression) => {
             resolve_first_ident(expr.to_member_expression().object())
         }
+
         Expression::CallExpression(call_expr) => resolve_first_ident(&call_expr.callee),
         Expression::TaggedTemplateExpression(tagged_expr) => resolve_first_ident(&tagged_expr.tag),
         _ => None,
@@ -379,6 +394,7 @@ pub struct ParsedExpectFnCall<'a> {
 impl<'a> ParsedExpectFnCall<'a> {
     pub fn matcher(&self) -> Option<&KnownMemberExpressionProperty<'a>> {
         let matcher_index = self.matcher_index?;
+
         self.members.get(matcher_index)
     }
 
@@ -416,6 +432,7 @@ impl<'a> KnownMemberExpressionProperty<'a> {
                 Expression::StringLiteral(string_literal) => {
                     Some(Cow::Borrowed(string_literal.value.as_str()))
                 }
+
                 Expression::TemplateLiteral(template_literal) => Some(Cow::Borrowed(
                     template_literal.quasi().expect("get string content").as_str(),
                 )),
@@ -440,6 +457,7 @@ impl<'a> KnownMemberExpressionProperty<'a> {
             if let Some(modifier_name) = ModifierName::from(name.as_ref()) {
                 return modifiers.contains(&modifier_name);
             }
+
             false
         })
     }
@@ -456,10 +474,12 @@ impl<'a> MemberExpressionElement<'a> {
         member_expr: &'a MemberExpression<'a>,
     ) -> Option<(Span, MemberExpressionElement<'a>)> {
         let (span, _) = member_expr.static_property_info()?;
+
         match member_expr {
             MemberExpression::ComputedMemberExpression(expr) => {
                 Some((span, Self::Expression(&expr.expression)))
             }
+
             MemberExpression::StaticMemberExpression(expr) => {
                 Some((span, Self::IdentName(&expr.property)))
             }
@@ -486,7 +506,9 @@ struct NodeChainParams<'a> {
 /// Port from [eslint-plugin-jest](https://github.com/jest-community/eslint-plugin-jest/blob/a058f22f94774eeea7980ea2d1f24c6808bf3e2c/src/rules/utils/parseJestFnCall.ts#L36-L51)
 fn get_node_chain<'a>(params: &NodeChainParams<'a>) -> Vec<KnownMemberExpressionProperty<'a>> {
     let mut chain = Vec::new();
+
     recurse_extend_node_chain(params, &mut chain);
+
     chain
 }
 
@@ -499,6 +521,7 @@ fn recurse_extend_node_chain<'a>(
     match expr {
         match_member_expression!(Expression) => {
             let member_expr = expr.to_member_expression();
+
             let params = NodeChainParams {
                 expr: member_expr.object(),
                 parent: Some(expr),
@@ -507,6 +530,7 @@ fn recurse_extend_node_chain<'a>(
             };
 
             recurse_extend_node_chain(&params, chain);
+
             if let Some((span, element)) = MemberExpressionElement::from_member_expr(member_expr) {
                 chain.push(KnownMemberExpressionProperty {
                     element,
@@ -517,6 +541,7 @@ fn recurse_extend_node_chain<'a>(
                 });
             }
         }
+
         Expression::Identifier(ident) => {
             chain.push(KnownMemberExpressionProperty {
                 element: MemberExpressionElement::Expression(expr),
@@ -526,6 +551,7 @@ fn recurse_extend_node_chain<'a>(
                 span: ident.span,
             });
         }
+
         Expression::CallExpression(call_expr) => {
             let params = NodeChainParams {
                 expr: &call_expr.callee,
@@ -533,8 +559,10 @@ fn recurse_extend_node_chain<'a>(
                 parent_kind: Some(KnownMemberExpressionParentKind::Call),
                 grandparent_kind: *parent_kind,
             };
+
             recurse_extend_node_chain(&params, chain);
         }
+
         Expression::TaggedTemplateExpression(tagged_expr) => {
             let params = NodeChainParams {
                 expr: &tagged_expr.tag,
@@ -542,8 +570,10 @@ fn recurse_extend_node_chain<'a>(
                 parent_kind: Some(KnownMemberExpressionParentKind::TaggedTemplate),
                 grandparent_kind: *parent_kind,
             };
+
             recurse_extend_node_chain(&params, chain);
         }
+
         Expression::StringLiteral(string_literal) => {
             chain.push(KnownMemberExpressionProperty {
                 element: MemberExpressionElement::Expression(expr),
@@ -553,6 +583,7 @@ fn recurse_extend_node_chain<'a>(
                 span: string_literal.span,
             });
         }
+
         Expression::TemplateLiteral(template_literal) if is_pure_string(template_literal) => {
             chain.push(KnownMemberExpressionProperty {
                 element: MemberExpressionElement::Expression(expr),
@@ -562,6 +593,7 @@ fn recurse_extend_node_chain<'a>(
                 span: template_literal.span,
             });
         }
+
         _ => {}
     };
 }

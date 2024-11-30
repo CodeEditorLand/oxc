@@ -69,13 +69,16 @@ impl<'a, 'b> ObjectLike<'a, 'b> {
             Self::Expression(object) => {
                 Box::new(object.properties.iter().map(|prop| prop.format(p)))
             }
+
             Self::AssignmentTarget(object) => {
                 Box::new(object.properties.iter().map(|prop| prop.format(p)))
             }
+
             Self::Pattern(object) => Box::new(object.properties.iter().map(|prop| prop.format(p))),
             Self::WithClause(attributes) => {
                 Box::new(attributes.with_entries.iter().map(|entry| entry.format(p)))
             }
+
             Self::TSTypeLiteral(literal) => {
                 Box::new(literal.members.iter().map(|member| member.format(p)))
             }
@@ -91,6 +94,7 @@ impl<'a, 'b> ObjectLike<'a, 'b> {
                     ""
                 }
             }
+
             _ => ",",
         }
     }
@@ -101,48 +105,62 @@ pub(super) fn print_object_properties<'a>(
     object: ObjectLike<'a, '_>,
 ) -> Doc<'a> {
     let left_brace = text!("{");
+
     let right_brace = text!("}");
 
     let should_break = false;
+
     let member_separator = object.member_separator(p);
 
     let content = if object.is_empty() {
         group![p, left_brace, softline!(), right_brace]
     } else {
         let mut parts = p.vec();
+
         parts.push(text!("{"));
+
         parts.push(Doc::Indent({
             let len = object.len();
+
             let has_rest = object.has_rest();
+
             let mut indent_parts = p.vec();
 
             indent_parts.push(if p.options.bracket_spacing { line!() } else { softline!() });
+
             for (i, doc) in object.iter(p).enumerate() {
                 indent_parts.push(doc);
+
                 if i == len - 1 && !has_rest {
                     break;
                 }
 
                 indent_parts.push(text!(member_separator));
+
                 indent_parts.push(line!());
             }
+
             match object {
                 ObjectLike::Expression(_)
                 | ObjectLike::WithClause(_)
                 | ObjectLike::TSTypeLiteral(_) => {}
+
                 ObjectLike::AssignmentTarget(target) => {
                     if let Some(rest) = &target.rest {
                         indent_parts.push(rest.format(p));
                     }
                 }
+
                 ObjectLike::Pattern(object) => {
                     if let Some(rest) = &object.rest {
                         indent_parts.push(rest.format(p));
                     }
                 }
             }
+
             indent_parts
         }));
+
         if p.should_print_es5_comma()
             && match object {
                 ObjectLike::Pattern(pattern) => pattern.rest.is_none(),
@@ -151,16 +169,20 @@ pub(super) fn print_object_properties<'a>(
         {
             parts.push(if_break!(p, member_separator, "", None));
         }
+
         parts.push(if p.options.bracket_spacing { line!() } else { softline!() });
+
         parts.push(text!("}"));
 
         if matches!(p.current_kind(), AstKind::Program(_)) {
             let should_break =
                 misc::has_new_line_in_range(p.source_text, object.span().start, object.span().end);
+
             return Doc::Group(Group::new(parts).with_break(should_break));
         }
 
         let parent_kind = p.parent_kind();
+
         if (object.is_object_pattern() && should_hug_the_only_parameter(p, parent_kind))
             || (!should_break
                 && object.is_object_pattern()
@@ -173,6 +195,7 @@ pub(super) fn print_object_properties<'a>(
         } else {
             let should_break =
                 misc::has_new_line_in_range(p.source_text, object.span().start, object.span().end);
+
             Doc::Group(Group::new(parts).with_break(should_break))
         }
     };
@@ -185,6 +208,7 @@ fn should_hug_the_only_parameter(p: &mut Prettier<'_>, kind: AstKind<'_>) -> boo
         AstKind::FormalParameters(params) => {
             super::function_parameters::should_hug_the_only_function_parameter(p, params)
         }
+
         _ => false,
     }
 }

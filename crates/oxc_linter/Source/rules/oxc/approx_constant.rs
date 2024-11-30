@@ -50,6 +50,7 @@ impl Rule for ApproxConstant {
         };
 
         let number_lit_str = number_literal.value.to_string();
+
         for (constant, name, min_digits) in &KNOWN_CONSTS {
             if is_approx_const(*constant, &number_lit_str, *min_digits) {
                 ctx.diagnostic(approx_constant_diagnostic(number_literal.span, name));
@@ -78,6 +79,7 @@ fn is_approx_const(constant: f64, value: &str, min_digits: usize) -> bool {
         true
     } else {
         let round_const = format!("{constant:.*}", value.len() - 2);
+
         value == round_const
     }
 }

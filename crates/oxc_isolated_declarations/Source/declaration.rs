@@ -30,6 +30,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 self.ast.vec_from_iter(decl.declarations.iter().filter_map(|declarator| {
                     self.transform_variable_declarator(declarator, check_binding)
                 }));
+
             Some(self.transform_variable_declaration_with_new_declarations(decl, declarations))
         }
     }
@@ -53,6 +54,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     self.error(binding_element_export(id.span));
                 }
             });
+
             return None;
         }
 
@@ -65,7 +67,9 @@ impl<'a> IsolatedDeclarations<'a> {
         }
 
         let mut binding_type = None;
+
         let mut init = None;
+
         if decl.id.type_annotation.is_none() {
             if let Some(init_expr) = &decl.init {
                 // if kind is const and it doesn't need to infer type from expression
@@ -83,13 +87,16 @@ impl<'a> IsolatedDeclarations<'a> {
                     binding_type = self.infer_type_from_expression(init_expr);
                 }
             }
+
             if init.is_none() && binding_type.is_none() {
                 binding_type = Some(self.ast.ts_type_unknown_keyword(SPAN));
+
                 if !decl.init.as_ref().is_some_and(Expression::is_function) {
                     self.error(variable_must_have_explicit_type(decl.id.span()));
                 }
             }
         }
+
         let id = binding_type.map_or_else(
             || decl.id.clone_in(self.ast.allocator),
             |ts_type| {
@@ -111,8 +118,11 @@ impl<'a> IsolatedDeclarations<'a> {
         // We need to enter a new scope for the module block, avoid add binding to the parent scope
         // TODO: doesn't have a scope_id!
         self.scope.enter_scope(ScopeFlags::TsModuleBlock, &Cell::default());
+
         let stmts = self.transform_statements_on_demand(&block.body);
+
         self.scope.leave_scope();
+
         self.ast.alloc_ts_module_block(SPAN, self.ast.vec(), stmts)
     }
 
@@ -131,6 +141,7 @@ impl<'a> IsolatedDeclarations<'a> {
         match body {
             TSModuleDeclarationBody::TSModuleDeclaration(decl) => {
                 let inner = self.transform_ts_module_declaration(decl);
+
                 self.ast.alloc_ts_module_declaration(
                     decl.span,
                     decl.id.clone_in(self.ast.allocator),
@@ -139,8 +150,10 @@ impl<'a> IsolatedDeclarations<'a> {
                     self.is_declare(),
                 )
             }
+
             TSModuleDeclarationBody::TSModuleBlock(block) => {
                 let body = self.transform_ts_module_block(block);
+
                 self.ast.alloc_ts_module_declaration(
                     decl.span,
                     decl.id.clone_in(self.ast.allocator),
@@ -167,6 +180,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+
             Declaration::VariableDeclaration(decl) => self
                 .transform_variable_declaration(decl, check_binding)
                 .map(Declaration::VariableDeclaration),
@@ -179,24 +193,31 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+
             Declaration::TSTypeAliasDeclaration(alias_decl) => {
                 if !check_binding || self.scope.has_reference(&alias_decl.id.name) {
                     let mut decl = decl.clone_in(self.ast.allocator);
+
                     self.visit_declaration(&mut decl);
+
                     Some(decl)
                 } else {
                     None
                 }
             }
+
             Declaration::TSInterfaceDeclaration(interface_decl) => {
                 if !check_binding || self.scope.has_reference(&interface_decl.id.name) {
                     let mut decl = decl.clone_in(self.ast.allocator);
+
                     self.visit_declaration(&mut decl);
+
                     Some(decl)
                 } else {
                     None
                 }
             }
+
             Declaration::TSEnumDeclaration(enum_decl) => {
                 if !check_binding || self.scope.has_reference(&enum_decl.id.name) {
                     self.transform_ts_enum_declaration(enum_decl)
@@ -204,6 +225,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+
             Declaration::TSModuleDeclaration(decl) => {
                 if !check_binding
                     || matches!(
@@ -219,6 +241,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+
             Declaration::TSImportEqualsDeclaration(decl) => {
                 if !check_binding || self.scope.has_reference(&decl.id.name) {
                     Some(Declaration::TSImportEqualsDeclaration(decl.clone_in(self.ast.allocator)))
@@ -239,6 +262,7 @@ impl<'a> IsolatedDeclarations<'a> {
             PropertyKey::StaticMemberExpression(expr) => {
                 !expr.get_first_object().is_identifier_reference()
             }
+
             key => !self.is_literal_key(key),
         };
 
@@ -251,19 +275,23 @@ impl<'a> IsolatedDeclarations<'a> {
 impl<'a> VisitMut<'a> for IsolatedDeclarations<'a> {
     fn visit_ts_signatures(&mut self, signatures: &mut Vec<'a, TSSignature<'a>>) {
         self.transform_ts_signatures(signatures);
+
         walk_ts_signatures(self, signatures);
     }
 
     fn visit_ts_method_signature(&mut self, signature: &mut TSMethodSignature<'a>) {
         self.report_signature_property_key(&signature.key, signature.computed);
+
         if signature.return_type.is_none() {
             match signature.kind {
                 TSMethodSignatureKind::Method => {
                     self.error(inferred_type_of_expression(signature.span));
                 }
+
                 TSMethodSignatureKind::Get => {
                     self.error(accessor_must_have_explicit_return_type(signature.key.span()));
                 }
+
                 TSMethodSignatureKind::Set => {
                     // setter method don't need return type
                 }

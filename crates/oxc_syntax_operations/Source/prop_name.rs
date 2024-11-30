@@ -23,6 +23,7 @@ impl<'a> PropName for ObjectProperty<'a> {
         if self.kind != PropertyKind::Init || self.method || self.shorthand || self.computed {
             return None;
         }
+
         self.key.prop_name()
     }
 }
@@ -53,6 +54,7 @@ impl<'a> PropName for MethodDefinition<'a> {
         if self.computed {
             return None;
         }
+
         self.key.prop_name()
     }
 }
@@ -62,6 +64,7 @@ impl<'a> PropName for PropertyDefinition<'a> {
         if self.computed {
             return None;
         }
+
         self.key.prop_name()
     }
 }

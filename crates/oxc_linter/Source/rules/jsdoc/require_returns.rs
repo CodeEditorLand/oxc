@@ -116,6 +116,7 @@ impl Rule for RequireReturns {
                 AstKind::Function(func) => {
                     functions_to_check.insert(node.id(), (node, func.span, (func.r#async, false)));
                 }
+
                 AstKind::ArrowFunctionExpression(arrow_func) => {
                     functions_to_check.insert(
                         node.id(),
@@ -144,6 +145,7 @@ impl Rule for RequireReturns {
                 // IMO: This is a fault of the original rule design...
                 AstKind::ReturnStatement(return_stmt) => {
                     let mut current_node = node;
+
                     while let Some(parent_node) = ctx.nodes().parent_node(current_node.id()) {
                         match parent_node.kind() {
                             AstKind::Function(_) | AstKind::ArrowFunctionExpression(_) => {
@@ -159,14 +161,17 @@ impl Rule for RequireReturns {
                                         None => e.2 = (e.2 .0, true),
                                     }
                                 });
+
                                 continue 'visit_node;
                             }
+
                             _ => {
                                 current_node = parent_node;
                             }
                         }
                     }
                 }
+
                 _ => continue,
             }
         }
@@ -182,6 +187,7 @@ impl Rule for RequireReturns {
             };
 
             let config = &self.0;
+
             let settings = &ctx.settings().jsdoc;
             // If JSDoc is found but safely ignored, skip
             if jsdocs
@@ -204,11 +210,13 @@ impl Rule for RequireReturns {
                             continue;
                         }
                     }
+
                     MethodDefinitionKind::Constructor => {
                         if !config.check_constructors {
                             continue;
                         }
                     }
+
                     _ => {}
                 }
             }
@@ -219,6 +227,7 @@ impl Rule for RequireReturns {
             {
                 continue;
             }
+
             if !config.force_require_return && !config.force_returns_with_async &&
                 // If async, no resolve value, skip
                 (!has_return_value && *is_async)
@@ -227,10 +236,12 @@ impl Rule for RequireReturns {
             }
 
             let jsdoc_tags = jsdocs.iter().flat_map(JSDoc::tags).collect::<Vec<_>>();
+
             let resolved_returns_tag_name = settings.resolve_tag_name("returns");
 
             if is_missing_returns_tag(&jsdoc_tags, resolved_returns_tag_name) {
                 ctx.diagnostic(missing_returns_diagnostic(*func_span));
+
                 continue;
             }
 
@@ -257,6 +268,7 @@ fn is_duplicated_returns_tag(
     resolved_returns_tag_name: &str,
 ) -> Option<Span> {
     let mut returns_found = false;
+
     for tag in jsdoc_tags {
         if tag.kind.parsed() == resolved_returns_tag_name {
             if returns_found {
@@ -287,6 +299,7 @@ fn is_promise_resolve_with_value(expr: &Expression, ctx: &LintContext) -> Option
                     Some(Expression::ArrowFunctionExpression(arrow_func)) => {
                         arrow_func.params.items.first()
                     }
+
                     _ => None,
                 })
                 // Retrieve symbol_id of resolver, `new Promise((HERE, ...) => {})`
@@ -317,9 +330,11 @@ fn is_promise_resolve_with_value(expr: &Expression, ctx: &LintContext) -> Option
                             AstKind::Argument(_) => {
                                 return Some(true);
                             }
+
                             _ => continue,
                         }
                     }
+
                     None
                 })
                 .or(Some(false));
@@ -1074,6 +1089,7 @@ fn test() {
 			                resolve();
 			              }
 			            });
+
 			            return;
 			          }
 			      ",
@@ -1586,6 +1602,7 @@ fn test() {
 			           */
 			          function quux () {
 			            var a = {};
+
 			            return new Promise((resolve, reject) => {
 			              with (a) {
 			                resolve(true);
@@ -1603,6 +1620,7 @@ fn test() {
 			           */
 			          function quux () {
 			            var a = {};
+
 			            return new Promise((resolve, reject) => {
 			              try {
 			                resolve(true);
@@ -1620,6 +1638,7 @@ fn test() {
 			           */
 			          function quux () {
 			            var a = {};
+
 			            return new Promise((resolve, reject) => {
 			              try {
 			              } catch (err) {
@@ -1638,6 +1657,7 @@ fn test() {
 			           */
 			          function quux () {
 			            var a = {};
+
 			            return new Promise((resolve, reject) => {
 			              try {
 			              } catch (err) {
@@ -1657,6 +1677,7 @@ fn test() {
 			           */
 			          function quux () {
 			            var a = {};
+
 			            return new Promise((resolve, reject) => {
 			              switch (a) {
 			              case 'abc':
@@ -1778,6 +1799,7 @@ fn test() {
 			            return new Promise((resolve, reject) => {
 			              return () => {
 			                identifierForCoverage;
+
 			                resolve(true);
 			              };
 			            });
@@ -2090,9 +2112,11 @@ fn test() {
 			                [b] () {
 			                  resolve();
 			                }
+
 			                method1 () {
 			                  resolve(true);
 			                }
+
 			                method2 () {}
 			              }
 			            });

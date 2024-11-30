@@ -102,23 +102,33 @@ struct Info {
 impl Info {
     fn new(diagnostic: &Error) -> Self {
         let mut line = 0;
+
         let mut column = 0;
+
         let mut filename = String::new();
+
         let mut message = String::new();
+
         let mut severity = Severity::Warning;
+
         let mut rule_id = None;
+
         if let Some(mut labels) = diagnostic.labels() {
             if let Some(source) = diagnostic.source_code() {
                 if let Some(label) = labels.next() {
                     if let Ok(span_content) = source.read_span(label.inner(), 0, 0) {
                         line = span_content.line() + 1;
+
                         column = span_content.column() + 1;
+
                         if let Some(name) = span_content.name() {
                             filename = name.to_string();
                         };
+
                         if matches!(diagnostic.severity(), Some(Severity::Error)) {
                             severity = Severity::Error;
                         }
+
                         let msg = diagnostic.to_string();
                         // Our messages usually comes with `eslint(rule): message`
                         (rule_id, message) = msg.split_once(':').map_or_else(
@@ -129,6 +139,7 @@ impl Info {
                 }
             }
         }
+
         Self { line, column, filename, message, severity, rule_id }
     }
 }

@@ -16,7 +16,9 @@ fn main() -> CliRunResult {
 	init_miette();
 
 	let command = oxc_cli::format_command().fallback_to_usage().run();
+
 	command.handle_threads();
+
 	FormatRunner::new(command.format_options).run()
 }
 

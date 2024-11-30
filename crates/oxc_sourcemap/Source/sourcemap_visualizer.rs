@@ -32,6 +32,7 @@ impl<'a> SourcemapVisualizer<'a> {
                 )
             })
             .collect();
+
         let output_lines = Self::generate_line_utf16_tables(self.output);
 
         let mut s = String::new();
@@ -39,10 +40,14 @@ impl<'a> SourcemapVisualizer<'a> {
         let tokens = &self.sourcemap.tokens;
 
         let mut last_source: Option<&str> = None;
+
         for i in 0..tokens.len() {
             let t = &tokens[i];
+
             let Some(source_id) = t.source_id else { continue };
+
             let Some(source) = self.sourcemap.get_source(source_id) else { continue };
+
             let Some(source_contents_lines) = source_contents_lines_map[source].as_ref() else {
                 continue;
             };
@@ -63,19 +68,26 @@ impl<'a> SourcemapVisualizer<'a> {
                         if t2.src_col <= t.src_col {
                             continue;
                         }
+
                         break 'result t2.src_col;
                     }
+
                     break;
                 }
+
                 source_contents_lines[t.src_line as usize].len() as u32
             };
 
             // Print source
             if last_source != Some(source) {
                 s.push('-');
+
                 s.push(' ');
+
                 s.push_str(source);
+
                 s.push('\n');
+
                 last_source = Some(source);
             }
 
@@ -102,6 +114,7 @@ impl<'a> SourcemapVisualizer<'a> {
                     (t.dst_line, dst_end_col)
                 )
             ));
+
             s.push('\n');
         }
 
@@ -110,7 +123,9 @@ impl<'a> SourcemapVisualizer<'a> {
 
     fn generate_line_utf16_tables(content: &str) -> Vec<Vec<u16>> {
         let mut tables = vec![];
+
         let mut line_byte_offset = 0;
+
         for (i, ch) in content.char_indices() {
             match ch {
                 '\r' | '\n' | '\u{2028}' | '\u{2029}' => {
@@ -118,13 +133,18 @@ impl<'a> SourcemapVisualizer<'a> {
                     if ch == '\r' && content.chars().nth(i + 1) == Some('\n') {
                         continue;
                     }
+
                     tables.push(content[line_byte_offset..=i].encode_utf16().collect::<Vec<_>>());
+
                     line_byte_offset = i + 1;
                 }
+
                 _ => {}
             }
         }
+
         tables.push(content[line_byte_offset..].encode_utf16().collect::<Vec<_>>());
+
         tables
     }
 
@@ -136,6 +156,7 @@ impl<'a> SourcemapVisualizer<'a> {
                         .unwrap(),
                 );
             }
+
             return Cow::Owned(
                 String::from_utf16(&buff[start.0 as usize][end.1 as usize..start.1 as usize])
                     .unwrap(),
@@ -143,8 +164,10 @@ impl<'a> SourcemapVisualizer<'a> {
         }
 
         let mut s = String::new();
+
         for i in start.0..=end.0 {
             let slice = &buff[i as usize];
+
             if i == start.0 {
                 s.push_str(&String::from_utf16(&slice[start.1 as usize..]).unwrap());
             } else if i == end.0 {

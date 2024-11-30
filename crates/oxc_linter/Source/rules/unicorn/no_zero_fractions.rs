@@ -59,6 +59,7 @@ impl Rule for NoZeroFractions {
         let Some((fmt, is_dangling_dot)) = format_raw(number_literal.raw) else {
             return;
         };
+
         if fmt == number_literal.raw {
             return;
         };
@@ -71,7 +72,9 @@ impl Rule for NoZeroFractions {
             },
             |fixer| {
                 let mut fixed = fmt.clone();
+
                 let is_decimal_integer = fmt.parse::<i64>().is_ok();
+
                 let is_member_expression =
                     ctx.nodes().parent_node(node.id()).map_or(false, |parent_node| {
                         matches!(parent_node.kind(), AstKind::MemberExpression(_))
@@ -89,7 +92,9 @@ impl Rule for NoZeroFractions {
                 // Handle special cases where a space is needed after certain keywords
                 // to prevent the number from being interpreted as a property access
                 let end = number_literal.span.start;
+
                 let token = ctx.source_range(oxc_span::Span::new(0, end));
+
                 if token.ends_with("return")
                     || token.ends_with("throw")
                     || token.ends_with("typeof")
@@ -112,12 +117,17 @@ fn format_raw(raw: &str) -> Option<(String, bool)> {
         // Recombine the scientific notation
         return Some((format!("{formatted_base}e{exp}"), has_fraction));
     }
+
     let (before, after_and_dot) = raw.split_once('.')?;
+
     let mut after_parts = after_and_dot.splitn(2, |c: char| !c.is_ascii_digit() && c != '_');
+
     let dot_and_fractions = after_parts.next()?;
+
     let after = after_parts.next().unwrap_or("");
 
     let fixed_dot_and_fractions = dot_and_fractions.trim_end_matches(['0', '.', '_']);
+
     let formatted = format!(
         "{}{}{}{}",
         if before.is_empty() && fixed_dot_and_fractions.is_empty() { "0" } else { before },

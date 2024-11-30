@@ -51,8 +51,10 @@ impl<'a> JSDocCommentPart<'a> {
         }
 
         let base_len = self.raw.len();
+
         if self.raw.lines().count() == 1 {
             let trimmed_start_offset = base_len - self.raw.trim_start().len();
+
             let trimmed_end_offset = base_len - self.raw.trim_end().len();
 
             return Span::new(
@@ -62,8 +64,11 @@ impl<'a> JSDocCommentPart<'a> {
         }
 
         let start_trimmed = self.raw.trim_start();
+
         let trimmed_start_offset = base_len - start_trimmed.len();
+
         let trimmed_end_offset = trimmed_start_offset + start_trimmed.find('\n').unwrap_or(0);
+
         Span::new(
             self.span.start + u32::try_from(trimmed_start_offset).unwrap_or_default(),
             self.span.start + u32::try_from(trimmed_end_offset).unwrap_or_default(),
@@ -95,6 +100,7 @@ pub struct JSDocTagKindPart<'a> {
 impl<'a> JSDocTagKindPart<'a> {
     pub fn new(part_content: &'a str, span: Span) -> Self {
         debug_assert!(part_content.starts_with('@'));
+
         debug_assert!(part_content.trim() == part_content);
 
         Self { raw: part_content, span }
@@ -115,6 +121,7 @@ pub struct JSDocTagTypePart<'a> {
 impl<'a> JSDocTagTypePart<'a> {
     pub fn new(part_content: &'a str, span: Span) -> Self {
         debug_assert!(part_content.starts_with('{'));
+
         debug_assert!(part_content.ends_with('}'));
 
         Self { raw: part_content, span }
@@ -139,6 +146,7 @@ impl<'a> JSDocTagTypeNamePart<'a> {
         debug_assert!(part_content.trim() == part_content);
 
         let optional = part_content.starts_with('[') && part_content.ends_with(']');
+
         let default = optional && part_content.contains('=');
 
         Self { raw: part_content, span, optional, default }
@@ -149,6 +157,7 @@ impl<'a> JSDocTagTypeNamePart<'a> {
     pub fn parsed(&self) -> &'a str {
         if self.optional {
             let inner = self.raw.trim_start_matches('[').trim_end_matches(']').trim();
+
             return inner.split_once('=').map_or(inner, |(v, _)| v.trim());
         }
 
@@ -229,6 +238,7 @@ mod test {
         ] {
             // `Span` is not used in this test
             let comment_part = JSDocCommentPart::new(actual, SPAN);
+
             assert_eq!(comment_part.parsed(), expect);
         }
     }
@@ -261,6 +271,7 @@ mod test {
         ] {
             let comment_part =
                 JSDocCommentPart::new(actual, Span::new(0, u32::try_from(actual.len()).unwrap()));
+
             assert_eq!(comment_part.span_trimmed_first_line().source_text(actual), expect);
         }
     }
@@ -270,6 +281,7 @@ mod test {
         for (actual, expect) in [("@foo", "foo"), ("@", ""), ("@かいんど", "かいんど")] {
             // `Span` is not used in this test
             let kind_part = JSDocTagKindPart::new(actual, SPAN);
+
             assert_eq!(kind_part.parsed(), expect);
         }
     }
@@ -287,6 +299,7 @@ mod test {
         ] {
             // `Span` is not used in this test
             let type_part = JSDocTagTypePart::new(actual, SPAN);
+
             assert_eq!(type_part.parsed(), expect);
         }
     }
@@ -304,6 +317,7 @@ mod test {
         ] {
             // `Span` is not used in this test
             let type_name_part = JSDocTagTypeNamePart::new(actual, SPAN);
+
             assert_eq!(type_name_part.parsed(), expect);
         }
     }

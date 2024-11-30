@@ -40,9 +40,11 @@ impl Generator for ImplGetSpanGenerator {
 		GeneratorOutput::One(quote! {
 			#header
 			insert!("#![allow(clippy::match_same_arms)]");
+
 			endl!();
 
 			use crate::ast::*;
+
 			use oxc_span::{GetSpan, Span};
 
 			#(#impls)*
@@ -52,7 +54,9 @@ impl Generator for ImplGetSpanGenerator {
 
 fn impl_enum(it @ REnum { item, .. }:&REnum) -> TokenStream {
 	let typ = it.as_type();
+
 	let generics = &item.generics;
+
 	let matches:Vec<TokenStream> = item
 		.variants
 		.iter()
@@ -61,6 +65,7 @@ fn impl_enum(it @ REnum { item, .. }:&REnum) -> TokenStream {
 
 	quote! {
 		endl!();
+
 		impl #generics GetSpan for #typ {
 			fn span(&self) -> Span {
 				match self {
@@ -73,17 +78,23 @@ fn impl_enum(it @ REnum { item, .. }:&REnum) -> TokenStream {
 
 fn impl_struct(it @ RStruct { item, .. }:&RStruct) -> TokenStream {
 	let typ = it.as_type();
+
 	let generics = &item.generics;
+
 	let inner_span_hint =
 		item.fields.iter().find(|it| it.attrs.iter().any(|a| a.path().is_ident("span")));
+
 	let span = if let Some(span_field) = inner_span_hint {
 		let ident = span_field.ident.as_ref().unwrap();
+
 		quote!(#ident.span())
 	} else {
 		quote!(span)
 	};
+
 	quote! {
 		endl!();
+
 		impl #generics GetSpan for #typ {
 			#[inline]
 			fn span(&self) -> Span {

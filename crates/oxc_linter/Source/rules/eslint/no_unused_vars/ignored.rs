@@ -59,6 +59,7 @@ impl NoUnusedVars {
     /// Does not handle ignore checks for re-assignments to array/object destructures.
     pub(super) fn is_ignored(&self, symbol: &Symbol<'_, '_>) -> bool {
         let declared_binding = symbol.name();
+
         match symbol.declaration().kind() {
             AstKind::BindingRestElement(_)
             | AstKind::Function(_)
@@ -79,20 +80,25 @@ impl NoUnusedVars {
                 {
                     return true;
                 }
+
                 self.is_ignored_var(declared_binding)
             }
+
             AstKind::CatchParameter(catch) => {
                 self.is_ignored_catch_err(declared_binding)
                     || self.is_ignored_binding_pattern(symbol, &catch.pattern)
             }
+
             AstKind::VariableDeclarator(decl) => {
                 self.is_ignored_var(declared_binding)
                     || self.is_ignored_binding_pattern(symbol, &decl.id)
             }
+
             AstKind::FormalParameter(param) => {
                 self.is_ignored_arg(declared_binding)
                     || self.is_ignored_binding_pattern(symbol, &param.pattern)
             }
+
             s => {
                 // panic when running test cases so we can find unsupported node kinds
                 debug_assert!(
@@ -100,6 +106,7 @@ impl NoUnusedVars {
                     "is_ignored_decl did not know how to handle node of kind {}",
                     s.debug_name()
                 );
+
                 false
             }
         }
@@ -148,6 +155,7 @@ impl NoUnusedVars {
             BindingPatternKind::AssignmentPattern(id) => {
                 self.search_binding_pattern(target, &id.left)
             }
+
             BindingPatternKind::ObjectPattern(obj) => {
                 for prop in &obj.properties {
                     // check if the prop is a binding identifier (with or
@@ -157,6 +165,7 @@ impl NoUnusedVars {
                     // const { x: { y, z }, ...rest } = obj
                     //              ^ not ignored by ignore_rest_siblings
                     let status = self.search_binding_pattern(target, &prop.value);
+
                     match prop.value.get_binding_identifier() {
                         // property is the target we're looking for and is on
                         // this destructure's "level" - ignore it if the config
@@ -185,9 +194,11 @@ impl NoUnusedVars {
                     self.search_binding_pattern(target, &rest.argument)
                 })
             }
+
             BindingPatternKind::ArrayPattern(arr) => {
                 for el in arr.elements.iter().flatten() {
                     let status = self.search_binding_pattern(target, el);
+
                     match el.get_binding_identifier() {
                         // el is a simple pattern for the symbol we're looking
                         // for. Check if it is ignored.
@@ -198,6 +209,7 @@ impl NoUnusedVars {
                         // symbol; our search is done, propegate it upwards
                         None if status.is_found() => {
                             debug_assert!(el.kind.is_destructuring_pattern());
+
                             return status;
                         }
                         // el is a simple pattern for a different symbol, or is
@@ -224,9 +236,11 @@ impl NoUnusedVars {
             AssignmentTarget::AssignmentTargetIdentifier(id) => {
                 FoundStatus::found(target == id.as_ref())
             }
+
             AssignmentTarget::ObjectAssignmentTarget(obj) => {
                 self.search_obj_assignment_target(target, obj.as_ref())
             }
+
             AssignmentTarget::ArrayAssignmentTarget(arr) => {
                 self.search_array_assignment_target(target, arr.as_ref())
             }
@@ -261,6 +275,7 @@ impl NoUnusedVars {
             // contains a ...rest and the user asks for it
             if status.is_found() {
                 let ignore_because_rest = self.is_ignored_spread_neighbor(obj.rest.is_some());
+
                 return status.ignore(ignore_because_rest);
             }
         }
@@ -350,6 +365,7 @@ mod test {
     use oxc_span::Atom;
 
     use super::super::NoUnusedVars;
+
     use crate::rule::Rule as _;
 
     #[test]
@@ -365,20 +381,29 @@ mod test {
         ]));
 
         assert!(rule.is_ignored_var("_x"));
+
         assert!(rule.is_ignored_var(&Atom::from("_x")));
+
         assert!(!rule.is_ignored_var("notIgnored"));
 
         assert!(rule.is_ignored_arg("ignored"));
+
         assert!(rule.is_ignored_arg("alsoIgnored"));
+
         assert!(rule.is_ignored_arg(&Atom::from("ignored")));
+
         assert!(rule.is_ignored_arg(&Atom::from("alsoIgnored")));
 
         assert!(rule.is_ignored_catch_err("err"));
+
         assert!(rule.is_ignored_catch_err("error"));
+
         assert!(!rule.is_ignored_catch_err("e"));
 
         assert!(rule.is_ignored_array_destructured("_x"));
+
         assert!(rule.is_ignored_array_destructured(&Atom::from("_x")));
+
         assert!(!rule.is_ignored_array_destructured("notIgnored"));
     }
 
@@ -390,8 +415,11 @@ mod test {
                 "caughtErrors": "all",
             }
         ]));
+
         assert!(rule.is_ignored_catch_err("_"));
+
         assert!(rule.is_ignored_catch_err("_err"));
+
         assert!(!rule.is_ignored_catch_err("err"));
 
         let rule = NoUnusedVars::from_configuration(serde_json::json!([
@@ -399,8 +427,11 @@ mod test {
                 "caughtErrors": "none",
             }
         ]));
+
         assert!(rule.is_ignored_catch_err("_"));
+
         assert!(rule.is_ignored_catch_err("_err"));
+
         assert!(rule.is_ignored_catch_err("err"));
     }
 }

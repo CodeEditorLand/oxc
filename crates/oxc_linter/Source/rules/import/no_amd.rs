@@ -54,6 +54,7 @@ impl Rule for NoAmd {
         if node.scope_id() != ctx.scopes().root_scope_id() {
             return;
         }
+
         if let AstKind::CallExpression(call_expr) = node.kind() {
             if let Expression::Identifier(ref identifier) = &call_expr.callee {
                 if identifier.name != "define" && identifier.name != "require" {

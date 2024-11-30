@@ -40,38 +40,46 @@ mod ignore_options {
 
     fn get_ignore_options(arg: &str) -> IgnoreOptions {
         let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
+
         lint_command().run_inner(args.as_slice()).unwrap().ignore_options
     }
 
     #[test]
     fn default() {
         let options = get_ignore_options(".");
+
         assert_eq!(options.ignore_path, OsString::from(".eslintignore"));
+
         assert!(!options.no_ignore);
+
         assert!(options.ignore_pattern.is_empty());
     }
 
     #[test]
     fn ignore_path() {
         let options = get_ignore_options("--ignore-path .xxx foo.js");
+
         assert_eq!(options.ignore_path, PathBuf::from(".xxx"));
     }
 
     #[test]
     fn no_ignore() {
         let options = get_ignore_options("--no-ignore foo.js");
+
         assert!(options.no_ignore);
     }
 
     #[test]
     fn single_ignore_pattern() {
         let options = get_ignore_options("--ignore-pattern ./test foo.js");
+
         assert_eq!(options.ignore_pattern, vec![String::from("./test")]);
     }
 
     #[test]
     fn multiple_ignore_pattern() {
         let options = get_ignore_options("--ignore-pattern ./test --ignore-pattern bar.js foo.js");
+
         assert_eq!(options.ignore_pattern, vec![String::from("./test"), String::from("bar.js")]);
     }
 }

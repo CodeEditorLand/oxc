@@ -35,24 +35,33 @@ impl JsonSchema for OxlintCategories {
 
     fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
         let severity = gen.subschema_for::<AllowWarnDeny>();
+
         let mut schema =
             gen.subschema_for::<FxHashMap<RuleCategory, AllowWarnDeny>>().into_object();
 
         {
             schema.object().additional_properties = None;
+
             let properties = &mut schema.object().properties;
 
             properties.insert(RuleCategory::Correctness.as_str().to_string(), severity.clone());
+
             properties.insert(RuleCategory::Suspicious.as_str().to_string(), severity.clone());
+
             properties.insert(RuleCategory::Pedantic.as_str().to_string(), severity.clone());
+
             properties.insert(RuleCategory::Perf.as_str().to_string(), severity.clone());
+
             properties.insert(RuleCategory::Style.as_str().to_string(), severity.clone());
+
             properties.insert(RuleCategory::Restriction.as_str().to_string(), severity.clone());
+
             properties.insert(RuleCategory::Nursery.as_str().to_string(), severity.clone());
         }
 
         {
             let metadata = schema.metadata();
+
             metadata.title = Some("Rule Categories".to_string());
 
             metadata.description = Some(

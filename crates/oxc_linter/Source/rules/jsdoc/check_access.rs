@@ -66,10 +66,13 @@ const ACCESS_LEVELS: phf::Set<&'static str> = phf_set! {
 impl Rule for CheckAccess {
     fn run_once(&self, ctx: &LintContext) {
         let settings = &ctx.settings().jsdoc;
+
         let resolved_access_tag_name = settings.resolve_tag_name("access");
 
         let mut access_related_tag_names = FxHashSet::default();
+
         access_related_tag_names.insert(resolved_access_tag_name);
+
         for level in &ACCESS_LEVELS {
             access_related_tag_names.insert(settings.resolve_tag_name(level));
         }
@@ -81,6 +84,7 @@ impl Rule for CheckAccess {
             .filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
         {
             let mut access_related_tags_count = 0;
+
             for tag in jsdoc.tags() {
                 let tag_name = tag.kind.parsed();
 
@@ -90,6 +94,7 @@ impl Rule for CheckAccess {
 
                 // Has valid access level?
                 let comment = tag.comment();
+
                 if tag_name == resolved_access_tag_name
                     && !ACCESS_LEVELS.contains(&comment.parsed())
                 {

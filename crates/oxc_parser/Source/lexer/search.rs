@@ -46,14 +46,19 @@ impl ByteMatchTable {
     // Create new `ByteMatchTable`.
     pub const fn new(bytes: [bool; 256]) -> Self {
         let mut table = Self([false; 256]);
+
         let mut i = 0;
+
         loop {
             table.0[i] = bytes[i];
+
             i += 1;
+
             if i == 256 {
                 break;
             }
         }
+
         table
     }
 
@@ -102,6 +107,7 @@ macro_rules! byte_match_table {
         const TABLE: ByteMatchTable = seq_macro::seq!($byte in 0u8..=255 {
             ByteMatchTable::new([ #($res,)* ])
         });
+
         TABLE
     }};
 }
@@ -170,11 +176,14 @@ impl SafeByteMatchTable {
         // 1. `true` for all byte values 192..248
         // 2. `false` for all byte values 128..192
         let mut unicode_start_all_match = true;
+
         let mut unicode_cont_all_no_match = true;
 
         let mut i = 0;
+
         loop {
             let matches = bytes[i];
+
             table.0[i] = matches;
 
             if matches {
@@ -186,6 +195,7 @@ impl SafeByteMatchTable {
             }
 
             i += 1;
+
             if i == 256 {
                 break;
             }
@@ -240,6 +250,7 @@ macro_rules! safe_byte_match_table {
         const TABLE: SafeByteMatchTable = seq_macro::seq!($byte in 0u8..=255 {
             SafeByteMatchTable::new([#($res,)*])
         });
+
         TABLE
     }};
 }
@@ -369,6 +380,7 @@ macro_rules! byte_search {
         handle_eof: $eof_handler:expr,
     ) => {{
         let start = $lexer.source.position();
+
         byte_search! {
             lexer: $lexer,
             table: $table,
@@ -387,6 +399,7 @@ macro_rules! byte_search {
         handle_eof: $eof_handler:expr,
     ) => {{
         let start = $lexer.source.position();
+
         byte_search! {
             lexer: $lexer,
             table: $table,
@@ -450,6 +463,7 @@ macro_rules! byte_search {
                     for _i in 0..crate::lexer::search::SEARCH_BATCH_SIZE {
                         // SAFETY: `$pos` cannot go out of bounds in this loop (see above)
                         let byte = unsafe { $pos.read() };
+
                         if $table.matches(byte) {
                             break 'inner byte;
                         }
@@ -470,6 +484,7 @@ macro_rules! byte_search {
                     while $pos.addr() < end_addr {
                         // SAFETY: `pos` is not at end of source, so safe to read a byte
                         let byte = unsafe { $pos.read() };
+
                         if $table.matches(byte) {
                             break 'inner byte;
                         }
@@ -488,6 +503,7 @@ macro_rules! byte_search {
                     #[allow(unused_variables, unreachable_code, clippy::diverging_sub_expression)]
                     {
                         let eof_ret = $eof_handler;
+
                         break 'outer eof_ret;
                     }
                 }
@@ -499,6 +515,7 @@ macro_rules! byte_search {
                 // SAFETY: `pos` is not at end of source, so safe to advance 1 byte.
                 // See above about UTF-8 character boundaries invariant.
                 $pos = unsafe { $pos.add(1) };
+
                 continue;
             }
 

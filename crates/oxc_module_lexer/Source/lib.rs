@@ -112,6 +112,7 @@ impl<'a> ModuleLexer<'a> {
     #[must_use]
     pub fn build(mut self, program: &Program<'a>) -> Self {
         self.visit_program(program);
+
         self
     }
 }
@@ -121,6 +122,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
         if self.facade && !stmt.is_module_declaration() && !stmt.is_declaration() {
             self.facade = false;
         }
+
         walk::walk_statement(self, stmt);
     }
 
@@ -128,6 +130,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
         if !self.has_module_syntax {
             self.has_module_syntax = true;
         }
+
         walk::walk_module_declaration(self, decl);
     }
 
@@ -136,6 +139,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
         if !self.has_module_syntax {
             self.has_module_syntax = true;
         }
+
         if prop.meta.name == "import" && prop.property.name == "meta" {
             self.imports.push(ImportSpecifier {
                 n: None,
@@ -148,6 +152,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
                 t: false,
             });
         }
+
         walk::walk_meta_property(self, prop);
     }
 
@@ -160,6 +165,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
                 let span = expr.source.span();
                 (None, span.start, span.end)
             };
+
         self.imports.push(ImportSpecifier {
             n: source,
             s: source_span_start,
@@ -170,6 +176,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
             a: expr.arguments.first().map(|e| e.span().start),
             t: false,
         });
+
         walk::walk_import_expression(self, expr);
     }
 
@@ -200,6 +207,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
             .as_ref()
             .filter(|c| c.with_entries.first().is_some_and(|a| a.key.as_atom() == "type"))
             .map(|c| c.span.start);
+
         self.imports.push(ImportSpecifier {
             n: Some(decl.source.value.clone()),
             s: decl.source.span.start + 1, // +- 1 for removing string quotes
@@ -210,6 +218,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
             a: assertions,
             t: decl.import_kind.is_type(),
         });
+
         walk::walk_import_declaration(self, decl);
     }
 
@@ -233,6 +242,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
             if self.facade {
                 self.facade = false;
             }
+
             decl.bound_names(&mut |ident| {
                 self.exports.push(ExportSpecifier {
                     n: ident.name.clone(),
@@ -247,6 +257,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
         }
 
         // export { named }
+
         self.exports.extend(decl.specifiers.iter().map(|s| {
             let (exported_start, exported_end) = match &s.exported {
                 ModuleExportName::IdentifierName(ident) => (ident.span.start, ident.span.end),
@@ -254,6 +265,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
                 // +1 -1 to remove the string quotes
                 ModuleExportName::StringLiteral(s) => (s.span.start + 1, s.span.end - 1),
             };
+
             ExportSpecifier {
                 n: s.exported.name().clone(),
                 ln: decl.source.is_none().then(|| s.local.name().clone()),
@@ -264,6 +276,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
                 t: decl.export_kind.is_type(),
             }
         }));
+
         walk::walk_export_named_declaration(self, decl);
     }
 
@@ -272,11 +285,13 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
         if self.facade {
             self.facade = false;
         }
+
         let ln = match &decl.declaration {
             ExportDefaultDeclarationKind::FunctionDeclaration(func) => func.id.as_ref(),
             ExportDefaultDeclarationKind::ClassDeclaration(class) => class.id.as_ref(),
             _ => None,
         };
+
         self.exports.push(ExportSpecifier {
             n: decl.exported.name().clone(),
             ln: ln.map(|id| id.name.clone()),
@@ -292,8 +307,11 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
         // export * as ns from 'foo'
         if let Some(exported) = &decl.exported {
             let n = exported.name().clone();
+
             let s = exported.span().start;
+
             let e = exported.span().end;
+
             self.exports.push(ExportSpecifier {
                 n: n.clone(),
                 ln: None,
@@ -303,6 +321,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
                 le: None,
                 t: decl.export_kind.is_type(),
             });
+
             self.imports.push(ImportSpecifier {
                 n: Some(n),
                 s,
@@ -326,6 +345,7 @@ impl<'a> Visit<'a> for ModuleLexer<'a> {
                 t: decl.export_kind.is_type(),
             });
         }
+
         walk::walk_export_all_declaration(self, decl);
     }
 }

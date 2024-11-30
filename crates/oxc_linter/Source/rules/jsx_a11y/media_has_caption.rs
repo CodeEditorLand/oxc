@@ -79,6 +79,7 @@ impl Rule for MediaHasCaption {
                                 .map(Into::into),
                         );
                     }
+
                     if let Some(video) = rule_config.get("video").and_then(Value::as_array) {
                         config.video.extend(
                             video
@@ -88,6 +89,7 @@ impl Rule for MediaHasCaption {
                                 .map(Into::into),
                         );
                     }
+
                     if let Some(track) = rule_config.get("track").and_then(Value::as_array) {
                         config.track.extend(
                             track
@@ -97,6 +99,7 @@ impl Rule for MediaHasCaption {
                                 .map(Into::into),
                         );
                     }
+
                     break;
                 }
             }
@@ -133,6 +136,7 @@ impl Rule for MediaHasCaption {
                                     _ => false,
                                 }
                             }
+
                             Some(JSXAttributeValue::StringLiteral(lit)) => lit.value == "true",
                             None => true, // e.g. <video muted></video>
                             _ => false,
@@ -140,6 +144,7 @@ impl Rule for MediaHasCaption {
                     }
                 }
             }
+
             false
         });
 
@@ -154,6 +159,7 @@ impl Rule for MediaHasCaption {
 
         let has_caption = if parent.children.is_empty() {
             ctx.diagnostic(media_has_caption_diagnostic(parent.opening_element.span));
+
             false
         } else {
             parent.children.iter().any(|child| match child {
@@ -161,6 +167,7 @@ impl Rule for MediaHasCaption {
                     let Some(child_name) = get_element_type(ctx, &child_el.opening_element) else {
                         return false;
                     };
+
                     self.0.track.contains(&child_name)
                         && child_el.opening_element.attributes.iter().any(|attr| {
                             if let JSXAttributeItem::Attribute(attr) = attr {
@@ -171,9 +178,11 @@ impl Rule for MediaHasCaption {
                                     }
                                 }
                             }
+
                             false
                         })
                 }
+
                 _ => false,
             })
         };

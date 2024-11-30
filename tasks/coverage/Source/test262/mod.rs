@@ -63,7 +63,9 @@ impl Test262Case {
     /// # Panics
     pub fn read_metadata(code: &str) -> MetaData {
         let (start, end) = (code.find("/*---").unwrap(), code.find("---*/").unwrap());
+
         let s = &code[start + 5..end].replace('\r', "\n");
+
         MetaData::from_str(s)
     }
 
@@ -79,7 +81,9 @@ impl Test262Case {
 impl Case for Test262Case {
     fn new(path: PathBuf, code: String) -> Self {
         let meta = Self::read_metadata(&code);
+
         let should_fail = Self::compute_should_fail(&meta);
+
         Self { path, code, meta, should_fail, always_strict: false, result: TestResult::ToBeRun }
     }
 
@@ -119,10 +123,12 @@ impl Case for Test262Case {
     // https://github.com/tc39/test262/blob/05c45a4c430ab6fee3e0c7f0d47d8a30d8876a6d/INTERPRETING.md#strict-mode
     fn run(&mut self) {
         let flags = &self.meta.flags;
+
         let source_type = SourceType::cjs();
 
         self.result = if flags.contains(&TestFlag::OnlyStrict) {
             self.always_strict = true;
+
             self.execute(source_type)
         } else if flags.contains(&TestFlag::Module) {
             self.execute(source_type.with_module(true))
@@ -130,9 +136,12 @@ impl Case for Test262Case {
             self.execute(source_type)
         } else {
             self.always_strict = true;
+
             let res = self.execute(source_type);
+
             if matches!(res, TestResult::Passed) {
                 self.always_strict = false;
+
                 self.execute(source_type)
             } else {
                 res

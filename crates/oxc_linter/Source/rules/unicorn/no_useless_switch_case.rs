@@ -100,6 +100,7 @@ fn test() {
             case a:
             case b:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -107,9 +108,12 @@ fn test() {
         switch (foo) {
             case a:
                 handleCaseA();
+
                 break;
+
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -117,8 +121,10 @@ fn test() {
         switch (foo) {
             case a:
                 handleCaseA();
+
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -126,8 +132,10 @@ fn test() {
         switch (foo) {
             case a:
                 break;
+
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -138,6 +146,7 @@ fn test() {
                 // Fallthrough
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -146,9 +155,12 @@ fn test() {
             case a:
             default:
                 handleDefaultCase();
+
                 break;
+
             case b:
                 handleCaseB();
+
                 break;
         }
         ",
@@ -166,10 +178,13 @@ fn test() {
         switch (1) {
             default:
                 handleDefaultCase1();
+
                 break;
+
             case 1:
             default:
                 handleDefaultCase2();
+
                 break;
         }
         ",
@@ -181,6 +196,7 @@ fn test() {
             case a:
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -188,8 +204,10 @@ fn test() {
         switch (foo) {
             case a: {
             }
+
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -204,8 +222,10 @@ fn test() {
                     }
                 }
             }
+
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -215,6 +235,7 @@ fn test() {
             case (( b ))         :
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -223,11 +244,14 @@ fn test() {
             case a:
             case b:
                 handleCaseAB();
+
                 break;
+
             case d:
             case d:
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -237,6 +261,7 @@ fn test() {
             case b:
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -247,6 +272,7 @@ fn test() {
             case b:
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",
@@ -257,6 +283,7 @@ fn test() {
             case b:
             default:
                 handleDefaultCase();
+
                 break;
         }
         ",

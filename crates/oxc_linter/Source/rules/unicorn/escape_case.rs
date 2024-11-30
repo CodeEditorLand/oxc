@@ -52,21 +52,27 @@ fn is_hex_char(c: char) -> bool {
 }
 fn is_hex(iter: &Chars, count: i32) -> bool {
     let mut iter = iter.clone();
+
     for _ in 0..count {
         if !matches!(iter.next(), Some(c) if is_hex_char(c)) {
             return false;
         }
     }
+
     true
 }
 
 // /(?<=(?:^|[^\\])(?:\\\\)*\\)(?<data>x[\dA-Fa-f]{2}|u[\dA-Fa-f]{4}|u{[\dA-Fa-f]+})/g
 fn check_case(value: &str, is_regex: bool) -> Option<String> {
     let mut in_escape = false;
+
     let mut result = String::with_capacity(value.len());
+
     let mut p = value.chars();
+
     while let Some(c) = p.next() {
         result.push(c);
+
         if in_escape {
             match c {
                 'x' => {
@@ -78,13 +84,18 @@ fn check_case(value: &str, is_regex: bool) -> Option<String> {
                 }
                 'u' => {
                     let mut iter = p.clone();
+
                     let c = iter.next();
+
                     if c == Some('{') {
                         let mut is_match = false;
+
                         let mut chars = vec![];
+
                         for c in iter {
                             if c == '}' {
                                 is_match = true;
+
                                 break;
                             } else if is_hex_char(c) {
                                 chars.push(c);
@@ -92,13 +103,18 @@ fn check_case(value: &str, is_regex: bool) -> Option<String> {
                                 break;
                             }
                         }
+
                         if is_match {
                             p.next();
+
                             result.push('{');
+
                             for _ in 0..chars.len() {
                                 result.push(p.next().unwrap().to_ascii_uppercase());
                             }
+
                             p.next();
+
                             result.push('}');
                         }
                     } else if is_hex(&p, 4) {
@@ -112,8 +128,10 @@ fn check_case(value: &str, is_regex: bool) -> Option<String> {
                         result.push(p.next().unwrap().to_ascii_uppercase());
                     }
                 }
+
                 _ => {}
             }
+
             in_escape = false;
         } else if c == '\\' {
             in_escape = true;
@@ -131,12 +149,14 @@ impl Rule for EscapeCase {
         match node.kind() {
             AstKind::StringLiteral(StringLiteral { span, .. }) => {
                 let text = span.source_text(ctx.source_text());
+
                 if let Some(fixed) = check_case(text, false) {
                     ctx.diagnostic_with_fix(escape_case_diagnostic(*span), |fixer| {
                         fixer.replace(*span, fixed)
                     });
                 }
             }
+
             AstKind::TemplateLiteral(TemplateLiteral { quasis, .. }) => {
                 quasis.iter().for_each(|quasi| {
                     if let Some(fixed) =
@@ -148,14 +168,17 @@ impl Rule for EscapeCase {
                     }
                 });
             }
+
             AstKind::RegExpLiteral(regex) => {
                 let text = regex.span.source_text(ctx.source_text());
+
                 if let Some(fixed) = check_case(text, true) {
                     ctx.diagnostic_with_fix(escape_case_diagnostic(regex.span), |fixer| {
                         fixer.replace(regex.span, fixed)
                     });
                 }
             }
+
             _ => {}
         }
     }
@@ -209,12 +232,14 @@ fn test() {
         r#"const foo = new RegExp("/\ca/")"#,
         r#"const foo = new RegExp("/\cA/")"#,
     ];
+
     let fail = vec![
         r#"const foo = "\xAab\xaab\xAAb\uAaAab\uaaaab\uAAAAb\u{AaAa}b\u{aaaa}b\u{AAAA}";"#,
         r"const foo = `\xAab\xaab\xAA${foo}\uAaAab\uaaaab\uAAAAb\u{AaAa}${foo}\u{aaaa}b\u{AAAA}`;",
         r"const foo = `\ud834${foo}\ud834${foo}\ud834`;",
         r#"const foo = new RegExp("/\u{1d306}/", "u")"#,
     ];
+
     let fix = vec![
         (r#"const foo = "\xa9";"#, r#"const foo = "\xA9";"#, None),
         (r#"const foo = "\xAa";"#, r#"const foo = "\xAA";"#, None),

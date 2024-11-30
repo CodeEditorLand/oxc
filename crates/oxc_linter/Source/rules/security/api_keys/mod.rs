@@ -155,6 +155,7 @@ impl ApiKeysInner {
 
 impl Deref for ApiKeys {
     type Target = ApiKeysInner;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -170,8 +171,10 @@ impl Rule for ApiKeys {
                 let Some(string) = string.quasi() else {
                     return;
                 };
+
                 string.as_str()
             }
+
             _ => return,
         };
 
@@ -180,7 +183,9 @@ impl Rule for ApiKeys {
         if string.len() < self.min_len.get() as usize {
             return;
         }
+
         let candidate = Secret::new(string, node.span(), None);
+
         if candidate.entropy() < self.min_entropy {
             return;
         }
@@ -198,8 +203,10 @@ impl Rule for ApiKeys {
             // This clone allocs no memory and so is relatively cheap. rustc should optimize it
             // away anyways.
             let mut violation = SecretViolation::new(candidate.clone(), rule);
+
             if rule.verify(&mut violation) {
                 ctx.diagnostic(api_keys(&violation));
+
                 return;
             }
         }
@@ -209,14 +216,17 @@ impl Rule for ApiKeys {
         let Some(obj) = value.get(0) else {
             return Self::default();
         };
+
         let config = serde_json::from_value::<ApiKeysConfig>(obj.clone())
             .expect("Invalid configuration for 'oxc-security/api-keys'");
 
         // TODO: Check if this is worth optimizing, then do so if needed.
         let mut rules = ALL_RULES.clone();
+
         rules.extend(config.custom_patterns.into_iter().map(|pattern| {
             let regex = Regex::new(&pattern.pattern)
                 .expect("Invalid custom API key regex in 'oxc-security/api-keys'");
+
             SecretsEnum::Custom(CustomSecret {
                 rule_name: pattern.rule_name,
                 message: pattern.message.unwrap_or("Detected a hard-coded secret.".into()),

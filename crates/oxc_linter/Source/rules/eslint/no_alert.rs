@@ -94,10 +94,12 @@ impl Rule for NoAlert {
         };
 
         let scope_id = node.scope_id();
+
         let callee = &call_expr.callee;
 
         if let Expression::Identifier(ident) = callee {
             let name = ident.name.as_str();
+
             if !is_shadowed(scope_id, name, ctx) && is_prohibited_identifier(name) {
                 return ctx.diagnostic(no_alert_diagnostic(ident.span));
             }
@@ -106,6 +108,7 @@ impl Rule for NoAlert {
         }
 
         let Some(member_expr) = callee.get_member_expr() else { return };
+
         if !is_global_this_ref_or_global_window(scope_id, ctx, member_expr.object()) {
             return;
         }
@@ -113,6 +116,7 @@ impl Rule for NoAlert {
         let Some(property_name) = member_expr.static_property_name() else {
             return;
         };
+
         if is_prohibited_identifier(property_name) {
             ctx.diagnostic(no_alert_diagnostic(member_expr.span()));
         }
@@ -158,18 +162,22 @@ fn test() {
         "window['prompt'](foo)",
         "function alert() {} window.alert(foo)",
         "var alert = function() {};
+
         	window.alert(foo)",
         "function foo(alert) { window.alert(); }",
         "function foo() { alert(); }",
         "function foo() { var alert = function() {}; }
+
         	alert();",
         "this.alert(foo)",
         "this['alert'](foo)",
         "function foo() { var window = bar; window.alert(); }
+
         	window.alert();",
         "globalThis['alert'](foo)", // { "ecmaVersion": 2020 },
         "globalThis.alert();",      // { "ecmaVersion": 2020 },
         "function foo() { var globalThis = bar; globalThis.alert(); }
+
         	globalThis.alert();", // { "ecmaVersion": 2020 },
         "window?.alert(foo)",       // { "ecmaVersion": 2020 },
         "(window?.alert)(foo)",     // { "ecmaVersion": 2020 }

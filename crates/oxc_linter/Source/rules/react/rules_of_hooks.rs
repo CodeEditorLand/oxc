@@ -21,7 +21,9 @@ use crate::{
 
 mod diagnostics {
     use oxc_diagnostics::OxcDiagnostic;
+
     use oxc_span::Span;
+
     const SCOPE: &str = "eslint-plugin-react-hooks";
 
     pub(super) fn function_error(span: Span, hook_name: &str, func_name: &str) -> OxcDiagnostic {
@@ -118,10 +120,12 @@ impl Rule for RulesOfHooks {
         let cfg = ctx.cfg();
 
         let span = call.span;
+
         let hook_name =
             call.callee_name().expect("We identify hooks using their names so it should be named.");
 
         let semantic = ctx.semantic();
+
         let nodes = semantic.nodes();
 
         let is_use = is_react_function_call(call, "use");
@@ -162,8 +166,10 @@ impl Rule for RulesOfHooks {
                 if !is_use && is_somewhere_inside_component_or_hook(nodes, parent_func.id()) {
                     ctx.diagnostic(diagnostics::generic_error(span, hook_name));
                 }
+
                 return;
             }
+
             AstKind::Function(Function { span, id: None, .. })
             | AstKind::ArrowFunctionExpression(ArrowFunctionExpression {
                 span,
@@ -192,6 +198,7 @@ impl Rule for RulesOfHooks {
                 //         useState(0);
                 //     }
                 // }
+
                 if ident.is_some_and(|name| !is_react_component_or_hook_name(&name))
                     || is_export_default(nodes, parent_func.id())
                 {
@@ -214,6 +221,7 @@ impl Rule for RulesOfHooks {
             }) => {
                 return ctx.diagnostic(diagnostics::async_component(*span, "Anonymous"));
             }
+
             _ => {}
         }
 
@@ -225,6 +233,7 @@ impl Rule for RulesOfHooks {
         }
 
         let node_cfg_id = node.cfg_id();
+
         let func_cfg_id = parent_func.cfg_id();
 
         // there is no branch between us and our parent function
@@ -258,8 +267,11 @@ fn has_conditional_path_accept_throw(
     to: &AstNode<'_>,
 ) -> bool {
     let from_graph_id = from.cfg_id();
+
     let to_graph_id = to.cfg_id();
+
     let graph = cfg.graph();
+
     if graph
         .edges(to_graph_id)
         .any(|it| matches!(it.weight(), EdgeType::Error(ErrorEdgeKind::Explicit)))
@@ -360,6 +372,7 @@ fn is_somewhere_inside_component_or_hook(nodes: &AstNodes, node_id: NodeId) -> b
                     AstKind::ArrowFunctionExpression(_) => {
                         get_declaration_identifier(nodes, node.id())
                     }
+
                     _ => unreachable!(),
                 },
             )
@@ -378,10 +391,12 @@ fn get_declaration_identifier<'a>(
     nodes.ancestor_ids(node_id).map(|id| nodes.kind(id)).find_map(|kind| {
         match kind {
             // const useHook = () => {};
+
             AstKind::VariableDeclaration(decl) if decl.declarations.len() == 1 => {
                 decl.declarations[0].id.get_identifier().map(|id| Cow::Borrowed(id.as_str()))
             }
             // useHook = () => {};
+
             AstKind::AssignmentExpression(expr)
                 if matches!(expr.operator, AssignmentOperator::Assign) =>
             {
@@ -389,11 +404,13 @@ fn get_declaration_identifier<'a>(
             }
             // const {useHook = () => {}} = {};
             // ({useHook = () => {}} = {});
+
             AstKind::AssignmentPattern(patt) => {
                 patt.left.get_identifier().map(|id| Cow::Borrowed(id.as_str()))
             }
             // { useHook: () => {} }
             // { useHook() {} }
+
             AstKind::ObjectProperty(prop) => prop.key.name(),
             _ => None,
         }
@@ -495,14 +512,20 @@ fn test() {
         // Valid because hooks can call hooks.
         "
             function useHook() { useState(); }
+
             const whatever = function useHook() { useState(); };
+
             const useHook1 = () => { useState(); };
+
             let useHook2 = () => useState();
+
             useHook2 = () => { useState(); };
             ({useHook: () => { useState(); }});
             ({useHook() { useState(); }});
+
             const {useHook3 = () => { useState(); }} = {};
             ({useHook = () => { useState(); }} = {});
+
             Namespace.useHook = () => { useState(); };
         ",
         // Valid because hooks can call hooks.
@@ -517,6 +540,7 @@ fn test() {
             function createHook() {
               return function useHook() {
                 useHook1();
+
                 useHook2();
               };
             }
@@ -585,6 +609,7 @@ fn test() {
             class C {
               m() {
                 this.useHook();
+
                 super.useHook();
               }
             }
@@ -592,6 +617,7 @@ fn test() {
         // Valid -- this is a regression test.
         "
             jest.useFakeTimers();
+
             beforeEach(() => {
               jest.useRealTimers();
             })
@@ -599,8 +625,11 @@ fn test() {
         // Valid because they're not matching use[A-Z].
         "
             fooState();
+
             _use();
+
             _useState();
+
             use_hook();
             // also valid because it's not matching the PascalCase namespace
             jest.useFakeTimer()
@@ -820,11 +849,15 @@ fn test() {
         ",
         "
             import * as React from 'react';
+
             function App() {
               if (shouldShowText) {
                 const text = use(query);
+
                 const data = React.use(thing);
+
                 const data2 = react.use(thing2);
+
                 return <Text text={text} />
               }
               return <Text text={shouldFetchBackupText ? use(backupQuery) : \"Nothing to see here\"} />
@@ -835,6 +868,7 @@ fn test() {
               let data = [];
               for (const query of queries) {
                 const text = use(item);
+
                 data.push(text);
               }
               return <Child data={data} />
@@ -850,6 +884,7 @@ fn test() {
             function useLabeledBlock() {
                 label: {
                     useHook();
+
                     if (a) break label;
                 }
             }
@@ -889,6 +924,7 @@ fn test() {
                         noop();
                     }
                 };
+
                 useHook();
             }
         ",
@@ -902,6 +938,7 @@ fn test() {
                                 something.value = true;
                             };
                         }, []);
+
                         return <div></div>;
                     },
                     useTargetModule: (m) => {
@@ -969,9 +1006,13 @@ fn test() {
         // ],
         "
             Hook.useState();
+
             Hook._useState();
+
             Hook.use42();
+
             Hook.useHook();
+
             Hook.use_hook();
         ",
         // errors: [classError('This.useHook'), classError('Super.useHook')],
@@ -1077,6 +1118,7 @@ fn test() {
                     useEffect(() => {
                         useHookInsideCallback();
                     });
+
                     return <button {...props} ref={ref} />
                 });
         ",
@@ -1088,6 +1130,7 @@ fn test() {
                     useEffect(() => {
                         useHookInsideCallback();
                     });
+
                     return <button {...props} />
                 });
         ",
@@ -1154,6 +1197,7 @@ fn test() {
                 function _normalFunctionWithHook() {
                     useHookInsideNormalFunction();
                 }
+
                 function _useNotAHook() {
                     useHookInsideNormalFunction();
                 }
@@ -1185,12 +1229,17 @@ fn test() {
                 function useHookInLoops() {
                     while (a) {
                         useHook1();
+
                         if (b) return;
+
                         useHook2();
                     }
+
                     while (c) {
                         useHook3();
+
                         if (d) return;
+
                         useHook4();
                     }
                 }
@@ -1202,7 +1251,9 @@ fn test() {
             function useHookInLoops() {
                 while (a) {
                     useHook1();
+
                     if (b) continue;
+
                     useHook2();
                 }
             }
@@ -1214,6 +1265,7 @@ fn test() {
                 function useLabeledBlock() {
                     label: {
                         if (a) break label;
+
                         useHook();
                     }
                 }
@@ -1236,12 +1288,17 @@ fn test() {
         // ]
         "
             function a() { useState(); }
+
             const whatever = function b() { useState(); };
+
             const c = () => { useState(); };
+
             let d = () => useState();
+
             e = () => { useState(); };
             ({f: () => { useState(); }});
             ({g() { useState(); }});
+
             const {j = () => { useState(); }} = {};
             ({k = () => { useState(); }} = {});
         ",
@@ -1251,6 +1308,7 @@ fn test() {
         "
                 function useHook() {
                     if (a) return;
+
                     useState();
                 }
         ",
@@ -1260,11 +1318,13 @@ fn test() {
         "
                 function useHook() {
                     if (a) return;
+
                     if (b) {
                         console.log('true');
                     } else {
                         console.log('false');
                     }
+
                     useState();
                 }
         ",
@@ -1278,7 +1338,9 @@ fn test() {
                     } else {
                         console.log('false');
                     }
+
                     if (a) return;
+
                     useState();
                 }
         ",
@@ -1288,6 +1350,7 @@ fn test() {
         "
                 function useHook() {
                     a && useHook1();
+
                     b && useHook2();
                 }
         ",
@@ -1301,6 +1364,7 @@ fn test() {
                 function useHook() {
                     try {
                         f();
+
                         useState();
                     } catch {}
                 }
@@ -1315,7 +1379,9 @@ fn test() {
         "
                 function useHook({ bar }) {
                     let foo1 = bar && useState();
+
                     let foo2 = bar || useState();
+
                     let foo3 = bar ?? useState();
                 }
         ",
@@ -1327,6 +1393,7 @@ fn test() {
                     if (props.fancy) {
                         useCustomHook();
                     }
+
                     return <button ref={ref}>{props.children}</button>;
                 });
         ",
@@ -1338,6 +1405,7 @@ fn test() {
                     if (props.fancy) {
                         useCustomHook();
                     }
+
                     return <button ref={ref}>{props.children}</button>;
                 });
         ",
@@ -1349,6 +1417,7 @@ fn test() {
                     if (props.fancy) {
                         useCustomHook();
                     }
+
                     return <button>{props.children}</button>;
                 });
         ",
@@ -1373,9 +1442,11 @@ fn test() {
         // ],
         "
             useState();
+
             if (foo) {
                 const foo = React.useCallback(() => {});
             }
+
             useCustomHook();
         ",
         // Technically this is a false positive.
@@ -1388,6 +1459,7 @@ fn test() {
         // errors: [topLevelError('useBasename')],
         "
             const {createHistory, useBasename} = require('history-2.1.2');
+
             const browserHistory = useBasename(createHistory)({
                 basename: '/',
             });
@@ -1443,11 +1515,17 @@ fn test() {
         // ],
         "
             Hook.use();
+
             Hook._use();
+
             Hook.useState();
+
             Hook._useState();
+
             Hook.use42();
+
             Hook.useHook();
+
             Hook.use_hook();
         ",
         // errors: [functionError('use', 'notAComponent')],
@@ -1459,6 +1537,7 @@ fn test() {
         // errors: [topLevelError('use')],
         "
             const text = use(promise);
+
             function App() {
                 return <Text text={text} />
             }

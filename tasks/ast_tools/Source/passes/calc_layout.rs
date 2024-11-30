@@ -74,16 +74,20 @@ pub fn calc_layout(ty: &mut AstType, ctx: &EarlyCtx) -> Result<bool> {
         .layout_32()
         .and_then(|x32| ty.layout_64().map(|x64| PlatformLayout(x64, x32)))
         .is_ok_and(|pl| pl.is_unknown());
+
     let layout = match ty {
         AstType::Enum(enum_) if unknown_layout => calc_enum_layout(enum_, ctx),
         AstType::Struct(struct_) if unknown_layout => calc_struct_layout(struct_, ctx),
         _ => return Ok(true),
     }?;
+
     if layout.is_unknown() {
         Ok(false)
     } else {
         let PlatformLayout(x64, x32) = layout;
+
         ty.set_layout(x64, x32)?;
+
         Ok(true)
     }
 }
@@ -96,6 +100,7 @@ fn calc_enum_layout(ty: &mut Enum, ctx: &EarlyCtx) -> Result<PlatformLayout> {
 
     // Get max size and align of variants
     let mut size_align_64 = SizeAlign { size: 0, align: 1 };
+
     let mut size_align_32 = SizeAlign { size: 0, align: 1 };
 
     for variant in &ty.item.variants {
@@ -104,27 +109,35 @@ fn calc_enum_layout(ty: &mut Enum, ctx: &EarlyCtx) -> Result<PlatformLayout> {
         }
 
         let field = variant.fields.iter().exactly_one().normalize().unwrap();
+
         let typ = field.ty.analyze(ctx);
+
         let PlatformLayout(variant_layout_64, variant_layout_32) = calc_type_layout(&typ, ctx)?;
 
         let variant_layout_64 = variant_layout_64.layout().unwrap();
+
         size_align_64.size = max(size_align_64.size, variant_layout_64.size());
+
         size_align_64.align = max(size_align_64.align, variant_layout_64.align());
 
         let variant_layout_32 = variant_layout_32.layout().unwrap();
+
         size_align_32.size = max(size_align_32.size, variant_layout_32.size());
+
         size_align_32.align = max(size_align_32.align, variant_layout_32.align());
     }
 
     // Round up size to largest variant alignment.
     // Largest variant is not necessarily the most highly aligned e.g. `enum { A([u8; 50]), B(u64) }`
     size_align_64.size = size_align_64.size.next_multiple_of(size_align_64.align);
+
     size_align_32.size = size_align_32.size.next_multiple_of(size_align_32.align);
 
     // Add discriminant.
     // All enums are `#[repr(C, u8)]` (fieldful) or `#[repr(u8)]` (fieldless), so disriminant is 1 byte.
     // But padding is inserted to align all payloads to largest alignment of any variant.
     size_align_64.size += size_align_64.align;
+
     size_align_32.size += size_align_32.align;
 
     // Variant payloads are not relevant in niche calculation for `#[repr(u8)]` / `#[repr(C, u8)]` enums.
@@ -137,7 +150,9 @@ fn calc_enum_layout(ty: &mut Enum, ctx: &EarlyCtx) -> Result<PlatformLayout> {
     let niches = (256 - ty.item.variants.len()) as u128;
 
     let layout_64 = KnownLayout::new(size_align_64.size, size_align_64.align, niches);
+
     let layout_32 = KnownLayout::new(size_align_32.size, size_align_32.align, niches);
+
     Ok(PlatformLayout(Layout::from(layout_64), Layout::from(layout_32)))
 }
 
@@ -151,6 +166,7 @@ fn calc_struct_layout(ty: &mut Struct, ctx: &EarlyCtx) -> Result<PlatformLayout>
                 .iter()
                 .map(|field| {
                     let typ = field.ty.analyze(ctx);
+
                     calc_type_layout(&typ, ctx)
                 })
                 .collect()
@@ -161,17 +177,26 @@ fn calc_struct_layout(ty: &mut Struct, ctx: &EarlyCtx) -> Result<PlatformLayout>
         layouts: &[KnownLayout],
     ) -> std::result::Result<KnownLayout, std::alloc::LayoutError> {
         let layouts = layouts.iter().enumerate();
+
         let mut offsets = vec![0; layouts.len()];
+
         let mut output = std::alloc::Layout::from_size_align(0, 1)?;
+
         let mut niches = 0;
+
         for (ix, layout) in layouts {
             let (new_layout, offset) = output
                 .extend(std::alloc::Layout::from_size_align(layout.size(), layout.align())?)?;
+
             output = new_layout;
+
             niches += layout.niches();
+
             offsets[ix] = offset;
         }
+
         let output = output.pad_to_align();
+
         Ok(KnownLayout::new(output.size(), output.align(), niches).with_offsets(offsets))
     }
 
@@ -190,6 +215,7 @@ fn calc_struct_layout(ty: &mut Struct, ctx: &EarlyCtx) -> Result<PlatformLayout>
         .expect("already checked.");
 
     let x32 = with_padding(&layouts_x32).normalize()?;
+
     let x64 = with_padding(&layouts_x64).normalize()?;
 
     Ok(PlatformLayout(Layout::from(x64), Layout::from(x32)))
@@ -209,6 +235,7 @@ fn calc_type_layout(ty: &TypeAnalysis, ctx: &EarlyCtx) -> Result<PlatformLayout>
         let Layout::Layout(mut known) = layout else { return layout };
         // option needs only one niche, We allow resizing in case there isn't enough space.
         known.consume_niches(1, true);
+
         Layout::Layout(known)
     }
 
@@ -229,6 +256,7 @@ fn calc_type_layout(ty: &TypeAnalysis, ctx: &EarlyCtx) -> Result<PlatformLayout>
             };
 
             let typ = typ.path.segments.first().unwrap().to_token_stream().to_string();
+
             let typ = &*typ.cow_replace(' ', "");
 
             if let Some(typ) = WELL_KNOWN.get(typ) {
@@ -237,6 +265,7 @@ fn calc_type_layout(ty: &TypeAnalysis, ctx: &EarlyCtx) -> Result<PlatformLayout>
                 panic!("Unsupported type: {:#?}", ty.typ.to_token_stream().to_string())
             }
         };
+
         Ok(result)
     };
 
@@ -244,31 +273,39 @@ fn calc_type_layout(ty: &TypeAnalysis, ctx: &EarlyCtx) -> Result<PlatformLayout>
         TypeWrapper::Vec | TypeWrapper::VecBox | TypeWrapper::VecOpt => {
             WELL_KNOWN[stringify!(Vec)].clone()
         }
+
         TypeWrapper::OptVec => {
             let mut pl = WELL_KNOWN[stringify!(Vec)].clone();
             // preconsume one niche for option
             if let Layout::Layout(layout) = &mut pl.0 {
                 layout.consume_niches(1, true);
             }
+
             if let Layout::Layout(layout) = &mut pl.1 {
                 layout.consume_niches(1, true);
             }
+
             pl
         }
+
         TypeWrapper::Ref if is_slice(ty) => PlatformLayout::wide_ptr(),
         TypeWrapper::Ref | TypeWrapper::Box | TypeWrapper::OptBox => PlatformLayout::ptr(),
         TypeWrapper::None => get_layout(ty.type_id.map(|id| ctx.ast_ref(id)).as_ref())?,
         TypeWrapper::Opt => {
             let PlatformLayout(x64, x32) =
                 get_layout(ty.type_id.map(|id| ctx.ast_ref(id)).as_ref())?;
+
             PlatformLayout(try_fold_option(x64), try_fold_option(x32))
         }
+
         TypeWrapper::Complex => {
             let PlatformLayout(x64, x32) =
                 get_layout(ty.type_id.map(|id| ctx.ast_ref(id)).as_ref())?;
+
             PlatformLayout(x64, x32)
         }
     };
+
     Ok(layout)
 }
 

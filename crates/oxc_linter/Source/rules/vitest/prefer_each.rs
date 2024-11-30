@@ -21,9 +21,11 @@ fn use_prefer_each(span: Span, fn_name: &str) -> OxcDiagnostic {
 fn is_in_test(ctx: &LintContext<'_>, id: NodeId) -> bool {
     ctx.nodes().ancestors(id).any(|node| {
         let AstKind::CallExpression(ancestor_call_expr) = node.kind() else { return false };
+
         let Some(ancestor_member_expr) = ancestor_call_expr.callee.as_member_expression() else {
             return false;
         };
+
         let Some(id) = ancestor_member_expr.object().get_identifier_reference() else {
             return false;
         };
@@ -70,6 +72,7 @@ declare_oxc_lint!(
 impl Rule for PreferEach {
     fn run_once(&self, ctx: &LintContext<'_>) {
         let mut skip = FxHashSet::<NodeId>::default();
+
         ctx.nodes().iter().for_each(|node| {
             Self::run(node, ctx, &mut skip);
         });
@@ -102,6 +105,7 @@ impl PreferEach {
                 AstKind::CallExpression(_) => {
                     return;
                 }
+
                 AstKind::ForStatement(_)
                 | AstKind::ForInStatement(_)
                 | AstKind::ForOfStatement(_) => {
@@ -122,20 +126,25 @@ impl PreferEach {
                         AstKind::ForStatement(statement) => {
                             Span::new(statement.span.start, statement.body.span().start)
                         }
+
                         AstKind::ForInStatement(statement) => {
                             Span::new(statement.span.start, statement.body.span().start)
                         }
+
                         AstKind::ForOfStatement(statement) => {
                             Span::new(statement.span.start, statement.body.span().start)
                         }
+
                         _ => unreachable!(),
                     };
 
                     skip.insert(parent_node.id());
+
                     ctx.diagnostic(use_prefer_each(span, fn_name));
 
                     break;
                 }
+
                 _ => {}
             }
         }

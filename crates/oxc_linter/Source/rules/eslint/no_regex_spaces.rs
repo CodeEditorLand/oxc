@@ -73,6 +73,7 @@ impl Rule for NoRegexSpaces {
                     ctx.diagnostic(no_regex_spaces_diagnostic(span)); // new RegExp('a  b')
                 }
             }
+
             _ => {}
         }
     }
@@ -81,12 +82,15 @@ impl Rule for NoRegexSpaces {
 impl NoRegexSpaces {
     fn find_literal_to_report(literal: &RegExpLiteral, ctx: &LintContext) -> Option<Span> {
         let pattern_text = literal.regex.pattern.source_text(ctx.source_text());
+
         let pattern_text = pattern_text.as_ref();
+
         if !Self::has_double_space(pattern_text) {
             return None;
         }
 
         let pattern = literal.regex.pattern.as_pattern()?;
+
         find_consecutive_spaces(pattern)
     }
 
@@ -100,17 +104,20 @@ impl NoRegexSpaces {
         let Some(Argument::StringLiteral(pattern)) = args.first() else {
             return None;
         };
+
         if !Self::has_double_space(&pattern.value) {
             return None;
         }
 
         let alloc = Allocator::default();
+
         let parser = ConstructorParser::new(
             &alloc,
             pattern.span.source_text(ctx.source_text()),
             None,
             Options { pattern_span_offset: pattern.span.start, ..Options::default() },
         );
+
         let parsed_pattern = parser.parse().ok()?;
 
         find_consecutive_spaces(&parsed_pattern)
@@ -133,6 +140,7 @@ impl NoRegexSpaces {
 
 fn find_consecutive_spaces(pattern: &Pattern) -> Option<Span> {
     let mut finder = ConsecutiveSpaceFinder { last_space_span: None, depth: 0 };
+
     finder.visit_pattern(pattern);
 
     // return none if span is only one space
@@ -150,6 +158,7 @@ impl<'a> Visit<'a> for ConsecutiveSpaceFinder {
             self.depth += 1;
         }
     }
+
     fn leave_node(&mut self, kind: RegExpAstKind<'a>) {
         if let RegExpAstKind::Quantifier(_) | RegExpAstKind::CharacterClass(_) = kind {
             self.depth -= 1;
@@ -160,9 +169,11 @@ impl<'a> Visit<'a> for ConsecutiveSpaceFinder {
         if self.depth > 0 {
             return;
         }
+
         if ch.value != u32::from(b' ') {
             return;
         }
+
         if let Some(ref mut space_span) = self.last_space_span {
             // If this is consecutive with the last space, extend it
             if space_span.end == ch.span.start {

@@ -134,6 +134,7 @@ pub fn is_identifier_start(c: char) -> bool {
     if c.is_ascii() {
         return is_identifier_start_ascii(c);
     }
+
     is_identifier_start_unicode(c)
 }
 
@@ -154,6 +155,7 @@ pub fn is_identifier_part(c: char) -> bool {
     if c.is_ascii() {
         return is_identifier_part_ascii(c);
     }
+
     is_identifier_part_unicode(c)
 }
 
@@ -178,6 +180,7 @@ pub fn is_identifier_name(name: &str) -> bool {
 
     // Get first byte. Exit if empty string.
     let bytes = name.as_bytes();
+
     let Some(&first_byte) = bytes.first() else { return false };
 
     let mut chars = if first_byte.is_ascii() {
@@ -190,6 +193,7 @@ pub fn is_identifier_name(name: &str) -> bool {
         'outer: loop {
             // Check blocks of 8 bytes, then 4 bytes, then single bytes
             let bytes_remaining = bytes.len() - index;
+
             if bytes_remaining >= 8 {
                 // Process block of 8 bytes.
                 // Check that next 8 bytes are all ASCII.
@@ -197,18 +201,23 @@ pub fn is_identifier_name(name: &str) -> bool {
                 #[allow(clippy::cast_ptr_alignment)]
                 let next8_as_u64 = unsafe {
                     let ptr = bytes.as_ptr().add(index).cast::<u64>();
+
                     ptr.read_unaligned()
                 };
+
                 let high_bits = next8_as_u64 & 0x8080_8080_8080_8080;
+
                 if high_bits != 0 {
                     // Some chars in this block are non-ASCII
                     break;
                 }
 
                 let next8 = next8_as_u64.to_ne_bytes();
+
                 for b in next8 {
                     // SAFETY: We just checked all these bytes are ASCII
                     unsafe { assert_unchecked!(b.is_ascii()) };
+
                     if !is_identifier_part_ascii(b as char) {
                         return false;
                     }
@@ -222,18 +231,23 @@ pub fn is_identifier_name(name: &str) -> bool {
                 #[allow(clippy::cast_ptr_alignment)]
                 let next4_as_u32 = unsafe {
                     let ptr = bytes.as_ptr().add(index).cast::<u32>();
+
                     ptr.read_unaligned()
                 };
+
                 let high_bits = next4_as_u32 & 0x8080_8080;
+
                 if high_bits != 0 {
                     // Some chars in this block are non-ASCII
                     break;
                 }
 
                 let next4 = next4_as_u32.to_ne_bytes();
+
                 for b in next4 {
                     // SAFETY: We just checked all these bytes are ASCII
                     unsafe { assert_unchecked!(b.is_ascii()) };
+
                     if !is_identifier_part_ascii(b as char) {
                         return false;
                     }
@@ -267,7 +281,9 @@ pub fn is_identifier_name(name: &str) -> bool {
         // First char is Unicode.
         // NB: `unwrap()` cannot fail because we already checked the string is not empty.
         let mut chars = name.chars();
+
         let first_char = chars.next().unwrap();
+
         if !is_identifier_start_unicode(first_char) {
             return false;
         }

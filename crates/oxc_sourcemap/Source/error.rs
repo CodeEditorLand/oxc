@@ -27,9 +27,11 @@ impl fmt::Display for Error {
             Error::BadSegmentSize(size) => {
                 write!(f, "Mapping segment had an unsupported size of {size}")
             }
+
             Error::BadSourceReference(idx) => {
                 write!(f, "Reference to non-existing source at position {idx}")
             }
+
             Error::BadNameReference(idx) => {
                 write!(f, "Reference to non-existing name at position {idx}")
             }

@@ -16,6 +16,7 @@ pub(super) fn print_export_declaration<'a>(
     debug_assert!(decl.is_export());
 
     let mut parts = p.vec();
+
     parts.push(text!("export"));
 
     if decl.is_default_export() {
@@ -33,11 +34,13 @@ pub(super) fn print_export_declaration<'a>(
 
     if let Some(source) = decl.source() {
         parts.push(text!(" from "));
+
         parts.push(source.format(p));
     }
 
     if let Some(with_clause) = decl.with_clause() {
         parts.push(space!());
+
         parts.push(with_clause.format(p));
     }
 
@@ -74,9 +77,11 @@ fn print_semicolon_after_export_declaration<'a>(
                 _ => Some(text!(";")),
             }
         }
+
         ModuleDeclaration::ExportAllDeclaration(_) | ModuleDeclaration::TSExportAssignment(_) => {
             Some(text!(";"))
         }
+
         _ => None,
     }
 }
@@ -88,14 +93,17 @@ pub fn print_module_specifiers<'a, T: Format<'a>>(
     include_namespace: bool,
 ) -> Doc<'a> {
     let mut parts = p.vec();
+
     if specifiers.is_empty() {
         parts.push(text!(" {}"));
     } else {
         parts.push(space!());
 
         let mut specifiers_iter: VecDeque<_> = specifiers.iter().collect();
+
         if include_default {
             parts.push(specifiers_iter.pop_front().unwrap().format(p));
+
             if !specifiers_iter.is_empty() {
                 parts.push(text!(", "));
             }
@@ -103,6 +111,7 @@ pub fn print_module_specifiers<'a, T: Format<'a>>(
 
         if include_namespace {
             parts.push(specifiers_iter.pop_front().unwrap().format(p));
+
             if !specifiers_iter.is_empty() {
                 parts.push(text!(", "));
             }
@@ -114,6 +123,7 @@ pub fn print_module_specifiers<'a, T: Format<'a>>(
             if can_break {
                 let docs =
                     specifiers_iter.iter().map(|s| s.format(p)).collect::<std::vec::Vec<_>>();
+
                 parts.push(group![
                     p,
                     text!("{"),
@@ -128,13 +138,17 @@ pub fn print_module_specifiers<'a, T: Format<'a>>(
                 ]);
             } else {
                 parts.push(text!("{"));
+
                 if p.options.bracket_spacing {
                     parts.push(space!());
                 }
+
                 parts.extend(specifiers_iter.iter().map(|s| s.format(p)));
+
                 if p.options.bracket_spacing {
                     parts.push(space!());
                 }
+
                 parts.push(text!("}"));
             }
         }

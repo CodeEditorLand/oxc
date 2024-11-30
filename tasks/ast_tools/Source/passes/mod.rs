@@ -25,12 +25,14 @@ pub trait Pass {
             let next_id = ctx.type_id(next).unwrap();
 
             let ast_ref = ctx.ast_ref(next_id);
+
             let val = &mut ast_ref.borrow_mut();
 
             if !self.each(val, ctx)? {
                 unresolved.push_front(next);
             }
         }
+
         Ok(vec![])
     }
 }

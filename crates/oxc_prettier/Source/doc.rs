@@ -96,11 +96,13 @@ impl<'a> Group<'a> {
 
     pub fn with_break(mut self, yes: bool) -> Self {
         self.should_break = yes;
+
         self
     }
 
     pub fn with_id(mut self, id: GroupId) -> Self {
         self.id = Some(id);
+
         self
     }
 }
@@ -117,6 +119,7 @@ impl<'a> IndentIfBreak<'a> {
 
     pub fn with_id(mut self, id: GroupId) -> Self {
         self.group_id = Some(id);
+
         self
     }
 }
@@ -133,6 +136,7 @@ impl<'a> Fill<'a> {
 
     pub fn drain_out_pair(&mut self) -> (Option<Doc<'a>>, Option<Doc<'a>>) {
         let content = if self.parts.len() > 0 { Some(self.parts.remove(0)) } else { None };
+
         let whitespace = if self.parts.len() > 0 { Some(self.parts.remove(0)) } else { None };
         (content, whitespace)
     }
@@ -180,9 +184,12 @@ pub trait DocBuilder<'a> {
     fn vec<T>(&self) -> Vec<'a, T> {
         Vec::new_in(self.allocator())
     }
+
     fn vec_single<T>(&self, value: T) -> Vec<'a, T> {
         let mut vec = Vec::with_capacity_in(1, self.allocator());
+
         vec.push(value);
+
         vec
     }
 
@@ -198,6 +205,7 @@ pub trait DocBuilder<'a> {
 
     fn join(&self, separator: Separator, docs: std::vec::Vec<Doc<'a>>) -> Vec<'a, Doc<'a>> {
         let mut parts = self.vec();
+
         for (i, doc) in docs.into_iter().enumerate() {
             if i != 0 {
                 parts.push(match separator {
@@ -206,8 +214,10 @@ pub trait DocBuilder<'a> {
                     Separator::CommaLine => array![self, ss!(","), line!()],
                 });
             }
+
             parts.push(doc);
         }
+
         parts
     }
 }
@@ -221,38 +231,54 @@ impl<'a> fmt::Display for Doc<'a> {
 // https://github.com/prettier/prettier/blob/3.3.3/src/document/debug.js
 fn print_doc_to_debug(doc: &Doc<'_>) -> std::string::String {
     use std::string::String;
+
     let mut string = String::new();
+
     match doc {
         Doc::Str(s) => {
             string.push('"');
+
             string.push_str(s);
+
             string.push('"');
         }
+
         Doc::Array(docs) => {
             string.push_str("[\n");
+
             for (idx, doc) in docs.iter().enumerate() {
                 string.push_str(&print_doc_to_debug(doc));
+
                 if idx != docs.len() - 1 {
                     string.push_str(", ");
                 }
             }
+
             string.push_str("]\n");
         }
+
         Doc::Indent(contents) => {
             string.push_str("indent([");
+
             for (idx, doc) in contents.iter().enumerate() {
                 string.push_str(&print_doc_to_debug(doc));
+
                 if idx != contents.len() - 1 {
                     string.push_str(", ");
                 }
             }
+
             string.push_str("])");
         }
+
         Doc::IndentIfBreak(indent_if_break) => {
             string.push_str("indentIfBreak(");
+
             string.push_str("[\n");
+
             for (idx, doc) in indent_if_break.contents.iter().enumerate() {
                 string.push_str(&print_doc_to_debug(doc));
+
                 if idx != indent_if_break.contents.len() - 1 {
                     string.push_str(", ");
                 }
@@ -264,36 +290,47 @@ fn print_doc_to_debug(doc: &Doc<'_>) -> std::string::String {
 
             string.push_str("])");
         }
+
         Doc::Group(group) => {
             if group.expanded_states.is_some() {
                 string.push_str("conditionalGroup([\n");
             }
 
             string.push_str("group([\n");
+
             for (idx, doc) in group.contents.iter().enumerate() {
                 string.push_str(&print_doc_to_debug(doc));
+
                 if idx != group.contents.len() - 1 {
                     string.push_str(", ");
                 }
             }
+
             string.push_str("], { shouldBreak: ");
+
             string.push_str(&group.should_break.to_string());
+
             if let Some(id) = group.id {
                 string.push_str(&format!(", id: {id}"));
             }
+
             string.push_str(" })");
 
             if let Some(expanded_states) = &group.expanded_states {
                 string.push_str(",\n");
+
                 for (idx, doc) in expanded_states.iter().enumerate() {
                     string.push_str(&print_doc_to_debug(doc));
+
                     if idx != expanded_states.len() - 1 {
                         string.push_str(", ");
                     }
                 }
+
                 string.push_str("])");
             }
         }
+
         Doc::Line(Line { soft, hard, .. }) => {
             if *soft {
                 string.push_str("softline");
@@ -303,38 +340,51 @@ fn print_doc_to_debug(doc: &Doc<'_>) -> std::string::String {
                 string.push_str("line");
             }
         }
+
         Doc::IfBreak(if_break) => {
             string.push_str(&format!(
                 "ifBreak({}, {}",
                 print_doc_to_debug(&if_break.break_contents),
                 print_doc_to_debug(&if_break.flat_content)
             ));
+
             if let Some(group_id) = if_break.group_id {
                 string.push_str(&format!(", {{ groupId: {group_id} }}"));
             }
+
             string.push(')');
         }
+
         Doc::Fill(fill) => {
             string.push_str("fill([\n");
+
             let parts = fill.parts();
+
             for (idx, doc) in parts.iter().enumerate() {
                 string.push_str(&print_doc_to_debug(doc));
+
                 if idx != parts.len() - 1 {
                     string.push_str(", ");
                 }
             }
+
             string.push_str("])");
         }
+
         Doc::LineSuffix(docs) => {
             string.push_str("lineSuffix(");
+
             for (idx, doc) in docs.iter().enumerate() {
                 string.push_str(&print_doc_to_debug(doc));
+
                 if idx != docs.len() - 1 {
                     string.push_str(", ");
                 }
             }
+
             string.push(')');
         }
+
         Doc::BreakParent => {
             string.push_str("BreakParent");
         }

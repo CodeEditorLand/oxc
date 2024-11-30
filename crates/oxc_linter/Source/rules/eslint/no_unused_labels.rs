@@ -41,9 +41,11 @@ impl Rule for NoUnusedLabels {
     fn run_once(&self, ctx: &LintContext) {
         for id in ctx.semantic().unused_labels() {
             let node = ctx.semantic().nodes().get_node(*id);
+
             let AstKind::LabeledStatement(stmt) = node.kind() else {
                 continue;
             };
+
             ctx.diagnostic_with_fix(
                 no_unused_labels_diagnostic(stmt.label.name.as_str(), stmt.label.span),
                 |fixer| fixer.replace_with(stmt, &stmt.body),
@@ -84,6 +86,7 @@ fn test() {
         ("A: /* comment */ foo", None),
         ("A /* comment */: foo", None),
     ];
+
     let fix = vec![
         ("A: var foo = 0;", "var foo = 0;", None),
         ("A: /* comment */ foo", "foo", None),

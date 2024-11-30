@@ -48,6 +48,7 @@ impl Rule for NoCssTags {
         // check for `rel="stylesheet"` and `href` (href must not be a url
 
         let mut rel_attr = None;
+
         let mut href_attr = None;
 
         for attr_item in &jsx_opening_element.attributes {
@@ -63,6 +64,7 @@ impl Rule for NoCssTags {
                     "href" => {
                         href_attr = Some(attr_item);
                     }
+
                     _ => {}
                 }
             }
@@ -75,6 +77,7 @@ impl Rule for NoCssTags {
         let Some(rel_prop_value) = get_string_literal_prop_value(rel_attr) else {
             return;
         };
+
         let Some(href_prop_value) = get_string_literal_prop_value(href_attr) else {
             return;
         };

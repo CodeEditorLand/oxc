@@ -24,9 +24,11 @@ impl<'a, 'b> IsLiteralValue<'a, 'b> for Expression<'a> {
             Self::ArrayExpression(expr) => {
                 expr.elements.iter().all(|element| element.is_literal_value(include_functions))
             }
+
             Self::ObjectExpression(expr) => {
                 expr.properties.iter().all(|property| property.is_literal_value(include_functions))
             }
+
             _ => self.is_immutable_value(),
         }
     }

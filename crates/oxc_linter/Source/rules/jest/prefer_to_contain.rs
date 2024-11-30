@@ -65,17 +65,21 @@ impl Rule for PreferToContain {
 impl PreferToContain {
     fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(jest_expect_fn_call) =
             parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
         };
+
         let Some(parent) = jest_expect_fn_call.head.parent else {
             return;
         };
+
         let Some(matcher) = jest_expect_fn_call.matcher() else {
             return;
         };
@@ -93,6 +97,7 @@ impl PreferToContain {
         else {
             return;
         };
+
         let Expression::CallExpression(expect_call_expr) = parent else {
             return;
         };
@@ -110,6 +115,7 @@ impl PreferToContain {
         let Some(first_argument) = expect_call_expr.arguments.first() else {
             return;
         };
+
         let Argument::CallExpression(includes_call_expr) = first_argument else {
             return;
         };
@@ -211,6 +217,7 @@ fn tests() {
         (
             "
                 import { expect as pleaseExpect } from '@jest/globals';
+
                 pleaseExpect([{a:1}].includes({a:1})).not.toStrictEqual(false);
             ",
             None,

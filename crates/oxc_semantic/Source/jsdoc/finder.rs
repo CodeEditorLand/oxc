@@ -32,6 +32,7 @@ impl<'a> JSDocFinder<'a> {
         }
 
         let span = node.kind().span();
+
         self.get_all_by_span(span)
     }
 

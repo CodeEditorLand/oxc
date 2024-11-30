@@ -38,20 +38,24 @@ fn derive_enum(def:&EnumDef) -> TokenStream {
 	let ty_ident = def.ident();
 
 	let mut used_alloc = false;
+
 	let matches = def
 		.all_variants()
 		.map(|var| {
 			let ident = var.ident();
+
 			if var.is_unit() {
 				quote!(Self :: #ident => #ty_ident :: #ident)
 			} else {
 				used_alloc = true;
+
 				quote!(Self :: #ident(it) => #ty_ident :: #ident(it.clone_in(allocator)))
 			}
 		})
 		.collect_vec();
 
 	let alloc_ident = if used_alloc { format_ident!("allocator") } else { format_ident!("_") };
+
 	let body = quote! {
 		match self {
 			#(#matches),*
@@ -69,6 +73,7 @@ fn derive_struct(def:&StructDef) -> TokenStream {
 	} else {
 		let fields = def.fields.iter().map(|field| {
 			let ident = field.ident();
+
 			match field.markers.derive_attributes.clone_in {
 				CloneInAttribute::Default => quote!(#ident: Default::default()),
 				CloneInAttribute::None => {
@@ -92,6 +97,7 @@ fn impl_clone_in(
 		quote! {
 			impl <'old_alloc, 'new_alloc> CloneIn<'new_alloc> for #ty_ident<'old_alloc> {
 				type Cloned = #ty_ident<'new_alloc>;
+
 				fn clone_in(&self, #alloc_ident: &'new_alloc Allocator) -> Self::Cloned {
 					#body
 				}
@@ -101,6 +107,7 @@ fn impl_clone_in(
 		quote! {
 			impl <'alloc> CloneIn<'alloc> for #ty_ident {
 				type Cloned = #ty_ident;
+
 				fn clone_in(&self, #alloc_ident: &'alloc Allocator) -> Self::Cloned {
 					#body
 				}

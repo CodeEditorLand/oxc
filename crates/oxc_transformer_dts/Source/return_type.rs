@@ -51,6 +51,7 @@ impl<'a> FunctionReturnType<'a> {
                         None
                     }
                 }
+
                 TSType::TSTypeQuery(query) => {
                     if let TSTypeQueryExprName::IdentifierReference(ident) = &query.expr_name {
                         Some((ident.name.clone(), true))
@@ -58,6 +59,7 @@ impl<'a> FunctionReturnType<'a> {
                         None
                     }
                 }
+
                 _ => None,
             } {
                 let is_defined_in_current_scope = if is_value {
@@ -108,9 +110,11 @@ impl<'a> Visit<'a> for FunctionReturnType<'a> {
 
     fn visit_return_statement(&mut self, stmt: &ReturnStatement<'a>) {
         self.return_statement_count += 1;
+
         if self.return_statement_count > 1 {
             return;
         }
+
         self.return_expression = self.ctx.ast.copy(&stmt.argument);
     }
 }

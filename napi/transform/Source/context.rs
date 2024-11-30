@@ -51,6 +51,7 @@ impl<'a> TransformContext<'a> {
         // Options that are added by this napi crates and don't exist in
         // oxc_transformer.
         let source_map = options.as_ref().and_then(|o| o.sourcemap).unwrap_or_default();
+
         let declarations =
             options.as_ref().and_then(|o| o.typescript.as_ref()).and_then(|t| t.declaration);
 
@@ -101,6 +102,7 @@ impl<'a> TransformContext<'a> {
 
     pub fn codegen(&self) -> Codegen<'a> {
         let codegen = Codegen::new();
+
         if self.source_map {
             codegen.enable_source_map(self.file_name(), self.source_text())
         } else {
@@ -112,6 +114,7 @@ impl<'a> TransformContext<'a> {
         if diagnostics.is_empty() {
             return;
         }
+
         self.errors.borrow_mut().extend(diagnostics);
     }
 
@@ -141,6 +144,7 @@ impl<'a> TransformContext<'a> {
 
             let ns = NamedSource::new(self.file_name(), self.source_text().to_string())
                 .with_language(lang);
+
             Arc::new(ns)
         };
 

@@ -7,5 +7,6 @@ fn main() {
     let options = TestRunnerOptions { filter: args.opt_value_from_str("--filter").unwrap() };
 
     TestRunner::new(TestLanguage::Js, options.clone()).run();
+
     TestRunner::new(TestLanguage::Ts, options).run();
 }

@@ -112,11 +112,16 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
     match member {
         TSSignature::TSCallSignatureDeclaration(decl) => {
             let start = decl.span.start;
+
             let end: u32 = decl.span.end;
+
             if let Some(type_annotation) = &decl.return_type {
                 let colon_pos = type_annotation.span.start - start;
+
                 let source_code = &ctx.source_text();
+
                 let text: &str = &source_code[start as usize..end as usize];
+
                 let mut suggestion = format!(
                     "{} =>{}",
                     &text[0..colon_pos as usize],
@@ -134,8 +139,11 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                                 prefer_function_type_diagnostic(&suggestion, decl.span),
                                 |fixer| {
                                     let mut span = interface_decl.id.span;
+
                                     span.end = type_parameters.span.end;
+
                                     let type_name = fixer.source_range(span);
+
                                     fixer.replace(
                                         interface_decl.span,
                                         format!("type {type_name} = {suggestion};"),
@@ -147,14 +155,19 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                                 prefer_function_type_diagnostic(&suggestion, decl.span),
                                 |_| {
                                     let mut is_parent_exported = false;
+
                                     let mut node_start = interface_decl.span.start;
+
                                     let mut node_end = interface_decl.span.end;
+
                                     if let Some(parent_node) = ctx.nodes().parent_node(node.id()) {
                                         if let AstKind::ExportNamedDeclaration(export_name_decl) =
                                             parent_node.kind()
                                         {
                                             is_parent_exported = true;
+
                                             node_start = export_name_decl.span.start;
+
                                             node_end = export_name_decl.span.end;
                                         }
                                     }
@@ -170,6 +183,7 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
 
                                         let comments_text = {
                                             let mut comments_vec: Vec<String> = vec![];
+
                                             comments.for_each(|(comment_interface, span)| {
                                                 let comment = span.source_text(source_code);
 
@@ -177,11 +191,14 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                                                     CommentKind::Line => {
                                                         let single_line_comment: String =
                                                             format!("//{comment}\n");
+
                                                         comments_vec.push(single_line_comment);
                                                     }
+
                                                     CommentKind::Block => {
                                                         let multi_line_comment: String =
                                                             format!("/*{comment}*/\n");
+
                                                         comments_vec.push(multi_line_comment);
                                                     }
                                                 }
@@ -252,6 +269,7 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                                 union_type.types.iter().for_each(|ts_type| {
                                     if let TSType::TSTypeLiteral(literal) = ts_type {
                                         let body = &literal.members;
+
                                         if body.len() == 1 {
                                             ctx.diagnostic_with_fix(
                                                 prefer_function_type_diagnostic(
@@ -274,6 +292,7 @@ fn check_member(member: &TSSignature, node: &AstNode<'_>, ctx: &LintContext<'_>)
                                 intersection_type.types.iter().for_each(|ts_type| {
                                     if let TSType::TSTypeLiteral(literal) = ts_type {
                                         let body = &literal.members;
+
                                         if body.len() == 1 {
                                             ctx.diagnostic_with_fix(
                                                 prefer_function_type_diagnostic(
@@ -329,6 +348,7 @@ impl Rule for PreferFunctionType {
                     &decl.declaration
                 {
                     let body = &interface_decl.body.body;
+
                     if !has_one_super_type(interface_decl) && body.len() == 1 {
                         check_member(&body[0], node, ctx);
                     }
@@ -341,6 +361,7 @@ impl Rule for PreferFunctionType {
                         union_type.types.iter().for_each(|ts_type| {
                             if let TSType::TSTypeLiteral(literal) = ts_type {
                                 let body = &literal.members;
+
                                 if body.len() == 1 {
                                     check_member(&body[0], node, ctx);
                                 }
@@ -350,6 +371,7 @@ impl Rule for PreferFunctionType {
 
                     TSType::TSTypeLiteral(literal) => {
                         let body = &literal.members;
+
                         if body.len() == 1 {
                             check_member(&body[0], node, ctx);
                         }
@@ -365,6 +387,7 @@ impl Rule for PreferFunctionType {
                         union_type.types.iter().for_each(|ts_type| {
                             if let TSType::TSTypeLiteral(literal) = ts_type {
                                 let body = &literal.members;
+
                                 if body.len() == 1 {
                                     check_member(&body[0], node, ctx);
                                 }
@@ -376,6 +399,7 @@ impl Rule for PreferFunctionType {
                         intersection_type.types.iter().for_each(|ts_type| {
                             if let TSType::TSTypeLiteral(literal) = ts_type {
                                 let body = &literal.members;
+
                                 if body.len() == 1 {
                                     check_member(&body[0], node, ctx);
                                 }
@@ -390,6 +414,7 @@ impl Rule for PreferFunctionType {
                             check_member(&body[0], node, ctx);
                         }
                     }
+
                     _ => {}
                 }
             }
@@ -406,6 +431,7 @@ impl Rule for PreferFunctionType {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     let pass: Vec<&str> = vec![
         "interface Foo { (): void; bar: number; }",
         "type Foo = { (): void; bar: number; };",
@@ -414,6 +440,7 @@ fn test() {
         interface Foo {
           bar: string;
         }
+
         interface Bar extends Foo {
           (): void;
         }
@@ -422,6 +449,7 @@ fn test() {
         interface Foo {
           bar: string;
         }
+
         interface Bar extends Function, Foo {
           (): void;
         }
@@ -500,7 +528,9 @@ fn test() {
             a: {
               nested: this;
             };
+
             between: this;
+
             b: {
               nested: string;
             };
@@ -684,7 +714,9 @@ interface Foo {
     a: {
       nested: this;
     };
+
     between: this;
+
     b: {
       nested: string;
     };
@@ -696,7 +728,9 @@ type Foo = () => {
     a: {
       nested: this;
     };
+
     between: this;
+
     b: {
       nested: string;
     };

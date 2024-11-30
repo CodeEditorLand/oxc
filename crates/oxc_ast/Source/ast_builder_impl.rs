@@ -104,6 +104,7 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn move_expression(self, expr: &mut Expression<'a>) -> Expression<'a> {
         let null_expr = self.expression_null_literal(expr.span());
+
         mem::replace(expr, null_expr)
     }
 
@@ -112,6 +113,7 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn move_statement(self, stmt: &mut Statement<'a>) -> Statement<'a> {
         let empty_stmt = self.empty_statement(stmt.span());
+
         mem::replace(stmt, Statement::EmptyStatement(self.alloc(empty_stmt)))
     }
 
@@ -121,6 +123,7 @@ impl<'a> AstBuilder<'a> {
     pub fn move_assignment_target(self, target: &mut AssignmentTarget<'a>) -> AssignmentTarget<'a> {
         let dummy =
             self.simple_assignment_target_identifier_reference(Span::default(), Atom::from(""));
+
         mem::replace(target, dummy.into())
     }
 
@@ -134,7 +137,9 @@ impl<'a> AstBuilder<'a> {
             self.vec(),
             false,
         );
+
         let empty_decl = Declaration::VariableDeclaration(self.alloc(empty_decl));
+
         mem::replace(decl, empty_decl)
     }
 
@@ -151,6 +156,7 @@ impl<'a> AstBuilder<'a> {
             self.vec(),
             false,
         );
+
         mem::replace(decl, empty_decl)
     }
 
@@ -158,6 +164,7 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn move_formal_parameters(self, params: &mut FormalParameters<'a>) -> FormalParameters<'a> {
         let empty_params = self.formal_parameters(Span::default(), params.kind, self.vec(), NONE);
+
         mem::replace(params, empty_params)
     }
 
@@ -165,6 +172,7 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn move_function_body(self, body: &mut FunctionBody<'a>) -> FunctionBody<'a> {
         let empty_body = self.function_body(Span::default(), self.vec(), self.vec());
+
         mem::replace(body, empty_body)
     }
 
@@ -177,6 +185,7 @@ impl<'a> AstBuilder<'a> {
             self.vec(),
             NONE,
         );
+
         let empty_function = self.function(
             FunctionType::FunctionDeclaration,
             Span::default(),
@@ -190,6 +199,7 @@ impl<'a> AstBuilder<'a> {
             NONE,
             NONE,
         );
+
         mem::replace(function, empty_function)
     }
 
@@ -200,6 +210,7 @@ impl<'a> AstBuilder<'a> {
         element: &mut ArrayExpressionElement<'a>,
     ) -> ArrayExpressionElement<'a> {
         let empty_element = self.array_expression_element_elision(Span::default());
+
         mem::replace(element, empty_element)
     }
 
@@ -222,6 +233,7 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn void_0(self, span: Span) -> Expression<'a> {
         let num = self.number_0();
+
         Expression::UnaryExpression(self.alloc(self.unary_expression(
             span,
             UnaryOperator::Void,

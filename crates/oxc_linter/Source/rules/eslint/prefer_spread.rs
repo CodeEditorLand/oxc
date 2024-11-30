@@ -113,6 +113,7 @@ impl Rule for PreferSpread {
         };
 
         check_eslint_prefer_spread(call_expr, ctx);
+
         check_unicorn_prefer_spread(call_expr, ctx);
     }
 }
@@ -123,6 +124,7 @@ fn check_eslint_prefer_spread(call_expr: &CallExpression, ctx: &LintContext) {
     }
 
     let callee = call_expr.callee.without_parentheses();
+
     let callee = match callee {
         match_member_expression!(Expression) => callee.to_member_expression(),
         Expression::ChainExpression(chain) => match chain.expression {
@@ -133,6 +135,7 @@ fn check_eslint_prefer_spread(call_expr: &CallExpression, ctx: &LintContext) {
     };
 
     let args = &call_expr.arguments;
+
     let Some(args0) = args[0].as_expression() else {
         return;
     };
@@ -140,6 +143,7 @@ fn check_eslint_prefer_spread(call_expr: &CallExpression, ctx: &LintContext) {
     if args[1].is_spread() {
         return;
     }
+
     if let Some(Expression::ArrayExpression(_)) = args[1].as_expression() {
         return;
     }
@@ -205,6 +209,7 @@ fn check_unicorn_prefer_spread(call_expr: &CallExpression, ctx: &LintContext) {
             let Some(expr) = call_expr.arguments[0].as_expression() else {
                 return;
             };
+
             if matches!(expr.without_parentheses(), Expression::ObjectExpression(_)) {
                 return;
             }
@@ -252,6 +257,7 @@ fn check_unicorn_prefer_spread(call_expr: &CallExpression, ctx: &LintContext) {
                 let Some(first_arg) = first_arg.as_expression() else {
                     return;
                 };
+
                 if let Expression::NumericLiteral(num_lit) = first_arg.without_parentheses() {
                     if num_lit.value != 0.0 {
                         return;
@@ -285,6 +291,7 @@ fn check_unicorn_prefer_spread(call_expr: &CallExpression, ctx: &LintContext) {
             let Some(expr) = call_expr.arguments[0].as_expression() else {
                 return;
             };
+
             let Expression::StringLiteral(string_lit) = expr.without_parentheses() else {
                 return;
             };
@@ -297,6 +304,7 @@ fn check_unicorn_prefer_spread(call_expr: &CallExpression, ctx: &LintContext) {
                 unicorn_prefer_spread_diagnostic(call_expr.span, "string.split()"),
                 |fixer| {
                     let callee_obj = member_expr.object().without_parentheses();
+
                     fixer.replace(
                         call_expr.span,
                         format!("[...{}]", callee_obj.span().source_text(ctx.source_text())),
@@ -304,6 +312,7 @@ fn check_unicorn_prefer_spread(call_expr: &CallExpression, ctx: &LintContext) {
                 },
             );
         }
+
         _ => {}
     }
 }
@@ -323,6 +332,7 @@ fn is_not_array(expr: &Expression, ctx: &LintContext) -> bool {
     ) {
         return true;
     }
+
     if expr.is_literal() {
         return true;
     }
@@ -332,8 +342,10 @@ fn is_not_array(expr: &Expression, ctx: &LintContext) -> bool {
             if Some("join") == member_expr.static_property_name() && call_expr.arguments.len() < 2 {
                 return true;
             }
+
             return false;
         }
+
         return false;
     }
 
@@ -341,6 +353,7 @@ fn is_not_array(expr: &Expression, ctx: &LintContext) -> bool {
         Expression::Identifier(ident) => {
             if let Some(symbol_id) = ast_util::get_symbol_id_of_variable(ident, ctx) {
                 let symbol_table = ctx.semantic().symbols();
+
                 let node = ctx.nodes().get_node(symbol_table.get_declaration(symbol_id));
 
                 if let AstKind::VariableDeclarator(variable_declarator) = node.kind() {
@@ -352,6 +365,7 @@ fn is_not_array(expr: &Expression, ctx: &LintContext) -> bool {
 
             ident.name.as_str()
         }
+
         expr @ match_member_expression!(Expression) => {
             if let Some(v) = expr.to_member_expression().static_property_name() {
                 v
@@ -359,6 +373,7 @@ fn is_not_array(expr: &Expression, ctx: &LintContext) -> bool {
                 return false;
             }
         }
+
         _ => return false,
     };
 

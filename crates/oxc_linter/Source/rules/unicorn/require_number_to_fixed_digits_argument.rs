@@ -71,12 +71,14 @@ impl Rule for RequireNumberToFixedDigitsArgument {
                                 let mut formatter = fixer.codegen();
 
                                 let mut parenthesis_span_without_right_one = parenthesis_span;
+
                                 parenthesis_span_without_right_one.end -= 1;
 
                                 let span_source_code =
                                     fixer.source_range(parenthesis_span_without_right_one);
 
                                 formatter.print_str(span_source_code);
+
                                 formatter.print_str("0)");
 
                                 formatter.into_source_text()

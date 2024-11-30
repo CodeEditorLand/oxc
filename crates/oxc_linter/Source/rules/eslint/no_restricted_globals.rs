@@ -62,15 +62,20 @@ impl Rule for NoRestrictedGlobals {
                 // "no-restricted-globals": ["error", "event"]
                 Value::String(name) => {
                     acc.insert(name.to_string(), String::new());
+
                     acc
                 }
                 // "no-restricted-globals": ["error", { "name": "event", "message": "Use local parameter instead." }]
                 Value::Object(obj) => {
                     let name = obj.get("name").and_then(Value::as_str).unwrap_or_default();
+
                     let message = obj.get("message").and_then(Value::as_str).unwrap_or_default();
+
                     acc.insert(name.to_string(), message.to_string());
+
                     acc
                 }
+
                 _ => acc,
             }),
             _ => FxHashMap::default(),
@@ -95,6 +100,7 @@ impl Rule for NoRestrictedGlobals {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     const CUSTOM_MESSAGE: &str = "Use bar instead.";
 
     let pass = vec![

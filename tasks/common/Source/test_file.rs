@@ -52,12 +52,15 @@ impl TestFiles {
 
     pub fn complicated() -> Self {
         let files = Self::complicated_urls().into_iter().map(TestFile::new).collect();
+
         Self { files }
     }
 
     pub fn complicated_one(index: usize) -> Self {
         let url = Self::complicated_urls()[index];
+
         let file = TestFile::new(url);
+
         Self { files: vec![file] }
     }
 
@@ -88,6 +91,7 @@ impl TestFile {
     /// # Panics
     pub fn new(url: &str) -> Self {
         let (file_name, source_text) = Self::get_source_text(url).unwrap();
+
         Self { url: url.to_string(), file_name, source_text }
     }
 
@@ -106,18 +110,22 @@ impl TestFile {
             Ok((filename.to_string(), code))
         } else {
             println!("[{filename}] - Downloading [{lib}] to [{}]", file.display());
+
             match agent().get(lib).call() {
                 Ok(response) => {
                     let mut reader = response.into_reader();
 
                     let _drop = std::fs::remove_file(&file);
+
                     let mut writer = std::fs::File::create(&file).map_err(err_to_string)?;
+
                     let _drop = std::io::copy(&mut reader, &mut writer);
 
                     std::fs::read_to_string(&file)
                         .map_err(err_to_string)
                         .map(|code| (filename.to_string(), code))
                 }
+
                 Err(e) => Err(format!("{e:?}")),
             }
         }

@@ -58,6 +58,7 @@ impl ModuleCache {
                 || Arc::new((Mutex::new(CacheStateEntry::ReadyToConstruct), Condvar::new())),
             ))
         };
+
         let mut state = cvar
             .wait_while(lock.lock().expect("Failed lock inner cache state"), |state| {
                 matches!(*state, CacheStateEntry::PendingStore(_))
@@ -70,6 +71,7 @@ impl ModuleCache {
             let i = if let CacheStateEntry::PendingStore(i) = *state { i.get() } else { 0 };
             // SAFETY: 1 + any natural number is always non-zero.
             *state = CacheStateEntry::PendingStore(unsafe { NonZeroUsize::new_unchecked(i + 1) });
+
             false
         };
 
@@ -78,6 +80,7 @@ impl ModuleCache {
         }
 
         drop(state);
+
         cache_hit
     }
 
@@ -94,6 +97,7 @@ impl ModuleCache {
     /// If a cache entry for `path` does not exist. You must call `init_cache_state` first.
     pub(super) fn ignore_path(&self, path: &Path) {
         self.modules.insert(path.to_path_buf().into_boxed_path(), ModuleState::Ignored);
+
         self.update_cache_state(path);
     }
 
@@ -108,9 +112,12 @@ impl ModuleCache {
                     .expect("Entry in http-cache state to have been previously inserted"),
             )
         };
+
         let mut state = lock.lock().expect("Failed lock inner cache state");
+
         if let CacheStateEntry::PendingStore(i) = *state {
             let new = i.get() - 1;
+
             if new == 0 {
                 *state = CacheStateEntry::ReadyToConstruct;
                 // Notify the next thread waiting in line, if there is any.

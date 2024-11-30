@@ -206,6 +206,7 @@ impl<'a> TransformCtx<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> CallExpression<'a> {
         let callee = self.helper_load(helper, ctx);
+
         ctx.ast.call_expression(
             span,
             callee,
@@ -224,6 +225,7 @@ impl<'a> TransformCtx<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let callee = self.helper_load(helper, ctx);
+
         ctx.ast.expression_call(
             span,
             callee,
@@ -236,13 +238,16 @@ impl<'a> TransformCtx<'a> {
     /// Load a helper function and return a callee expression.
     pub fn helper_load(&self, helper: Helper, ctx: &mut TraverseCtx<'a>) -> Expression<'a> {
         let helper_loader = &self.helper_loader;
+
         match helper_loader.mode {
             HelperLoaderMode::Runtime => {
                 helper_loader.transform_for_runtime_helper(helper, self, ctx)
             }
+
             HelperLoaderMode::External => {
                 HelperLoaderStore::transform_for_external_helper(helper, ctx)
             }
+
             HelperLoaderMode::Inline => {
                 unreachable!("Inline helpers are not supported yet");
             }
@@ -259,9 +264,11 @@ impl<'a> HelperLoaderStore<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let mut loaded_helpers = self.loaded_helpers.borrow_mut();
+
         let binding = loaded_helpers
             .entry(helper)
             .or_insert_with(|| self.get_runtime_helper(helper, transform_ctx, ctx));
+
         binding.create_read_expression(ctx)
     }
 
@@ -275,10 +282,15 @@ impl<'a> HelperLoaderStore<'a> {
 
         // Construct string directly in arena without an intermediate temp allocation
         let len = self.module_name.len() + "/helpers/".len() + helper_name.len();
+
         let mut source = ArenaString::with_capacity_in(len, ctx.ast.allocator);
+
         source.push_str(&self.module_name);
+
         source.push_str("/helpers/");
+
         source.push_str(helper_name);
+
         let source = Atom::from(source.into_bump_str());
 
         let flag = if transform_ctx.source_type.is_module() {
@@ -286,6 +298,7 @@ impl<'a> HelperLoaderStore<'a> {
         } else {
             SymbolFlags::FunctionScopedVariable
         };
+
         let binding = ctx.generate_uid_in_root_scope(helper_name, flag);
 
         transform_ctx.module_imports.add_default_import(source, binding.clone(), false);
@@ -297,9 +310,12 @@ impl<'a> HelperLoaderStore<'a> {
         static HELPER_VAR: &str = "babelHelpers";
 
         let symbol_id = ctx.scopes().find_binding(ctx.current_scope_id(), HELPER_VAR);
+
         let object =
             ctx.create_ident_expr(SPAN, Atom::from(HELPER_VAR), symbol_id, ReferenceFlags::Read);
+
         let property = ctx.ast.identifier_name(SPAN, Atom::from(helper.name()));
+
         Expression::from(ctx.ast.member_expression_static(SPAN, object, property, false))
     }
 }

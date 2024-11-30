@@ -59,6 +59,7 @@ impl Rule for PreferTsExpectError {
 
             if comment.is_line() {
                 let comment_span = comment.span;
+
                 ctx.diagnostic_with_fix(prefer_ts_expect_error_diagnostic(comment_span), |fixer| {
                     fixer.replace(
                         comment_span,
@@ -67,6 +68,7 @@ impl Rule for PreferTsExpectError {
                 });
             } else {
                 let comment_span = comment.span;
+
                 ctx.diagnostic_with_fix(prefer_ts_expect_error_diagnostic(comment_span), |fixer| {
                     fixer.replace(
                         comment_span,

@@ -121,11 +121,14 @@ impl ScopeTree {
         // which are not cheap to construct, so this is best we can do at present.
         // TODO: Switch to `Entry` API once we use `&str`s or `Atom`s as keys.
         let reference_ids = self.root_unresolved_references.get_mut(name).unwrap();
+
         if reference_ids.len() == 1 {
             assert!(reference_ids[0] == reference_id);
+
             self.root_unresolved_references.remove(name);
         } else {
             let index = reference_ids.iter().position(|&id| id == reference_id).unwrap();
+
             reference_ids.swap_remove(index);
         }
     }
@@ -148,6 +151,7 @@ impl ScopeTree {
     ) -> ScopeFlags {
         // https://tc39.es/ecma262/#sec-strict-mode-code
         let parent_scope_flags = self.get_flags(parent_scope_id);
+
         flags |= parent_scope_flags & ScopeFlags::StrictMode;
 
         // inherit flags for non-function scopes
@@ -165,6 +169,7 @@ impl ScopeTree {
 
     pub fn set_parent_id(&mut self, scope_id: ScopeId, parent_id: Option<ScopeId>) {
         self.parent_ids[scope_id] = parent_id;
+
         if self.build_child_ids {
             // Set this scope as child of parent scope
             if let Some(parent_id) = parent_id {
@@ -178,6 +183,7 @@ impl ScopeTree {
     /// This will also remove the scope from the child list of the old parent and add it to the new parent.
     pub fn change_parent_id(&mut self, scope_id: ScopeId, new_parent_id: Option<ScopeId>) {
         let old_parent_id = mem::replace(&mut self.parent_ids[scope_id], new_parent_id);
+
         if self.build_child_ids {
             // Remove this scope from old parent scope
             if let Some(old_parent_id) = old_parent_id {
@@ -194,7 +200,9 @@ impl ScopeTree {
     pub fn delete_scope(&mut self, scope_id: ScopeId) {
         if self.build_child_ids {
             self.child_ids[scope_id].clear();
+
             let parent_id = self.parent_ids[scope_id];
+
             if let Some(parent_id) = parent_id {
                 self.child_ids[parent_id].retain(|&child_id| child_id != scope_id);
             }
@@ -238,6 +246,7 @@ impl ScopeTree {
                 return Some(symbol_id);
             }
         }
+
         None
     }
 
@@ -291,12 +300,15 @@ impl ScopeTree {
 
     pub fn iter_all_child_ids(&self, scope_id: ScopeId) -> impl Iterator<Item = ScopeId> + '_ {
         let mut stack = self.child_ids[scope_id].clone();
+
         let child_ids: &IndexVec<ScopeId, Vec<ScopeId>> = &self.child_ids;
+
         std::iter::from_fn(move || {
             if let Some(scope_id) = stack.pop() {
                 if let Some(children) = child_ids.get(scope_id) {
                     stack.extend(children.iter().copied());
                 }
+
                 Some(scope_id)
             } else {
                 None
@@ -319,15 +331,21 @@ impl ScopeTree {
         flags: ScopeFlags,
     ) -> ScopeId {
         let scope_id = self.parent_ids.push(parent_id);
+
         self.flags.push(flags);
+
         self.bindings.push(Bindings::default());
+
         self.node_ids.push(node_id);
+
         if self.build_child_ids {
             self.child_ids.push(vec![]);
+
             if let Some(parent_id) = parent_id {
                 self.child_ids[parent_id].push(scope_id);
             }
         }
+
         scope_id
     }
 
@@ -346,6 +364,7 @@ impl ScopeTree {
     /// Move a binding from one scope to another.
     pub fn move_binding(&mut self, from: ScopeId, to: ScopeId, name: &str) {
         let from_map = &mut self.bindings[from];
+
         if let Some((name, symbol_id)) = from_map.swap_remove_entry(name) {
             self.bindings[to].insert(name, symbol_id);
         }
@@ -361,9 +380,13 @@ impl ScopeTree {
     /// Reserve memory for an `additional` number of scopes.
     pub fn reserve(&mut self, additional: usize) {
         self.parent_ids.reserve(additional);
+
         self.flags.reserve(additional);
+
         self.bindings.reserve(additional);
+
         self.node_ids.reserve(additional);
+
         if self.build_child_ids {
             self.child_ids.reserve(additional);
         }

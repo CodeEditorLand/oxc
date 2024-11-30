@@ -44,6 +44,7 @@ pub fn is_jest_rule_adapted_to_vitest(rule_name: &str) -> bool {
 pub fn read_to_string(path: &Path) -> io::Result<String> {
     // `simdutf8` is faster than `std::str::from_utf8` which `fs::read_to_string` uses internally
     let bytes = std::fs::read(path)?;
+
     if simdutf8::basic::from_utf8(&bytes).is_err() {
         // Same error as `fs::read_to_string` produces (`io::Error::INVALID_UTF8`)
         return Err(io::Error::new(

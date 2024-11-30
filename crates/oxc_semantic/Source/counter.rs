@@ -25,14 +25,18 @@ pub(crate) struct Counts {
 impl Counts {
     pub fn count(program: &Program) -> Self {
         let mut counts = Counts::default();
+
         counts.visit_program(program);
+
         counts
     }
 
     #[cfg(debug_assertions)]
     pub fn assert_accurate(actual: &Self, estimated: &Self) {
         assert_eq!(actual.nodes, estimated.nodes, "nodes count mismatch");
+
         assert_eq!(actual.scopes, estimated.scopes, "scopes count mismatch");
+
         assert_eq!(actual.references, estimated.references, "references count mismatch");
         // `Counts` may overestimate number of symbols, because multiple
         // `BindingIdentifier`s can result in only a single symbol.
@@ -58,12 +62,14 @@ impl<'a> Visit<'a> for Counts {
     #[inline]
     fn visit_binding_identifier(&mut self, _: &BindingIdentifier<'a>) {
         self.nodes += 1;
+
         self.symbols += 1;
     }
 
     #[inline]
     fn visit_identifier_reference(&mut self, _: &IdentifierReference<'a>) {
         self.nodes += 1;
+
         self.references += 1;
     }
 
@@ -72,12 +78,14 @@ impl<'a> Visit<'a> for Counts {
         if !it.is_expression() {
             self.symbols += 1;
         }
+
         walk_ts_enum_member_name(self, it);
     }
 
     #[inline]
     fn visit_ts_module_declaration_name(&mut self, it: &TSModuleDeclarationName<'a>) {
         self.symbols += 1;
+
         walk_ts_module_declaration_name(self, it);
     }
 }

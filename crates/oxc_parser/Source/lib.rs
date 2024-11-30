@@ -233,6 +233,7 @@ impl<'a> Parser<'a> {
     /// - `source_type`: Source type (e.g. JavaScript, TypeScript, JSX, ESM Module, Script)
     pub fn new(allocator: &'a Allocator, source_text: &'a str, source_type: SourceType) -> Self {
         let options = ParseOptions::default();
+
         Self { allocator, source_text, source_type, options }
     }
 
@@ -240,6 +241,7 @@ impl<'a> Parser<'a> {
     #[must_use]
     pub fn with_options(mut self, options: ParseOptions) -> Self {
         self.options = options;
+
         self
     }
 }
@@ -287,6 +289,7 @@ mod parser_parse {
         /// See the [module-level documentation](crate) for examples and more information.
         pub fn parse(self) -> ParserReturn<'a> {
             let unique = UniquePromise::new();
+
             let parser = ParserImpl::new(
                 self.allocator,
                 self.source_text,
@@ -294,6 +297,7 @@ mod parser_parse {
                 self.options,
                 unique,
             );
+
             parser.parse()
         }
 
@@ -318,6 +322,7 @@ mod parser_parse {
         /// If the source code being parsed has syntax errors.
         pub fn parse_expression(self) -> std::result::Result<Expression<'a>, Vec<OxcDiagnostic>> {
             let unique = UniquePromise::new();
+
             let parser = ParserImpl::new(
                 self.allocator,
                 self.source_text,
@@ -325,6 +330,7 @@ mod parser_parse {
                 self.options,
                 unique,
             );
+
             parser.parse_expression()
         }
     }
@@ -405,6 +411,7 @@ impl<'a> ParserImpl<'a> {
             Ok(program) => (program, false),
             Err(error) => {
                 self.error(self.overlong_error().unwrap_or(error));
+
                 let program = self.ast.program(
                     Span::default(),
                     self.source_type,
@@ -419,34 +426,47 @@ impl<'a> ParserImpl<'a> {
         };
 
         self.check_unfinished_errors();
+
         let mut is_flow_language = false;
+
         let mut errors = vec![];
         // only check for `@flow` if the file failed to parse.
         if !self.lexer.errors.is_empty() || !self.errors.is_empty() {
             if let Some(error) = self.flow_error() {
                 is_flow_language = true;
+
                 errors.push(error);
             }
         }
+
         if errors.len() != 1 {
             errors.reserve(self.lexer.errors.len() + self.errors.len());
+
             errors.extend(self.lexer.errors);
+
             errors.extend(self.errors);
         }
+
         let irregular_whitespaces =
             self.lexer.trivia_builder.irregular_whitespaces.into_boxed_slice();
+
         ParserReturn { program, errors, irregular_whitespaces, panicked, is_flow_language }
     }
 
     pub fn parse_expression(mut self) -> std::result::Result<Expression<'a>, Vec<OxcDiagnostic>> {
         // initialize cur_token and prev_token by moving onto the first token
         self.bump_any();
+
         let expr = self.parse_expr().map_err(|diagnostic| vec![diagnostic])?;
+
         self.check_unfinished_errors();
+
         let errors = self.lexer.errors.into_iter().chain(self.errors).collect::<Vec<_>>();
+
         if !errors.is_empty() {
             return Err(errors);
         }
+
         Ok(expr)
     }
 
@@ -456,13 +476,16 @@ impl<'a> ParserImpl<'a> {
         self.bump_any();
 
         let hashbang = self.parse_hashbang();
+
         let (directives, statements) =
             self.parse_directives_and_statements(/* is_top_level */ true)?;
 
         self.set_source_type_to_script_if_unambiguous();
 
         let span = Span::new(0, self.source_text.len() as u32);
+
         let comments = self.ast.vec_from_iter(self.lexer.trivia_builder.comments.iter().copied());
+
         Ok(self.ast.program(
             span,
             self.source_type,
@@ -476,13 +499,16 @@ impl<'a> ParserImpl<'a> {
 
     fn default_context(source_type: SourceType, options: ParseOptions) -> Context {
         let mut ctx = Context::default().and_ambient(source_type.is_typescript_definition());
+
         if source_type.module_kind() == ModuleKind::Module {
             // for [top-level-await](https://tc39.es/proposal-top-level-await/)
             ctx = ctx.and_await(true);
         }
+
         if options.allow_return_outside_function {
             ctx = ctx.and_return(true);
         }
+
         ctx
     }
 
@@ -492,9 +518,12 @@ impl<'a> ParserImpl<'a> {
         if !self.source_type.is_javascript() {
             return None;
         };
+
         let span = self.lexer.trivia_builder.comments.first()?.span;
+
         if span.source_text(self.source_text).contains("@flow") {
             self.errors.clear();
+
             Some(diagnostics::flow(span))
         } else {
             None
@@ -516,6 +545,7 @@ impl<'a> ParserImpl<'a> {
         if self.source_text.len() > MAX_LEN {
             return Some(diagnostics::overlong_source());
         }
+
         None
     }
 
@@ -530,6 +560,7 @@ impl<'a> ParserImpl<'a> {
                 return error;
             }
         }
+
         diagnostics::unexpected_token(self.cur_token().span())
     }
 
@@ -571,27 +602,39 @@ mod test {
     #[test]
     fn parse_program_smoke_test() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default();
+
         let source = "";
+
         let ret = Parser::new(&allocator, source, source_type).parse();
+
         assert!(ret.program.is_empty());
+
         assert!(ret.errors.is_empty());
+
         assert!(!ret.is_flow_language);
     }
 
     #[test]
     fn parse_expression_smoke_test() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default();
+
         let source = "a";
+
         let expr = Parser::new(&allocator, source, source_type).parse_expression().unwrap();
+
         assert!(matches!(expr, Expression::Identifier(_)));
     }
 
     #[test]
     fn flow_error() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default();
+
         let sources = [
             "// @flow\nasdf adsf",
             "/* @flow */\n asdf asdf",
@@ -602,10 +645,14 @@ mod test {
              ",
             "/* @flow */ super;",
         ];
+
         for source in sources {
             let ret = Parser::new(&allocator, source, source_type).parse();
+
             assert!(ret.is_flow_language);
+
             assert_eq!(ret.errors.len(), 1);
+
             assert_eq!(ret.errors.first().unwrap().to_string(), "Flow is not supported");
         }
     }
@@ -613,24 +660,33 @@ mod test {
     #[test]
     fn ts_module_declaration() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::from_path(Path::new("module.ts")).unwrap();
+
         let source = "declare module 'test'\n";
+
         let ret = Parser::new(&allocator, source, source_type).parse();
+
         assert_eq!(ret.errors.len(), 0);
     }
 
     #[test]
     fn directives() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default();
+
         let sources = [
             ("import x from 'foo'; 'use strict';", 2),
             ("export {x} from 'foo'; 'use strict';", 2),
             (";'use strict';", 2),
         ];
+
         for (source, body_length) in sources {
             let ret = Parser::new(&allocator, source, source_type).parse();
+
             assert!(ret.program.directives.is_empty(), "{source}");
+
             assert_eq!(ret.program.body.len(), body_length, "{source}");
         }
     }
@@ -638,7 +694,9 @@ mod test {
     #[test]
     fn comments() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default().with_typescript(true);
+
         let sources = [
             ("// line comment", CommentKind::Line),
             ("/* line comment */", CommentKind::Block),
@@ -647,10 +705,14 @@ mod test {
                 CommentKind::Block,
             ),
         ];
+
         for (source, kind) in sources {
             let ret = Parser::new(&allocator, source, source_type).parse();
+
             let comments = &ret.program.comments;
+
             assert_eq!(comments.len(), 1, "{source}");
+
             assert_eq!(comments.first().unwrap().kind, kind, "{source}");
         }
     }
@@ -658,26 +720,37 @@ mod test {
     #[test]
     fn hashbang() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default();
+
         let source = "#!/usr/bin/node\n;";
+
         let ret = Parser::new(&allocator, source, source_type).parse();
+
         assert_eq!(ret.program.hashbang.unwrap().value.as_str(), "/usr/bin/node");
     }
 
     #[test]
     fn unambiguous() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::unambiguous();
+
         assert!(source_type.is_unambiguous());
+
         let sources = ["import x from 'foo';", "export {x} from 'foo';", "import.meta"];
+
         for source in sources {
             let ret = Parser::new(&allocator, source, source_type).parse();
+
             assert!(ret.program.source_type.is_module());
         }
 
         let sources = ["", "import('foo')"];
+
         for source in sources {
             let ret = Parser::new(&allocator, source, source_type).parse();
+
             assert!(ret.program.source_type.is_script());
         }
     }
@@ -685,10 +758,14 @@ mod test {
     #[test]
     fn memory_leak() {
         let allocator = Allocator::default();
+
         let source_type = SourceType::default();
+
         let sources = ["2n", ";'1234567890123456789012345678901234567890'"];
+
         for source in sources {
             let ret = Parser::new(&allocator, source, source_type).parse();
+
             assert!(!ret.program.body.is_empty());
         }
     }
@@ -700,24 +777,35 @@ mod test {
     fn overlong_source() {
         // Build string in 16 KiB chunks for speed
         let mut source = String::with_capacity(MAX_LEN + 1);
+
         let line = "var x = 123456;\n";
+
         let chunk = line.repeat(1024);
+
         while source.len() < MAX_LEN + 1 - chunk.len() {
             source.push_str(&chunk);
         }
+
         while source.len() < MAX_LEN + 1 - line.len() {
             source.push_str(line);
         }
+
         while source.len() < MAX_LEN + 1 {
             source.push('\n');
         }
+
         assert_eq!(source.len(), MAX_LEN + 1);
 
         let allocator = Allocator::default();
+
         let ret = Parser::new(&allocator, &source, SourceType::default()).parse();
+
         assert!(ret.program.is_empty());
+
         assert!(ret.panicked);
+
         assert_eq!(ret.errors.len(), 1);
+
         assert_eq!(ret.errors.first().unwrap().to_string(), "Source length exceeds 4 GiB limit");
     }
 
@@ -729,16 +817,25 @@ mod test {
     fn legal_length_source() {
         // Build a string MAX_LEN bytes long which doesn't take too long to parse
         let head = "const x = 1;\n/*";
+
         let foot = "*/\nconst y = 2;\n";
+
         let mut source = "x".repeat(MAX_LEN);
+
         source.replace_range(..head.len(), head);
+
         source.replace_range(MAX_LEN - foot.len().., foot);
+
         assert_eq!(source.len(), MAX_LEN);
 
         let allocator = Allocator::default();
+
         let ret = Parser::new(&allocator, &source, SourceType::default()).parse();
+
         assert!(!ret.panicked);
+
         assert!(ret.errors.is_empty());
+
         assert_eq!(ret.program.body.len(), 2);
     }
 }

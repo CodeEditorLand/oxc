@@ -74,6 +74,7 @@ declare_oxc_lint!(
 impl Rule for TripleSlashReference {
     fn from_configuration(value: serde_json::Value) -> Self {
         let options: Option<&serde_json::Value> = value.get(0);
+
         Self(Box::new(TripleSlashReferenceConfig {
             lib: options
                 .and_then(|x| x.get("lib"))
@@ -107,15 +108,18 @@ impl Rule for TripleSlashReference {
         let Some(root) = ctx.nodes().root_node() else {
             return;
         };
+
         let AstKind::Program(program) = root.kind() else { unreachable!() };
 
         // We don't need to iterate over all comments since Triple-slash directives are only valid at the top of their containing file.
         // We are trying to get the first statement start potioin, falling back to the program end if statement does not exist
         let comments_range_end = program.body.first().map_or(program.span.end, |v| v.span().start);
+
         let mut refs_for_import = FxHashMap::default();
 
         for comment in ctx.semantic().comments_range(0..comments_range_end) {
             let raw = ctx.source_range(comment.content_span());
+
             if let Some((group1, group2)) = get_attr_key_and_value(raw) {
                 if (group1 == "types" && self.types == TypesOption::Never)
                     || (group1 == "path" && self.path == PathOption::Never)
@@ -143,6 +147,7 @@ impl Rule for TripleSlashReference {
                                 ));
                             }
                         }
+
                         TSModuleReference::IdentifierReference(_)
                         | TSModuleReference::QualifiedName(_) => {}
                     },
@@ -154,6 +159,7 @@ impl Rule for TripleSlashReference {
                             ));
                         }
                     }
+
                     _ => {}
                 }
             }
@@ -171,6 +177,7 @@ fn get_attr_key_and_value(raw: &str) -> Option<(String, String)> {
     }
 
     let reference_start = "<reference ";
+
     let reference_end = "/>";
 
     if let Some(start_idx) = raw.find(reference_start) {
@@ -194,14 +201,18 @@ fn get_attr_key_and_value(raw: &str) -> Option<(String, String)> {
             if let Some(attr) = filtered_parts.first() {
                 // Split the attribute by '=' to get key and value
                 let attr_parts: Vec<&str> = attr.split('=').collect();
+
                 if attr_parts.len() == 2 {
                     let key = attr_parts[0].trim().trim_matches('"').to_string();
+
                     let value = attr_parts[1].trim_matches('"').trim_end_matches('/').to_string();
+
                     return Some((key, value));
                 }
             }
         }
     }
+
     None
 }
 
@@ -216,7 +227,9 @@ fn test() {
         	        // <reference types="bar" />
         	        // <reference lib="baz" />
         	        import * as foo from 'foo';
+
         	        import * as bar from 'bar';
+
         	        import * as baz from 'baz';
         	      "#,
             Some(serde_json::json!([{ "path": "never", "types": "never", "lib": "never" }])),
@@ -227,7 +240,9 @@ fn test() {
         	        // <reference types="bar" />
         	        // <reference lib="baz" />
         	        import foo = require('foo');
+
         	        import bar = require('bar');
+
         	        import baz = require('baz');
         	      "#,
             Some(serde_json::json!([{ "path": "never", "types": "never", "lib": "never" }])),
@@ -238,7 +253,9 @@ fn test() {
         	        /// <reference types="bar" />
         	        /// <reference lib="baz" />
         	        import * as foo from 'foo';
+
         	        import * as bar from 'bar';
+
         	        import * as baz from 'baz';
         	      "#,
             Some(serde_json::json!([{ "path": "always", "types": "always", "lib": "always" }])),
@@ -249,7 +266,9 @@ fn test() {
         	        /// <reference types="bar" />
         	        /// <reference lib="baz" />
         	        import foo = require('foo');
+
         	        import bar = require('bar');
+
         	        import baz = require('baz');
         	      "#,
             Some(serde_json::json!([{ "path": "always", "types": "always", "lib": "always" }])),
@@ -260,7 +279,9 @@ fn test() {
         	        /// <reference types="bar" />
         	        /// <reference lib="baz" />
         	        import foo = foo;
+
         	        import bar = bar;
+
         	        import baz = baz;
         	      "#,
             Some(serde_json::json!([{ "path": "always", "types": "always", "lib": "always" }])),
@@ -271,7 +292,9 @@ fn test() {
         	        /// <reference types="bar" />
         	        /// <reference lib="baz" />
         	        import foo = foo.foo;
+
         	        import bar = bar.bar.bar.bar;
+
         	        import baz = baz.baz;
         	      "#,
             Some(serde_json::json!([{ "path": "always", "types": "always", "lib": "always" }])),

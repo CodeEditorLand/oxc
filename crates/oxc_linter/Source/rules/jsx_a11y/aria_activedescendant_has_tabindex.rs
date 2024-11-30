@@ -87,6 +87,7 @@ impl Rule for AriaActivedescendantHasTabindex {
             JSXElementName::IdentifierReference(id) => (id.name.as_str(), id.span),
             _ => return,
         };
+
         ctx.diagnostic(aria_activedescendant_has_tabindex_diagnostic(span, name));
     }
 }

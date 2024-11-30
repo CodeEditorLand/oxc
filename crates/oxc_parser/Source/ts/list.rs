@@ -21,7 +21,9 @@ impl<'a> SeparatedList<'a> for TSEnumMemberList<'a> {
 
 	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		let element = p.parse_ts_enum_member()?;
+
 		self.members.push(element);
+
 		Ok(())
 	}
 }
@@ -39,7 +41,9 @@ impl<'a> SeparatedList<'a> for TSTupleElementList<'a> {
 
 	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		let ty = p.parse_tuple_element_name_or_tuple_element_type()?;
+
 		self.elements.push(ty);
+
 		Ok(())
 	}
 }
@@ -57,7 +61,9 @@ impl<'a> SeparatedList<'a> for TSTypeParameterList<'a> {
 
 	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		let param = p.parse_ts_type_parameter()?;
+
 		self.params.push(param);
+
 		Ok(())
 	}
 }
@@ -77,7 +83,9 @@ impl<'a> NormalList<'a> for TSInterfaceOrObjectBodyList<'a> {
 
 	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		let property = p.parse_ts_type_signature()?;
+
 		self.body.push(property);
+
 		Ok(())
 	}
 }
@@ -90,8 +98,11 @@ pub struct TSTypeArgumentList<'a> {
 impl<'a> TSTypeArgumentList<'a> {
 	pub fn parse(p:&mut ParserImpl<'a>, in_expression:bool) -> Result<Self> {
 		let mut list = Self::new(p);
+
 		list.in_expression = in_expression;
+
 		list.parse_list(p)?;
+
 		Ok(list)
 	}
 }
@@ -105,7 +116,9 @@ impl<'a> SeparatedList<'a> for TSTypeArgumentList<'a> {
 
 	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		let ty = p.parse_ts_type()?;
+
 		self.params.push(ty);
+
 		Ok(())
 	}
 
@@ -119,6 +132,7 @@ impl<'a> SeparatedList<'a> for TSTypeArgumentList<'a> {
 				first = false;
 			} else {
 				p.expect(self.separator())?;
+
 				if p.at(self.close()) {
 					break;
 				}
@@ -132,9 +146,12 @@ impl<'a> SeparatedList<'a> for TSTypeArgumentList<'a> {
 			if matches!(p.re_lex_right_angle(), Kind::GtEq) {
 				return Err(p.unexpected());
 			}
+
 			p.re_lex_ts_r_angle();
 		}
+
 		p.expect(self.close())?;
+
 		Ok(())
 	}
 }
@@ -152,15 +169,20 @@ impl<'a> SeparatedList<'a> for TSImportAttributeList<'a> {
 
 	fn parse_element(&mut self, p:&mut ParserImpl<'a>) -> Result<()> {
 		let span = p.start_span();
+
 		let name = match p.cur_kind() {
 			Kind::Str => TSImportAttributeName::StringLiteral(p.parse_literal_string()?),
 			_ => TSImportAttributeName::Identifier(p.parse_identifier_name()?),
 		};
 
 		p.expect(Kind::Colon)?;
+
 		let value = p.parse_expr()?;
+
 		let element = TSImportAttribute { span:p.end_span(span), name, value };
+
 		self.elements.push(element);
+
 		Ok(())
 	}
 }

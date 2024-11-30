@@ -29,14 +29,21 @@ impl ReplaceGlobalDefinesConfig {
 	/// * value has a syntax error
 	pub fn new<S:AsRef<str>>(defines:&[(S, S)]) -> Result<Self, Vec<OxcDiagnostic>> {
 		let allocator = Allocator::default();
+
 		let mut identifier_defines = vec![];
+
 		for (key, value) in defines {
 			let key = key.as_ref();
+
 			let value = value.as_ref();
+
 			Self::check_key(key)?;
+
 			Self::check_value(&allocator, value)?;
+
 			identifier_defines.push((key.to_string(), value.to_string()));
 		}
+
 		Ok(Self(Arc::new(ReplaceGlobalDefinesConfigImpl { identifier_defines })))
 	}
 
@@ -44,11 +51,13 @@ impl ReplaceGlobalDefinesConfig {
 		if !is_identifier_name(key) {
 			return Err(vec![OxcDiagnostic::error(format!("`{key}` is not an identifier."))]);
 		}
+
 		Ok(())
 	}
 
 	fn check_value(allocator:&Allocator, source_text:&str) -> Result<(), Vec<OxcDiagnostic>> {
 		Parser::new(allocator, source_text, SourceType::default()).parse_expression()?;
+
 		Ok(())
 	}
 }
@@ -88,6 +97,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
 				if ident.name.as_str() == key {
 					let value = self.parse_value(value);
 					*expr = value;
+
 					break;
 				}
 			}
@@ -98,6 +108,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
 impl<'a> VisitMut<'a> for ReplaceGlobalDefines<'a> {
 	fn visit_expression(&mut self, expr:&mut Expression<'a>) {
 		self.replace_identifier_defines(expr);
+
 		walk_mut::walk_expression(self, expr);
 	}
 }

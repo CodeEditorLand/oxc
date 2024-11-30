@@ -86,6 +86,7 @@ impl Rule for NoConstantBinaryExpression {
                         expr.span,
                     ));
                 }
+
                 LogicalOperator::Coalesce
                     if Self::has_constant_nullishness(&expr.left, false, ctx) =>
                 {
@@ -95,11 +96,14 @@ impl Rule for NoConstantBinaryExpression {
                         expr.span,
                     ));
                 }
+
                 _ => {}
             },
             AstKind::BinaryExpression(expr) => {
                 let left = &expr.left;
+
                 let right = &expr.right;
+
                 let operator = expr.operator;
 
                 let right_constant_operand =
@@ -110,11 +114,13 @@ impl Rule for NoConstantBinaryExpression {
 
                 if right_constant_operand.is_some() {
                     ctx.diagnostic(constant_binary_operand("left", operator.as_str(), expr.span));
+
                     return;
                 }
 
                 if left_constant_operand.is_some() {
                     ctx.diagnostic(constant_binary_operand("right", operator.as_str(), expr.span));
+
                     return;
                 }
 
@@ -124,6 +130,7 @@ impl Rule for NoConstantBinaryExpression {
                 ) && (Self::is_always_new(left, ctx) || Self::is_always_new(right, ctx))
                 {
                     ctx.diagnostic(constant_always_new(expr.span));
+
                     return;
                 }
 
@@ -134,6 +141,7 @@ impl Rule for NoConstantBinaryExpression {
                     ctx.diagnostic(constant_both_always_new(expr.span));
                 }
             }
+
             _ => {}
         }
     }
@@ -152,6 +160,7 @@ impl NoConstantBinaryExpression {
         if non_nullish && (expr.is_null() || expr.evaluate_to_undefined()) {
             return false;
         }
+
         match expr.get_inner_expression() {
             Expression::ObjectExpression(_)
             | Expression::ArrayExpression(_)
@@ -169,17 +178,21 @@ impl NoConstantBinaryExpression {
                     return ["Boolean", "String", "Number"].contains(&ident.name.as_str())
                         && ctx.semantic().is_reference_to_global_variable(ident);
                 }
+
                 false
             }
+
             Expression::LogicalExpression(logical_expr)
                 if logical_expr.operator == LogicalOperator::Coalesce =>
             {
                 Self::has_constant_nullishness(&logical_expr.right, true, ctx)
             }
+
             Expression::AssignmentExpression(assign_expr) => match assign_expr.operator {
                 AssignmentOperator::Assign => {
                     Self::has_constant_nullishness(&assign_expr.right, non_nullish, ctx)
                 }
+
                 op if op.is_logical() => false,
                 _ => true,
             },
@@ -209,6 +222,7 @@ impl NoConstantBinaryExpression {
                     return Some(b);
                 }
             }
+
             BinaryOperator::StrictEquality | BinaryOperator::StrictInequality => {
                 if (a.is_null_or_undefined() && Self::has_constant_nullishness(b, false, ctx))
                     || (ast_util::is_static_boolean(a, ctx)
@@ -217,8 +231,10 @@ impl NoConstantBinaryExpression {
                     return Some(b);
                 }
             }
+
             _ => {}
         }
+
         None
     }
 
@@ -239,6 +255,7 @@ impl NoConstantBinaryExpression {
                 array_expr.elements.is_empty()
                     || array_expr.elements.iter().filter(|e| e.is_expression()).count() > 1
             }
+
             Expression::UnaryExpression(unary_expr) => match unary_expr.operator {
                 UnaryOperator::Void | UnaryOperator::Typeof => true,
                 UnaryOperator::LogicalNot => unary_expr.argument.is_constant(true, ctx),
@@ -250,6 +267,7 @@ impl NoConstantBinaryExpression {
                 assignment_expr.operator == AssignmentOperator::Assign
                     && Self::has_constant_loose_boolean_comparison(&assignment_expr.right, ctx)
             }
+
             Expression::SequenceExpression(sequence_expr) => sequence_expr
                 .expressions
                 .iter()
@@ -258,6 +276,7 @@ impl NoConstantBinaryExpression {
             Expression::ParenthesizedExpression(paren_expr) => {
                 Self::has_constant_loose_boolean_comparison(&paren_expr.expression, ctx)
             }
+
             expr if expr.is_literal() => true,
             expr if expr.evaluate_to_undefined() => true,
             _ => false,
@@ -283,6 +302,7 @@ impl NoConstantBinaryExpression {
             Expression::BinaryExpression(binary_expr) => {
                 binary_expr.operator.is_numeric_or_string_binary_operator()
             }
+
             Expression::UnaryExpression(unary_expr) => match unary_expr.operator {
                 UnaryOperator::Delete => false,
                 UnaryOperator::LogicalNot => unary_expr.argument.is_constant(true, ctx),
@@ -307,12 +327,15 @@ impl NoConstantBinaryExpression {
                             .map_or(true, |first| first.is_constant(true, ctx));
                     }
                 }
+
                 false
             }
+
             Expression::AssignmentExpression(assign_expr) => match assign_expr.operator {
                 AssignmentOperator::Assign => {
                     Self::has_constant_strict_boolean_comparison(&assign_expr.right, ctx)
                 }
+
                 op if op.is_logical() => false,
                 _ => true,
             },
@@ -324,6 +347,7 @@ impl NoConstantBinaryExpression {
             Expression::ParenthesizedExpression(paren_expr) => {
                 Self::has_constant_strict_boolean_comparison(&paren_expr.expression, ctx)
             }
+
             Expression::Identifier(_) => expr.evaluate_to_undefined(),
             _ => false,
         }
@@ -343,8 +367,10 @@ impl NoConstantBinaryExpression {
                     return ctx.env_contains_var(ident.name.as_str())
                         && ctx.semantic().is_reference_to_global_variable(ident);
                 }
+
                 false
             }
+
             Expression::SequenceExpression(sequence_expr) => sequence_expr
                 .expressions
                 .iter()
@@ -355,13 +381,16 @@ impl NoConstantBinaryExpression {
             {
                 Self::is_always_new(&assignment_expr.right, ctx)
             }
+
             Expression::ConditionalExpression(cond_expr) => {
                 Self::is_always_new(&cond_expr.consequent, ctx)
                     && Self::is_always_new(&cond_expr.alternate, ctx)
             }
+
             Expression::ParenthesizedExpression(paren_expr) => {
                 Self::is_always_new(&paren_expr.expression, ctx)
             }
+
             _ => false,
         }
     }

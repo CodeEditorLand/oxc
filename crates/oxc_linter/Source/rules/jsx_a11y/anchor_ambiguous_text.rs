@@ -135,6 +135,7 @@ fn normalize_str(text: &str) -> CompactStr {
     // the overhead of going &str -> cow string -> string is greater than just using to_lowercase
     #[allow(clippy::disallowed_methods)]
     let mut normalized_str = text.to_lowercase();
+
     normalized_str.retain(|c| {
         c != ','
             && c != '.'
@@ -150,6 +151,7 @@ fn normalize_str(text: &str) -> CompactStr {
     if normalized_str.contains(char::is_whitespace) {
         let parts: Vec<String> =
             normalized_str.split_whitespace().map(std::string::ToString::to_string).collect();
+
         return CompactStr::from(parts.join(" "));
     }
 

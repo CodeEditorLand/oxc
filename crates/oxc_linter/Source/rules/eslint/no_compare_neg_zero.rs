@@ -38,10 +38,14 @@ impl Rule for NoCompareNegZero {
         let AstKind::BinaryExpression(expr) = node.kind() else {
             return;
         };
+
         if Self::should_check(expr.operator) {
             let op = expr.operator.as_str();
+
             let is_left_neg_zero = is_neg_zero(&expr.left);
+
             let is_right_neg_zero = is_neg_zero(&expr.right);
+
             if is_left_neg_zero || is_right_neg_zero {
                 if expr.operator == BinaryOperator::StrictEquality {
                     ctx.diagnostic_with_suggestion(
@@ -53,6 +57,7 @@ impl Rule for NoCompareNegZero {
                             } else {
                                 ctx.source_range(expr.left.span())
                             };
+
                             fixer.replace(expr.span, format!("Object.is({value}, -0)"))
                         },
                     );
@@ -69,8 +74,11 @@ impl Rule for NoCompareNegZero {
                             } else {
                                 expr.right.span().start
                             };
+
                             let end = start + 1;
+
                             let span = Span::new(start, end);
+
                             fixer.delete(&span)
                         },
                     );
@@ -90,9 +98,11 @@ fn is_neg_zero(expr: &Expression) -> bool {
     let Expression::UnaryExpression(unary) = expr.get_inner_expression() else {
         return false;
     };
+
     if unary.operator != UnaryOperator::UnaryNegation {
         return false;
     }
+
     match &unary.argument {
         Expression::NumericLiteral(number) => number.value == 0.0,
         Expression::BigIntLiteral(bigint) => bigint.is_zero(),

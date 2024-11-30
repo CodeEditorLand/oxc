@@ -62,6 +62,7 @@ impl Rule for NoIterator {
         let AstKind::MemberExpression(member_expression) = node.kind() else {
             return;
         };
+
         if let Some(static_property_name) = member_expression.static_property_name() {
             if static_property_name == "__iterator__" {
                 ctx.diagnostic(no_iterator_diagnostic(Span::new(

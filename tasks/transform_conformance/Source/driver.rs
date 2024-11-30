@@ -56,6 +56,7 @@ impl CompilerInterface for Driver {
                 self.errors.extend(errors);
             }
         }
+
         ControlFlow::Continue(())
     }
 }
@@ -80,6 +81,7 @@ impl Driver {
         source_path: &Path,
     ) -> Self {
         self.compile(source_text, source_type, source_path);
+
         self
     }
 }

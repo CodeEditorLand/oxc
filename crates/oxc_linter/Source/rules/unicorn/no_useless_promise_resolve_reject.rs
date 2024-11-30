@@ -75,6 +75,7 @@ impl Rule for NoUselessPromiseResolveReject {
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(member_expr) = call_expr.callee.get_member_expr() else {
             return;
         };
@@ -99,22 +100,27 @@ impl Rule for NoUselessPromiseResolveReject {
 
         match parent.kind() {
             AstKind::ArrowFunctionExpression(_) | AstKind::ReturnStatement(_) => {}
+
             AstKind::ExpressionStatement(_) => {
                 let Some(grand_parent) = outermost_paren_parent(parent, ctx) else {
                     return;
                 };
+
                 let AstKind::FunctionBody(function_body) = grand_parent.kind() else { return };
 
                 if function_body.statements.len() != 1 {
                     return;
                 }
             }
+
             AstKind::YieldExpression(yield_expr) => {
                 is_yield = true;
+
                 if yield_expr.delegate {
                     return;
                 }
             }
+
             _ => return,
         }
 
@@ -149,6 +155,7 @@ impl Rule for NoUselessPromiseResolveReject {
                 if self.0.allow_reject {
                     return;
                 }
+
                 ctx.diagnostic_with_fix(
                     reject(node.kind().span(), if is_yield { "yield" } else { "return" }),
                     |fixer| {
@@ -164,6 +171,7 @@ impl Rule for NoUselessPromiseResolveReject {
                     },
                 );
             }
+
             _ => unreachable!(),
         }
     }
@@ -174,14 +182,17 @@ fn get_function_like_node<'a, 'b>(
     ctx: &'a LintContext<'b>,
 ) -> Option<(bool, &'a AstNode<'b>, bool)> {
     let mut parent = node;
+
     let mut is_in_try_statement = false;
 
     let fnx = loop {
         if let Some(grand_parent) = ctx.nodes().parent_node(parent.id()) {
             parent = grand_parent;
+
             if parent.kind().is_function_like() {
                 break parent;
             }
+
             if matches!(parent.kind(), AstKind::TryStatement(_)) {
                 is_in_try_statement = true;
             }
@@ -194,6 +205,7 @@ fn get_function_like_node<'a, 'b>(
         AstKind::ArrowFunctionExpression(arrow_expr) => {
             Some((arrow_expr.r#async, parent, is_in_try_statement))
         }
+
         AstKind::Function(func) => Some((func.r#async, parent, is_in_try_statement)),
         _ => None,
     }
@@ -201,9 +213,11 @@ fn get_function_like_node<'a, 'b>(
 
 fn is_promise_callback<'a, 'b>(node: &'a AstNode<'b>, ctx: &'a LintContext<'b>) -> bool {
     let function_node = traverse_bind_calls(node, ctx);
+
     let Some(parent) = outermost_paren_parent(function_node, ctx) else {
         return false;
     };
+
     let Some(parent) = outermost_paren_parent(parent, ctx) else {
         return false;
     };
@@ -219,6 +233,7 @@ fn is_promise_callback<'a, 'b>(node: &'a AstNode<'b>, ctx: &'a LintContext<'b>) 
     if member_expr.is_computed() {
         return false;
     }
+
     let Some(static_prop_name) = member_expr.static_property_name() else {
         return false;
     };
@@ -231,6 +246,7 @@ fn is_promise_callback<'a, 'b>(node: &'a AstNode<'b>, ctx: &'a LintContext<'b>) 
         if call_expr.arguments[0].is_spread() {
             return false;
         }
+
         return true;
     }
 
@@ -240,10 +256,12 @@ fn is_promise_callback<'a, 'b>(node: &'a AstNode<'b>, ctx: &'a LintContext<'b>) 
 // Traverse bind functions and return outer call expression
 fn traverse_bind_calls<'a, 'b>(node: &'a AstNode<'b>, ctx: &'a LintContext<'b>) -> &'a AstNode<'b> {
     let mut current_node = node;
+
     loop {
         let Some(parent) = outermost_paren_parent(current_node, ctx) else {
             return current_node;
         };
+
         if !is_bind_member_expression(parent) {
             return current_node;
         }
@@ -251,6 +269,7 @@ fn traverse_bind_calls<'a, 'b>(node: &'a AstNode<'b>, ctx: &'a LintContext<'b>) 
         let Some(grand_parent) = outermost_paren_parent(parent, ctx) else {
             return current_node;
         };
+
         let AstKind::CallExpression(_) = grand_parent.kind() else {
             return current_node;
         };
@@ -274,6 +293,7 @@ fn match_arrow_function_body<'a>(ctx: &LintContext<'a>, parent: &AstNode<'a>) ->
                 Some(arrow_function) => {
                     matches!(arrow_function.kind(), AstKind::ArrowFunctionExpression(_))
                 }
+
                 None => false,
             },
             _ => false,
@@ -299,9 +319,11 @@ fn generate_fix<'a>(
         &String::new()
     } else {
         let arg = &call_expr.arguments[0];
+
         if arg.is_spread() {
             return fixer.noop();
         }
+
         fixer.source_range(arg.span())
     };
 
@@ -309,6 +331,7 @@ fn generate_fix<'a>(
         if is_in_try_statement {
             return fixer.noop();
         }
+
         if is_yield {
             if let Some(parent) = ctx.nodes().parent_node(node.id()) {
                 if let Some(grand_parent) = ctx.nodes().parent_node(parent.id()) {
@@ -335,42 +358,52 @@ fn generate_fix<'a>(
     };
 
     let mut replace_range = if is_reject { parent.kind().span() } else { call_expr.span() };
+
     let replacement_text = if is_reject {
         let text = if arg_text.is_empty() { "undefined" } else { arg_text };
+
         let mut text = format!("throw {text}");
 
         if is_yield {
             replace_range = get_parenthesized_node(parent, ctx).kind().span();
+
             text
         } else {
             text = format!("{text};");
             // `=> Promise.reject(error)` -> `=> { throw error; }`
             if is_arrow_function_body {
                 replace_range = get_parenthesized_node(parent, ctx).kind().span();
+
                 text = format!("{{ {text} }}");
             }
+
             text
         }
     } else {
         let mut text = arg_text.to_string();
+
         if text.is_empty() {
             // `=> Promise.resolve()` -> `=> {}`
             if is_arrow_function_body {
                 text = "{}".to_string();
+
                 text
             } else {
                 if matches!(parent.kind(), AstKind::ReturnStatement(_)) {
                     replace_range.start = parent.kind().span().start + 6;
                 }
+
                 if is_yield {
                     replace_range.start = parent.kind().span().start + 5;
                 }
+
                 text
             }
         } else {
             if matches!(&call_expr.arguments[0], Argument::ObjectExpression(_)) {
                 text = format!("({text})");
             }
+
             text
         }
     };
@@ -383,6 +416,7 @@ fn get_parenthesized_node<'a, 'b>(
     ctx: &'a LintContext<'b>,
 ) -> &'a AstNode<'b> {
     let mut node = node;
+
     while let Some(parent_node) = ctx.nodes().parent_node(node.id()) {
         if let AstKind::ParenthesizedExpression(_) = parent_node.kind() {
             node = parent_node;
@@ -390,6 +424,7 @@ fn get_parenthesized_node<'a, 'b>(
             break;
         }
     }
+
     node
 }
 
@@ -624,6 +659,7 @@ fn test() {
                 if (foo > 4) {
                     return Promise.reject(new Error('🤪'));
                 }
+
                 return Promise.resolve(result);
             };
         ",

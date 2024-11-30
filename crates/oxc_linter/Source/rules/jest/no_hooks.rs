@@ -105,9 +105,11 @@ impl Rule for NoHooks {
 impl NoHooks {
     fn run<'a>(&self, possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         if !is_type_of_jest_fn_call(
             call_expr,
             possible_jest_node,
@@ -119,6 +121,7 @@ impl NoHooks {
 
         if let Expression::Identifier(ident) = &call_expr.callee {
             let name = CompactStr::from(ident.name.as_str());
+
             if !self.allow.contains(&name) {
                 ctx.diagnostic(unexpected_hook_diagonsitc(call_expr.callee.span()));
             }
@@ -155,6 +158,7 @@ fn test() {
                 import { beforeEach as afterEach, afterEach as beforeEach } from '@jest/globals';
 
                 afterEach(() => {});
+
                 beforeEach(() => { jest.resetModules() });
             ",
             Some(serde_json::json!([{ "allow": ["afterEach"] }])),

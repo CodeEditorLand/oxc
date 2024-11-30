@@ -42,12 +42,15 @@ impl Rule for NoBeforeInteractiveScriptOutsideDocument {
             let Some(file_path) = ctx.file_path().to_str() else {
                 return;
             };
+
             if is_in_app_dir(file_path) {
                 return;
             }
+
             let Some(tag_name) = jsx_el.name.get_identifier_name() else {
                 return;
             };
+
             if jsx_el.attributes.len() == 0 {
                 return;
             }
@@ -72,11 +75,14 @@ impl Rule for NoBeforeInteractiveScriptOutsideDocument {
                     if is_document_page(file_path) {
                         return;
                     }
+
                     let next_script_import_local_name = get_next_script_import_local_name(ctx);
+
                     if !matches!(next_script_import_local_name, Some(import) if tag_name.as_str() == import.as_str())
                     {
                         return;
                     }
+
                     ctx.diagnostic(no_before_interactive_script_outside_document_diagnostic(
                         strategy.span,
                     ));

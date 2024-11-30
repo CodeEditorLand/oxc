@@ -60,7 +60,9 @@ impl OxlintRules {
     #[allow(clippy::option_if_let_else, clippy::print_stderr)]
     pub(crate) fn override_rules(&self, rules_for_override: &mut RuleSet, all_rules: &[RuleEnum]) {
         use itertools::Itertools;
+
         let mut rules_to_replace: Vec<RuleWithSeverity> = vec![];
+
         let mut rules_to_remove: Vec<RuleWithSeverity> = vec![];
 
         // Rules can have the same name but different plugin names
@@ -71,11 +73,14 @@ impl OxlintRules {
                 0 => unreachable!(),
                 1 => {
                     let rule_config = &rule_configs[0];
+
                     let (rule_name, plugin_name) = transform_rule_and_plugin_name(
                         &rule_config.rule_name,
                         &rule_config.plugin_name,
                     );
+
                     let severity = rule_config.severity;
+
                     match severity {
                         AllowWarnDeny::Warn | AllowWarnDeny::Deny => {
                             if let Some(rule) = all_rules
@@ -83,16 +88,20 @@ impl OxlintRules {
                                 .find(|r| r.name() == rule_name && r.plugin_name() == plugin_name)
                             {
                                 let config = rule_config.config.clone().unwrap_or_default();
+
                                 let rule = rule.read_json(config);
+
                                 rules_to_replace.push(RuleWithSeverity::new(rule, severity));
                             }
                         }
+
                         AllowWarnDeny::Allow => {
                             if let Some(rule) = rules_for_override
                                 .iter()
                                 .find(|r| r.name() == rule_name && r.plugin_name() == plugin_name)
                             {
                                 let rule = rule.clone();
+
                                 rules_to_remove.push(rule);
                             }
                             // If the given rule is not found in the rule list (for example, if all rules are disabled),
@@ -102,12 +111,15 @@ impl OxlintRules {
                                 .find(|r| r.name() == rule_name && r.plugin_name() == plugin_name)
                             {
                                 let config = rule_config.config.clone().unwrap_or_default();
+
                                 let rule = rule.read_json(config);
+
                                 rules_to_remove.push(RuleWithSeverity::new(rule, severity));
                             }
                         }
                     }
                 }
+
                 _ => {
                     // For overlapping rule names, use the "error" one
                     // "no-loss-of-precision": "off",
@@ -141,6 +153,7 @@ impl OxlintRules {
         for rule in rules_to_remove {
             rules_for_override.remove(&rule);
         }
+
         for rule in rules_to_replace {
             rules_for_override.replace(rule);
         }
@@ -196,10 +209,12 @@ impl Serialize for OxlintRules {
 
         for rule in &self.rules {
             let key = rule.full_name();
+
             match rule.config.as_ref() {
                 // e.g. unicorn/some-rule: ["warn", { foo: "bar" }]
                 Some(config) if !config.is_null() => {
                     let value = (rule.severity.as_str(), config);
+
                     rules.serialize_entry(&key, &value)?;
                 }
                 // e.g. unicorn/some-rule: "warn"
@@ -236,9 +251,12 @@ impl<'de> Deserialize<'de> for OxlintRules {
                 M: de::MapAccess<'de>,
             {
                 let mut rules = vec![];
+
                 while let Some((key, value)) = map.next_entry::<String, serde_json::Value>()? {
                     let (plugin_name, rule_name) = parse_rule_key(&key);
+
                     let (severity, config) = parse_rule_value(&value).map_err(de::Error::custom)?;
+
                     rules.push(ESLintRule { plugin_name, rule_name, severity, config });
                 }
 
@@ -284,6 +302,7 @@ fn parse_rule_value(
     match value {
         serde_json::Value::String(_) | serde_json::Value::Number(_) => {
             let severity = AllowWarnDeny::try_from(value)?;
+
             Ok((severity, None))
         }
 
@@ -341,7 +360,9 @@ mod test {
         rules::{RuleEnum, RULES},
         AllowWarnDeny, RuleWithSeverity,
     };
+
     use serde::Deserialize;
+
     use serde_json::{json, Value};
 
     use super::{OxlintRules, RuleSet};
@@ -355,56 +376,80 @@ mod test {
             "@next/next/noop": 2,
         }))
         .unwrap();
+
         let mut rules = rules.rules.iter();
 
         let r1 = rules.next().unwrap();
+
         assert_eq!(r1.rule_name, "no-console");
+
         assert_eq!(r1.plugin_name, "eslint");
+
         assert!(r1.severity.is_allow());
+
         assert!(r1.config.is_none());
 
         let r2 = rules.next().unwrap();
+
         assert_eq!(r2.rule_name, "no-unused-vars");
+
         assert_eq!(r2.plugin_name, "foo");
+
         assert!(r2.severity.is_warn_deny());
+
         assert!(r2.config.is_none());
 
         let r3 = rules.next().unwrap();
+
         assert_eq!(r3.rule_name, "dummy");
+
         assert_eq!(r3.plugin_name, "unknown_plugin");
+
         assert!(r3.severity.is_warn_deny());
+
         assert_eq!(r3.config, Some(serde_json::json!(["arg1", "args2"])));
 
         let r4 = rules.next().unwrap();
+
         assert_eq!(r4.rule_name, "noop");
+
         assert_eq!(r4.plugin_name, "nextjs");
+
         assert!(r4.severity.is_warn_deny());
+
         assert!(r4.config.is_none());
     }
 
     #[test]
     fn test_parse_rules_default() {
         let rules = OxlintRules::default();
+
         assert!(rules.is_empty());
     }
 
     fn r#override(rules: &mut RuleSet, rules_rc: &Value) {
         let rules_config = OxlintRules::deserialize(rules_rc).unwrap();
+
         rules_config.override_rules(rules, &RULES);
     }
 
     #[test]
     fn test_override_empty() {
         let mut rules = RuleSet::default();
+
         let configs = [json!({ "no-console": "error" }), json!({ "eslint/no-console": "error" })];
 
         for config in configs {
             rules.clear();
+
             r#override(&mut rules, &config);
 
             assert_eq!(rules.len(), 1, "{config:?}");
+
             let rule = rules.iter().next().unwrap();
+
             assert_eq!(rule.name(), "no-console", "{config:?}");
+
             assert_eq!(rule.severity, AllowWarnDeny::Deny, "{config:?}");
         }
     }
@@ -416,24 +461,31 @@ mod test {
     )]
     fn test_override_empty_fixme() {
         let config = json!({ "@typescript-eslint/no-console": "error" });
+
         let mut rules = RuleSet::default();
 
         rules.clear();
+
         r#override(&mut rules, &config);
 
         assert_eq!(rules.len(), 1, "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}");
+
         let rule = rules.iter().next().unwrap();
+
         assert_eq!(rule.name(), "no-console", "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}");
+
         assert_eq!(rule.severity, AllowWarnDeny::Deny, "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}");
     }
 
     #[test]
     fn test_override_allow() {
         let mut rules = RuleSet::default();
+
         rules.insert(RuleWithSeverity {
             rule: RuleEnum::NoConsole(Default::default()),
             severity: AllowWarnDeny::Deny,
         });
+
         r#override(&mut rules, &json!({ "eslint/no-console": "off" }));
 
         assert!(rules.is_empty());
@@ -450,25 +502,34 @@ mod test {
 
         for config in &configs {
             let mut rules = RuleSet::default();
+
             r#override(&mut rules, config);
 
             assert_eq!(rules.len(), 1, "{config:?}");
+
             let rule = rules.iter().next().unwrap();
+
             assert_eq!(rule.name(), "no-unused-vars", "{config:?}");
+
             assert_eq!(rule.severity, AllowWarnDeny::Deny, "{config:?}");
         }
 
         for config in &configs {
             let mut rules = RuleSet::default();
+
             rules.insert(RuleWithSeverity {
                 rule: RuleEnum::NoUnusedVars(Default::default()),
                 severity: AllowWarnDeny::Warn,
             });
+
             r#override(&mut rules, config);
 
             assert_eq!(rules.len(), 1, "{config:?}");
+
             let rule = rules.iter().next().unwrap();
+
             assert_eq!(rule.name(), "no-unused-vars", "{config:?}");
+
             assert_eq!(rule.severity, AllowWarnDeny::Warn, "{config:?}");
         }
     }

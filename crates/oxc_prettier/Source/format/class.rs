@@ -14,7 +14,9 @@ use crate::{
 
 pub(super) fn print_class<'a>(p: &mut Prettier<'a>, class: &Class<'a>) -> Doc<'a> {
     let mut parts = p.vec();
+
     let mut heritage_clauses_parts = p.vec();
+
     let mut group_parts = p.vec();
 
     // Keep old behaviour of extends in same line
@@ -27,6 +29,7 @@ pub(super) fn print_class<'a>(p: &mut Prettier<'a>, class: &Class<'a>) -> Doc<'a
         let mut extend_parts = p.vec();
 
         extend_parts.push(text!("extends "));
+
         extend_parts.push(super_class.format(p));
 
         if let Some(super_type_parameters) = &class.super_type_parameters {
@@ -46,7 +49,9 @@ pub(super) fn print_class<'a>(p: &mut Prettier<'a>, class: &Class<'a>) -> Doc<'a
 
     for decorator in &class.decorators {
         parts.push(text!("@"));
+
         parts.push(decorator.expression.format(p));
+
         parts.extend(hardline!());
     }
 
@@ -89,6 +94,7 @@ pub(super) fn print_class<'a>(p: &mut Prettier<'a>, class: &Class<'a>) -> Doc<'a
     }
 
     parts.push(class.body.format(p));
+
     Doc::Array(parts)
 }
 
@@ -117,15 +123,22 @@ pub(super) fn print_class_body<'a>(p: &mut Prettier<'a>, class_body: &ClassBody<
     // TODO: if there are any dangling comments, print them
 
     let mut parts = p.vec();
+
     parts.push(text!("{"));
+
     if !parts_inner.is_empty() {
         let indent = {
             let mut parts = p.vec();
+
             parts.extend(hardline!());
+
             parts.push(Doc::Array(parts_inner));
+
             Doc::Indent(parts)
         };
+
         parts.push(array![p, indent]);
+
         parts.extend(hardline!());
     }
 
@@ -146,6 +159,7 @@ impl<'a, 'b> ClassMemberish<'a, 'b> {
             ClassMemberish::PropertyDefinition(property_definition) => {
                 property_definition.key.format(p)
             }
+
             ClassMemberish::AccessorProperty(accessor_property) => accessor_property.key.format(p),
         }
     }
@@ -172,6 +186,7 @@ impl<'a, 'b> ClassMemberish<'a, 'b> {
             ClassMemberish::PropertyDefinition(property_definition) => {
                 property_definition.r#override
             }
+
             ClassMemberish::AccessorProperty(accessor_property) => false,
         }
     }
@@ -195,6 +210,7 @@ impl<'a, 'b> ClassMemberish<'a, 'b> {
             ClassMemberish::PropertyDefinition(property_definition) => {
                 property_definition.r#type == PropertyDefinitionType::TSAbstractPropertyDefinition
             }
+
             ClassMemberish::AccessorProperty(accessor_property) => {
                 accessor_property.r#type == AccessorPropertyType::TSAbstractAccessorProperty
             }
@@ -220,6 +236,7 @@ impl<'a, 'b> ClassMemberish<'a, 'b> {
             ClassMemberish::PropertyDefinition(property_definition) => {
                 property_definition.value.as_ref()
             }
+
             ClassMemberish::AccessorProperty(_) => None,
         }
     }
@@ -236,6 +253,7 @@ impl<'a, 'b> ClassMemberish<'a, 'b> {
             ClassMemberish::PropertyDefinition(property_definition) => {
                 property_definition.type_annotation.as_ref().map(|v| v.type_annotation.format(p))
             }
+
             ClassMemberish::AccessorProperty(accessor_definition) => {
                 accessor_definition.type_annotation.as_ref().map(|v| v.type_annotation.format(p))
             }
@@ -252,13 +270,16 @@ pub(super) fn print_class_property<'a>(
     if let Some(decarators) = node.decorators() {
         for decorator in decarators {
             parts.push(text!("@"));
+
             parts.push(decorator.expression.format(p));
+
             parts.extend(hardline!());
         }
     }
 
     if let Some(accessibility) = node.format_accessibility(p) {
         parts.push(accessibility);
+
         parts.push(space!());
     }
 
@@ -292,23 +313,30 @@ pub(super) fn print_class_property<'a>(
 
     if let Some(type_annotation) = node.format_type_annotation(p) {
         parts.push(text!(": "));
+
         parts.push(type_annotation);
     }
 
     let right_expr = node.right_expr();
+
     let node = match node {
         ClassMemberish::PropertyDefinition(v) => AssignmentLikeNode::PropertyDefinition(v),
         ClassMemberish::AccessorProperty(v) => AssignmentLikeNode::AccessorProperty(v),
     };
+
     let mut result =
         assignment::print_assignment(p, node, Doc::Array(parts), text!(" ="), right_expr);
 
     if p.options.semi {
         let mut parts = p.vec();
+
         parts.push(result);
+
         parts.push(text!(";"));
+
         result = Doc::Array(parts);
     }
+
     result
 }
 
@@ -408,6 +436,7 @@ fn print_heritage_clauses_implements<'a>(p: &mut Prettier<'a>, class: &Class<'a>
         p,
         group!(p, softline!(), Doc::Array(p.join(Separator::CommaLine, implements_docs)))
     ));
+
     parts.push(space!());
 
     Doc::Group(Group::new(parts))

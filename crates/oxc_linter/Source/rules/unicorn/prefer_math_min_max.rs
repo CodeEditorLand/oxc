@@ -73,6 +73,7 @@ impl Rule for PreferMathMinMax {
             let Some(consequent) = get_expr_value(&conditional_expr.consequent) else {
                 return fixer.noop();
             };
+
             let Some(alternate) = get_expr_value(&conditional_expr.alternate) else {
                 return fixer.noop();
             };
@@ -106,6 +107,7 @@ fn get_expr_value(expr: &Expression) -> Option<String> {
 
             Some(unary_str.to_string())
         }
+
         Expression::Identifier(identifier) => Some(identifier.name.to_string()),
         _ => None,
     }
@@ -122,6 +124,7 @@ fn is_same_expression(left: &Expression, right: &Expression, ctx: &LintContext) 
                 && right_expr.operator == UnaryOperator::UnaryNegation
                 && is_same_reference(&left_expr.argument, &right_expr.argument, ctx)
         }
+
         _ => false,
     }
 }
@@ -151,6 +154,7 @@ fn is_min_max(
         if matches!(condition.operator, BinaryOperator::LessThan | BinaryOperator::LessEqualThan) {
             return TypeOptions::Min;
         }
+
         return TypeOptions::Max;
     } else if is_same_expression(&condition.left, alternate, ctx)
         && is_same_expression(&condition.right, consequent, ctx)
@@ -158,6 +162,7 @@ fn is_min_max(
         if matches!(condition.operator, BinaryOperator::LessThan | BinaryOperator::LessEqualThan) {
             return TypeOptions::Max;
         }
+
         return TypeOptions::Min;
     }
 

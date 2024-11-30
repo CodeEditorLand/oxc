@@ -16,8 +16,11 @@ impl<'a> ParserImpl<'a> {
         if self.is_start_of_function_type_or_constructor_type() {
             return self.parse_function_or_constructor_type();
         }
+
         let span = self.start_span();
+
         let ty = self.parse_union_type_or_higher()?;
+
         if !self.ctx.has_disallow_conditional_types()
             && !self.cur_token().is_on_new_line
             && self.eat(Kind::Extends)
@@ -27,18 +30,23 @@ impl<'a> ParserImpl<'a> {
                 Context::empty(),
                 Self::parse_ts_type,
             )?;
+
             self.expect(Kind::Question)?;
+
             let true_type = self.context(
                 Context::empty(),
                 Context::DisallowConditionalTypes,
                 Self::parse_ts_type,
             )?;
+
             self.expect(Kind::Colon)?;
+
             let false_type = self.context(
                 Context::empty(),
                 Context::DisallowConditionalTypes,
                 Self::parse_ts_type,
             )?;
+
             return Ok(self.ast.ts_type_conditional_type(
                 self.end_span(span),
                 ty,
@@ -47,31 +55,42 @@ impl<'a> ParserImpl<'a> {
                 false_type,
             ));
         }
+
         Ok(ty)
     }
 
     fn parse_function_or_constructor_type(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         let r#abstract = self.eat(Kind::Abstract);
+
         let is_constructor_type = self.eat(Kind::New);
+
         let type_parameters = self.parse_ts_type_parameters()?;
+
         let (this_param, params) = self.parse_formal_parameters(FormalParameterKind::Signature)?;
+
         let return_type = {
             let return_type_span = self.start_span();
+
             let Some(return_type) =
                 self.parse_return_type(Kind::Arrow, /* is_type */ false)?
             else {
                 return Err(self.unexpected());
             };
+
             self.ast.ts_type_annotation(self.end_span(return_type_span), return_type)
         };
 
         let span = self.end_span(span);
+
         Ok(if is_constructor_type {
             if let Some(this_param) = &this_param {
                 // type Foo = new (this: number) => any;
+
                 self.error(diagnostics::ts_constructor_this_parameter(this_param.span));
             }
+
             self.ast.ts_type_constructor_type(
                 span,
                 r#abstract,
@@ -88,9 +107,11 @@ impl<'a> ParserImpl<'a> {
         if self.at(Kind::LAngle) {
             return true;
         }
+
         if self.at(Kind::LParen) && self.lookahead(Self::is_unambiguously_start_of_function_type) {
             return true;
         }
+
         self.at(Kind::New) || (self.at(Kind::Abstract) && self.peek_at(Kind::New))
     }
 
@@ -101,6 +122,7 @@ impl<'a> ParserImpl<'a> {
         if matches!(self.cur_kind(), Kind::RParen | Kind::Dot3) {
             return true;
         }
+
         if self.skip_parameter_start() {
             // ( xxx :
             // ( xxx ,
@@ -114,6 +136,7 @@ impl<'a> ParserImpl<'a> {
                 return true;
             }
         }
+
         false
     }
 
@@ -122,16 +145,21 @@ impl<'a> ParserImpl<'a> {
         if self.cur_kind().is_modifier_kind() {
             self.parse_modifiers(false, false, false);
         }
+
         if self.cur_kind().is_identifier() || self.at(Kind::This) {
             self.bump_any();
+
             return true;
         }
+
         if matches!(self.cur_kind(), Kind::LBrack | Kind::LCurly) {
             let errors_count = self.errors_count();
+
             if self.parse_binding_pattern_kind().is_ok() && errors_count == self.errors_count() {
                 return true;
             }
         }
+
         false
     }
 
@@ -141,25 +169,34 @@ impl<'a> ParserImpl<'a> {
         if !self.is_ts {
             return Ok(None);
         }
+
         if !self.at(Kind::LAngle) {
             return Ok(None);
         }
+
         let span = self.start_span();
+
         self.expect(Kind::LAngle)?;
+
         let params = self.parse_delimited_list(
             Kind::RAngle,
             Kind::Comma,
             /* trailing_separator */ true,
             Self::parse_ts_type_parameter,
         )?;
+
         self.expect(Kind::RAngle)?;
+
         Ok(Some(self.ast.alloc_ts_type_parameter_declaration(self.end_span(span), params)))
     }
 
     pub(crate) fn parse_ts_implements_clause(&mut self) -> Result<Vec<'a, TSClassImplements<'a>>> {
         self.expect(Kind::Implements)?;
+
         let first = self.parse_ts_implement_name()?;
+
         let mut implements = self.ast.vec();
+
         implements.push(first);
 
         while self.eat(Kind::Comma) {
@@ -173,6 +210,7 @@ impl<'a> ParserImpl<'a> {
         let span = self.start_span();
 
         let modifiers = self.parse_modifiers(false, true, false);
+
         self.verify_modifiers(
             &modifiers,
             ModifierFlags::IN | ModifierFlags::OUT | ModifierFlags::CONST,
@@ -180,7 +218,9 @@ impl<'a> ParserImpl<'a> {
         );
 
         let name = self.parse_binding_identifier()?;
+
         let constraint = self.parse_ts_type_constraint()?;
+
         let default = self.parse_ts_default_type()?;
 
         Ok(self.ast.ts_type_parameter(
@@ -215,24 +255,30 @@ impl<'a> ParserImpl<'a> {
     {
         let span = self.start_span();
         // let is_union_type = kind == Kind::Pipe;
+
         let has_leading_operator = self.eat(kind);
         /* hasLeadingOperator && parseFunctionOrConstructorTypeToError(isUnionType) ||*/
         let mut ty = parse_constituent_type(self)?;
+
         if self.at(kind) || has_leading_operator {
             let mut types = self.ast.vec1(ty);
+
             while self.eat(kind) {
                 types.push(
                     /*parseFunctionOrConstructorTypeToError(isUnionType) || */
                     parse_constituent_type(self)?,
                 );
             }
+
             let span = self.end_span(span);
+
             ty = match kind {
                 Kind::Pipe => self.ast.ts_type_union_type(span, types),
                 Kind::Amp => self.ast.ts_type_intersection_type(span, types),
                 _ => unreachable!(),
             };
         }
+
         Ok(ty)
     }
 
@@ -252,59 +298,77 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_type_operator(&mut self, operator: TSTypeOperatorOperator) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.bump_any(); // bump operator
         let type_annotation = self.parse_type_operator_or_higher()?;
+
         Ok(self.ast.ts_type_type_operator(self.end_span(span), operator, type_annotation))
     }
 
     fn parse_infer_type(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.bump_any(); // bump `infer`
         let type_parameter = self.parse_type_parameter_of_infer_type()?;
+
         Ok(self.ast.ts_type_infer_type(self.end_span(span), type_parameter))
     }
 
     fn parse_type_parameter_of_infer_type(&mut self) -> Result<Box<'a, TSTypeParameter<'a>>> {
         let span = self.start_span();
+
         let name = self.parse_binding_identifier()?;
+
         let constraint = self.try_parse(Self::try_parse_constraint_of_infer_type).unwrap_or(None);
+
         let span = self.end_span(span);
+
         let ts_type_parameter =
             self.ast.alloc_ts_type_parameter(span, name, constraint, None, false, false, false);
+
         Ok(ts_type_parameter)
     }
 
     fn parse_postfix_type_or_higher(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         let mut ty = self.parse_non_array_type()?;
 
         while !self.cur_token().is_on_new_line {
             match self.cur_kind() {
                 Kind::Bang => {
                     self.bump_any();
+
                     ty = self.ast.ts_type_js_doc_non_nullable_type(
                         self.end_span(span),
                         ty,
                         /* postfix */ true,
                     );
                 }
+
                 Kind::Question => {
                     // If next token is start of a type we have a conditional type
                     if self.lookahead(Self::next_token_is_start_of_type) {
                         return Ok(ty);
                     }
+
                     self.bump_any();
+
                     ty = self.ast.ts_type_js_doc_nullable_type(
                         self.end_span(span),
                         ty,
                         /* postfix */ true,
                     );
                 }
+
                 Kind::LBrack => {
                     self.bump_any();
+
                     if self.is_start_of_type(/* in_start_of_parameter */ false) {
                         let index_type = self.parse_ts_type()?;
+
                         self.expect(Kind::RBrack)?;
+
                         ty = self.ast.ts_type_indexed_access_type(
                             self.end_span(span),
                             ty,
@@ -312,12 +376,15 @@ impl<'a> ParserImpl<'a> {
                         );
                     } else {
                         self.expect(Kind::RBrack)?;
+
                         ty = self.ast.ts_type_array_type(self.end_span(span), ty);
                     }
                 }
+
                 _ => return Ok(ty),
             }
         }
+
         Ok(ty)
     }
 
@@ -353,14 +420,17 @@ impl<'a> ParserImpl<'a> {
             // // falls through
             // case SyntaxKind.FunctionKeyword:
             // return parseJSDocFunctionType();
+
             Kind::Question => self.parse_js_doc_unknown_or_nullable_type(),
             Kind::Bang => self.parse_js_doc_non_nullable_type(),
             Kind::NoSubstitutionTemplate | Kind::Str | Kind::False | Kind::Null => {
                 self.parse_literal_type_node(/* negative */ false)
             }
+
             kind if kind.is_number() => {
                 self.parse_literal_type_node(/* negative */ false)
             }
+
             Kind::Minus => {
                 if self.peek_kind().is_number() {
                     self.parse_literal_type_node(/* negative */ true)
@@ -368,20 +438,28 @@ impl<'a> ParserImpl<'a> {
                     self.parse_type_reference()
                 }
             }
+
             Kind::Void => {
                 let span = self.start_span();
+
                 self.bump_any();
+
                 Ok(self.ast.ts_type_void_keyword(self.end_span(span)))
             }
+
             Kind::This => {
                 let span = self.start_span();
+
                 self.bump_any(); // bump `this`
                 let this_type = self.ast.ts_this_type(self.end_span(span));
+
                 if self.peek_at(Kind::Is) && !self.peek_token().is_on_new_line {
                     return self.parse_this_type_predicate(this_type);
                 }
+
                 Ok(TSType::TSThisType(self.alloc(this_type)))
             }
+
             Kind::Typeof => {
                 if self.peek_at(Kind::Import) {
                     self.parse_ts_import_type()
@@ -389,6 +467,7 @@ impl<'a> ParserImpl<'a> {
                     self.parse_type_query()
                 }
             }
+
             Kind::LCurly => {
                 if self.lookahead(Self::is_start_of_mapped_type) {
                     self.parse_mapped_type()
@@ -396,17 +475,20 @@ impl<'a> ParserImpl<'a> {
                     self.parse_type_literal()
                 }
             }
+
             Kind::LBrack => self.parse_tuple_type(),
             Kind::LParen => self.parse_parenthesized_type(),
             Kind::Import => self.parse_ts_import_type(),
             Kind::Asserts => {
                 let peek_token = self.peek_token();
+
                 if peek_token.kind.is_identifier_name() && !peek_token.is_on_new_line {
                     self.parse_asserts_type_predicate()
                 } else {
                     self.parse_type_reference()
                 }
             }
+
             Kind::TemplateHead => self.parse_template_type(false),
             _ => self.parse_type_reference(),
         }
@@ -414,64 +496,93 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_keyword_and_no_dot(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         let ty = match self.cur_kind() {
             Kind::Any => {
                 self.bump_any();
+
                 self.ast.ts_type_any_keyword(self.end_span(span))
             }
+
             Kind::BigInt => {
                 self.bump_any();
+
                 self.ast.ts_type_big_int_keyword(self.end_span(span))
             }
+
             Kind::Boolean => {
                 self.bump_any();
+
                 self.ast.ts_type_boolean_keyword(self.end_span(span))
             }
+
             Kind::Intrinsic => {
                 self.bump_any();
+
                 self.ast.ts_type_intrinsic_keyword(self.end_span(span))
             }
+
             Kind::Never => {
                 self.bump_any();
+
                 self.ast.ts_type_never_keyword(self.end_span(span))
             }
+
             Kind::Null => {
                 self.bump_any();
+
                 self.ast.ts_type_null_keyword(self.end_span(span))
             }
+
             Kind::Number => {
                 self.bump_any();
+
                 self.ast.ts_type_number_keyword(self.end_span(span))
             }
+
             Kind::Object => {
                 self.bump_any();
+
                 self.ast.ts_type_object_keyword(self.end_span(span))
             }
+
             Kind::String => {
                 self.bump_any();
+
                 self.ast.ts_type_string_keyword(self.end_span(span))
             }
+
             Kind::Symbol => {
                 self.bump_any();
+
                 self.ast.ts_type_symbol_keyword(self.end_span(span))
             }
+
             Kind::Undefined => {
                 self.bump_any();
+
                 self.ast.ts_type_undefined_keyword(self.end_span(span))
             }
+
             Kind::Unknown => {
                 self.bump_any();
+
                 self.ast.ts_type_unknown_keyword(self.end_span(span))
             }
+
             Kind::Void => {
                 self.bump_any();
+
                 self.ast.ts_type_void_keyword(self.end_span(span))
             }
+
             _ => return Err(self.unexpected()),
         };
+
         if self.at(Kind::Dot) {
             return Err(self.unexpected());
         }
+
         Ok(ty)
     }
 
@@ -518,6 +629,7 @@ impl<'a> ParserImpl<'a> {
                 !in_start_of_parameter
                     && self.lookahead(Self::is_start_of_parenthesized_or_function_type)
             }
+
             kind => kind.is_identifier(),
         }
     }
@@ -544,11 +656,13 @@ impl<'a> ParserImpl<'a> {
 
     fn next_token_is_start_of_type(&mut self) -> bool {
         self.bump_any();
+
         self.is_start_of_type(false)
     }
 
     fn is_start_of_parenthesized_or_function_type(&mut self) -> bool {
         self.bump_any();
+
         self.at(Kind::RParen)
             || self.is_start_of_parameter(/* is_js_doc_parameter */ false)
             || self.is_start_of_type(false)
@@ -556,6 +670,7 @@ impl<'a> ParserImpl<'a> {
 
     fn is_start_of_parameter(&mut self, is_js_doc_parameter: bool) -> bool {
         let kind = self.cur_kind();
+
         kind == Kind::Dot3
             || kind.is_binding_identifier_or_private_identifier_or_pattern()
             || kind.is_modifier_kind()
@@ -565,8 +680,11 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_mapped_type(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.expect(Kind::LCurly)?;
+
         let mut readonly = TSMappedTypeModifierOperator::None;
+
         if self.eat(Kind::Readonly) {
             readonly = TSMappedTypeModifierOperator::True;
         } else if self.eat(Kind::Plus) && self.eat(Kind::Readonly) {
@@ -576,13 +694,19 @@ impl<'a> ParserImpl<'a> {
         }
 
         self.expect(Kind::LBrack)?;
+
         let type_parameter_span = self.start_span();
+
         if !self.cur_kind().is_identifier_name() {
             return Err(self.unexpected());
         }
+
         let name = self.parse_binding_identifier()?;
+
         self.expect(Kind::In)?;
+
         let constraint = self.parse_ts_type()?;
+
         let type_parameter = self.alloc(self.ast.ts_type_parameter(
             self.end_span(type_parameter_span),
             name,
@@ -594,28 +718,39 @@ impl<'a> ParserImpl<'a> {
         ));
 
         let name_type = if self.eat(Kind::As) { Some(self.parse_ts_type()?) } else { None };
+
         self.expect(Kind::RBrack)?;
 
         let optional = match self.cur_kind() {
             Kind::Question => {
                 self.bump_any();
+
                 TSMappedTypeModifierOperator::True
             }
+
             Kind::Minus => {
                 self.bump_any();
+
                 self.expect(Kind::Question)?;
+
                 TSMappedTypeModifierOperator::Minus
             }
+
             Kind::Plus => {
                 self.bump_any();
+
                 self.expect(Kind::Question)?;
+
                 TSMappedTypeModifierOperator::Plus
             }
+
             _ => TSMappedTypeModifierOperator::None,
         };
 
         let type_annotation = self.eat(Kind::Colon).then(|| self.parse_ts_type()).transpose()?;
+
         self.bump(Kind::Semicolon);
+
         self.expect(Kind::RCurly)?;
 
         Ok(self.ast.ts_type_mapped_type(
@@ -630,29 +765,39 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_type_literal(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         let member_list =
             self.parse_normal_list(Kind::LCurly, Kind::RCurly, Self::parse_ts_type_signature)?;
+
         Ok(self.ast.ts_type_type_literal(self.end_span(span), member_list))
     }
 
     fn parse_type_query(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.bump_any(); // `bump `typeof`
         let entity_name = self.parse_ts_type_name()?; // TODO: parseEntityName
         let entity_name = TSTypeQueryExprName::from(entity_name);
+
         let type_arguments =
             if self.cur_token().is_on_new_line { None } else { self.try_parse_type_arguments()? };
+
         Ok(self.ast.ts_type_type_query(self.end_span(span), entity_name, type_arguments))
     }
 
     fn parse_this_type_predicate(&mut self, this_ty: TSThisType) -> Result<TSType<'a>> {
         let span = this_ty.span;
+
         self.bump_any(); // bump `is`
                          // TODO: this should go through the ast builder.
         let parameter_name = TSTypePredicateName::This(this_ty);
+
         let type_span = self.start_span();
+
         let ty = self.parse_ts_type()?;
+
         let type_annotation = Some(self.ast.ts_type_annotation(self.end_span(type_span), ty));
+
         Ok(self.ast.ts_type_type_predicate(
             self.end_span(span),
             parameter_name,
@@ -663,6 +808,7 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_this_type_node(&mut self) -> TSThisType {
         let span = self.start_span();
+
         self.bump_any(); // bump `this`
         self.ast.ts_this_type(self.end_span(span))
     }
@@ -671,7 +817,9 @@ impl<'a> ParserImpl<'a> {
         if !self.at(Kind::Extends) {
             return Ok(None);
         }
+
         self.bump_any();
+
         Ok(Some(self.parse_ts_type()?))
     }
 
@@ -679,39 +827,53 @@ impl<'a> ParserImpl<'a> {
         if !self.at(Kind::Eq) {
             return Ok(None);
         }
+
         self.bump_any();
+
         Ok(Some(self.parse_ts_type()?))
     }
 
     fn parse_template_type(&mut self, tagged: bool) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         let mut types = self.ast.vec();
+
         let mut quasis = self.ast.vec();
+
         match self.cur_kind() {
             Kind::NoSubstitutionTemplate => {
                 quasis.push(self.parse_template_element(tagged));
             }
+
             Kind::TemplateHead => {
                 quasis.push(self.parse_template_element(tagged));
+
                 types.push(self.parse_ts_type()?);
+
                 self.re_lex_template_substitution_tail();
+
                 loop {
                     match self.cur_kind() {
                         Kind::Eof => self.expect(Kind::TemplateTail)?,
                         Kind::TemplateTail => {
                             quasis.push(self.parse_template_element(tagged));
+
                             break;
                         }
+
                         Kind::TemplateMiddle => {
                             quasis.push(self.parse_template_element(tagged));
                         }
+
                         _ => {
                             types.push(self.parse_ts_type()?);
+
                             self.re_lex_template_substitution_tail();
                         }
                     }
                 }
             }
+
             _ => unreachable!("parse_template_literal"),
         }
 
@@ -720,19 +882,26 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_asserts_type_predicate(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.bump_any(); // bump `asserts`
         let parameter_name = if self.at(Kind::This) {
             TSTypePredicateName::This(self.parse_this_type_node())
         } else {
             let ident_name = self.parse_identifier_name()?;
+
             TSTypePredicateName::Identifier(self.alloc(ident_name))
         };
+
         let mut type_annotation = None;
+
         if self.eat(Kind::Is) {
             let type_span = self.start_span();
+
             let ty = self.parse_ts_type()?;
+
             type_annotation = Some(self.ast.ts_type_annotation(self.end_span(type_span), ty));
         }
+
         Ok(self.ast.ts_type_type_predicate(
             self.end_span(span),
             parameter_name,
@@ -743,27 +912,39 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_type_reference(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         let type_name = self.parse_ts_type_name()?;
+
         let type_parameters = self.parse_type_arguments_of_type_reference()?;
+
         Ok(self.ast.ts_type_type_reference(self.end_span(span), type_name, type_parameters))
     }
 
     fn parse_ts_implement_name(&mut self) -> Result<TSClassImplements<'a>> {
         let span = self.start_span();
+
         let type_name = self.parse_ts_type_name()?;
+
         let type_parameters = self.parse_type_arguments_of_type_reference()?;
+
         Ok(self.ast.ts_class_implements(self.end_span(span), type_name, type_parameters))
     }
 
     pub(crate) fn parse_ts_type_name(&mut self) -> Result<TSTypeName<'a>> {
         let span = self.start_span();
+
         let ident = self.parse_identifier_name()?;
+
         let ident = self.ast.alloc_identifier_reference(ident.span, ident.name);
+
         let mut left = TSTypeName::IdentifierReference(ident);
+
         while self.eat(Kind::Dot) {
             let right = self.parse_identifier_name()?;
+
             left = self.ast.ts_type_name_qualified_name(self.end_span(span), left, right);
         }
+
         Ok(left)
     }
 
@@ -772,18 +953,23 @@ impl<'a> ParserImpl<'a> {
     ) -> Result<Option<Box<'a, TSTypeParameterInstantiation<'a>>>> {
         if self.at(Kind::LAngle) {
             let span = self.start_span();
+
             self.expect(Kind::LAngle)?;
+
             let params = self.parse_delimited_list(
                 Kind::RAngle,
                 Kind::Comma,
                 /* trailing_separator */ true,
                 Self::parse_ts_type,
             )?;
+
             self.expect(Kind::RAngle)?;
+
             return Ok(Some(
                 self.ast.alloc_ts_type_parameter_instantiation(self.end_span(span), params),
             ));
         }
+
         Ok(None)
     }
 
@@ -791,20 +977,26 @@ impl<'a> ParserImpl<'a> {
         &mut self,
     ) -> Result<Option<Box<'a, TSTypeParameterInstantiation<'a>>>> {
         self.re_lex_l_angle();
+
         if !self.cur_token().is_on_new_line && self.re_lex_l_angle() == Kind::LAngle {
             let span = self.start_span();
+
             self.expect(Kind::LAngle)?;
+
             let params = self.parse_delimited_list(
                 Kind::RAngle,
                 Kind::Comma,
                 /* trailing_separator */ true,
                 Self::parse_ts_type,
             )?;
+
             self.expect(Kind::RAngle)?;
+
             return Ok(Some(
                 self.ast.alloc_ts_type_parameter_instantiation(self.end_span(span), params),
             ));
         }
+
         Ok(None)
     }
 
@@ -814,11 +1006,15 @@ impl<'a> ParserImpl<'a> {
         if !self.is_ts {
             return Ok(None);
         }
+
         let span = self.start_span();
+
         if self.re_lex_l_angle() != Kind::LAngle {
             return Ok(None);
         }
+
         self.expect(Kind::LAngle)?;
+
         let params = self.parse_delimited_list(
             Kind::RAngle,
             Kind::Comma,
@@ -829,13 +1025,17 @@ impl<'a> ParserImpl<'a> {
         if matches!(self.re_lex_right_angle(), Kind::GtEq) {
             return Err(self.unexpected());
         }
+
         self.re_lex_ts_r_angle();
+
         self.expect(Kind::RAngle)?;
+
         if self.can_follow_type_arguments_in_expr() {
             return Ok(Some(
                 self.ast.alloc_ts_type_parameter_instantiation(self.end_span(span), params),
             ));
         }
+
         Err(self.unexpected())
     }
 
@@ -853,14 +1053,18 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_tuple_type(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.expect(Kind::LBrack)?;
+
         let elements = self.parse_delimited_list(
             Kind::RBrack,
             Kind::Comma,
             /* trailing_separator */ true,
             Self::parse_tuple_element_name_or_tuple_element_type,
         )?;
+
         self.expect(Kind::RBrack)?;
+
         Ok(self.ast.ts_type_tuple_type(self.end_span(span), elements))
     }
 
@@ -869,13 +1073,21 @@ impl<'a> ParserImpl<'a> {
     ) -> Result<TSTupleElement<'a>> {
         if self.lookahead(Self::is_tuple_element_name) {
             let span = self.start_span();
+
             let dotdotdot = self.eat(Kind::Dot3);
+
             let member_span = self.start_span();
+
             let label = self.parse_identifier_name()?;
+
             let optional = self.eat(Kind::Question);
+
             self.expect(Kind::Colon)?;
+
             let element_type = self.parse_tuple_element_type()?;
+
             let span = self.end_span(span);
+
             return Ok(if dotdotdot {
                 let type_annotation = self.ast.ts_type_named_tuple_member(
                     self.end_span(member_span),
@@ -885,6 +1097,7 @@ impl<'a> ParserImpl<'a> {
                     // See typescript suite <conformance/types/tuple/restTupleElements1.ts>
                     optional,
                 );
+
                 self.ast.ts_tuple_element_rest_type(span, type_annotation)
             } else {
                 TSTupleElement::from(self.ast.ts_type_named_tuple_member(
@@ -895,6 +1108,7 @@ impl<'a> ParserImpl<'a> {
                 ))
             });
         }
+
         self.parse_tuple_element_type()
     }
 
@@ -903,24 +1117,31 @@ impl<'a> ParserImpl<'a> {
             return self.cur_kind().is_identifier_name()
                 && self.is_next_token_colon_or_question_colon();
         }
+
         self.cur_kind().is_identifier_name() && self.is_next_token_colon_or_question_colon()
     }
 
     fn is_next_token_colon_or_question_colon(&mut self) -> bool {
         self.bump_any();
+
         if self.at(Kind::Colon) {
             return true;
         }
+
         self.at(Kind::Question) && self.peek_at(Kind::Colon)
     }
 
     fn parse_tuple_element_type(&mut self) -> Result<TSTupleElement<'a>> {
         let span = self.start_span();
+
         if self.eat(Kind::Dot3) {
             let ty = self.parse_ts_type()?;
+
             return Ok(self.ast.ts_tuple_element_rest_type(self.end_span(span), ty));
         }
+
         let ty = self.parse_ts_type()?;
+
         if let TSType::JSDocNullableType(ty) = ty {
             if ty.span.start == ty.type_annotation.span().start {
                 Ok(self.ast.ts_tuple_element_optional_type(ty.span, ty.unbox().type_annotation))
@@ -934,14 +1155,18 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_parenthesized_type(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.bump_any(); // bump `(`
         let ty = self.parse_ts_type()?;
+
         self.expect(Kind::RParen)?;
+
         Ok(self.ast.ts_type_parenthesized_type(self.end_span(span), ty))
     }
 
     fn parse_literal_type_node(&mut self, negative: bool) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         if negative {
             self.bump_any(); // bump `-`
         }
@@ -953,6 +1178,7 @@ impl<'a> ParserImpl<'a> {
         }?;
 
         let span = self.end_span(span);
+
         let literal = if negative {
             match self.ast.expression_unary(span, UnaryOperator::UnaryNegation, expression) {
                 Expression::UnaryExpression(unary_expr) => TSLiteral::UnaryExpression(unary_expr),
@@ -976,15 +1202,24 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_ts_import_type(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         let is_type_of = self.eat(Kind::Typeof);
+
         self.expect(Kind::Import)?;
+
         self.expect(Kind::LParen)?;
+
         let parameter = self.parse_ts_type()?;
+
         let attributes =
             if self.eat(Kind::Comma) { Some(self.parse_ts_import_attributes()?) } else { None };
+
         self.expect(Kind::RParen)?;
+
         let qualifier = if self.eat(Kind::Dot) { Some(self.parse_ts_type_name()?) } else { None };
+
         let type_parameters = self.parse_type_arguments_of_type_reference()?;
+
         Ok(self.ast.ts_type_import_type(
             self.end_span(span),
             is_type_of,
@@ -997,7 +1232,9 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_ts_import_attributes(&mut self) -> Result<TSImportAttributes<'a>> {
         let span = self.start_span();
+
         self.expect(Kind::LCurly)?;
+
         let attributes_keyword = match self.cur_kind() {
             Kind::Assert if !self.cur_token().is_on_new_line => self.parse_identifier_name()?,
             Kind::With => self.parse_identifier_name()?,
@@ -1005,28 +1242,37 @@ impl<'a> ParserImpl<'a> {
                 return Err(self.unexpected());
             }
         };
+
         self.expect(Kind::Colon)?;
+
         self.expect(Kind::LCurly)?;
+
         let elements = self.parse_delimited_list(
             Kind::RCurly,
             Kind::Comma,
             /* trailing_separator */ true,
             Self::parse_ts_import_attribute,
         )?;
+
         self.expect(Kind::RCurly)?;
+
         self.expect(Kind::RCurly)?;
+
         Ok(self.ast.ts_import_attributes(self.end_span(span), attributes_keyword, elements))
     }
 
     fn parse_ts_import_attribute(&mut self) -> Result<TSImportAttribute<'a>> {
         let span = self.start_span();
+
         let name = match self.cur_kind() {
             Kind::Str => TSImportAttributeName::StringLiteral(self.parse_literal_string()?),
             _ => TSImportAttributeName::Identifier(self.parse_identifier_name()?),
         };
 
         self.expect(Kind::Colon)?;
+
         let value = self.parse_expr()?;
+
         Ok(self.ast.ts_import_attribute(self.end_span(span), name, value))
     }
 
@@ -1037,10 +1283,12 @@ impl<'a> ParserImpl<'a> {
                 Context::empty(),
                 Self::parse_ts_type,
             )?;
+
             if self.ctx.has_disallow_conditional_types() || !self.at(Kind::Question) {
                 return Ok(Some(constraint));
             }
         }
+
         Err(self.unexpected())
     }
 
@@ -1052,10 +1300,13 @@ impl<'a> ParserImpl<'a> {
         if !self.is_ts {
             return Ok(None);
         }
+
         if !self.at(Kind::Colon) {
             return Ok(None);
         }
+
         let span = self.start_span();
+
         Ok(self
             .parse_return_type(kind, is_type)?
             .map(|return_type| self.ast.alloc_ts_type_annotation(self.end_span(span), return_type)))
@@ -1075,14 +1326,17 @@ impl<'a> ParserImpl<'a> {
                 )
                 .map(Some);
         }
+
         Ok(None)
     }
 
     fn should_parse_return_type(&mut self, return_kind: Kind, _is_type: bool) -> bool {
         if return_kind == Kind::Arrow {
             self.bump_any();
+
             return true;
         }
+
         if self.eat(Kind::Colon) {
             return true;
         }
@@ -1093,21 +1347,28 @@ impl<'a> ParserImpl<'a> {
         // nextToken();
         // return true;
         // }
+
         false
     }
 
     fn parse_type_or_type_predicate(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         let type_predicate_variable = if self.cur_kind().is_identifier_name() {
             self.try_parse(Self::parse_type_predicate_prefix)
         } else {
             None
         };
+
         let type_span = self.start_span();
+
         let ty = self.parse_ts_type()?;
+
         if let Some(id) = type_predicate_variable {
             let type_annotation = Some(self.ast.ts_type_annotation(self.end_span(type_span), ty));
+
             let parameter_name = TSTypePredicateName::Identifier(self.alloc(id));
+
             return Ok(self.ast.ts_type_type_predicate(
                 self.end_span(span),
                 parameter_name,
@@ -1115,16 +1376,21 @@ impl<'a> ParserImpl<'a> {
                 type_annotation,
             ));
         }
+
         Ok(ty)
     }
 
     fn parse_type_predicate_prefix(&mut self) -> Result<IdentifierName<'a>> {
         let id = self.parse_identifier_name()?;
+
         let token = self.cur_token();
+
         if token.kind == Kind::Is && !token.is_on_new_line {
             self.bump_any();
+
             return Ok(id);
         }
+
         Err(self.unexpected())
     }
 
@@ -1134,10 +1400,15 @@ impl<'a> ParserImpl<'a> {
 
     pub(crate) fn parse_ts_call_signature_member(&mut self) -> Result<TSSignature<'a>> {
         let span = self.start_span();
+
         let type_parameters = self.parse_ts_type_parameters()?;
+
         let (this_param, params) = self.parse_formal_parameters(FormalParameterKind::Signature)?;
+
         let return_type = self.parse_ts_return_type_annotation(Kind::Colon, false)?;
+
         self.parse_type_member_semicolon();
+
         Ok(self.ast.ts_signature_call_signature_declaration(
             self.end_span(span),
             type_parameters,
@@ -1149,11 +1420,17 @@ impl<'a> ParserImpl<'a> {
 
     pub(crate) fn parse_ts_getter_signature_member(&mut self) -> Result<TSSignature<'a>> {
         let span = self.start_span();
+
         self.expect(Kind::Get)?;
+
         let (key, computed) = self.parse_property_name()?;
+
         let (this_param, params) = self.parse_formal_parameters(FormalParameterKind::Signature)?;
+
         let return_type = self.parse_ts_return_type_annotation(Kind::Colon, false)?;
+
         self.parse_type_member_semicolon();
+
         Ok(self.ast.ts_signature_method_signature(
             self.end_span(span),
             key,
@@ -1169,16 +1446,23 @@ impl<'a> ParserImpl<'a> {
 
     pub(crate) fn parse_ts_setter_signature_member(&mut self) -> Result<TSSignature<'a>> {
         let span = self.start_span();
+
         self.expect(Kind::Set)?;
+
         let (key, computed) = self.parse_property_name()?;
+
         let (this_param, params) = self.parse_formal_parameters(FormalParameterKind::Signature)?;
+
         let return_type = self.parse_ts_return_type_annotation(Kind::Colon, false)?;
+
         self.parse_type_member_semicolon();
+
         if let Some(return_type) = return_type.as_ref() {
             self.error(diagnostics::a_set_accessor_cannot_have_a_return_type_annotation(
                 return_type.span,
             ));
         }
+
         Ok(self.ast.ts_signature_method_signature(
             self.end_span(span),
             key,
@@ -1196,6 +1480,7 @@ impl<'a> ParserImpl<'a> {
         &mut self,
     ) -> Result<TSSignature<'a>> {
         let span = self.start_span();
+
         let readonly = self.at(Kind::Readonly) && self.is_next_at_type_member_name();
 
         if readonly {
@@ -1203,6 +1488,7 @@ impl<'a> ParserImpl<'a> {
         }
 
         let (key, computed) = self.parse_property_name()?;
+
         let optional = self.eat(Kind::Question);
 
         if self.at(Kind::LParen) || self.at(Kind::LAngle) {
@@ -1211,8 +1497,11 @@ impl<'a> ParserImpl<'a> {
             else {
                 unreachable!()
             };
+
             self.parse_type_member_semicolon();
+
             let call_signature = call_signature.unbox();
+
             Ok(self.ast.ts_signature_method_signature(
                 self.end_span(span),
                 key,
@@ -1226,7 +1515,9 @@ impl<'a> ParserImpl<'a> {
             ))
         } else {
             let type_annotation = self.parse_ts_type_annotation()?;
+
             self.parse_type_member_semicolon();
+
             Ok(self.ast.ts_signature_property_signature(
                 self.end_span(span),
                 computed,
@@ -1240,17 +1531,21 @@ impl<'a> ParserImpl<'a> {
 
     pub(crate) fn parse_ts_constructor_signature_member(&mut self) -> Result<TSSignature<'a>> {
         let span = self.start_span();
+
         self.expect(Kind::New)?;
 
         let type_parameters = self.parse_ts_type_parameters()?;
+
         let (this_param, params) = self.parse_formal_parameters(FormalParameterKind::Signature)?;
 
         if let Some(this_param) = this_param {
             // interface Foo { new(this: number): Foo }
+
             self.error(diagnostics::ts_constructor_this_parameter(this_param.span));
         }
 
         let return_type = self.parse_ts_return_type_annotation(Kind::Colon, false)?;
+
         self.parse_type_member_semicolon();
 
         Ok(self.ast.ts_signature_construct_signature_declaration(
@@ -1271,13 +1566,19 @@ impl<'a> ParserImpl<'a> {
             ModifierFlags::READONLY | ModifierFlags::STATIC,
             diagnostics::cannot_appear_on_an_index_signature,
         );
+
         self.bump(Kind::LBrack);
+
         let parameters = self.ast.vec1(self.parse_ts_index_signature_name()?);
+
         self.expect(Kind::RBrack)?;
+
         let Some(type_annotation) = self.parse_ts_type_annotation()? else {
             return Err(self.unexpected());
         };
+
         self.parse_type_member_semicolon();
+
         Ok(self.ast.ts_index_signature(
             self.end_span(span),
             parameters,
@@ -1299,7 +1600,9 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_ts_index_signature_name(&mut self) -> Result<TSIndexSignatureName<'a>> {
         let span = self.start_span();
+
         let name = self.parse_identifier_name()?.name;
+
         let type_annotation = self.parse_ts_type_annotation()?;
 
         if type_annotation.is_none() {
@@ -1318,6 +1621,7 @@ impl<'a> ParserImpl<'a> {
         }
 
         let mut flags = ModifierFlags::empty();
+
         let mut modifiers: Vec<Modifier> = self.ast.vec();
 
         loop {
@@ -1328,7 +1632,9 @@ impl<'a> ParserImpl<'a> {
             #[allow(clippy::unnecessary_fallible_conversions)]
             if let Ok(kind) = ModifierKind::try_from(self.cur_kind()) {
                 let modifier = Modifier { kind, span: self.cur_token().span() };
+
                 flags.set(kind.into(), true);
+
                 modifiers.push(modifier);
             } else {
                 break;
@@ -1342,9 +1648,12 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_js_doc_unknown_or_nullable_type(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.bump_any(); // bump `?`
         let type_annotation = self.parse_ts_type()?;
+
         let span = self.end_span(span);
+
         if matches!(
             self.cur_kind(),
             Kind::Comma | Kind::RCurly | Kind::RParen | Kind::RAngle | Kind::Eq | Kind::Pipe
@@ -1361,8 +1670,10 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_js_doc_non_nullable_type(&mut self) -> Result<TSType<'a>> {
         let span = self.start_span();
+
         self.bump_any(); // bump `!`
         let ty = self.parse_non_array_type()?;
+
         Ok(self.ast.ts_type_js_doc_non_nullable_type(
             self.end_span(span),
             ty,
@@ -1374,6 +1685,7 @@ impl<'a> ParserImpl<'a> {
         if self.ctx.has_in() && self.at(Kind::In) {
             return false;
         }
+
         self.cur_kind().is_binary_operator()
     }
 
@@ -1381,6 +1693,7 @@ impl<'a> ParserImpl<'a> {
         if self.is_start_of_left_hand_side_expression() {
             return true;
         }
+
         match self.cur_kind() {
             kind if kind.is_unary_operator() => true,
             kind if kind.is_update_operator() => true,
@@ -1407,6 +1720,7 @@ impl<'a> ParserImpl<'a> {
             Kind::Import => {
                 matches!(self.peek_kind(), Kind::LParen | Kind::LAngle | Kind::Dot)
             }
+
             kind => kind.is_identifier(),
         }
     }

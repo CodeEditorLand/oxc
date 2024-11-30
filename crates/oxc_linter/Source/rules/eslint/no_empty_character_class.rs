@@ -50,6 +50,7 @@ impl Rule for NoEmptyCharacterClass {
             }
 
             let mut finder = EmptyClassFinder { empty_classes: vec![] };
+
             finder.visit_pattern(pattern);
 
             for span in finder.empty_classes {

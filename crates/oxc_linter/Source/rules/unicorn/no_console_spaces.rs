@@ -76,6 +76,7 @@ impl Rule for NoConsoleSpaces {
 
                         (literal_raw, false)
                     }
+
                     Expression::TemplateLiteral(string_lit) => {
                         let literal_raw = string_lit
                             .span
@@ -139,6 +140,7 @@ fn report_diagnostic<'a>(
         } else {
             Cow::Borrowed(literal_raw.trim())
         };
+
         fixer.replace(span, content)
     });
 }

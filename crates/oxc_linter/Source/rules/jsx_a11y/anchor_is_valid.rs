@@ -124,6 +124,7 @@ impl Rule for AnchorIsValid {
         let Some(valid_hrefs) = value.get("validHrefs").and_then(Value::as_array) else {
             return Self::default();
         };
+
         Self(Box::new(valid_hrefs.iter().collect()))
     }
 
@@ -132,11 +133,13 @@ impl Rule for AnchorIsValid {
             let Some(name) = &get_element_type(ctx, &jsx_el.opening_element) else {
                 return;
             };
+
             if name != "a" {
                 return;
             };
             // Don't eagerly get `span` here, to avoid that work unless rule fails
             let get_span = || jsx_el.opening_element.name.span();
+
             if let Some(href_attr) = has_jsx_prop_ignore_case(&jsx_el.opening_element, "href") {
                 let JSXAttributeItem::Attribute(attr) = href_attr else {
                     return;
@@ -145,18 +148,24 @@ impl Rule for AnchorIsValid {
                 // Check if the 'a' element has a correct href attribute
                 let Some(value) = attr.value.as_ref() else {
                     ctx.diagnostic(incorrect_href(get_span()));
+
                     return;
                 };
 
                 let is_empty = self.check_value_is_empty_or_invalid(value);
+
                 if is_empty {
                     if has_jsx_prop_ignore_case(&jsx_el.opening_element, "onclick").is_some() {
                         ctx.diagnostic(cant_be_anchor(get_span()));
+
                         return;
                     }
+
                     ctx.diagnostic(incorrect_href(get_span()));
+
                     return;
                 }
+
                 return;
             }
             // Exclude '<a {...props} />' case
@@ -164,9 +173,11 @@ impl Rule for AnchorIsValid {
                 JSXAttributeItem::SpreadAttribute(_) => true,
                 JSXAttributeItem::Attribute(_) => false,
             });
+
             if has_spread_attr {
                 return;
             }
+
             ctx.diagnostic(missing_href_attribute(get_span()));
         }
     }
@@ -189,8 +200,10 @@ impl AnchorIsValid {
                     let Some(quasi) = temp_lit.quasi() else {
                         return false;
                     };
+
                     self.is_invalid_href(&quasi)
                 }
+
                 _ => false,
             },
             JSXAttributeValue::Fragment(_) => true,
@@ -201,7 +214,9 @@ impl AnchorIsValid {
 impl AnchorIsValidConfig {
     fn new(mut valid_hrefs: Vec<CompactStr>) -> Self {
         valid_hrefs.sort_unstable();
+
         valid_hrefs.dedup();
+
         Self { valid_hrefs }
     }
 
@@ -221,6 +236,7 @@ impl AnchorIsValidConfig {
 impl<'v> FromIterator<&'v Value> for AnchorIsValidConfig {
     fn from_iter<T: IntoIterator<Item = &'v Value>>(iter: T) -> Self {
         let hrefs = iter.into_iter().filter_map(Value::as_str).map(CompactStr::from).collect();
+
         Self::new(hrefs)
     }
 }

@@ -72,6 +72,7 @@ impl Rule for JsxNoCommentTextnodes {
 fn has_comment_pattern(text: &str) -> bool {
     text.lines().any(|line| {
         let line = line.trim();
+
         line.starts_with("//") || line.starts_with("/*")
     })
 }
@@ -124,6 +125,7 @@ fn test() {
 			        class Comp1 extends Component {
 			          render() {
 			            const bar = (<div>{/* valid */}</div>);
+
 			            return bar;
 			          }
 			        }

@@ -56,8 +56,11 @@ pub enum ESFeature {
 }
 pub fn features() -> &'static FxHashMap<ESFeature, EngineTargets> {
     use ESFeature::*;
+
     use Engine::*;
+
     static FEATURES: OnceLock<FxHashMap<ESFeature, EngineTargets>> = OnceLock::new();
+
     FEATURES.get_or_init(|| {
         FxHashMap::from_iter([
             (

@@ -73,8 +73,10 @@ impl Rule for IframeHasTitle {
         if name != "iframe" {
             return;
         }
+
         let Some(alt_prop) = has_jsx_prop_ignore_case(jsx_el, "title") else {
             ctx.diagnostic(iframe_has_title_diagnostic(jsx_el.name.span()));
+
             return;
         };
 
@@ -84,6 +86,7 @@ impl Rule for IframeHasTitle {
                     return;
                 }
             }
+
             Some(JSXAttributeValue::ExpressionContainer(container)) => {
                 match &container.expression {
                     JSXExpression::StringLiteral(str) => {
@@ -91,6 +94,7 @@ impl Rule for IframeHasTitle {
                             return;
                         }
                     }
+
                     JSXExpression::TemplateLiteral(tmpl) => {
                         if !tmpl.quasis.is_empty()
                             & !tmpl.expressions.is_empty()
@@ -99,17 +103,21 @@ impl Rule for IframeHasTitle {
                             return;
                         }
                     }
+
                     JSXExpression::CallExpression(_) => {
                         return;
                     }
+
                     expr @ JSXExpression::Identifier(_) => {
                         if !expr.is_undefined() {
                             return;
                         }
                     }
+
                     _ => {}
                 }
             }
+
             _ => {}
         }
 

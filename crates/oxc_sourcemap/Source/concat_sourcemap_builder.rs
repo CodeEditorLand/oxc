@@ -54,11 +54,16 @@ impl ConcatSourceMapBuilder {
     pub fn from_sourcemaps(sourcemap_and_line_offsets: &[(&SourceMap, u32)]) -> Self {
         // Calculate length of `Vec`s required
         let mut names_len = 0;
+
         let mut sources_len = 0;
+
         let mut tokens_len = 0;
+
         for (sourcemap, _) in sourcemap_and_line_offsets {
             names_len += sourcemap.names.len();
+
             sources_len += sourcemap.sources.len();
+
             tokens_len += sourcemap.tokens.len();
         }
 
@@ -78,6 +83,7 @@ impl ConcatSourceMapBuilder {
 
     pub fn add_sourcemap(&mut self, sourcemap: &SourceMap, line_offset: u32) {
         let source_offset = self.sources.len() as u32;
+
         let name_offset = self.names.len() as u32;
 
         // Add `token_chunks`, See `TokenChunk`.
@@ -119,10 +125,12 @@ impl ConcatSourceMapBuilder {
 
         // Extend `names`.
         self.names.reserve(sourcemap.names.len());
+
         self.names.extend(sourcemap.get_names().map(Into::into));
 
         // Extend `tokens`.
         self.tokens.reserve(sourcemap.tokens.len());
+
         let tokens = sourcemap.get_tokens().map(|token| {
             Token::new(
                 token.get_dst_line() + line_offset,
@@ -132,10 +140,12 @@ impl ConcatSourceMapBuilder {
                 token.get_source_id().map(|x| x + source_offset),
                 token.get_name_id().map(|x| {
                     self.token_chunk_prev_name_id = x + name_offset;
+
                     self.token_chunk_prev_name_id
                 }),
             )
         });
+
         self.tokens.extend(tokens);
     }
 
@@ -156,9 +166,11 @@ impl ConcatSourceMapBuilder {
 fn test_concat_sourcemap_builder() {
     run_test(|sourcemap_and_line_offsets| {
         let mut builder = ConcatSourceMapBuilder::default();
+
         for (sourcemap, line_offset) in sourcemap_and_line_offsets.iter().copied() {
             builder.add_sourcemap(sourcemap, line_offset);
         }
+
         builder
     });
 }
@@ -182,6 +194,7 @@ where
         vec![Token::new(1, 1, 1, 1, Some(0), Some(0))],
         None,
     );
+
     let sm2 = SourceMap::new(
         None,
         vec!["bar".into()],
@@ -191,6 +204,7 @@ where
         vec![Token::new(1, 1, 1, 1, Some(0), Some(0))],
         None,
     );
+
     let sm3 = SourceMap::new(
         None,
         vec!["abc".into()],
@@ -216,11 +230,15 @@ where
         ],
         None,
     );
+
     let concat_sm = builder.into_sourcemap();
 
     assert_eq!(concat_sm.tokens, sm.tokens);
+
     assert_eq!(concat_sm.sources, sm.sources);
+
     assert_eq!(concat_sm.names, sm.names);
+
     assert_eq!(
         concat_sm.token_chunks,
         Some(vec![

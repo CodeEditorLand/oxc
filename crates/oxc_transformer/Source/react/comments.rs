@@ -41,6 +41,7 @@ fn update_options_with_comment(
             if options.jsx.jsx_plugin || options.jsx.development {
                 options.jsx.pragma = Some(remainder.to_string());
             }
+
             options.typescript.jsx_pragma = Cow::from(remainder.to_string());
         }
         // @jsxRuntime
@@ -62,8 +63,10 @@ fn update_options_with_comment(
             if options.jsx.jsx_plugin || options.jsx.development {
                 options.jsx.pragma_frag = Some(remainder.to_string());
             }
+
             options.typescript.jsx_pragma_frag = Cow::from(remainder.to_string());
         }
+
         _ => {}
     }
 }
@@ -85,6 +88,7 @@ fn find_jsx_pragma<'a>(
     // Slice from start of comment to end of file, not end of comment.
     // This allows `find_at_sign` functions to search in chunks of 8 bytes without hitting end of string.
     let comment_str = &source_text[comment.span.start as usize..];
+
     let comment_str = match comment.kind {
         CommentKind::Line => find_at_sign_in_line_comment(comment_str)?,
         CommentKind::Block => find_at_sign_in_block_comment(comment_str)?,
@@ -92,9 +96,11 @@ fn find_jsx_pragma<'a>(
 
     // Check next 3 chars after `@` is `jsx`
     let first_3_bytes = comment_str.as_bytes().get(..3)?;
+
     if first_3_bytes != b"jsx" {
         return None;
     }
+
     let comment_str = &comment_str[3..];
     // `@jsx` found. `comment_str` contains all source text after `@jsx`
 
@@ -103,11 +109,14 @@ fn find_jsx_pragma<'a>(
 
     // Slice off after end of comment
     let remainder_start = source_text.len() - remainder.len();
+
     if remainder_start >= comment.span.end as usize {
         // Space was after end of comment
         return None;
     }
+
     let len = comment.span.end as usize - remainder_start;
+
     let remainder = &remainder[..len];
     // Trim excess whitespace/line breaks from end
     let remainder = trim_end(remainder);
@@ -123,13 +132,19 @@ fn find_jsx_pragma<'a>(
 fn find_at_sign_in_line_comment(str: &str) -> Option<&str> {
     // Note: Neither `accept` nor `skip` matches line breaks, so will not search beyond end of the comment
     let accept = |byte| byte == b'@';
+
     let skip = |byte| matches!(byte, b' ' | b'\t');
+
     let find_unicode = |str: &str| {
         let len = str.len();
+
         let str = str.trim_start().strip_prefix('@')?;
+
         Some(len - str.len() - 1)
     };
+
     let index = find(str, accept, skip, find_unicode)?;
+
     Some(&str[index + 1..])
 }
 
@@ -147,18 +162,25 @@ fn find_at_sign_in_line_comment(str: &str) -> Option<&str> {
 fn find_at_sign_in_block_comment(str: &str) -> Option<&str> {
     // Note: Neither `accept` nor `skip` matches `/`, so will not search beyond end of the comment
     let accept = |byte| byte == b'@';
+
     let skip = |byte| byte == b'*' || is_ascii_whitespace(byte);
+
     let find_unicode = |str: &str| {
         let len = str.len();
+
         let mut str = str.trim_start();
         // Strip leading jsdoc comment `*` and then whitespaces
         while let Some(cur_str) = str.strip_prefix('*') {
             str = cur_str.trim_start();
         }
+
         let str = str.strip_prefix('@')?;
+
         Some(len - str.len() - 1)
     };
+
     let index = find(str, accept, skip, find_unicode)?;
+
     Some(&str[index + 1..])
 }
 
@@ -168,30 +190,38 @@ fn find_at_sign_in_block_comment(str: &str) -> Option<&str> {
 fn split_at_whitespace(str: &str) -> Option<(&str, &str)> {
     // Find first space, tab, or irregular whitespace
     let mut space_bytes = 1;
+
     let accept = |byte| matches!(byte, b' ' | b'\t');
+
     let skip = |_| true;
+
     let find_unicode = |str: &str| {
         str.find(|c| {
             if c == ' ' || c == '\t' {
                 true
             } else if is_irregular_whitespace(c) {
                 space_bytes = c.len_utf8();
+
                 true
             } else {
                 false
             }
         })
     };
+
     let space_index = find(str, accept, skip, find_unicode)?;
 
     let before = &str[..space_index];
+
     let after_space_index = space_index + space_bytes;
 
     // Consume any further spaces.
     // Don't use `find` to search in chunks here, as usually there's only a single space and this loop
     // will exit on first turn.
     let more_spaces_after;
+
     let mut iter = str.as_bytes()[after_space_index..].iter().enumerate();
+
     loop {
         if let Some((index, &byte)) = iter.next() {
             more_spaces_after = match byte {
@@ -199,13 +229,17 @@ fn split_at_whitespace(str: &str) -> Option<(&str, &str)> {
                 _ if byte.is_ascii() => index,
                 _ => cold_branch(|| {
                     let is_space = |c| c == ' ' || c == '\t' || is_irregular_whitespace(c);
+
                     str[after_space_index..].find(|c| !is_space(c)).unwrap_or(0)
                 }),
             };
+
             break;
         }
+
         return None;
     }
+
     let after = &str[after_space_index + more_spaces_after..];
 
     Some((before, after))
@@ -217,6 +251,7 @@ fn split_at_whitespace(str: &str) -> Option<(&str, &str)> {
 /// Comparison: <https://godbolt.org/z/4nfW6183z>
 fn trim_end(str: &str) -> &str {
     let mut iter = str.as_bytes().iter().enumerate().rev();
+
     let index = loop {
         if let Some((index, &byte)) = iter.next() {
             match byte {
@@ -225,6 +260,7 @@ fn trim_end(str: &str) -> &str {
                 _ => break index,
             }
         }
+
         return "";
     };
 
@@ -244,7 +280,9 @@ fn trim_end(str: &str) -> &str {
 #[inline]
 fn is_ascii_whitespace(byte: u8) -> bool {
     const VT: u8 = 0x0B;
+
     const FF: u8 = 0x0C;
+
     matches!(byte, b' ' | b'\t' | b'\r' | b'\n' | VT | FF)
 }
 
@@ -276,8 +314,10 @@ where
     // Process string in chunks of 8 bytes.
     // Check chunks for any non-ASCII bytes in one go, and deopt to unicode handler if so.
     let mut chunks = str.as_bytes().chunks_exact(8);
+
     for (chunk_index, chunk) in chunks.by_ref().enumerate() {
         let chunk: [u8; 8] = chunk.try_into().unwrap();
+
         if !chunk_is_ascii(chunk) {
             return cold_branch(|| find_unicode(str));
         }
@@ -294,6 +334,7 @@ where
 
     // We only get here if we're close to end of the string
     let chunk_start = str.len() & !7;
+
     for (byte_index, &byte) in chunks.remainder().iter().enumerate() {
         match byte {
             _ if !byte.is_ascii() => return cold_branch(|| find_unicode(str)),
@@ -309,7 +350,9 @@ where
 #[inline]
 fn chunk_is_ascii(chunk: [u8; 8]) -> bool {
     const HIGH_BITS: u64 = 0x8080_8080_8080_8080;
+
     let chunk_u64 = u64::from_ne_bytes(chunk);
+
     chunk_u64 & HIGH_BITS == 0
 }
 
@@ -325,7 +368,9 @@ pub fn cold_branch<F: FnOnce() -> T, T>(f: F) -> T {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use oxc_ast::CommentPosition;
+
     use oxc_span::Span;
 
     static PRE_AND_POSTFIX: &[(&str, &str)] = &[
@@ -340,6 +385,7 @@ mod tests {
         for (comment_str, expected) in cases {
             for (before, after) in PRE_AND_POSTFIX {
                 let (comment, source_text) = create_comment(comment_str, before, after);
+
                 assert_eq!(find_jsx_pragma(&comment, &source_text), expected);
             }
         }
@@ -359,6 +405,7 @@ mod tests {
             (before.len() + 2) as u32,
             (before.len() + comment_str.len() - end_bytes) as u32,
         );
+
         let comment = Comment {
             span,
             kind,

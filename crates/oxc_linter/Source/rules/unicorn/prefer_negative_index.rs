@@ -65,8 +65,11 @@ impl Rule for PreferNegativeIndex {
         let callee_object_expr = call_expr.callee.to_member_expression().object();
 
         let Some(name) = call_expr.callee_name() else { return };
+
         let is_prototype_call = name == "call";
+
         let is_prototype_apply = name == "apply";
+
         let is_prototype =
             callee_object_expr.is_member_expression() && (is_prototype_call || is_prototype_apply);
 
@@ -98,17 +101,22 @@ impl Rule for PreferNegativeIndex {
                     else {
                         return;
                     };
+
                     first_arg
                 } else {
                     callee_object_expr
                 }
             }
+
             _ => return,
         };
 
         let mut member_exprs: Vec<&StaticMemberExpression> = Vec::new();
+
         let range_increment = if matches!(callee_name, "slice" | "subarray") { 2 } else { 1 };
+
         let arg_range_start = usize::from(is_prototype);
+
         let arg_range_end = if is_prototype_apply {
             arg_range_start + 1
         } else {
@@ -134,11 +142,13 @@ impl Rule for PreferNegativeIndex {
                         member_exprs.push(member_expr);
                     }
                 }
+
                 Expression::ArrayExpression(array_expr) => {
                     for (j, element) in array_expr.elements.iter().enumerate() {
                         if j >= range_increment {
                             break;
                         }
+
                         if let ArrayExpressionElement::BinaryExpression(binary_expr) = element {
                             let Some(el_member_expr) = get_binary_left_expr(binary_expr) else {
                                 continue;
@@ -150,6 +160,7 @@ impl Rule for PreferNegativeIndex {
                         }
                     }
                 }
+
                 _ => continue,
             }
         }
@@ -160,9 +171,12 @@ impl Rule for PreferNegativeIndex {
 
                 for member_expr in member_exprs {
                     let member_expr_span = member_expr.span();
+
                     let member_expr_next_end = member_expr_span.end + 1;
+
                     let member_expr_with_next_span =
                         Span::new(member_expr_span.start, member_expr_next_end);
+
                     let member_expr_with_next_str = ctx.source_range(member_expr_with_next_span);
 
                     if member_expr_with_next_str.ends_with(' ') {
@@ -214,6 +228,7 @@ fn is_same_node(left: &Expression, right: &Expression, ctx: &LintContext) -> boo
 
             return left_string_lit.to_string() == template_str.as_str();
         }
+
         _ => false,
     }
 }
@@ -240,6 +255,7 @@ fn get_prototype_callee_type(expression: &Expression) -> TypeOptions {
                 _ => TypeOptions::Unknown,
             }
         }
+
         _ => TypeOptions::Unknown,
     }
 }
@@ -262,6 +278,7 @@ fn get_binary_left_expr<'a>(
 
             get_binary_left_expr(paren_inner_binary_expr)
         }
+
         Expression::BinaryExpression(inner_binary_expr) => get_binary_left_expr(inner_binary_expr),
         Expression::StaticMemberExpression(member_expr) => {
             if member_expr.property.name == "length" {
@@ -270,6 +287,7 @@ fn get_binary_left_expr<'a>(
 
             None
         }
+
         _ => None,
     }
 }
@@ -356,66 +374,124 @@ fn test() {
         						",
         "
         							Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							String.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							String.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							ArrayBuffer.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							ArrayBuffer.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int8Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int8Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8ClampedArray.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8ClampedArray.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int16Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int16Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint16Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint16Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int32Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint32Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float32Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float64Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigInt64Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigInt64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigUint64Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigUint64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							NOT_SUPPORTED.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							NOT_SUPPORTED.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
         						",
         "
         							Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							String.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							String.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							ArrayBuffer.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							ArrayBuffer.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int8Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int8Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8ClampedArray.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8ClampedArray.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int16Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int16Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint16Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint16Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int32Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint32Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float32Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float64Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigInt64Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigInt64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigUint64Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigUint64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							NOT_SUPPORTED.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							NOT_SUPPORTED.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
         						",
         "/**/foo.slice(foo.length - 2, foo.length - 1)",
@@ -517,130 +593,247 @@ fn test() {
         						", None),
         ("
         							Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							String.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							String.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							ArrayBuffer.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							ArrayBuffer.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int8Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int8Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8ClampedArray.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8ClampedArray.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int16Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int16Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint16Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint16Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int32Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint32Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float32Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float64Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigInt64Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigInt64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigUint64Array.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigUint64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							NOT_SUPPORTED.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							NOT_SUPPORTED.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
         						", "
         							Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Array.prototype.splice.call(foo, - 1, foo.length - 2, foo.length - 3);
+
         							String.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							String.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							ArrayBuffer.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							ArrayBuffer.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int8Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Int8Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Uint8Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint8ClampedArray.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Uint8ClampedArray.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int16Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Int16Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint16Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Uint16Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Int32Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Int32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Uint32Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Uint32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float32Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Float32Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							Float64Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							Float64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigInt64Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							BigInt64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							BigUint64Array.prototype.slice.call(foo, - 1, - 2, foo.length - 3);
+
         							BigUint64Array.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							NOT_SUPPORTED.prototype.slice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
+
         							NOT_SUPPORTED.prototype.splice.call(foo, foo.length - 1, foo.length - 2, foo.length - 3);
         						", None),
         ("
         							Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							String.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							String.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							ArrayBuffer.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							ArrayBuffer.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int8Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int8Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8ClampedArray.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8ClampedArray.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int16Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int16Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint16Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint16Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int32Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint32Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float32Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float64Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigInt64Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigInt64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigUint64Array.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigUint64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							NOT_SUPPORTED.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							NOT_SUPPORTED.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
         						", "
         							Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Array.prototype.splice.apply(foo, [- 1, foo.length - 2, foo.length - 3]);
+
         							String.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							String.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							ArrayBuffer.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							ArrayBuffer.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int8Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Int8Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Uint8Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint8ClampedArray.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Uint8ClampedArray.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int16Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Int16Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint16Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Uint16Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Int32Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Int32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Uint32Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Uint32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float32Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Float32Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							Float64Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							Float64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigInt64Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							BigInt64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							BigUint64Array.prototype.slice.apply(foo, [- 1, - 2, foo.length - 3]);
+
         							BigUint64Array.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							NOT_SUPPORTED.prototype.slice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
+
         							NOT_SUPPORTED.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
         						", None)
     ];
+
     Tester::new(PreferNegativeIndex::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
 }

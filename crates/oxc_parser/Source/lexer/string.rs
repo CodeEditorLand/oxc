@@ -44,6 +44,7 @@ macro_rules! handle_string_literal {
             start: after_opening_quote,
             handle_eof: {
                 $lexer.error(diagnostics::unterminated_string($lexer.unterminated_range()));
+
                 return Kind::Undetermined;
             },
         };
@@ -55,8 +56,10 @@ macro_rules! handle_string_literal {
                 // SAFETY: Macro user guarantees delimiter is ASCII, so consuming it cannot move
                 // `lexer.source` off a UTF-8 character boundary.
                 $lexer.source.next_byte_unchecked();
+
                 Kind::Str
             }
+
             b'\\' => cold_branch(|| {
                 handle_string_literal_escape!($lexer, $delimiter, $table, after_opening_quote)
             }),
@@ -66,6 +69,7 @@ macro_rules! handle_string_literal {
                     debug_assert!(matches!(next_byte, b'\r' | b'\n'));
                     $lexer.consume_char();
                     $lexer.error(diagnostics::unterminated_string($lexer.unterminated_range()));
+
                     Kind::Undetermined
                 })
             }
@@ -79,7 +83,9 @@ macro_rules! handle_string_literal_escape {
         // We don't know how long string will end up being. Take a guess that total length
         // will be double what we've seen so far, or `MIN_ESCAPED_STR_LEN` minimum.
         let so_far = $lexer.source.str_from_pos_to_current($after_opening_quote);
+
         let capacity = max(so_far.len() * 2, MIN_ESCAPED_STR_LEN);
+
         let mut str = String::with_capacity_in(capacity, $lexer.allocator);
 
         // Push chunk before `\` into `str`.
@@ -93,6 +99,7 @@ macro_rules! handle_string_literal_escape {
             // Consume escape sequence and add char to `str`
             let mut is_valid_escape_sequence = true;
             $lexer.read_string_escape_sequence(&mut str, false, &mut is_valid_escape_sequence);
+
             if !is_valid_escape_sequence {
                 let range = Span::new(escape_start_offset, $lexer.offset());
                 $lexer.error(diagnostics::invalid_escape_sequence(range));
@@ -100,6 +107,7 @@ macro_rules! handle_string_literal_escape {
 
             // Consume bytes until reach end of string, line break, or another escape
             let chunk_start = $lexer.source.position();
+
             while let Some(b) = $lexer.peek_byte() {
                 match b {
                     b if !$table.matches(b) => {
@@ -109,31 +117,40 @@ macro_rules! handle_string_literal_escape {
                         // mean `!table.matches(b)` on this branch prevents exiting this loop until
                         // `source` is positioned on a UTF-8 character boundary again.
                         $lexer.source.next_byte_unchecked();
+
                         continue;
                     }
+
                     b if b == $delimiter => {
                         // End of string found. Push last chunk to `str`.
                         let chunk = $lexer.source.str_from_pos_to_current(chunk_start);
+
                         str.push_str(chunk);
 
                         // Consume closing quote.
                         // SAFETY: Caller guarantees delimiter is ASCII, so consuming it cannot move
                         // `lexer.source` off a UTF-8 character boundary
                         $lexer.source.next_byte_unchecked();
+
                         break 'outer;
                     }
+
                     b'\\' => {
                         // Another escape found. Push last chunk to `str`, and loop back to handle escape.
                         let chunk = $lexer.source.str_from_pos_to_current(chunk_start);
+
                         str.push_str(chunk);
+
                         continue 'outer;
                     }
+
                     _ => {
                         // Line break. This is impossible in valid JS, so cold path.
                         return cold_branch(|| {
                             debug_assert!(matches!(b, b'\r' | b'\n'));
                             $lexer.consume_char();
                             $lexer.error(diagnostics::unterminated_string($lexer.unterminated_range()));
+
                             Kind::Undetermined
                         });
                     }
@@ -142,6 +159,7 @@ macro_rules! handle_string_literal_escape {
 
             // EOF
             $lexer.error(diagnostics::unterminated_string($lexer.unterminated_range()));
+
             return Kind::Undetermined;
         }
 
@@ -180,7 +198,9 @@ impl<'a> Lexer<'a> {
         if !has_escape {
             return;
         }
+
         self.escaped_strings.insert(self.token.start, s);
+
         self.token.escaped = true;
     }
 
@@ -190,13 +210,16 @@ impl<'a> Lexer<'a> {
         }
 
         let raw = &self.source.whole()[token.start as usize..token.end as usize];
+
         match token.kind {
             Kind::Str => {
                 &raw[1..raw.len() - 1] // omit surrounding quotes
             }
+
             Kind::PrivateIdentifier => {
                 &raw[1..] // omit leading `#`
             }
+
             _ => raw,
         }
     }

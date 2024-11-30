@@ -85,25 +85,35 @@ impl ReplaceGlobalDefinesConfig {
     /// * value has a syntax error
     pub fn new<S: AsRef<str>>(defines: &[(S, S)]) -> Result<Self, Vec<OxcDiagnostic>> {
         let allocator = Allocator::default();
+
         let mut identifier_defines = vec![];
+
         let mut dot_defines = vec![];
+
         let mut meta_properties_defines = vec![];
+
         let mut import_meta = None;
+
         let mut has_this_expr_define = false;
+
         for (key, value) in defines {
             let key = key.as_ref();
 
             let value = value.as_ref();
+
             Self::check_value(&allocator, value)?;
 
             match Self::check_key(key)? {
                 IdentifierType::Identifier => {
                     has_this_expr_define |= key == "this";
+
                     identifier_defines.push((CompactStr::new(key), CompactStr::new(value)));
                 }
+
                 IdentifierType::DotDefines { parts } => {
                     dot_defines.push(DotDefine::new(parts, CompactStr::new(value)));
                 }
+
                 IdentifierType::ImportMetaWithParts { parts, postfix_wildcard } => {
                     meta_properties_defines.push(MetaPropertyDefine::new(
                         parts,
@@ -111,6 +121,7 @@ impl ReplaceGlobalDefinesConfig {
                         postfix_wildcard,
                     ));
                 }
+
                 IdentifierType::ImportMeta(postfix_wildcard) => {
                     if postfix_wildcard {
                         meta_properties_defines.push(MetaPropertyDefine::new(
@@ -136,6 +147,7 @@ impl ReplaceGlobalDefinesConfig {
                 Ordering::Equal
             }
         });
+
         Ok(Self(Arc::new(ReplaceGlobalDefinesConfigImpl {
             identifier: IdentifierDefine { identifier_defines, has_this_expr_define },
             dot: dot_defines,
@@ -155,8 +167,10 @@ impl ReplaceGlobalDefinesConfig {
                     "The define key `{key}` is not an identifier."
                 ))]);
             }
+
             return Ok(IdentifierType::Identifier);
         }
+
         let normalized_parts_len =
             if parts[parts.len() - 1] == "*" { parts.len() - 1 } else { parts.len() };
         // We can ensure now the parts.len() >= 2
@@ -169,6 +183,7 @@ impl ReplaceGlobalDefinesConfig {
                 ))]);
             }
         }
+
         if is_import_meta {
             match normalized_parts_len {
                 2 => Ok(IdentifierType::ImportMeta(normalized_parts_len != parts.len())),
@@ -200,6 +215,7 @@ impl ReplaceGlobalDefinesConfig {
 
     fn check_value(allocator: &Allocator, source_text: &str) -> Result<(), Vec<OxcDiagnostic>> {
         Parser::new(allocator, source_text, SourceType::default()).parse_expression()?;
+
         Ok(())
     }
 }
@@ -225,6 +241,7 @@ pub struct ReplaceGlobalDefines<'a> {
 impl<'a> Traverse<'a> for ReplaceGlobalDefines<'a> {
     fn enter_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         self.replace_identifier_defines(expr, ctx);
+
         self.replace_dot_defines(expr, ctx);
     }
 }
@@ -241,6 +258,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
         program: &mut Program<'a>,
     ) -> ReplaceGlobalDefinesReturn {
         let (symbols, scopes) = traverse_mut(self, self.allocator, program, symbols, scopes);
+
         ReplaceGlobalDefinesReturn { symbols, scopes }
     }
 
@@ -263,10 +281,12 @@ impl<'a> ReplaceGlobalDefines<'a> {
                     if ident.name.as_str() == key {
                         let value = self.parse_value(value);
                         *expr = value;
+
                         break;
                     }
                 }
             }
+
             Expression::ThisExpression(_)
                 if self.config.0.identifier.has_this_expr_define
                     && should_replace_this_expr(ctx.current_scope_flags()) =>
@@ -275,10 +295,12 @@ impl<'a> ReplaceGlobalDefines<'a> {
                     if key.as_str() == "this" {
                         let value = self.parse_value(value);
                         *expr = value;
+
                         break;
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -294,6 +316,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
                         MemberExpression::StaticMemberExpression(ref mut member) => {
                             self.replace_dot_static_member_expr(ctx, member)
                         }
+
                         MemberExpression::PrivateFieldExpression(_) => None,
                     })
                 else {
@@ -301,16 +324,19 @@ impl<'a> ReplaceGlobalDefines<'a> {
                 };
                 *expr = new_expr;
             }
+
             Expression::StaticMemberExpression(member) => {
                 if let Some(new_expr) = self.replace_dot_static_member_expr(ctx, member) {
                     *expr = new_expr;
                 }
             }
+
             Expression::ComputedMemberExpression(member) => {
                 if let Some(new_expr) = self.replace_dot_computed_member_expr(ctx, member) {
                     *expr = new_expr;
                 }
             }
+
             Expression::MetaProperty(meta_property) => {
                 if let Some(ref replacement) = self.config.0.import_meta {
                     if meta_property.meta.name == "import" && meta_property.property.name == "meta"
@@ -320,6 +346,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -336,6 +363,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
                 DotDefineMemberExpression::ComputedMemberExpression(member),
             ) {
                 let value = self.parse_value(&dot_define.value);
+
                 return Some(value);
             }
         }
@@ -355,15 +383,19 @@ impl<'a> ReplaceGlobalDefines<'a> {
                 DotDefineMemberExpression::StaticMemberExpression(member),
             ) {
                 let value = self.parse_value(&dot_define.value);
+
                 return Some(destructing_dot_define_optimizer(value, ctx));
             }
         }
+
         for meta_property_define in &self.config.0.meta_property {
             if Self::is_meta_property_define(meta_property_define, member) {
                 let value = self.parse_value(&meta_property_define.value);
+
                 return Some(destructing_dot_define_optimizer(value, ctx));
             }
         }
+
         None
     }
 
@@ -376,19 +408,28 @@ impl<'a> ReplaceGlobalDefines<'a> {
                 Expression::MetaProperty(ref meta) => {
                     return meta.meta.name == "import" && meta.property.name == "meta";
                 }
+
                 _ => return false,
             }
         }
+
         debug_assert!(!meta_define.parts.is_empty());
 
         let mut current_part_member_expression = Some(member);
+
         let mut cur_part_name = &member.property.name;
+
         let mut is_full_match = true;
+
         let mut i = meta_define.parts.len() - 1;
+
         let mut has_matched_part = false;
+
         loop {
             let part = &meta_define.parts[i];
+
             let matched = cur_part_name.as_str() == part;
+
             if matched {
                 has_matched_part = true;
             } else {
@@ -409,18 +450,23 @@ impl<'a> ReplaceGlobalDefines<'a> {
                 match &member.object {
                     Expression::StaticMemberExpression(member) => {
                         cur_part_name = &member.property.name;
+
                         Some(member)
                     }
+
                     Expression::MetaProperty(_) => {
                         if meta_define.postfix_wildcard {
                             // `import.meta.env` should not match `import.meta.env.*`
                             return has_matched_part && !is_full_match;
                         }
+
                         return true;
                     }
+
                     Expression::Identifier(_) => {
                         return false;
                     }
+
                     _ => None,
                 }
             } else {
@@ -450,16 +496,20 @@ impl<'a> ReplaceGlobalDefines<'a> {
         member: DotDefineMemberExpression<'b, 'a>,
     ) -> bool {
         debug_assert!(dot_define.parts.len() > 1);
+
         let should_replace_this_expr = should_replace_this_expr(ctx.current_scope_flags());
+
         let Some(mut cur_part_name) = member.name() else {
             return false;
         };
+
         let mut current_part_member_expression = Some(member);
 
         for (i, part) in dot_define.parts.iter().enumerate().rev() {
             if cur_part_name.as_str() != part {
                 return false;
             }
+
             if i == 0 {
                 break;
             }
@@ -468,25 +518,34 @@ impl<'a> ReplaceGlobalDefines<'a> {
                 match &member.object() {
                     Expression::StaticMemberExpression(member) => {
                         cur_part_name = &member.property.name;
+
                         Some(DotDefineMemberExpression::StaticMemberExpression(member))
                     }
+
                     Expression::ComputedMemberExpression(computed_member) => {
                         static_property_name_of_computed_expr(computed_member).map(|name| {
                             cur_part_name = name;
+
                             DotDefineMemberExpression::ComputedMemberExpression(computed_member)
                         })
                     }
+
                     Expression::Identifier(ident) => {
                         if !ident.is_global_reference(ctx.symbols()) {
                             return false;
                         }
+
                         cur_part_name = &ident.name;
+
                         None
                     }
+
                     Expression::ThisExpression(_) if should_replace_this_expr => {
                         cur_part_name = &THIS_ATOM;
+
                         None
                     }
+
                     _ => None,
                 }
             } else {
@@ -530,6 +589,7 @@ fn static_property_name_of_computed_expr<'b, 'a: 'b>(
         Expression::TemplateLiteral(lit) if lit.expressions.is_empty() && lit.quasis.len() == 1 => {
             Some(&lit.quasis[0].value.raw)
         }
+
         _ => None,
     }
 }
@@ -539,7 +599,9 @@ fn destructing_dot_define_optimizer<'ast>(
     ctx: &mut TraverseCtx<'ast>,
 ) -> Expression<'ast> {
     let Expression::ObjectExpression(ref mut obj) = expr else { return expr };
+
     let parent = ctx.parent();
+
     let destruct_obj_pat = match parent {
         Ancestor::VariableDeclaratorInit(declarator) => match declarator.id().kind {
             BindingPatternKind::ObjectPattern(ref pat) => pat,
@@ -549,7 +611,9 @@ fn destructing_dot_define_optimizer<'ast>(
             return expr;
         }
     };
+
     let mut needed_keys = FxHashSet::default();
+
     for prop in &destruct_obj_pat.properties {
         match prop.key.name() {
             Some(key) => {
@@ -569,6 +633,7 @@ fn destructing_dot_define_optimizer<'ast>(
     // but need to save the checkpoint(to return the original Expr if there are any dynamic key exists) which is a memory clone,
     // cpu is faster than memory allocation
     let mut should_preserved_keys = Vec::with_capacity(obj.properties.len());
+
     for prop in &obj.properties {
         let v = match prop {
             ObjectPropertyKind::ObjectProperty(prop) => {
@@ -582,13 +647,16 @@ fn destructing_dot_define_optimizer<'ast>(
             // not static key
             ObjectPropertyKind::SpreadProperty(_) => true,
         };
+
         should_preserved_keys.push(v);
     }
 
     // we could ensure `should_preserved_keys` has the same length as `obj.properties`
     // the method copy from std doc https://doc.rust-lang.org/std/vec/struct.Vec.html#examples-26
     let mut iter = should_preserved_keys.iter();
+
     obj.properties.retain(|_| *iter.next().unwrap());
+
     expr
 }
 

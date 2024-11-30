@@ -39,6 +39,7 @@ impl Rule for NoUnnecessaryAwait {
             if !not_promise(&expr.argument) {
                 return;
             }
+
             if {
                 // Removing `await` may change them to a declaration, if there is no `id` will cause SyntaxError
                 matches!(expr.argument, Expression::FunctionExpression(_))

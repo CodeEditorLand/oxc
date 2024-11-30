@@ -15,7 +15,9 @@ where
     G: FnMut(&BasicBlockId, State) -> (State, bool),
 {
     let mut q = vec![];
+
     let mut final_states = vec![];
+
     let mut visited = FxHashSet::default();
 
     // for initial node
@@ -29,22 +31,28 @@ where
 
     while let Some((graph_ix, state)) = q.pop() {
         let mut edges = 0;
+
         if visited.contains(&graph_ix) {
             continue;
         }
+
         visited.insert(graph_ix);
+
         for edge in graph.edges_directed(graph_ix, Direction::Outgoing) {
             if let Some(result_of_edge_filtering) = edge_filter(edge.weight()) {
                 final_states.push(result_of_edge_filtering);
             } else {
                 let opposite_dir_of_edge_graph_ix = edge.target();
+
                 let (new_state, keep_walking_this_path) =
                     visitor(&opposite_dir_of_edge_graph_ix, state.clone());
+
                 if keep_walking_this_path {
                     q.push((opposite_dir_of_edge_graph_ix, new_state.clone()));
                 } else {
                     final_states.push(new_state.clone());
                 }
+
                 edges += 1;
             }
         }

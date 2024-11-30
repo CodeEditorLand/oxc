@@ -69,14 +69,19 @@ impl TypeExt for Type {
         match self {
             Type::Path(TypePath { path, .. }) => {
                 let seg1 = path.segments.first().unwrap();
+
                 match &seg1.arguments {
                     PathArguments::None => TypeIdentResult::Ident(&seg1.ident),
                     PathArguments::AngleBracketed(it) => {
                         let args = &it.args.iter().collect_vec();
+
                         assert!(args.len() < 3, "Max path arguments here is 2, eg `Box<'a, Adt>`");
+
                         if let Some(second) = args.get(1) {
                             let GenericArgument::Type(second) = second else { panic!() };
+
                             let inner = second.get_ident();
+
                             if seg1.ident == "Box" {
                                 TypeIdentResult::boxed(inner)
                             } else if seg1.ident == "Vec" {
@@ -88,24 +93,29 @@ impl TypeExt for Type {
                             match args.first() {
                                 Some(GenericArgument::Type(it)) => {
                                     let inner = it.get_ident();
+
                                     if seg1.ident == "Option" {
                                         TypeIdentResult::option(inner)
                                     } else {
                                         inner
                                     }
                                 }
+
                                 Some(GenericArgument::Lifetime(_)) => {
                                     TypeIdentResult::Ident(&seg1.ident)
                                 }
+
                                 _ => panic!("unsupported type!"),
                             }
                         }
                     }
+
                     PathArguments::Parenthesized(_) => {
                         panic!("Parenthesized path arguments aren't supported!")
                     }
                 }
             }
+
             Type::Reference(typ) => TypeIdentResult::reference(typ.elem.get_ident()),
             _ => panic!("Unsupported type."),
         }
@@ -115,11 +125,13 @@ impl TypeExt for Type {
 impl<T: AsRef<str>> StrExt for T {
     fn to_plural(self) -> String {
         let txt = self.as_ref();
+
         if txt.is_empty() {
             return String::default();
         }
 
         let mut txt = txt.to_string();
+
         if txt.ends_with("child") {
             txt.push_str("ren");
         } else {
@@ -127,13 +139,17 @@ impl<T: AsRef<str>> StrExt for T {
                 Some('s') => {
                     txt.push_str("es");
                 }
+
                 Some('y') => {
                     txt.pop();
+
                     txt.push_str("ies");
                 }
+
                 _ => txt.push('s'),
             }
         }
+
         txt
     }
 }
@@ -147,6 +163,7 @@ impl TokenStreamExt for TokenStream {
                     Group::new(group.delimiter(), group.stream().replace_ident(needle, replace))
                         .to_token_stream()
                 }
+
                 _ => it.to_token_stream(),
             })
             .collect()

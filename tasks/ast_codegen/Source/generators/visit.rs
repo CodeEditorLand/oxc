@@ -50,6 +50,7 @@ impl Generator for VisitGenerator {
 
 	fn generate(&mut self, ctx:&CodegenCtx) -> GeneratorOutput {
 		let visit = (String::from("visit"), generate_visit(ctx));
+
 		let visit_mut = (String::from("visit_mut"), generate_visit_mut(ctx));
 
 		GeneratorOutput::Many(HashMap::from_iter(vec![visit, visit_mut]))
@@ -74,6 +75,7 @@ fn generate_visit(ctx:&CodegenCtx) -> TokenStream {
 	"};
 
 	let (visits, walks) = VisitBuilder::new(ctx, false).build();
+
 	let clippy_attr = insert!("#![allow({})]", CLIPPY_ALLOW);
 
 	quote! {
@@ -84,6 +86,7 @@ fn generate_visit(ctx:&CodegenCtx) -> TokenStream {
 		endl!();
 
 		use oxc_allocator::Vec;
+
 		use oxc_syntax::scope::ScopeFlags;
 
 		endl!();
@@ -99,11 +102,13 @@ fn generate_visit(ctx:&CodegenCtx) -> TokenStream {
 		/// Syntax tree traversal
 		pub trait Visit<'a>: Sized {
 			fn enter_node(&mut self, kind: AstKind<'a>) {}
+
 			fn leave_node(&mut self, kind: AstKind<'a>) {}
 
 			endl!();
 
 			fn enter_scope(&mut self, flags: ScopeFlags) {}
+
 			fn leave_scope(&mut self) {}
 
 			endl!();
@@ -111,7 +116,9 @@ fn generate_visit(ctx:&CodegenCtx) -> TokenStream {
 			#[inline]
 			fn alloc<T>(&self, t: &T) -> &'a T {
 				insert!("// SAFETY:");
+
 				insert!("// This should be safe as long as `src` is an reference from the allocator.");
+
 				insert!("// But honestly, I'm not really sure if this is safe.");
 				#[allow(unsafe_code)]
 				unsafe {
@@ -146,6 +153,7 @@ fn generate_visit_mut(ctx:&CodegenCtx) -> TokenStream {
 	"};
 
 	let (visits, walks) = VisitBuilder::new(ctx, true).build();
+
 	let clippy_attr = insert!("#![allow({})]", CLIPPY_ALLOW);
 
 	quote! {
@@ -156,6 +164,7 @@ fn generate_visit_mut(ctx:&CodegenCtx) -> TokenStream {
 		endl!();
 
 		use oxc_allocator::Vec;
+
 		use oxc_syntax::scope::ScopeFlags;
 
 		endl!();
@@ -171,11 +180,13 @@ fn generate_visit_mut(ctx:&CodegenCtx) -> TokenStream {
 		/// Syntax tree traversal to mutate an exclusive borrow of a syntax tree in place.
 		pub trait VisitMut<'a>: Sized {
 			fn enter_node(&mut self, ty: AstType) {}
+
 			fn leave_node(&mut self, ty: AstType) {}
 
 			endl!();
 
 			fn enter_scope(&mut self, flags: ScopeFlags) {}
+
 			fn leave_scope(&mut self) {}
 
 			endl!();
@@ -213,6 +224,7 @@ impl<'a> VisitBuilder<'a> {
 		let program = {
 			let types:Vec<&TypeRef> =
 				self.ctx.ty_table.iter().filter(|it| it.borrow().visitable()).collect_vec();
+
 			TypeRef::clone(
 				types
 					.iter()
@@ -248,11 +260,14 @@ impl<'a> VisitBuilder<'a> {
 		visit_as:Option<&Ident>,
 	) -> Cow<'a, Ident> {
 		let cache_ix = usize::from(collection);
+
 		let (ident, as_type) = {
 			let ty = ty.borrow();
+
 			debug_assert!(ty.visitable(), "{ty:?}");
 
 			let ident = ty.ident().unwrap();
+
 			let as_type = ty.as_type().unwrap();
 
 			let ident = visit_as.unwrap_or(ident);
@@ -272,6 +287,7 @@ impl<'a> VisitBuilder<'a> {
 
 		let ident_snake = {
 			let it = ident.to_string().to_case(Case::Snake);
+
 			let it = if collection {
 				// edge case for `Vec<FormalParameter>` to avoid conflicts with
 				// `FormalParameters` which both would generate the same
@@ -281,7 +297,9 @@ impl<'a> VisitBuilder<'a> {
 				// `visit_formal_parameters`.
 				if matches!(it.as_str(), "formal_parameter" | "ts_import_attribute") {
 					let mut it = it;
+
 					it.push_str("_list");
+
 					it
 				} else {
 					it.to_plural()
@@ -289,10 +307,12 @@ impl<'a> VisitBuilder<'a> {
 			} else {
 				it
 			};
+
 			format_ident!("{it}")
 		};
 
 		let as_param_type = self.with_ref_pat(&as_type);
+
 		let (extra_params, extra_args) = if ident == "Function" {
 			(quote!(, flags: Option<ScopeFlags>,), quote!(, flags))
 		} else {
@@ -301,11 +321,15 @@ impl<'a> VisitBuilder<'a> {
 
 		let visit_name = {
 			let visit_name = format_ident!("visit_{}", ident_snake);
+
 			if !self.cache.contains_key(&ident) {
 				debug_assert!(self.cache.insert(ident.clone(), [None, None]).is_none());
 			}
+
 			let cached = self.cache.get_mut(&ident).unwrap();
+
 			assert!(cached[cache_ix].replace(Cow::Owned(visit_name)).is_none());
+
 			Cow::clone(cached[cache_ix].as_ref().unwrap())
 		};
 
@@ -323,10 +347,12 @@ impl<'a> VisitBuilder<'a> {
 		// each walk as we go, This would let us to maintain the order of
 		// first visit.
 		let this_walker = self.walks.len();
+
 		self.walks.push(TokenStream::default());
 
 		let (walk_body, may_inline) = if collection {
 			let singular_visit = self.get_visitor(ty, false, None);
+
 			let iter = self.get_iter();
 			(
 				quote! {
@@ -351,8 +377,11 @@ impl<'a> VisitBuilder<'a> {
 					(
 						quote! {
 							let kind = #kind;
+
 							visitor.enter_node(kind);
+
 							visitor.visit_expression(it);
+
 							visitor.leave_node(kind);
 						},
 						false,
@@ -365,6 +394,7 @@ impl<'a> VisitBuilder<'a> {
 		};
 
 		let visit_trait = if self.is_mut { quote!(VisitMut) } else { quote!(Visit) };
+
 		let may_inline = if may_inline { Some(quote!(#[inline])) } else { None };
 
 		// replace the placeholder walker with the actual one!
@@ -385,7 +415,9 @@ impl<'a> VisitBuilder<'a> {
 		visit_as:Option<&Ident>,
 	) -> (TokenStream, /* inline */ bool) {
 		let ident = enum_.ident();
+
 		let mut non_exhaustive = false;
+
 		let variants_matches = enum_
 			.item
 			.variants
@@ -404,6 +436,7 @@ impl<'a> VisitBuilder<'a> {
 					// We are ignoring some variants so the match is no longer
 					// exhaustive.
 					non_exhaustive = true;
+
 					false
 				} else {
 					true
@@ -417,12 +450,18 @@ impl<'a> VisitBuilder<'a> {
 					.map(|f| &f.ty)
 					.map_err(|_| "We only support visited enum nodes with exactly one field!")
 					.unwrap();
+
 				let variant_name = &it.ident;
+
 				let typ = self.ctx.find(&typ.get_ident().inner_ident().to_string())?;
+
 				let borrowed = typ.borrow();
+
 				let visitable = borrowed.visitable();
+
 				if visitable {
 					let visit = self.get_visitor(&typ, false, None);
+
 					let (args_def, args) = it
 						.attrs
 						.iter()
@@ -434,7 +473,9 @@ impl<'a> VisitBuilder<'a> {
 								.fold((Vec::new(), Vec::new()), Self::visit_args_fold)
 						})
 						.unwrap_or_default();
+
 					let body = quote!(visitor.#visit(it #(#args)*));
+
 					let body = if args_def.is_empty() {
 						body
 					} else {
@@ -445,6 +486,7 @@ impl<'a> VisitBuilder<'a> {
 							#body
 						}}
 					};
+
 					Some(quote!(#ident::#variant_name(it) => #body))
 				} else {
 					None
@@ -456,11 +498,16 @@ impl<'a> VisitBuilder<'a> {
 			let Inherit::Linked { super_, .. } = it else {
 				panic!("Unresolved inheritance!")
 			};
+
 			let type_name = super_.get_ident().as_ident().unwrap().to_string();
+
 			let typ = self.ctx.find(&type_name)?;
+
 			if typ.borrow().visitable() {
 				let snake_name = type_name.to_case(Case::Snake);
+
 				let match_macro = format_ident!("match_{snake_name}");
+
 				let match_macro = quote!(#match_macro!(#ident));
 				// HACK: edge case till we get attributes to work with
 				// inheritance.
@@ -471,12 +518,15 @@ impl<'a> VisitBuilder<'a> {
 				} else {
 					None
 				};
+
 				let to_child = if self.is_mut {
 					format_ident!("to_{snake_name}_mut")
 				} else {
 					format_ident!("to_{snake_name}")
 				};
+
 				let visit = self.get_visitor(&typ, false, visit_as.as_ref());
+
 				Some(quote!(#match_macro => visitor.#visit(it.#to_child())))
 			} else {
 				None
@@ -487,18 +537,22 @@ impl<'a> VisitBuilder<'a> {
 
 		let with_node_events = |tk| {
 			let ident = visit_as.unwrap_or(ident);
+
 			if KIND_BLACK_LIST.contains(&ident.to_string().as_str()) {
 				tk
 			} else {
 				let kind = self.kind_type(ident);
+
 				quote! {
 					let kind = #kind;
+
 					visitor.enter_node(kind);
 					#tk
 					visitor.leave_node(kind);
 				}
 			}
 		};
+
 		let non_exhaustive = if non_exhaustive { Some(quote!(,_ => {})) } else { None };
 		(
 			with_node_events(quote!(match it { #(#matches),* #non_exhaustive })),
@@ -513,7 +567,9 @@ impl<'a> VisitBuilder<'a> {
 		visit_as:Option<&Ident>,
 	) -> (TokenStream, /* inline */ bool) {
 		let ident = visit_as.unwrap_or_else(|| struct_.ident());
+
 		let scope_attr = struct_.item.attrs.iter().find(|it| it.path().is_ident("scope"));
+
 		let (scope_enter, scope_leave) = scope_attr
 			.map(parse_as_scope)
 			.transpose()
@@ -521,8 +577,10 @@ impl<'a> VisitBuilder<'a> {
 			.map_or_else(Default::default, |scope_args| {
 				let cond = scope_args.r#if.map(|cond| {
 					let cond = cond.to_token_stream().replace_ident("self", &format_ident!("it"));
+
 					quote!(let scope_events_cond = #cond;)
 				});
+
 				let maybe_conditional = |tk:TokenStream| {
 					if cond.is_some() {
 						quote! {
@@ -534,34 +592,45 @@ impl<'a> VisitBuilder<'a> {
 						tk
 					}
 				};
+
 				let flags = scope_args
 					.flags
 					.map_or_else(|| quote!(ScopeFlags::empty()), |it| it.to_token_stream());
+
 				let args = if let Some(strict_if) = scope_args.strict_if {
 					let strict_if =
 						strict_if.to_token_stream().replace_ident("self", &format_ident!("it"));
+
 					quote! {{
 						let mut flags = #flags;
+
 						if #strict_if {
 							flags |= ScopeFlags::StrictMode;
 						}
+
 						flags
 					}}
 				} else {
 					flags
 				};
+
 				let mut enter = cond.as_ref().into_token_stream();
+
 				enter.extend(maybe_conditional(quote!(visitor.enter_scope(#args);)));
+
 				let leave = maybe_conditional(quote!(visitor.leave_scope();));
 				(Some(enter), Some(leave))
 			});
+
 		let mut entered_scope = false;
+
 		let fields_visits:Vec<TokenStream> = struct_
 			.item
 			.fields
 			.iter()
 			.filter_map(|it| {
 				let (typ, typ_wrapper) = self.analyze_type(&it.ty)?;
+
 				let visit_as:Option<Ident> =
 					it.attrs.iter().find(|it| it.path().is_ident("visit_as")).map(|it| {
 						match &it.meta {
@@ -573,7 +642,9 @@ impl<'a> VisitBuilder<'a> {
 					});
 				// TODO: make sure it is `#[scope(enter_before)]`
 				let have_enter_scope = it.attrs.iter().any(|it| it.path().is_ident("scope"));
+
 				let args = it.attrs.iter().find(|it| it.meta.path().is_ident("visit_args"));
+
 				let (args_def, args) = args
 					.map(|it| it.parse_args_with(VisitArgs::parse))
 					.map(|it| {
@@ -582,6 +653,7 @@ impl<'a> VisitBuilder<'a> {
 							.fold((Vec::new(), Vec::new()), Self::visit_args_fold)
 					})
 					.unwrap_or_default();
+
 				let visit = self.get_visitor(
 					&typ,
 					matches!(
@@ -590,8 +662,11 @@ impl<'a> VisitBuilder<'a> {
 					),
 					visit_as.as_ref(),
 				);
+
 				let name = it.ident.as_ref().expect("expected named fields!");
+
 				let borrowed_field = self.with_ref_pat(quote!(it.#name));
+
 				let mut result = match typ_wrapper {
 					TypeWrapper::Opt | TypeWrapper::OptBox | TypeWrapper::OptVec => {
 						quote! {
@@ -602,6 +677,7 @@ impl<'a> VisitBuilder<'a> {
 					},
 					TypeWrapper::VecOpt => {
 						let iter = self.get_iter();
+
 						quote! {
 							for #name in it.#name.#iter().flatten() {
 								visitor.#visit(#name #(#args)*);
@@ -614,12 +690,15 @@ impl<'a> VisitBuilder<'a> {
 						}
 					},
 				};
+
 				if have_enter_scope {
 					assert!(!entered_scope);
+
 					result = quote! {
 						#scope_enter
 						#result
 					};
+
 					entered_scope = true;
 				}
 
@@ -641,14 +720,17 @@ impl<'a> VisitBuilder<'a> {
 				"// NOTE: {} doesn't exists!",
 				if self.is_mut { "AstType" } else { "AstKind" }
 			);
+
 			quote! {
 				#note
 				#(#fields_visits)*
 			}
 		} else {
 			let kind = self.kind_type(ident);
+
 			quote! {
 				let kind = #kind;
+
 				visitor.enter_node(kind);
 				#(#fields_visits)*
 				visitor.leave_node(kind);
@@ -679,27 +761,36 @@ impl<'a> VisitBuilder<'a> {
 	fn analyze_type(&self, ty:&Type) -> Option<(TypeRef, TypeWrapper)> {
 		fn analyze<'a>(res:&'a TypeIdentResult) -> Option<(&'a Ident, TypeWrapper)> {
 			let mut wrapper = TypeWrapper::None;
+
 			let ident = match res {
 				TypeIdentResult::Ident(inner) => inner,
 				TypeIdentResult::Box(inner) => {
 					wrapper = TypeWrapper::Box;
+
 					let (inner, inner_kind) = analyze(inner)?;
+
 					assert!(inner_kind == TypeWrapper::None,);
+
 					inner
 				},
 				TypeIdentResult::Vec(inner) => {
 					wrapper = TypeWrapper::Vec;
+
 					let (inner, inner_kind) = analyze(inner)?;
+
 					if inner_kind == TypeWrapper::Opt {
 						wrapper = TypeWrapper::VecOpt;
 					} else if inner_kind != TypeWrapper::None {
 						panic!();
 					}
+
 					inner
 				},
 				TypeIdentResult::Option(inner) => {
 					wrapper = TypeWrapper::Opt;
+
 					let (inner, inner_kind) = analyze(inner)?;
+
 					if inner_kind == TypeWrapper::Vec {
 						wrapper = TypeWrapper::OptVec;
 					} else if inner_kind == TypeWrapper::Box {
@@ -707,16 +798,21 @@ impl<'a> VisitBuilder<'a> {
 					} else if inner_kind != TypeWrapper::None {
 						panic!();
 					}
+
 					inner
 				},
 				TypeIdentResult::Reference(_) => return None,
 			};
+
 			Some((ident, wrapper))
 		}
+
 		let type_ident = ty.get_ident();
+
 		let (type_ident, wrapper) = analyze(&type_ident)?;
 
 		let type_ref = self.ctx.find(&type_ident.to_string())?;
+
 		if type_ref.borrow().visitable() { Some((type_ref, wrapper)) } else { None }
 	}
 
@@ -725,9 +821,13 @@ impl<'a> VisitBuilder<'a> {
 		arg:VisitArg,
 	) -> (Vec<TokenStream>, Vec<TokenStream>) {
 		let VisitArg { ident: id, value: val } = arg;
+
 		let val = val.to_token_stream().replace_ident("self", &format_ident!("it"));
+
 		accumulator.0.push(quote!(let #id = #val;));
+
 		accumulator.1.push(quote!(, #id));
+
 		accumulator
 	}
 }
@@ -749,6 +849,7 @@ struct VisitArgs(Punctuated<VisitArg, Token![,]>);
 
 impl IntoIterator for VisitArgs {
 	type IntoIter = syn::punctuated::IntoIter<Self::Item>;
+
 	type Item = VisitArg;
 
 	fn into_iter(self) -> Self::IntoIter { self.0.into_iter() }
@@ -776,6 +877,7 @@ impl Parse for VisitArgs {
 impl Parse for VisitArg {
 	fn parse(input:ParseStream) -> std::result::Result<Self, syn::Error> {
 		let nv:MetaNameValue = input.parse()?;
+
 		Ok(Self {
 			ident:nv.path.get_ident().map_or_else(
 				|| Err(syn::Error::new(nv.span(), "Invalid `visit_args` input!")),
@@ -796,12 +898,16 @@ impl Parse for ScopeArgs {
 			} else {
 				return Err(syn::Error::new(input.span(), "Invalid `#[scope]` input."));
 			};
+
 			let content;
+
 			parenthesized!(content in input);
+
 			Ok((ident, content.parse()?))
 		}
 
 		let parsed = input.parse_terminated(parse, Token![,])?;
+
 		Ok(parsed.into_iter().fold(Self::default(), |mut acc, (ident, expr)| {
 			match ident.as_str() {
 				"if" => acc.r#if = Some(expr),
@@ -809,6 +915,7 @@ impl Parse for ScopeArgs {
 				"strict_if" => acc.strict_if = Some(expr),
 				_ => {},
 			}
+
 			acc
 		}))
 	}
@@ -816,16 +923,23 @@ impl Parse for ScopeArgs {
 
 fn parse_as_visit_args(attr:&Attribute) -> Vec<(Ident, TokenStream)> {
 	debug_assert!(attr.path().is_ident("visit_args"));
+
 	let mut result = Vec::new();
+
 	let args:MetaNameValue = attr.parse_args().expect("Invalid `visit_args` input!");
+
 	let ident = args.path.get_ident().unwrap().clone();
+
 	let value = args.value.to_token_stream();
+
 	result.push((ident, value));
+
 	result
 }
 
 fn parse_as_scope(attr:&Attribute) -> std::result::Result<ScopeArgs, syn::Error> {
 	debug_assert!(attr.path().is_ident("scope"));
+
 	if matches!(attr.meta, Meta::Path(_)) {
 		// empty!
 		Ok(ScopeArgs::default())

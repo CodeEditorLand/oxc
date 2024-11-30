@@ -41,6 +41,7 @@ impl Rule for NoUndef {
             .and_then(|config| config.get("typeof"))
             .and_then(serde_json::Value::as_bool)
             .unwrap_or_default();
+
         Self { type_of }
     }
 
@@ -50,6 +51,7 @@ impl Rule for NoUndef {
         for reference_id_list in ctx.scopes().root_unresolved_references_ids() {
             for reference_id in reference_id_list {
                 let reference = symbol_table.get_reference(reference_id);
+
                 let name = ctx.semantic().reference_name(reference);
 
                 if ctx.env_contains_var(name) {
@@ -61,6 +63,7 @@ impl Rule for NoUndef {
                 }
 
                 let node = ctx.nodes().get_node(reference.node_id());
+
                 if !self.type_of && has_typeof_operator(node, ctx) {
                     continue;
                 }
@@ -189,6 +192,7 @@ fn test() {
     Tester::new(NoUndef::NAME, pass, fail).test_and_snapshot();
 
     let pass = vec![];
+
     let fail = vec![(
         "if (typeof anUndefinedVar === 'string') {}",
         Some(serde_json::json!([{ "typeof": true }])),
@@ -197,6 +201,7 @@ fn test() {
     Tester::new(NoUndef::NAME, pass, fail).test();
 
     let pass = vec![("foo", None, Some(serde_json::json!({ "globals": { "foo": "readonly" } })))];
+
     let fail = vec![("foo", None, Some(serde_json::json!({ "globals": { "foo": "off" } })))];
 
     Tester::new(NoUndef::NAME, pass, fail).test();

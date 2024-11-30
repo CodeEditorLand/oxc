@@ -21,6 +21,7 @@ impl<'a> TransformerDts<'a> {
                 self.ctx.ast.new_vec_from_iter(decl.declarations.iter().filter_map(|declarator| {
                     self.transform_variable_declarator(declarator, check_binding)
                 }));
+
             Some(self.transform_variable_declaration_with_new_declarations(decl, declarations))
         }
     }
@@ -47,6 +48,7 @@ impl<'a> TransformerDts<'a> {
             self.ctx.error(OxcDiagnostic::error(
                 "Binding elements can't be exported directly with --isolatedDeclarations.",
             ));
+
             return None;
         }
 
@@ -59,7 +61,9 @@ impl<'a> TransformerDts<'a> {
         }
 
         let mut binding_type = None;
+
         let mut init = None;
+
         if decl.id.type_annotation.is_none() {
             if let Some(init_expr) = &decl.init {
                 // if kind is const and it doesn't need to infer type from
@@ -71,8 +75,10 @@ impl<'a> TransformerDts<'a> {
                     binding_type = self.infer_type_from_expression(init_expr);
                 }
             }
+
             if init.is_none() && binding_type.is_none() {
                 binding_type = Some(self.ctx.ast.ts_unknown_keyword(SPAN));
+
                 self.ctx.error(
                     OxcDiagnostic::error(
                         "Variable must have an explicit type annotation with \
@@ -82,6 +88,7 @@ impl<'a> TransformerDts<'a> {
                 );
             }
         }
+
         let id = binding_type.map_or_else(
             || self.ctx.ast.copy(&decl.id),
             |ts_type| {
@@ -105,6 +112,7 @@ impl<'a> TransformerDts<'a> {
             self.ctx.ast.new_vec_from_iter(decl.declarations.iter().filter_map(|declarator| {
                 self.transform_variable_declarator(declarator, check_binding)
             }));
+
         self.transform_using_declaration_with_new_declarations(decl, declarations)
     }
 
@@ -128,8 +136,11 @@ impl<'a> TransformerDts<'a> {
         // We need to enter a new scope for the module block, avoid add binding
         // to the parent scope
         self.scope.enter_scope(ScopeFlags::TsModuleBlock);
+
         let stmts = self.transform_statements_on_demand(&block.body);
+
         self.scope.leave_scope();
+
         self.ctx.ast.ts_module_block(SPAN, stmts)
     }
 
@@ -148,6 +159,7 @@ impl<'a> TransformerDts<'a> {
         match body {
             TSModuleDeclarationBody::TSModuleDeclaration(decl) => {
                 let inner = self.transform_ts_module_declaration(decl);
+
                 return self.ctx.ast.ts_module_declaration(
                     decl.span,
                     self.ctx.ast.copy(&decl.id),
@@ -156,8 +168,10 @@ impl<'a> TransformerDts<'a> {
                     self.modifiers_declare(),
                 );
             }
+
             TSModuleDeclarationBody::TSModuleBlock(block) => {
                 let body = self.transform_ts_module_block(block);
+
                 return self.ctx.ast.ts_module_declaration(
                     decl.span,
                     self.ctx.ast.copy(&decl.id),
@@ -184,6 +198,7 @@ impl<'a> TransformerDts<'a> {
                     None
                 }
             }
+
             Declaration::VariableDeclaration(decl) => self
                 .transform_variable_declaration(decl, check_binding)
                 .map(Declaration::VariableDeclaration),
@@ -199,6 +214,7 @@ impl<'a> TransformerDts<'a> {
                     None
                 }
             }
+
             Declaration::TSTypeAliasDeclaration(decl) => {
                 if !check_binding || self.scope.has_reference(&decl.id.name) {
                     Some(Declaration::TSTypeAliasDeclaration(self.ctx.ast.copy(decl)))
@@ -206,6 +222,7 @@ impl<'a> TransformerDts<'a> {
                     None
                 }
             }
+
             Declaration::TSInterfaceDeclaration(decl) => {
                 if !check_binding || self.scope.has_reference(&decl.id.name) {
                     Some(Declaration::TSInterfaceDeclaration(self.ctx.ast.copy(decl)))
@@ -213,6 +230,7 @@ impl<'a> TransformerDts<'a> {
                     None
                 }
             }
+
             Declaration::TSEnumDeclaration(decl) => {
                 if !check_binding || self.scope.has_reference(&decl.id.name) {
                     Some(Declaration::TSEnumDeclaration(self.ctx.ast.copy(decl)))
@@ -220,6 +238,7 @@ impl<'a> TransformerDts<'a> {
                     None
                 }
             }
+
             Declaration::TSModuleDeclaration(decl) => {
                 if !check_binding
                     || matches!(
@@ -235,6 +254,7 @@ impl<'a> TransformerDts<'a> {
                     None
                 }
             }
+
             Declaration::TSImportEqualsDeclaration(decl) => {
                 if !check_binding || self.scope.has_reference(&decl.id.name) {
                     Some(Declaration::TSImportEqualsDeclaration(self.ctx.ast.copy(decl)))

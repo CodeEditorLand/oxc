@@ -54,20 +54,24 @@ impl Rule for NoDangerWithChildren {
                 // Either children are passed in as a prop like `children={}` or they are nested between the tags.
                 let has_children = has_jsx_prop(ctx, node, "children")
                     || (!jsx.children.is_empty() && !is_line_break(&jsx.children[0]));
+
                 if !has_children {
                     return;
                 }
 
                 let has_danger_prop = has_jsx_prop(ctx, node, "dangerouslySetInnerHTML");
+
                 if has_danger_prop {
                     ctx.diagnostic(no_danger_with_children_diagnostic(jsx.span));
                 }
             }
+
             AstKind::CallExpression(call_expr) => {
                 // Calls with zero or one arguments are safe since they are not proper createElement calls.
                 if call_expr.arguments.len() <= 1 {
                     return;
                 }
+
                 let Expression::StaticMemberExpression(callee) = &call_expr.callee else {
                     return;
                 };
@@ -89,9 +93,11 @@ impl Rule for NoDangerWithChildren {
                         Expression::ObjectExpression(obj_expr) => {
                             is_object_with_prop_name(&obj_expr.properties, "children")
                         }
+
                         Expression::Identifier(ident) => {
                             does_object_var_have_prop_name(ctx, node, &ident.name, "children")
                         }
+
                         _ => false,
                     }
                 } else {
@@ -106,6 +112,7 @@ impl Rule for NoDangerWithChildren {
                     Expression::ObjectExpression(obj_expr) => {
                         is_object_with_prop_name(&obj_expr.properties, "dangerouslySetInnerHTML")
                     }
+
                     Expression::Identifier(ident) => does_object_var_have_prop_name(
                         ctx,
                         node,
@@ -119,6 +126,7 @@ impl Rule for NoDangerWithChildren {
                     ctx.diagnostic(no_danger_with_children_diagnostic(call_expr.span));
                 }
             }
+
             _ => (),
         }
     }
@@ -139,11 +147,13 @@ fn test() {
         "#,
         r#"
         const moreProps = { className: "eslint" };
+
         const props = { children: "Children", ...moreProps };
         <div {...props} />
         "#,
         r#"
         const otherProps = { children: "Children" };
+
         const { a, b, ...props } = otherProps;
         <div {...props} />
         "#,
@@ -161,6 +171,7 @@ fn test() {
         r#"React.createElement("Hello", undefined, "Children")"#,
         "
         const props = {...props, scratch: {mode: 'edit'}};
+
         const component = shallow(<TaskEditableTitle {...props} />);
         ",
     ];
@@ -221,16 +232,21 @@ fn test() {
         "#,
         r#"
         const props = { dangerouslySetInnerHTML: { __html: "HTML" } };
+
         React.createElement("div", props, "Children");
         "#,
         r#"
         const props = { children: "Children", dangerouslySetInnerHTML: { __html: "HTML" } };
+
         React.createElement("div", props);
         "#,
         r#"
         const moreProps = { children: "Children" };
+
         const otherProps = { ...moreProps };
+
         const props = { ...otherProps, dangerouslySetInnerHTML: { __html: "HTML" } };
+
         React.createElement("div", props);
         "#,
     ];
@@ -246,7 +262,9 @@ fn is_line_break(child: &JSXChild) -> bool {
     let JSXChild::Text(text) = child else {
         return false;
     };
+
     let is_multi_line = text.value.contains('\n');
+
     is_multi_line && is_whitespace(text.value.as_str())
 }
 
@@ -262,12 +280,15 @@ fn has_jsx_prop(ctx: &LintContext, node: &AstNode, prop_name: &'static str) -> b
             let JSXAttributeName::Identifier(ident) = &attr.name else {
                 return false;
             };
+
             ident.name == prop_name
         }
+
         JSXAttributeItem::SpreadAttribute(attr) => {
             let Some(ident) = attr.argument.get_identifier_reference() else {
                 return false;
             };
+
             does_object_var_have_prop_name(ctx, node, ident.name.as_str(), prop_name)
         }
     })
@@ -301,6 +322,7 @@ fn does_object_var_have_prop_name(
         ObjectPropertyKind::ObjectProperty(obj_prop) => {
             obj_prop.key.static_name().is_some_and(|key| key == prop_name)
         }
+
         ObjectPropertyKind::SpreadProperty(spread_prop) => {
             let Some(ident) = spread_prop.argument.get_identifier_reference() else {
                 return false;
@@ -338,6 +360,7 @@ fn is_object_with_prop_name(
         let ObjectPropertyKind::ObjectProperty(obj_prop) = prop else {
             return false;
         };
+
         obj_prop.key.static_name().is_some_and(|key| key == prop_name)
     })
 }

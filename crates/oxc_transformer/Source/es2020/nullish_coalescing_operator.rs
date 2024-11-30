@@ -76,6 +76,7 @@ impl<'a, 'ctx> NullishCoalescingOperator<'a, 'ctx> {
         match &logical_expr.left {
             Expression::ThisExpression(this) => {
                 let this_span = this.span;
+
                 return Self::create_conditional_expression(
                     logical_expr.left,
                     ctx.ast.expression_this(this_span),
@@ -85,14 +86,18 @@ impl<'a, 'ctx> NullishCoalescingOperator<'a, 'ctx> {
                     ctx,
                 );
             }
+
             Expression::Identifier(ident) => {
                 let symbol_id = ctx.symbols().get_reference(ident.reference_id()).symbol_id();
+
                 if let Some(symbol_id) = symbol_id {
                     // Check binding is not mutated.
                     // TODO(improve-on-babel): Remove this check. Whether binding is mutated or not is not relevant.
                     if ctx.symbols().get_resolved_references(symbol_id).all(|r| !r.is_write()) {
                         let binding = BoundIdentifier::new(ident.name.clone(), symbol_id);
+
                         let ident_span = ident.span;
+
                         return Self::create_conditional_expression(
                             logical_expr.left,
                             binding.create_spanned_read_expression(ident_span, ctx),
@@ -104,6 +109,7 @@ impl<'a, 'ctx> NullishCoalescingOperator<'a, 'ctx> {
                     }
                 }
             }
+
             _ => {}
         }
 
@@ -132,6 +138,7 @@ impl<'a, 'ctx> NullishCoalescingOperator<'a, 'ctx> {
             binding.create_write_target(ctx),
             logical_expr.left,
         );
+
         let mut new_expr = Self::create_conditional_expression(
             assignment,
             binding.create_read_expression(ctx),
@@ -145,18 +152,22 @@ impl<'a, 'ctx> NullishCoalescingOperator<'a, 'ctx> {
             // Replace `function (a, x = a.b ?? c) {}` to `function (a, x = (() => a.b ?? c)() ){}`
             // so the temporary variable can be injected in correct scope
             let id = binding.create_binding_pattern(ctx);
+
             let param = ctx.ast.formal_parameter(SPAN, ctx.ast.vec(), id, None, false, false);
+
             let params = ctx.ast.formal_parameters(
                 SPAN,
                 FormalParameterKind::ArrowFormalParameters,
                 ctx.ast.vec1(param),
                 NONE,
             );
+
             let body = ctx.ast.function_body(
                 SPAN,
                 ctx.ast.vec(),
                 ctx.ast.vec1(ctx.ast.statement_expression(SPAN, new_expr)),
             );
+
             let arrow_function = Expression::ArrowFunctionExpression(
                 ctx.ast.alloc_arrow_function_expression_with_scope_id(
                     SPAN,
@@ -208,9 +219,13 @@ impl<'a, 'ctx> NullishCoalescingOperator<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let op = BinaryOperator::StrictInequality;
+
         let null = ctx.ast.expression_null_literal(SPAN);
+
         let left = ctx.ast.expression_binary(SPAN, assignment, op, null);
+
         let right = ctx.ast.expression_binary(SPAN, reference1, op, ctx.ast.void_0(SPAN));
+
         let test = ctx.ast.expression_logical(SPAN, left, LogicalOperator::And, right);
 
         ctx.ast.expression_conditional(span, test, reference2, default)

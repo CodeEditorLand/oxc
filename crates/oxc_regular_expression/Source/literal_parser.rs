@@ -72,17 +72,21 @@ fn parse_reg_exp_literal(
     span_factory: &SpanFactory,
 ) -> Result<(usize, usize, usize)> {
     let mut offset = 0;
+
     let mut chars = source_text.chars().peekable();
 
     let Some('/') = chars.next() else {
         return Err(diagnostics::unexpected_literal_char(span_factory.create(offset, offset)));
     };
+
     offset += 1; // '/'
 
     let body_start = offset;
 
     let mut in_escape = false;
+
     let mut in_character_class = false;
+
     loop {
         match chars.peek() {
             // Line terminators are not allowed
@@ -92,6 +96,7 @@ fn parse_reg_exp_literal(
                     if in_character_class { "character class" } else { "regular expression" },
                 ));
             }
+
             Some(&ch) => {
                 if in_escape {
                     in_escape = false;
@@ -118,6 +123,7 @@ fn parse_reg_exp_literal(
     let Some('/') = chars.next() else {
         return Err(diagnostics::unexpected_literal_char(span_factory.create(offset, offset)));
     };
+
     let body_end = offset;
 
     if body_end == body_start {
@@ -149,7 +155,9 @@ mod test {
                     .unwrap_or_else(|_| panic!("{literal_text} should be parsed"));
 
             let body_text = &literal_text[body_start_offset..body_end_offset];
+
             let flag_text = &literal_text[flag_start_offset..];
+
             assert_eq!(format!("/{body_text}/{flag_text}",), literal_text);
         }
     }

@@ -79,6 +79,7 @@ impl Rule for BadReplaceAllArg {
 			let Some(call_expr_callee) = call_expr.callee.as_member_expression() else {
 				return;
 			};
+
 			let Some((replace_all_span, _)) = call_expr_callee.static_property_info() else {
 				return;
 			};
@@ -111,6 +112,7 @@ fn resolve_flags<'a>(expr:&'a Expression<'a>, ctx:&LintContext<'a>) -> Option<(R
 					}
 				}
 			}
+
 			None
 		},
 		_ => None,

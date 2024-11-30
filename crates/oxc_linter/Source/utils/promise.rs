@@ -14,6 +14,7 @@ pub const PROMISE_STATIC_METHODS: Set<&'static str> = phf_set! {
 
 pub fn is_promise(call_expr: &CallExpression) -> Option<String> {
     let member_expr = call_expr.callee.get_member_expr()?;
+
     let prop_name = member_expr.static_property_name()?;
 
     // hello.then(), hello.catch(), hello.finally()

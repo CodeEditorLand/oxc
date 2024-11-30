@@ -79,6 +79,7 @@ impl Rule for PreferStringStartsEndsWith {
         };
 
         let pattern_text = regex.regex.pattern.source_text(ctx.source_text());
+
         let pattern_text = pattern_text.as_ref();
 
         let Some(err_kind) = check_regex(regex, pattern_text) else {
@@ -91,6 +92,7 @@ impl Rule for PreferStringStartsEndsWith {
                     do_fix(fixer, err_kind, call_expr, pattern_text)
                 });
             }
+
             ErrorKind::EndsWith => {
                 ctx.diagnostic_with_fix(ends_with(member_expr.span()), |fixer| {
                     do_fix(fixer, err_kind, call_expr, pattern_text)
@@ -107,10 +109,12 @@ fn do_fix<'a>(
     pattern_text: &str,
 ) -> RuleFix<'a> {
     let Some(target_span) = can_replace(call_expr) else { return fixer.noop() };
+
     let (argument, method) = match err_kind {
         ErrorKind::StartsWith => (pattern_text.trim_start_matches('^'), "startsWith"),
         ErrorKind::EndsWith => (pattern_text.trim_end_matches('$'), "endsWith"),
     };
+
     let fix_text = format!(r#"{}.{}("{}")"#, fixer.source_range(target_span), method, argument);
 
     fixer.replace(call_expr.span, fix_text)
@@ -121,7 +125,9 @@ fn can_replace(call_expr: &CallExpression) -> Option<Span> {
     }
 
     let arg = &call_expr.arguments[0];
+
     let expr = arg.as_expression()?;
+
     match expr.without_parentheses() {
         Expression::StringLiteral(s) => Some(s.span),
         Expression::TemplateLiteral(s) => Some(s.span),
@@ -152,6 +158,7 @@ fn check_regex(regexp_lit: &RegExpLiteral, pattern_text: &str) -> Option<ErrorKi
     if alternatives.len() > 1 {
         return None;
     }
+
     let pattern_terms = alternatives.first().map(|it| &it.body)?;
 
     if let Some(Term::BoundaryAssertion(boundary_assert)) = pattern_terms.first() {
@@ -181,6 +188,7 @@ fn check_regex(regexp_lit: &RegExpLiteral, pattern_text: &str) -> Option<ErrorKi
 fn is_useless_case_sensitive_regex_flag(pattern_text: &str) -> bool {
     // ignore `^` and `$` (start and end of string)
     let pat = pattern_text.trim_start_matches('^').trim_end_matches('$');
+
     pat.chars().any(|c| c.is_ascii_alphabetic())
 }
 

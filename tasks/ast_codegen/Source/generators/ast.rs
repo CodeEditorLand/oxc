@@ -10,6 +10,7 @@ impl Generator for AstGenerator {
 	fn generate(&mut self, ctx:&CodegenCtx) -> GeneratorOutput {
 		let output =
 			ctx.modules.iter().map(|it| (it.module.clone(), it.to_token_stream())).collect();
+
 		GeneratorOutput::Many(output)
 	}
 }

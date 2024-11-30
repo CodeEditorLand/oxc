@@ -87,8 +87,11 @@ impl Rule for NoLengthAsSliceEnd {
             ),
             |fixer| {
                 let start = call_expr.arguments[0].span().end;
+
                 let end = call_expr.arguments[1].span().end;
+
                 let span = Span::new(start, end);
+
                 fixer.delete(&span)
             },
         );

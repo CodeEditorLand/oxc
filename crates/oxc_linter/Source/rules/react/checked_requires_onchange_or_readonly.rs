@@ -72,6 +72,7 @@ impl Rule for CheckedRequiresOnchangeOrReadonly {
                 let Some(element_type) = get_element_type(ctx, jsx_opening_el) else {
                     return;
                 };
+
                 if element_type != "input" {
                     return;
                 }
@@ -117,6 +118,7 @@ impl Rule for CheckedRequiresOnchangeOrReadonly {
                     }
                 }
             }
+
             AstKind::CallExpression(call_expr) => {
                 if !is_create_element_call(call_expr) {
                     return;
@@ -181,6 +183,7 @@ impl Rule for CheckedRequiresOnchangeOrReadonly {
                     }
                 }
             }
+
             _ => {}
         }
     }

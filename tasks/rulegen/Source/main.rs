@@ -86,12 +86,15 @@ impl TestCase {
             filename: None,
             language_options: None,
         };
+
         test_case.visit_expression(arg);
+
         test_case
     }
 
     fn with_group_comment(mut self, comment: String) -> Self {
         self.group_comment = Some(comment);
+
         self
     }
 
@@ -100,18 +103,22 @@ impl TestCase {
             .as_ref()
             .map(|code| {
                 let code_str = format_code_snippet(code);
+
                 let config = self.config.as_ref().map_or_else(
                     || "None".to_string(),
                     |config| format!("Some(serde_json::json!({config}))"),
                 );
+
                 let settings = self.settings.as_ref().map_or_else(
                     || "None".to_string(),
                     |settings| format!(r#"Some(serde_json::json!({{ "settings": {settings} }}))"#),
                 );
+
                 let filename = self.filename.as_ref().map_or_else(
                     || "None".to_string(),
                     |filename| format!(r#"Some(PathBuf::from("{filename}"))"#),
                 );
+
                 let code_str = if need_filename {
                     format!("({code_str}, {config}, {settings}, {filename})")
                 } else if need_settings {
@@ -121,6 +128,7 @@ impl TestCase {
                 } else {
                     code_str
                 };
+
                 if let Some(language_options) = &self.language_options {
                     format!("{code_str}, // {language_options}")
                 } else {
@@ -136,7 +144,9 @@ impl TestCase {
 
     fn output(&self) -> Option<String> {
         let code = format_code_snippet(self.code.as_ref()?);
+
         let output = format_code_snippet(self.output.as_ref()?);
+
         let config = self.config.as_ref().map_or_else(
             || "None".to_string(),
             |config| format!("Some(serde_json::json!({config}))"),
@@ -194,6 +204,7 @@ impl<'a> Visit<'a> for TestCase {
             Expression::TaggedTemplateExpression(tag_expr) => {
                 self.visit_tagged_template_expression(tag_expr);
             }
+
             _ => {}
         }
     }
@@ -203,14 +214,19 @@ impl<'a> Visit<'a> for TestCase {
             if let Expression::ArrayExpression(array_expr) = member_expr.object() {
                 // ['class A {', '}'].join('\n')
                 let mut code = String::new();
+
                 for arg in &array_expr.elements {
                     let ArrayExpressionElement::StringLiteral(lit) = arg else {
                         continue;
                     };
+
                     code.push_str(lit.value.as_str());
+
                     code.push('\n');
                 }
+
                 self.code = Some(code);
+
                 self.config = None;
             }
         }
@@ -226,6 +242,7 @@ impl<'a> Visit<'a> for TestCase {
                             Expression::TaggedTemplateExpression(tag_expr) => {
                                 format_tagged_template_expression(tag_expr)
                             }
+
                             Expression::TemplateLiteral(tag_expr) => {
                                 tag_expr.quasi().map(|quasi| quasi.to_string())
                             }
@@ -234,16 +251,20 @@ impl<'a> Visit<'a> for TestCase {
                                 if !call_expr.arguments.first().is_some_and(|arg|  matches!(arg, Argument::StringLiteral(string) if string.value == "\n")) {
                                     continue;
                                 }
+
                                 let Expression::StaticMemberExpression(member) = &call_expr.callee
                                 else {
                                     continue;
                                 };
+
                                 if member.property.name != "join" {
                                     continue;
                                 }
+
                                 let Expression::ArrayExpression(array_expr) = &member.object else {
                                     continue;
                                 };
+
                                 Some(
                                     array_expr
                                         .elements
@@ -252,49 +273,68 @@ impl<'a> Visit<'a> for TestCase {
                                             ArrayExpressionElement::StringLiteral(string) => {
                                                 string.value.as_str()
                                             }
+
                                             _ => "",
                                         })
                                         .collect::<Vec<_>>()
                                         .join("\n"),
                                 )
                             }
+
                             _ => continue,
                         }
                     }
+
                     PropertyKey::StaticIdentifier(ident) if ident.name == "output" => {
                         self.output = match &prop.value {
                             Expression::StringLiteral(s) => Some(s.value.to_string()),
                             Expression::TaggedTemplateExpression(tag_expr) => {
                                 format_tagged_template_expression(tag_expr)
                             }
+
                             Expression::TemplateLiteral(tag_expr) => {
                                 tag_expr.quasi().map(|quasi| quasi.to_string())
                             }
+
                             _ => None,
                         }
                     }
+
                     PropertyKey::StaticIdentifier(ident) if ident.name == "options" => {
                         let span = prop.value.span();
+
                         let option_text = &self.source_text[span.start as usize..span.end as usize];
+
                         self.config = Some(json::convert_config_to_json_literal(option_text));
                     }
+
                     PropertyKey::StaticIdentifier(ident) if ident.name == "settings" => {
                         let span = prop.value.span();
+
                         let setting_text = span.source_text(&self.source_text);
+
                         self.settings = Some(json::convert_config_to_json_literal(setting_text));
                     }
+
                     PropertyKey::StaticIdentifier(ident) if ident.name == "filename" => {
                         let span = prop.value.span();
+
                         let filename = span.source_text(&self.source_text);
+
                         self.filename = Some(filename.to_string());
                     }
+
                     PropertyKey::StaticIdentifier(ident) if ident.name == "languageOptions" => {
                         let span = prop.value.span();
+
                         let language_options = span.source_text(&self.source_text);
+
                         let language_options =
                             json::convert_config_to_json_literal(language_options);
+
                         self.language_options = Some(language_options);
                     }
+
                     _ => continue,
                 },
                 ObjectPropertyKind::SpreadProperty(_) => continue,
@@ -304,16 +344,19 @@ impl<'a> Visit<'a> for TestCase {
 
     fn visit_template_literal(&mut self, lit: &TemplateLiteral<'a>) {
         self.code = Some(lit.quasi().unwrap().to_string());
+
         self.config = None;
     }
 
     fn visit_string_literal(&mut self, lit: &StringLiteral) {
         self.code = Some(lit.value.to_string());
+
         self.config = None;
     }
 
     fn visit_tagged_template_expression(&mut self, expr: &TaggedTemplateExpression<'a>) {
         self.code = format_tagged_template_expression(expr);
+
         self.config = None;
     }
 }
@@ -337,8 +380,11 @@ pub struct Context {
 impl Context {
     fn new(plugin_name: String, rule_name: &str, pass_cases: String, fail_cases: String) -> Self {
         let pascal_rule_name = rule_name.to_case(Case::Pascal);
+
         let kebab_rule_name = rule_name.to_case(Case::Kebab);
+
         let underscore_rule_name = rule_name.to_case(Case::Snake);
+
         Self {
             plugin_name,
             kebab_rule_name,
@@ -354,16 +400,19 @@ impl Context {
 
     fn with_filename(mut self, has_filename: bool) -> Self {
         self.has_filename = has_filename;
+
         self
     }
 
     fn with_fix_cases(mut self, fix_cases: String) -> Self {
         self.fix_cases = Some(fix_cases);
+
         self
     }
 
     fn with_language<S: Into<Cow<'static, str>>>(mut self, language: S) -> Self {
         self.language = language.into();
+
         self
     }
 }
@@ -400,6 +449,7 @@ impl<'a> State<'a> {
             .iter()
             .map(|arg| {
                 let case = TestCase::new(self.source_text, arg);
+
                 if let Some(group_comment) = self.expression_to_group_comment_map.get(&arg.span()) {
                     case.with_group_comment(group_comment.to_string())
                 } else {
@@ -415,11 +465,13 @@ impl<'a> State<'a> {
 
     fn add_valid_test(&mut self, expr: &'a Expression<'a>) {
         self.valid_tests.push(expr);
+
         self.expression_to_group_comment_map.insert(expr.span(), self.get_comment());
     }
 
     fn add_invalid_test(&mut self, expr: &'a Expression<'a>) {
         self.invalid_tests.push(expr);
+
         self.expression_to_group_comment_map.insert(expr.span(), self.get_comment());
     }
 }
@@ -442,6 +494,7 @@ impl<'a> Visit<'a> for State<'a> {
                     self.visit_object_expression(obj_expr);
                 }
             }
+
             _ => {}
         }
     }
@@ -452,16 +505,19 @@ impl<'a> Visit<'a> for State<'a> {
 
     fn visit_call_expression(&mut self, expr: &CallExpression<'a>) {
         let mut pushed = false;
+
         if let Expression::Identifier(ident) = &expr.callee {
             // Add describe's first parameter as part group comment
             // e.g. for `describe('valid', () => { ... })`, the group comment will be "valid"
             if ident.name == "describe" {
                 if let Some(Argument::StringLiteral(lit)) = expr.arguments.first() {
                     pushed = true;
+
                     self.group_comment_stack.push(lit.value.to_string());
                 }
             }
         }
+
         for arg in &expr.arguments {
             self.visit_argument(arg);
         }
@@ -475,10 +531,12 @@ impl<'a> Visit<'a> for State<'a> {
 
     fn visit_object_property(&mut self, prop: &ObjectProperty<'a>) {
         let PropertyKey::StaticIdentifier(ident) = &prop.key else { return };
+
         match ident.name.as_str() {
             "valid" => {
                 if let Expression::ArrayExpression(array_expr) = &prop.value {
                     let array_expr = self.alloc(array_expr);
+
                     for arg in &array_expr.elements {
                         if let Some(expr) = arg.as_expression() {
                             self.add_valid_test(expr);
@@ -503,6 +561,7 @@ impl<'a> Visit<'a> for State<'a> {
                             call_expr.arguments.first()
                         {
                             let array_expr = self.alloc(array_expr);
+
                             for arg in &array_expr.elements {
                                 if let Some(expr) = arg.as_expression() {
                                     self.add_valid_test(expr);
@@ -515,6 +574,7 @@ impl<'a> Visit<'a> for State<'a> {
             "invalid" => {
                 if let Expression::ArrayExpression(array_expr) = &prop.value {
                     let array_expr = self.alloc(array_expr);
+
                     for arg in &array_expr.elements {
                         if let Some(expr) = arg.as_expression() {
                             self.add_invalid_test(expr);
@@ -539,6 +599,7 @@ impl<'a> Visit<'a> for State<'a> {
                             call_expr.arguments.first()
                         {
                             let array_expr = self.alloc(array_expr);
+
                             for arg in &array_expr.elements {
                                 if let Some(expr) = arg.as_expression() {
                                     self.add_invalid_test(expr);
@@ -548,6 +609,7 @@ impl<'a> Visit<'a> for State<'a> {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -558,10 +620,13 @@ fn find_parser_arguments<'a, 'b>(
 ) -> Option<&'b oxc_allocator::Vec<'a, Argument<'a>>> {
     loop {
         let Expression::CallExpression(call_expr) = expr else { return None };
+
         let Expression::StaticMemberExpression(static_member_expr) = &call_expr.callee else {
             return None;
         };
+
         let StaticMemberExpression { object, property, .. } = &**static_member_expr;
+
         if let Expression::Identifier(iden) = object {
             if iden.name == "parsers" && property.name == "all" {
                 if let Some(arg) = call_expr.arguments.first() {
@@ -569,14 +634,17 @@ fn find_parser_arguments<'a, 'b>(
                         if call_expr.callee.is_member_expression() {
                             return Some(&call_expr.arguments);
                         }
+
                         return None;
                     }
+
                     if arg.is_expression() {
                         return None;
                     }
                 }
             }
         }
+
         expr = object;
     }
 }
@@ -646,12 +714,17 @@ impl Display for RuleKind {
 
 fn main() {
     let mut args = std::env::args();
+
     args.next();
 
     let rule_name = args.next().expect("expected rule name").to_case(Case::Snake);
+
     let rule_kind = args.next().map_or(RuleKind::ESLint, |kind| RuleKind::from(&kind));
+
     let kebab_rule_name = rule_name.to_case(Case::Kebab);
+
     let camel_rule_name = rule_name.to_case(Case::Camel);
+
     let plugin_name = rule_kind.to_string();
 
     let rule_test_path = match rule_kind {
@@ -670,6 +743,7 @@ fn main() {
         RuleKind::Vitest => format!("{VITEST_TEST_PATH}/{kebab_rule_name}.test.ts"),
         RuleKind::Oxc | RuleKind::Security => String::new(),
     };
+
     let language = match rule_kind {
         RuleKind::Typescript | RuleKind::Oxc => "ts",
         RuleKind::NextJS => "tsx",
@@ -680,17 +754,23 @@ fn main() {
     println!("Reading test file from {rule_test_path}");
 
     let body = oxc_tasks_common::agent().get(&rule_test_path).call().map(Response::into_string);
+
     let context = match body {
         Ok(Ok(body)) => {
             let allocator = Allocator::default();
+
             let source_type = SourceType::from_path(rule_test_path).expect("incorrect {path:?}");
+
             let ret = Parser::new(&allocator, &body, source_type).parse();
 
             let mut state = State::new(&body);
+
             state.visit_program(&ret.program);
 
             let pass_cases = state.pass_cases();
+
             let fail_cases = state.fail_cases();
+
             println!(
                 "File parsed and {} pass cases, {} fail cases are found",
                 pass_cases.len(),
@@ -698,30 +778,43 @@ fn main() {
             );
 
             let pass_has_config = pass_cases.iter().any(|case| case.config.is_some());
+
             let fail_has_config = fail_cases.iter().any(|case| case.config.is_some());
+
             let has_config = pass_has_config || fail_has_config;
 
             let pass_has_settings = pass_cases.iter().any(|case| case.settings.is_some());
+
             let fail_has_settings = fail_cases.iter().any(|case| case.settings.is_some());
+
             let has_settings = pass_has_settings || fail_has_settings;
 
             let pass_has_filename = pass_cases.iter().any(|case| case.filename.is_some());
+
             let fail_has_filename = fail_cases.iter().any(|case| case.filename.is_some());
+
             let has_filename = pass_has_filename || fail_has_filename;
 
             let gen_cases_string = |cases: Vec<TestCase>| {
                 let mut codes = vec![];
+
                 let mut fix_codes = vec![];
+
                 let mut last_comment = String::new();
+
                 for case in cases {
                     let current_comment = case.group_comment();
+
                     let mut code = case.code(has_config, has_settings, has_filename);
+
                     if code.is_empty() {
                         continue;
                     }
+
                     if let Some(current_comment) = current_comment {
                         if current_comment != last_comment {
                             last_comment = current_comment.to_string();
+
                             code = format!(
                                 "// {}\n{}",
                                 &last_comment,
@@ -742,6 +835,7 @@ fn main() {
 
             // pass cases don't need to be fixed
             let (pass_cases, _) = gen_cases_string(pass_cases);
+
             let (fail_cases, fix_cases) = gen_cases_string(fail_cases);
 
             Context::new(plugin_name, &rule_name, pass_cases, fail_cases)
@@ -749,18 +843,24 @@ fn main() {
                 .with_filename(has_filename)
                 .with_fix_cases(fix_cases)
         }
+
         Err(_err) => {
             println!("Rule {rule_name} cannot be found in {rule_kind}, use empty template.");
+
             Context::new(plugin_name, &rule_name, String::new(), String::new())
         }
+
         Ok(Err(err)) => {
             println!("Failed to convert rule source code to string: {err}, use empty template");
+
             Context::new(plugin_name, &rule_name, String::new(), String::new())
         }
     };
 
     let rule_name = &context.kebab_rule_name;
+
     let template = template::Template::with_context(&context);
+
     if let Err(err) = template.render(rule_kind) {
         eprintln!("failed to render {rule_name} rule template: {err}");
     }
@@ -774,6 +874,7 @@ fn main() {
 /// `declare_all_lint_rules!` macro block.
 fn add_rules_entry(ctx: &Context, rule_kind: RuleKind) -> Result<(), Box<dyn std::error::Error>> {
     let rules_path = "crates/oxc_linter/src/rules.rs";
+
     let mut rules = std::fs::read_to_string(rules_path)?;
 
     let mod_name = match rule_kind {
@@ -793,18 +894,23 @@ fn add_rules_entry(ctx: &Context, rule_kind: RuleKind) -> Result<(), Box<dyn std
         RuleKind::Node => "node",
         RuleKind::Security => "security",
     };
+
     let mod_def = format!("mod {mod_name}");
+
     let Some(mod_start) = rules.find(&mod_def) else {
         return Err(format!("failed to find '{mod_def}' in {rules_path}").into());
     };
+
     let mod_end = &rules[mod_start..]
         .find("}\n")
         .ok_or(format!("failed to find end of '{mod_def}' module in {rules_path}"))?;
+
     let mod_rules = &rules[mod_start..(*mod_end + mod_start)];
 
     // find the rule name (`pub mod xyz;`) that comes alphabetically before the new rule mod def,
     // otherwise just append it to the mod.
     let rule_mod_def = format!("pub mod {};", ctx.kebab_rule_name);
+
     let rule_mod_def_start = mod_rules
         .lines()
         .filter_map(|line| line.split_once("pub mod ").map(|(_, rest)| rest))
@@ -825,13 +931,16 @@ fn add_rules_entry(ctx: &Context, rule_kind: RuleKind) -> Result<(), Box<dyn std
     let declare_all_lint_rules_start = rules
         .find("declare_all_lint_rules!")
         .ok_or(format!("failed to find 'declare_all_lint_rules!' in {rules_path}"))?;
+
     let rule_def = format!("{mod_name}::{};", ctx.snake_rule_name);
+
     let rule_def_start = rules[declare_all_lint_rules_start..]
         .lines()
         .filter_map(|line| line.trim().split_once("::"))
         .find_map(|(plugin, rule)| {
             if plugin == mod_name && rule > &ctx.kebab_rule_name {
                 let def = format!("{plugin}::{rule}");
+
                 rules.find(&def)
             } else {
                 None
@@ -840,6 +949,7 @@ fn add_rules_entry(ctx: &Context, rule_kind: RuleKind) -> Result<(), Box<dyn std
         .ok_or(format!(
             "failed to find where to insert the new rule def ({rule_def}) in {rules_path}"
         ))?;
+
     rules.insert_str(
         rule_def_start,
         &format!(

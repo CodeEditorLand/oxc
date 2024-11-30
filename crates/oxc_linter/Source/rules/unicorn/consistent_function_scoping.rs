@@ -167,6 +167,7 @@ impl Rule for ConsistentFunctionScoping {
                     }
 
                     let func_scope_id = function.scope_id();
+
                     if let Some(parent_scope_id) = ctx.scopes().get_parent_id(func_scope_id) {
                         // Example: const foo = function bar() {};
                         // The bar function scope id is 1. In order to ignore this rule,
@@ -196,6 +197,7 @@ impl Rule for ConsistentFunctionScoping {
                         return;
                     }
                 }
+
                 AstKind::ArrowFunctionExpression(arrow_function) if self.check_arrow_functions => {
                     let Some(binding_ident) = get_function_like_declaration(node, ctx) else {
                         return;
@@ -203,6 +205,7 @@ impl Rule for ConsistentFunctionScoping {
 
                     (binding_ident.symbol_id(), &arrow_function.body, binding_ident.span())
                 }
+
                 _ => return,
             };
 
@@ -227,6 +230,7 @@ impl Rule for ConsistentFunctionScoping {
         // get all references in the function body
         let (function_body_var_references, is_parent_this_referenced) = {
             let mut rf = ReferencesFinder::default();
+
             rf.visit_function_body(function_body);
             (rf.references, rf.is_parent_this_referenced)
         };
@@ -237,19 +241,27 @@ impl Rule for ConsistentFunctionScoping {
 
         let parent_scope_ids = {
             let mut current_scope_id = ctx.symbols().get_scope_id(function_declaration_symbol_id);
+
             let mut parent_scope_ids = FxHashSet::default();
+
             parent_scope_ids.insert(current_scope_id);
+
             while let Some(parent_scope_id) = ctx.scopes().get_parent_id(current_scope_id) {
                 parent_scope_ids.insert(parent_scope_id);
+
                 current_scope_id = parent_scope_id;
             }
+
             parent_scope_ids
         };
 
         for reference_id in function_body_var_references {
             let reference = ctx.symbols().get_reference(reference_id);
+
             let Some(symbol_id) = reference.symbol_id() else { continue };
+
             let scope_id = ctx.symbols().get_scope_id(symbol_id);
+
             if parent_scope_ids.contains(&scope_id) && symbol_id != function_declaration_symbol_id {
                 return;
             }
@@ -320,6 +332,7 @@ fn is_in_react_hook<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> bool {
             return is_react_hook(&call_expr.callee);
         }
     }
+
     false
 }
 
@@ -339,6 +352,7 @@ fn test() {
                 function doBar(bar) {
                     return foo + bar;
                 }
+
                 return foo;
             };",
             None,
@@ -348,6 +362,7 @@ fn test() {
                 const doBar = function(bar) {
                     return foo + bar;
                 };
+
                 return foo;
             };",
             None,
@@ -357,6 +372,7 @@ fn test() {
                 const doBar = function(bar) {
                     return foo + bar;
                 };
+
                 return foo;
             }",
             None,
@@ -380,9 +396,11 @@ fn test() {
         (
             "function doFoo() {
                 const foo = 'foo';
+
                 function doBar(bar) {
                     return foo + bar;
                 }
+
                 return foo;
             }",
             None,
@@ -393,8 +411,10 @@ fn test() {
                     function doZaz(zaz) {
                         return foo + bar + zaz;
                     }
+
                     return bar;
                 }
+
                 return foo;
             }",
             None,
@@ -402,11 +422,14 @@ fn test() {
         ("for (let foo = 0; foo < 1; foo++) { function doBar(bar) { return bar + foo; } }", None),
         (
             "let foo = 0;
+
             function doFoo() {
                 foo = 1;
+
                 function doBar(bar) {
                     return foo + bar;
                 }
+
                 return foo;
             }",
             None,
@@ -419,6 +442,7 @@ fn test() {
                 const doBar = bar => {
                     return foo + bar;
                 }
+
                 return foo;
             }",
             None,
@@ -427,6 +451,7 @@ fn test() {
             "function doFoo() {
                 {
                     const foo = 'foo';
+
                     function doBar(bar) {
                         return bar + foo;
                     }
@@ -439,6 +464,7 @@ fn test() {
                 function doBar(bar) {
                     foo.bar = bar;
                 }
+
                 function doZaz(zaz) {
                     doBar(zaz);
                 }
@@ -470,7 +496,9 @@ fn test() {
                     return await f(...args);
                 } catch (error) {
                     error.packageName = packageName;
+
                     error.cliArgs = cliArgs;
+
                     throw error;
                 }
             };",
@@ -496,11 +524,14 @@ fn test() {
         (
             "
             'use strict';
+
             module.exports = function recordErrors(eventEmitter, stateArgument) {
                 const stateVariable = stateArgument;
+
                 function onError(error) {
                     stateVariable.inputError = error;
                 }
+
                 eventEmitter.once('error', onError);
             };",
             None,
@@ -510,6 +541,7 @@ fn test() {
                 function onError(error) {
                     stateArgument.inputError = error;
                 }
+
                 function onError2(error) {
                     onError(error);
                 }
@@ -577,6 +609,7 @@ fn test() {
         (
             "export function a(x: number) {
                 const b = (y: number) => (z: number): number => x + y + z;
+
                 return b(1)(2);
             }",
             None,
@@ -594,6 +627,7 @@ fn test() {
             function foo1() {
                 inner = function() {}
             }
+
             function foo2() {
                 inner = function() {}
             }",
@@ -613,6 +647,7 @@ fn test() {
                         return bar;
                     }
                 }
+
                 return foo;
             }",
             None,
@@ -622,6 +657,7 @@ fn test() {
                 function Bar() {
                     return <FooComponent />;
                 }
+
                 return Bar;
             };",
             None,
@@ -631,6 +667,7 @@ fn test() {
                 function Bar () {
                     return <div />
                 }
+
                 return <div>{ Bar() }</div>
             }",
             None,
@@ -651,6 +688,7 @@ fn test() {
                 function doBar(bar) {
                     return bar;
                 }
+
                 return foo;
             }",
             None,
@@ -658,9 +696,11 @@ fn test() {
         (
             "function doFoo() {
                 const foo = 'foo';
+
                 function doBar(bar) {
                     return bar;
                 }
+
                 return foo;
             }",
             None,
@@ -686,6 +726,7 @@ fn test() {
         (
             "function doFoo(Foo) {
                 const doBar = () => (function() {return () => this})();
+
                 return doBar();
             };",
             None,
@@ -695,6 +736,7 @@ fn test() {
                 function doBar() {
                     return arguments;
                 }
+
                 return doBar();
             };",
             None,
@@ -702,6 +744,7 @@ fn test() {
         (
             "function doFoo(Foo) {
                 const doBar = () => (function() {return arguments})();
+
                 return doBar();
             };",
             None,
@@ -711,6 +754,7 @@ fn test() {
                 function doBar(bar) {
                     return doBar(bar);
                 }
+
                 return foo;
             }",
             None,
@@ -720,6 +764,7 @@ fn test() {
                 function doBar(bar) {
                     return bar;
                 }
+
                 return doBar;
             }",
             None,
@@ -759,6 +804,7 @@ fn test() {
                 function returnsZero() {
                     return true;
                 }
+
                 process.exitCode = returnsZero();
             });",
             None,
@@ -798,6 +844,7 @@ fn test() {
                 function doBaz() {
                     return 42
                 }
+
                 return <div>{ doBaz() }</div>
             }",
             None,
@@ -807,9 +854,11 @@ fn test() {
                 function Bar () {
                     return <div />
                 }
+
                 function doBaz() {
                     return 42
                 }
+
                 return <div>{ doBaz() }</div>
             }",
             None,
@@ -819,9 +868,12 @@ fn test() {
                 function a() {
                     return <JSX a={b()}/>;
                 }
+
                 function b() {}
+
                 function c() {}
             }
+
             function fn2() {
                 function foo() {}
             }",

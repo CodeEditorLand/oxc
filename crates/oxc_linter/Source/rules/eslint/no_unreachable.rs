@@ -32,8 +32,11 @@ declare_oxc_lint!(
 impl Rule for NoUnreachable {
     fn run_once(&self, ctx: &LintContext) {
         let nodes = ctx.nodes();
+
         let Some(root) = nodes.root_node() else { return };
+
         let cfg = ctx.cfg();
+
         let graph = cfg.graph();
 
         // A pre-allocated vector containing the reachability status of all the basic blocks.
@@ -53,11 +56,13 @@ impl Rule for NoUnreachable {
         let _: Control<()> = depth_first_search(graph, Some(root.cfg_id()), |event| {
             if let DfsEvent::Finish(node, _) = event {
                 let unreachable = cfg.basic_block(node).is_unreachable();
+
                 unreachables[node.index()] = unreachable;
 
                 if !unreachable {
                     if let Some(it) = cfg.is_infinite_loop_start(node, |instruction| {
                         use oxc_cfg::EvalConstConditionResult::{Eval, Fail, NotFound};
+
                         match instruction {
                             Instruction { kind: InstructionKind::Condition, node_id: Some(id) } => {
                                 match nodes.kind(*id) {
@@ -65,6 +70,7 @@ impl Rule for NoUnreachable {
                                     _ => Fail,
                                 }
                             }
+
                             _ => NotFound,
                         }
                     }) {
@@ -72,6 +78,7 @@ impl Rule for NoUnreachable {
                     }
                 }
             }
+
             Control::Continue
         });
 
@@ -91,6 +98,7 @@ impl Rule for NoUnreachable {
             let _: Control<()> = depth_first_search(graph, starts, |event| match event {
                 DfsEvent::Discover(node, _) => {
                     let mut incoming = graph.edges_directed(node, Direction::Incoming);
+
                     if incoming.any(|e| match e.weight() {
                         // `NewFunction` is always reachable
                         | EdgeType::NewFunction
@@ -111,6 +119,7 @@ impl Rule for NoUnreachable {
                         {
                             true
                         }
+
                         _ => false,
                     }) {
                         // We prune this branch if it is reachable from this point forward.
@@ -118,12 +127,15 @@ impl Rule for NoUnreachable {
                     } else {
                         // Otherwise we set it to unreachable and continue.
                         unreachables[node.index()] = true;
+
                         Control::Continue
                     }
                 }
+
                 _ => Control::Continue,
             });
         }
+
         for node in ctx.nodes() {
             // exit early if we are not visiting a statement.
             if !node.kind().is_statement() {
@@ -208,6 +220,7 @@ fn test() {
         } catch (err) {
             b();
         }
+
         c();
         ",
         "
@@ -215,6 +228,7 @@ fn test() {
             if (!a) {
                 return '';
             }
+
             while (a && b > c && d-- > 0) {
             }
         };
@@ -240,6 +254,7 @@ fn test() {
           case 3:
             return c();
         }
+
         d();
         ",
         "
@@ -250,6 +265,7 @@ fn test() {
         } finally {
           c();
         }
+
         d();
         ",
         "
@@ -267,6 +283,7 @@ fn test() {
         } finally {
             b();
         }
+
         c();
         ",
         "

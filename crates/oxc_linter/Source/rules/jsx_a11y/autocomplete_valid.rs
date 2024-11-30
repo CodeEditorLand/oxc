@@ -152,6 +152,7 @@ static VALID_AUTOCOMPLETE_COMBINATIONS: phf::Map<&'static str, &'static phf::Set
 
 fn is_valid_autocomplete_value(value: &str) -> bool {
     let parts: Vec<&str> = value.split_whitespace().collect();
+
     match parts.len() {
         1 => VALID_AUTOCOMPLETE_VALUES.contains(parts[0]),
         2 => VALID_AUTOCOMPLETE_COMBINATIONS
@@ -184,6 +185,7 @@ impl Rule for AutocompleteValid {
             let Some(name) = &get_element_type(ctx, jsx_el) else {
                 return;
             };
+
             if !self.input_components.contains(name.as_ref()) {
                 return;
             }
@@ -191,14 +193,18 @@ impl Rule for AutocompleteValid {
             let Some(autocomplete_prop) = has_jsx_prop_ignore_case(jsx_el, "autocomplete") else {
                 return;
             };
+
             let attr = match autocomplete_prop {
                 JSXAttributeItem::Attribute(attr) => attr,
                 JSXAttributeItem::SpreadAttribute(_) => return,
             };
+
             let Some(JSXAttributeValue::StringLiteral(autocomplete_values)) = &attr.value else {
                 return;
             };
+
             let value = &autocomplete_values.value;
+
             if !is_valid_autocomplete_value(value) {
                 ctx.diagnostic(autocomplete_valid_diagnostic(attr.span, value));
             }

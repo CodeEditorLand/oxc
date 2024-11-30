@@ -102,6 +102,7 @@ impl Rule for NoRestrictedMatchers {
 impl NoRestrictedMatchers {
     fn run<'a>(&self, possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };

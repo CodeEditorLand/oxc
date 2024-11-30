@@ -4,6 +4,7 @@ use website::linter;
 
 fn main() {
     let mut args = Arguments::from_env();
+
     let command = args.subcommand().expect("subcommands");
 
     let task = command.as_deref().unwrap_or("default");

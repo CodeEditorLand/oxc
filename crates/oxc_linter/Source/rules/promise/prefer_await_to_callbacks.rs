@@ -59,8 +59,10 @@ impl Rule for PreferAwaitToCallbacks {
         match node.kind() {
             AstKind::CallExpression(expr) => {
                 let callee_name = expr.callee.get_identifier_reference().map(|id| id.name.as_str());
+
                 if matches!(callee_name, Some("callback" | "cb")) {
                     ctx.diagnostic(prefer_await_to_callbacks(expr.span));
+
                     return;
                 }
 
@@ -106,12 +108,15 @@ impl Rule for PreferAwaitToCallbacks {
                     }
                 }
             }
+
             AstKind::Function(func) => {
                 Self::check_last_params_for_callback(&func.params, ctx);
             }
+
             AstKind::ArrowFunctionExpression(expr) => {
                 Self::check_last_params_for_callback(&expr.params, ctx);
             }
+
             _ => {}
         }
     }
@@ -124,6 +129,7 @@ impl PreferAwaitToCallbacks {
         };
 
         let id = param.pattern.get_identifier();
+
         if matches!(id.as_deref(), Some("callback" | "cb")) {
             ctx.diagnostic(prefer_await_to_callbacks(param.span));
         }

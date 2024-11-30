@@ -80,7 +80,9 @@ impl Rule for ConsistentExistenceIndexCheck {
         };
 
         let left = binary_expression.left.get_inner_expression();
+
         let right = binary_expression.right.get_inner_expression();
+
         let operator = binary_expression.operator;
 
         let Expression::Identifier(identifier) = left else {
@@ -93,6 +95,7 @@ impl Rule for ConsistentExistenceIndexCheck {
         };
 
         let declaration_node_id = ctx.symbols().get_declaration(symbol_id);
+
         let node = ctx.nodes().get_node(declaration_node_id);
 
         if let AstKind::VariableDeclarator(variables_declarator) = node.kind() {
@@ -126,19 +129,25 @@ impl Rule for ConsistentExistenceIndexCheck {
                 consistent_existence_index_check_diagnostic(replacement, binary_expression.span),
                 |fixer| {
                     let operator_start = binary_expression.left.span().end;
+
                     let operator_end = binary_expression.right.span().start;
+
                     let operator_span = Span::new(operator_start, operator_end);
+
                     let operator_source = ctx.source_range(operator_span);
 
                     let operator_matches =
                         operator_source.match_indices(replacement.original_operator);
+
                     let mut operator_replacement_text = operator_source.to_string();
 
                     for (index, text) in operator_matches {
                         let comments = ctx.semantic().comments_range(operator_start..operator_end);
 
                         let start = operator_start + u32::try_from(index).unwrap_or(0);
+
                         let length = u32::try_from(text.len()).unwrap_or(0);
+
                         let span = Span::sized(start, length);
 
                         let mut is_in_comment = false;
@@ -146,12 +155,14 @@ impl Rule for ConsistentExistenceIndexCheck {
                         for comment in comments {
                             if comment.span.contains_inclusive(span) {
                                 is_in_comment = true;
+
                                 break;
                             }
                         }
 
                         if !is_in_comment {
                             let head = &operator_source[..index];
+
                             let tail = &operator_source[index + text.len()..];
 
                             operator_replacement_text =
@@ -160,9 +171,11 @@ impl Rule for ConsistentExistenceIndexCheck {
                     }
 
                     let fixer = fixer.for_multifix();
+
                     let mut rule_fixes = fixer.new_fix_with_capacity(2);
 
                     rule_fixes.push(fixer.replace(operator_span, operator_replacement_text));
+
                     rule_fixes.push(fixer.replace(right.span(), replacement.replacement_value));
 
                     rule_fixes
@@ -194,6 +207,7 @@ fn get_replacement(right: &Expression, operator: BinaryOperator) -> Option<GetRe
 
             None
         }
+
         BinaryOperator::GreaterThan => {
             if is_negative_one(right.get_inner_expression()) {
                 return Some(GetReplacementOutput {
@@ -206,6 +220,7 @@ fn get_replacement(right: &Expression, operator: BinaryOperator) -> Option<GetRe
 
             None
         }
+
         BinaryOperator::GreaterEqualThan => {
             if right.is_number_0() {
                 return Some(GetReplacementOutput {
@@ -218,6 +233,7 @@ fn get_replacement(right: &Expression, operator: BinaryOperator) -> Option<GetRe
 
             None
         }
+
         _ => None,
     }
 }
@@ -328,7 +344,9 @@ fn test() {
         r"
         	const index1 = foo.indexOf('1'),
         		index2 = foo.indexOf('2');
+
         	index1 < 0;
+
         	index2 >= 0;
         ",
         r"
@@ -454,13 +472,17 @@ fn test() {
             r"
                     const index1 = foo.indexOf('1'),
                         index2 = foo.indexOf('2');
+
                     index1 < 0;
+
                     index2 >= 0;
                     ",
             r"
                     const index1 = foo.indexOf('1'),
                         index2 = foo.indexOf('2');
+
                     index1 === -1;
+
                     index2 !== -1;
                     ",
             None,

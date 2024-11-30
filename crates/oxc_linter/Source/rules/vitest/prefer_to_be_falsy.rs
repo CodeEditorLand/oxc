@@ -102,6 +102,7 @@ fn test() {
             None,
         ),
     ];
+
     Tester::new(PreferToBeFalsy::NAME, pass, fail)
         .expect_fix(fix)
         .with_vitest_plugin(true)

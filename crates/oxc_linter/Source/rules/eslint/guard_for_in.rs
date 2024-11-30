@@ -43,12 +43,15 @@ impl Rule for GuardForIn {
                 {
                     return;
                 }
+
                 Statement::BlockStatement(block_body) if block_body.body.len() >= 1 => {
                     let block_statement = &block_body.body[0];
+
                     if let Statement::IfStatement(i) = block_statement {
                         if let Statement::ContinueStatement(_) = &i.consequent {
                             return;
                         }
+
                         if let Statement::BlockStatement(consequent_block) = &i.consequent {
                             if consequent_block.body.len() == 1
                                 && matches!(
@@ -61,8 +64,10 @@ impl Rule for GuardForIn {
                         }
                     }
                 }
+
                 _ => {}
             }
+
             ctx.diagnostic(guard_for_in_diagnostic(Span::new(
                 for_in_statement.span.start,
                 for_in_statement.right.span().end + 1,

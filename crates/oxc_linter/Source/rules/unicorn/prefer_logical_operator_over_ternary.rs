@@ -96,6 +96,7 @@ fn is_same_node(left: &Expression, right: &Expression, ctx: &LintContext) -> boo
         (_, Expression::ParenthesizedExpression(right_paren_expr)) => {
             return is_same_node(left, &right_paren_expr.expression, ctx);
         }
+
         _ => {}
     }
 

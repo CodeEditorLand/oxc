@@ -54,6 +54,7 @@ impl Compiler {
             .and_then(|options| options.define.take())
             .map(|map| {
                 let define = map.into_iter().collect::<Vec<_>>();
+
                 ReplaceGlobalDefinesConfig::new(&define)
             })
             .transpose()?;
@@ -71,7 +72,9 @@ impl Compiler {
                                     "Inject plugin did not receive a tuple [string, string].",
                                 )]);
                             }
+
                             let source = v[0].to_string();
+
                             Ok(if v[1] == "*" {
                                 InjectImport::namespace_specifier(&source, &local)
                             } else {
@@ -132,11 +135,13 @@ impl CompilerInterface for Compiler {
 
     fn after_codegen(&mut self, ret: CodegenReturn) {
         self.printed = ret.code;
+
         self.printed_sourcemap = ret.map.map(SourceMap::from);
     }
 
     fn after_isolated_declarations(&mut self, ret: CodegenReturn) {
         self.declaration.replace(ret.code);
+
         self.declaration_map = ret.map.map(SourceMap::from);
     }
 }
@@ -171,6 +176,7 @@ pub fn transform(
                 ..Default::default()
             }
         }
+
         None => {
             let mut source_type = SourceType::from_path(source_path).unwrap_or_default();
             // Force `script` or `module`
@@ -179,6 +185,7 @@ pub fn transform(
                 Some("module") => source_type = source_type.with_module(true),
                 _ => {}
             }
+
             source_type
         }
     };

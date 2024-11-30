@@ -68,9 +68,11 @@ impl Rule for NoUndefined {
             AstKind::IdentifierReference(ident) => {
                 diagnostic_undefined_keyword(ident.name.as_str(), ident.span, ctx);
             }
+
             AstKind::BindingIdentifier(ident) => {
                 diagnostic_undefined_keyword(ident.name.as_str(), ident.span, ctx);
             }
+
             _ => {}
         }
     }

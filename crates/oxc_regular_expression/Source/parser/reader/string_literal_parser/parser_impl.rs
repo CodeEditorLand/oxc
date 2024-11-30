@@ -23,13 +23,16 @@ pub fn parse_regexp_literal(
     let mut body = vec![];
 
     let mut offset = 0;
+
     for ch in source_text.chars() {
         let start = offset;
         #[allow(clippy::cast_possible_truncation)]
         let end = start + ch.len_utf8() as u32;
 
         let offsets_and_cp: OffsetsAndCp = ((start, end), ch as u32);
+
         Parser::handle_code_point(&mut body, offsets_and_cp, span_offset, combine_surrogate_pair);
+
         offset = end;
     }
 
@@ -64,7 +67,9 @@ impl<'a> Parser {
             // Otherwise, split the code point into a surrogate pair, sharing the same span
             let (lead, trail) =
                 (0xd800 + ((cp - 0x10000) >> 10), 0xdc00 + ((cp - 0x10000) & 0x3ff));
+
             body.push(ast::CodePoint { span, value: lead });
+
             body.push(ast::CodePoint { span, value: trail });
         }
     }
@@ -104,6 +109,7 @@ impl<'a> Parser {
 
             let span =
                 Span::new(self.options.span_offset, self.options.span_offset + self.offset());
+
             return Ok(ast::StringLiteral { span, kind, body });
         }
 
@@ -127,6 +133,7 @@ impl<'a> Parser {
         single_or_double_quote: char,
     ) -> Result<Vec<ast::CodePoint>> {
         let mut body = vec![];
+
         while let Some(code_point) = self.parse_string_character(single_or_double_quote)? {
             Parser::handle_code_point(
                 &mut body,
@@ -135,6 +142,7 @@ impl<'a> Parser {
                 self.options.combine_surrogate_pair,
             );
         }
+
         Ok(body)
     }
 
@@ -158,6 +166,7 @@ impl<'a> Parser {
         single_or_double_quote: char,
     ) -> Result<Option<OffsetsAndCp>> {
         let offset_start = self.offset();
+
         let checkpoint = self.checkpoint();
 
         if let Some(ch) = self
@@ -165,22 +174,30 @@ impl<'a> Parser {
             .filter(|&ch| ch != single_or_double_quote && ch != '\\' && !is_line_terminator(ch))
         {
             self.advance();
+
             return Ok(Some(((offset_start, self.offset()), ch as u32)));
         }
+
         if self.peek() == Some(LS) {
             self.advance();
+
             return Ok(Some(((offset_start, self.offset()), LS as u32)));
         }
+
         if self.peek() == Some(PS) {
             self.advance();
+
             return Ok(Some(((offset_start, self.offset()), PS as u32)));
         }
+
         if self.eat('\\') {
             if let Some(cp) = self.parse_escape_sequence(offset_start)? {
                 return Ok(Some(((offset_start, self.offset()), cp)));
             }
+
             self.rewind(checkpoint);
         }
+
         if let Some(cp) = self.parse_line_terminator_sequence() {
             return Ok(Some(((offset_start, self.offset()), cp)));
         }
@@ -201,10 +218,13 @@ impl<'a> Parser {
         if let Some(cp) = self.parse_character_escape_sequence() {
             return Ok(Some(cp));
         }
+
         if self.peek() == Some('0') && self.peek2().map_or(true, |ch| !ch.is_ascii_digit()) {
             self.advance();
+
             return Ok(Some(0x00));
         }
+
         if let Some(cp) = self.parse_legacy_octal_escape_sequence() {
             // [SS:EE] EscapeSequence :: LegacyOctalEscapeSequence
             // It is a Syntax Error if IsStrict(this production) is true.
@@ -217,8 +237,10 @@ impl<'a> Parser {
                     ),
                 ));
             }
+
             return Ok(Some(cp));
         }
+
         if let Some(cp) = self.parse_non_octal_decimal_escape_sequence() {
             // [SS:EE] EscapeSequence :: NonOctalDecimalEscapeSequence
             // It is a Syntax Error if IsStrict(this production) is true.
@@ -231,11 +253,14 @@ impl<'a> Parser {
                     ),
                 ));
             }
+
             return Ok(Some(cp));
         }
+
         if let Some(cp) = self.parse_hex_escape_sequence() {
             return Ok(Some(cp));
         }
+
         if let Some(cp) = self.parse_unicode_escape_sequence(offset_start)? {
             return Ok(Some(cp));
         }
@@ -251,10 +276,13 @@ impl<'a> Parser {
     fn parse_character_escape_sequence(&mut self) -> Option<u32> {
         if let Some(ch) = self.peek().filter(|&ch| is_single_escape_character(ch)) {
             self.advance();
+
             return Some(ch as u32);
         }
+
         if let Some(ch) = self.peek().filter(|&ch| is_non_escape_character(ch)) {
             self.advance();
+
             return Some(ch as u32);
         }
 
@@ -313,9 +341,11 @@ impl<'a> Parser {
         if self.eat('8') {
             return Some('8' as u32);
         }
+
         if self.eat('9') {
             return Some('9' as u32);
         }
+
         None
     }
 
@@ -351,6 +381,7 @@ impl<'a> Parser {
             if let Some(cp) = self.consume_hex4_digits() {
                 return Ok(Some(cp));
             }
+
             self.rewind(chckpoint);
         }
 
@@ -364,6 +395,7 @@ impl<'a> Parser {
                     }
                 }
             }
+
             self.rewind(chckpoint);
         }
 
@@ -387,18 +419,25 @@ impl<'a> Parser {
         if self.eat('\\') {
             if self.peek() == Some(LF) {
                 self.advance();
+
                 return Some(LF as u32);
             }
+
             if self.peek() == Some(CR) && self.peek2() != Some(LF) {
                 self.advance();
+
                 return Some(CR as u32);
             }
+
             if self.peek() == Some(LS) {
                 self.advance();
+
                 return Some(LS as u32);
             }
+
             if self.peek() == Some(PS) {
                 self.advance();
+
                 return Some(PS as u32);
             }
             // NOTE: CR+LF can not represent as a single code point.
@@ -406,12 +445,15 @@ impl<'a> Parser {
             // To distinguish this from CR and LF, structural change is needed...
             if self.peek() == Some(CR) && self.peek2() == Some(LF) {
                 self.advance();
+
                 self.advance();
+
                 return Some(LF as u32);
             }
         }
 
         self.rewind(checkpoint);
+
         None
     }
 
@@ -420,6 +462,7 @@ impl<'a> Parser {
     fn consume_hex_digit(&mut self) -> Option<u32> {
         if let Some(ch) = self.peek().filter(char::is_ascii_hexdigit) {
             self.advance();
+
             return ch.to_digit(16);
         }
 
@@ -444,15 +487,18 @@ impl<'a> Parser {
         let checkpoint = self.checkpoint();
 
         let mut value = 0;
+
         for _ in 0..4 {
             let Some(hex) =
                 self.peek().filter(char::is_ascii_hexdigit).and_then(|ch| ch.to_digit(16))
             else {
                 self.rewind(checkpoint);
+
                 return None;
             };
 
             value = (16 * value) + hex;
+
             self.advance();
         }
 
@@ -463,12 +509,14 @@ impl<'a> Parser {
         let checkpoint = self.checkpoint();
 
         let mut value: u32 = 0;
+
         while let Some(hex) =
             self.peek().filter(char::is_ascii_hexdigit).and_then(|ch| ch.to_digit(16))
         {
             // To prevent panic on overflow cases like `\u{FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}`
             if let Some(v) = value.checked_mul(16).and_then(|v| v.checked_add(hex)) {
                 value = v;
+
                 self.advance();
             } else {
                 return Err(diagnostics::too_large_unicode_escape_sequence(Span::new(
@@ -493,6 +541,7 @@ impl<'a> Parser {
 
     fn rewind(&mut self, checkpoint: (usize, u32)) {
         self.index = checkpoint.0;
+
         self.offset = checkpoint.1;
     }
 
@@ -500,7 +549,9 @@ impl<'a> Parser {
         if let Some(ch) = self.chars.get(self.index) {
             #[allow(clippy::cast_possible_truncation)]
             let len = ch.len_utf8() as u32;
+
             self.offset += len;
+
             self.index += 1;
         }
     }
@@ -508,8 +559,10 @@ impl<'a> Parser {
     fn eat(&mut self, ch: char) -> bool {
         if self.peek() == Some(ch) {
             self.advance();
+
             return true;
         }
+
         false
     }
 
@@ -519,6 +572,7 @@ impl<'a> Parser {
 
     fn peek_nth(&mut self, n: usize) -> Option<char> {
         let nth = self.index + n;
+
         self.chars.get(nth).copied()
     }
 

@@ -63,6 +63,7 @@ impl Rule for TextEncodingIdentifierCase {
                 return;
             }
         };
+
         let s = s.as_str();
 
         if s == "utf-8" && is_jsx_meta_elem_with_charset_attr(node.id(), ctx) {
@@ -114,6 +115,7 @@ fn is_jsx_meta_elem_with_charset_attr(id: NodeId, ctx: &LintContext) -> bool {
     let JSXAttributeName::Identifier(ident) = &jsx_attr.name else {
         return false;
     };
+
     if !ident.name.eq_ignore_ascii_case("charset") {
         return false;
     }

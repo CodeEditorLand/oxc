@@ -25,10 +25,13 @@ impl SourceMapBuilder {
     /// Add item to `SourceMap::name`.
     pub fn add_name(&mut self, name: &str) -> u32 {
         let count = self.names.len() as u32;
+
         let id = *self.names_map.entry(name.into()).or_insert(count);
+
         if id == count {
             self.names.push(name.into());
         }
+
         id
     }
 
@@ -36,11 +39,15 @@ impl SourceMapBuilder {
     /// If `source` maybe duplicate, please use it.
     pub fn add_source_and_content(&mut self, source: &str, source_content: &str) -> u32 {
         let count = self.sources.len() as u32;
+
         let id = *self.sources_map.entry(source.into()).or_insert(count);
+
         if id == count {
             self.sources.push(source.into());
+
             self.source_contents.push(source_content.into());
         }
+
         id
     }
 
@@ -48,8 +55,11 @@ impl SourceMapBuilder {
     /// If `source` hasn't duplicate，it will avoid extra hash calculation.
     pub fn set_source_and_content(&mut self, source: &str, source_content: &str) -> u32 {
         let count = self.sources.len() as u32;
+
         self.sources.push(source.into());
+
         self.source_contents.push(source_content.into());
+
         count
     }
 
@@ -91,15 +101,22 @@ impl SourceMapBuilder {
 #[test]
 fn test_sourcemap_builder() {
     let mut builder = SourceMapBuilder::default();
+
     builder.set_source_and_content("baz.js", "");
+
     builder.add_name("x");
+
     builder.set_file("file");
 
     let sm = builder.into_sourcemap();
+
     assert_eq!(sm.get_source(0), Some("baz.js"));
+
     assert_eq!(sm.get_name(0), Some("x"));
+
     assert_eq!(sm.get_file(), Some("file"));
 
     let expected = r#"{"version":3,"file":"file","names":["x"],"sources":["baz.js"],"sourcesContent":[""],"mappings":""}"#;
+
     assert_eq!(expected, sm.to_json_string());
 }

@@ -67,6 +67,7 @@ impl Rule for NoConditionalTests {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) -> Option<()> {
     let node = possible_jest_node.node;
+
     let call_expr = node.kind().as_call_expression()?;
 
     if is_type_of_jest_fn_call(
@@ -84,6 +85,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
             .find(|node| matches!(node.kind(), AstKind::IfStatement(_)))?;
 
         let if_statement = if_statement_node.kind().as_if_statement()?;
+
         ctx.diagnostic(no_conditional_tests(if_statement.span));
     }
 

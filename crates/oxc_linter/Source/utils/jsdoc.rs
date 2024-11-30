@@ -50,7 +50,9 @@ pub fn get_function_nearest_jsdoc_node<'a, 'b>(
             => {
                 // /** This JSDoc should NOT found for `VariableDeclaration` */
                 // export const foo = () => {}
+
                 let parent_node = ctx.nodes().parent_node(current_node.id())?;
+
                 match parent_node.kind() {
                     AstKind::ExportDefaultDeclaration(_) | AstKind::ExportNamedDeclaration(_) => return Some(parent_node),
                     _ => return None
@@ -80,10 +82,12 @@ pub fn should_ignore_as_internal(jsdoc: &JSDoc, settings: &JSDocPluginSettings) 
 pub fn should_ignore_as_private(jsdoc: &JSDoc, settings: &JSDocPluginSettings) -> bool {
     if settings.ignore_private {
         let resolved_private_tag_name = settings.resolve_tag_name("private");
+
         let resolved_access_tag_name = settings.resolve_tag_name("access");
 
         for tag in jsdoc.tags() {
             let tag_name = tag.kind.parsed();
+
             if tag_name == resolved_private_tag_name
                 || tag_name == resolved_access_tag_name && tag.comment().parsed() == "private"
             {
@@ -102,16 +106,21 @@ pub fn should_ignore_as_avoid(
 ) -> bool {
     let mut ignore_tag_names =
         exempted_tag_names.iter().map(String::as_str).collect::<FxHashSet<_>>();
+
     if settings.ignore_replaces_docs {
         ignore_tag_names.insert(settings.resolve_tag_name("ignore"));
     }
+
     if settings.override_replaces_docs {
         ignore_tag_names.insert(settings.resolve_tag_name("override"));
     }
+
     if settings.augments_extends_replaces_docs {
         ignore_tag_names.insert(settings.resolve_tag_name("augments"));
+
         ignore_tag_names.insert(settings.resolve_tag_name("extends"));
     }
+
     if settings.implements_replaces_docs {
         ignore_tag_names.insert(settings.resolve_tag_name("implements"));
     }
@@ -145,6 +154,7 @@ pub fn collect_params(params: &FormalParameters) -> Vec<ParamKind> {
             BindingPatternKind::BindingIdentifier(ident) => {
                 ParamKind::Single(Param { span: ident.span, name: ident.name.to_string(), is_rest })
             }
+
             BindingPatternKind::ObjectPattern(obj_pat) => {
                 let mut collected = vec![];
 
@@ -155,6 +165,7 @@ pub fn collect_params(params: &FormalParameters) -> Vec<ParamKind> {
                         ParamKind::Single(param) => {
                             collected.push(Param { name: format!("{name}"), ..param });
                         }
+
                         ParamKind::Nested(params) => {
                             collected.push(Param {
                                 span: prop.span,
@@ -181,6 +192,7 @@ pub fn collect_params(params: &FormalParameters) -> Vec<ParamKind> {
 
                 ParamKind::Nested(collected)
             }
+
             BindingPatternKind::ArrayPattern(arr_pat) => {
                 let mut collected = vec![];
 
@@ -204,6 +216,7 @@ pub fn collect_params(params: &FormalParameters) -> Vec<ParamKind> {
 
                 ParamKind::Nested(collected)
             }
+
             BindingPatternKind::AssignmentPattern(assign_pat) => match &assign_pat.right {
                 Expression::Identifier(_) => get_param_name(&assign_pat.left, false),
                 _ => {
@@ -212,6 +225,7 @@ pub fn collect_params(params: &FormalParameters) -> Vec<ParamKind> {
                     // { prop = { a: 1, b: 2 }} => [prop, prop.a, prop.b]
                     //     get_param_name(&assign_pat.left, false)
                     // }
+
                     get_param_name(&assign_pat.left, false)
                 }
             },

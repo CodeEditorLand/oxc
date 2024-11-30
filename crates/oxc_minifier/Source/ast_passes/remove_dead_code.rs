@@ -21,6 +21,7 @@ impl<'a> Traverse<'a> for RemoveDeadCode {
 
 	fn exit_statements(&mut self, stmts:&mut Vec<'a, Statement<'a>>, ctx:&mut TraverseCtx<'a>) {
 		stmts.retain(|stmt| !matches!(stmt, Statement::EmptyStatement(_)));
+
 		self.dead_code_elimination(stmts, ctx);
 	}
 }
@@ -40,6 +41,7 @@ impl<'a> RemoveDeadCode {
 		'outer: for (i, stmt) in stmts.iter().enumerate() {
 			if matches!(stmt, Statement::ReturnStatement(_) | Statement::ThrowStatement(_)) {
 				index.replace(i);
+
 				break;
 			}
 			// Double check block statements folded by if statements above
@@ -48,6 +50,7 @@ impl<'a> RemoveDeadCode {
 					if matches!(stmt, Statement::ReturnStatement(_) | Statement::ThrowStatement(_))
 					{
 						index.replace(i);
+
 						break 'outer;
 					}
 				}
@@ -55,6 +58,7 @@ impl<'a> RemoveDeadCode {
 		}
 
 		let Some(index) = index else { return };
+
 		if index == stmts.len() - 1 {
 			return;
 		}
@@ -66,8 +70,10 @@ impl<'a> RemoveDeadCode {
 		}
 
 		let mut i = 0;
+
 		stmts.retain(|s| {
 			i += 1;
+
 			if i - 1 <= index {
 				return true;
 			}
@@ -75,6 +81,7 @@ impl<'a> RemoveDeadCode {
 			if matches!(s.as_declaration(), Some(Declaration::FunctionDeclaration(_))) {
 				return true;
 			}
+
 			false
 		});
 
@@ -91,6 +98,7 @@ impl<'a> RemoveDeadCode {
 		// Descend and remove `else` blocks first.
 		if let Some(alternate) = &mut if_stmt.alternate {
 			Self::fold_if_statement(alternate, ctx);
+
 			if matches!(alternate, Statement::EmptyStatement(_)) {
 				if_stmt.alternate = None;
 			}
@@ -106,7 +114,9 @@ impl<'a> RemoveDeadCode {
 				} else {
 					// Keep hoisted `vars` from the consequent block.
 					let mut keep_var = KeepVar::new(ctx.ast);
+
 					keep_var.visit_statement(&if_stmt.consequent);
+
 					keep_var
 						.get_variable_declaration_statement()
 						.unwrap_or_else(|| ctx.ast.statement_empty(SPAN))

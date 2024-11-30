@@ -6,6 +6,7 @@
 #[allow(clippy::cast_precision_loss)]
 pub(crate) fn entropy<S: AsRef<[u8]>>(string: S) -> f32 {
     let mut histogram = [0u32; 256];
+
     let bytes = string.as_ref();
     // we don't care if this is truncated
     let len = bytes.len() as f32;
@@ -56,6 +57,7 @@ mod test {
 
         for (input, expected) in test_cases {
             let actual = entropy(input);
+
             assert!(
                 (actual - expected).abs() < f32::EPSILON,
                 "expected entropy({input}) to be {expected}, got {actual}"

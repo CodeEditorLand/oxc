@@ -62,13 +62,18 @@ impl ReactPerfRule for JsxNoNewArrayAsProp {
                 if let Some(init_span) = decl.init.as_ref().and_then(check_expression) {
                     return Some((decl.id.span(), Some(init_span)));
                 }
+
                 None
             }
+
             AstKind::FormalParameter(param) => {
                 let (id, init) = find_initialized_binding(&param.pattern, symbol_id)?;
+
                 let init_span = check_expression(init)?;
+
                 Some((id.span(), Some(init_span)))
             }
+
             _ => None,
         }
     }
@@ -92,6 +97,7 @@ fn check_expression(expr: &Expression) -> Option<Span> {
                 None
             }
         }
+
         Expression::NewExpression(expr) => {
             if is_constructor_matching_name(&expr.callee, "Array") {
                 Some(expr.span)
@@ -99,12 +105,15 @@ fn check_expression(expr: &Expression) -> Option<Span> {
                 None
             }
         }
+
         Expression::LogicalExpression(expr) => {
             check_expression(&expr.left).or_else(|| check_expression(&expr.right))
         }
+
         Expression::ConditionalExpression(expr) => {
             check_expression(&expr.consequent).or_else(|| check_expression(&expr.alternate))
         }
+
         _ => None,
     }
 }

@@ -39,6 +39,7 @@ impl Rule for RequireYield {
                 && func.body.as_ref().is_some_and(|body| !body.statements.is_empty())
             {
                 let span = func.id.as_ref().map_or_else(|| func.span, |ident| ident.span);
+
                 ctx.diagnostic(require_yield_diagnostic(span));
             }
         }

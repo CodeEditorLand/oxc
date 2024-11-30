@@ -33,6 +33,7 @@ impl<'a, 'ctx> ES2022<'a, 'ctx> {
                     if options.class_static_block { Some(ClassStaticBlock::new()) } else { None };
                 (class_static_block, None)
             };
+
         Self { class_static_block, class_properties }
     }
 }

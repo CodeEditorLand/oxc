@@ -19,7 +19,9 @@ pub struct Template<'a> {
 impl<'a> Template<'a> {
     pub fn with_context(context: &'a Context) -> Self {
         let mut registry = handlebars::Handlebars::new();
+
         registry.register_escape_fn(handlebars::no_escape);
+
         Self { context, registry }
     }
 
@@ -48,9 +50,11 @@ impl<'a> Template<'a> {
         };
 
         std::fs::create_dir_all(path)?;
+
         let out_path = path.join(format!("{}.rs", self.context.snake_rule_name));
 
         File::create(out_path.clone())?.write_all(rendered.as_bytes())?;
+
         format_rule_output(&out_path)?;
 
         println!("Saved test file to {out_path:?}");

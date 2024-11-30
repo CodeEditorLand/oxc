@@ -50,20 +50,25 @@ impl Rule for NoUselessCatch {
         let AstKind::TryStatement(try_stmt) = node.kind() else {
             return;
         };
+
         let Some(catch_clause) = &try_stmt.handler else {
             return;
         };
+
         let Some(BindingPatternKind::BindingIdentifier(binding_ident)) =
             catch_clause.param.as_ref().map(|param| &param.pattern.kind)
         else {
             return;
         };
+
         let Some(Statement::ThrowStatement(throw_stmt)) = catch_clause.body.body.first() else {
             return;
         };
+
         let Expression::Identifier(throw_ident) = &throw_stmt.argument else {
             return;
         };
+
         if binding_ident.name == throw_ident.name {
             if try_stmt.finalizer.is_some() {
                 ctx.diagnostic(no_useless_catch_finalizer_diagnostic(
@@ -103,6 +108,7 @@ fn test() {
         foo();
       } catch (err) {
         doSomethingBeforeRethrow();
+
         throw err;
       }
     ",
@@ -152,6 +158,7 @@ fn test() {
             await doSomething();
           } catch (e) {
             doSomethingAfterCatch();
+
             throw e;
           }
         }

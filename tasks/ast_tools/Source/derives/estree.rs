@@ -52,9 +52,11 @@ impl Derive for DeriveESTree {
             TypeDef::Enum(def) => serialize_enum(def),
             TypeDef::Struct(def) => serialize_struct(def, schema),
         };
+
         let ident = def.ident();
 
         let lifetime = if def.has_lifetime() { quote!(<'a>) } else { TokenStream::new() };
+
         quote! {
             impl #lifetime Serialize for #ident #lifetime {
                 fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
@@ -68,6 +70,7 @@ impl Derive for DeriveESTree {
 fn serialize_struct(def: &StructDef, schema: &Schema) -> TokenStream {
     if let Some(via) = &def.markers.estree.as_ref().and_then(|e| e.via.as_ref()) {
         let via: TokenStream = via.parse().unwrap();
+
         return quote! {
             #via::from(self).serialize(serializer)
         };
@@ -79,6 +82,7 @@ fn serialize_struct(def: &StructDef, schema: &Schema) -> TokenStream {
     let type_tag = get_type_tag(def);
 
     let mut fields = vec![];
+
     if let Some(ty) = &type_tag {
         fields.push(quote! { map.serialize_entry("type", #ty)?; });
     }
@@ -90,6 +94,7 @@ fn serialize_struct(def: &StructDef, schema: &Schema) -> TokenStream {
         let Some(parent) = field.markers.derive_attributes.estree.append_to.as_ref() else {
             continue;
         };
+
         assert!(
             append_to.insert(parent.clone(), field).is_none(),
             "Duplicate append_to target (on {ident})"
@@ -102,17 +107,21 @@ fn serialize_struct(def: &StructDef, schema: &Schema) -> TokenStream {
         {
             continue;
         }
+
         let ident = field.ident().unwrap();
+
         let name = match &field.markers.derive_attributes.estree.rename {
             Some(rename) => rename.to_string(),
             None => field.name.clone().unwrap().to_case(Case::Camel),
         };
+
         assert!(
             !(name == "type" && type_tag.is_some()),
             "Unexpected r#type field when #[estree(type = ...)] is specified (on {ident})"
         );
 
         let ident = field.ident().unwrap();
+
         let always_flatten = match field.typ.type_id() {
             Some(id) => get_always_flatten_structs(schema).contains(&id),
             None => false,
@@ -125,6 +134,7 @@ fn serialize_struct(def: &StructDef, schema: &Schema) -> TokenStream {
                 append_after.is_none(),
                 "Cannot flatten and append to the same field (on {ident})"
             );
+
             fields.push(quote! {
                 self.#ident.serialize(
                     serde::__private::ser::FlatMapSerializer(&mut map)
@@ -132,6 +142,7 @@ fn serialize_struct(def: &StructDef, schema: &Schema) -> TokenStream {
             });
         } else if let Some(append_after) = append_after {
             let after_ident = append_after.ident().unwrap();
+
             fields.push(quote! {
                 map.serialize_entry(
                     #name,
@@ -170,12 +181,14 @@ fn serialize_enum(def: &EnumDef) -> TokenStream {
     if is_untagged {
         let match_branches = def.all_variants().map(|var| {
             let var_ident = var.ident();
+
             quote! {
                 #ident::#var_ident(x) => {
                     Serialize::serialize(x, serializer)
                 }
             }
         });
+
         quote! {
             match self {
                 #(#match_branches),*
@@ -184,19 +197,25 @@ fn serialize_enum(def: &EnumDef) -> TokenStream {
     } else {
         let match_branches = def.all_variants().map(|var| {
             let var_ident = var.ident();
+
             let enum_name = ident.to_string();
+
             let discriminant = u32::from(var.discriminant);
+
             let serialized_to = enum_variant_name(var, def);
+
             assert!(
                 var.fields.is_empty(),
                 "Tagged enums must not have inner fields (on {ident}::{var_ident})"
             );
+
             quote! {
                 #ident::#var_ident => {
                     serializer.serialize_unit_variant(#enum_name, #discriminant, #serialized_to)
                 }
             }
         });
+
         quote! {
             match *self {
                 #(#match_branches),*

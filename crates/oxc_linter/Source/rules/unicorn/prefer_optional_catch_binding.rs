@@ -50,22 +50,30 @@ impl Rule for PreferOptionalCatchBinding {
         let AstKind::CatchParameter(catch_param) = node.kind() else {
             return;
         };
+
         let references_count = get_param_references_count(&catch_param.pattern, ctx);
+
         if references_count != 0 {
             return;
         }
+
         let Some(parent_node) = ctx.nodes().parent_node(node.id()) else {
             return;
         };
+
         let AstKind::CatchClause(catch_clause) = parent_node.kind() else {
             return;
         };
+
         ctx.diagnostic_with_fix(
             prefer_optional_catch_binding_diagnostic(catch_param.pattern.span()),
             |fixer| {
                 let mut start = catch_clause.span().start + 5;
+
                 let total_param = Span::new(start, catch_param.span().start);
+
                 let total_param_value = ctx.source_range(total_param);
+
                 let plus_space: u32 = total_param_value
                     .as_bytes()
                     .iter()
@@ -73,9 +81,13 @@ impl Rule for PreferOptionalCatchBinding {
                     .unwrap_or(0)
                     .try_into()
                     .unwrap();
+
                 start += plus_space;
+
                 let end = catch_clause.body.span().start;
+
                 let span = Span::new(start, end);
+
                 fixer.delete(&span)
             },
         );
@@ -87,6 +99,7 @@ fn get_param_references_count(binding_pat: &BindingPattern, ctx: &LintContext) -
         BindingPatternKind::BindingIdentifier(binding_ident) => {
             ctx.semantic().symbol_references(binding_ident.symbol_id()).count()
         }
+
         BindingPatternKind::ObjectPattern(object_pat) => {
             let mut count = 0;
 
@@ -100,6 +113,7 @@ fn get_param_references_count(binding_pat: &BindingPattern, ctx: &LintContext) -
 
             count
         }
+
         BindingPatternKind::AssignmentPattern(_) => 1,
         BindingPatternKind::ArrayPattern(array_pat) => {
             let mut count = 0;

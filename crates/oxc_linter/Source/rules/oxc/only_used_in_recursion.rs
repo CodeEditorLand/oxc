@@ -66,6 +66,7 @@ declare_oxc_lint!(
 
 fn is_exported(id: &BindingIdentifier<'_>, ctx: &LintContext<'_>) -> bool {
     let module_record = ctx.module_record();
+
     module_record.exported_bindings.contains_key(id.name.as_str())
         || module_record.export_default.is_some_and(|default| default == id.span)
 }
@@ -86,6 +87,7 @@ impl Rule for OnlyUsedInRecursion {
                     return;
                 }
             }
+
             AstKind::ArrowFunctionExpression(arrow_function) => {
                 if let Some(binding_ident) = get_function_like_declaration(node, ctx) {
                     (binding_ident, &arrow_function.params, arrow_function.span)
@@ -93,6 +95,7 @@ impl Rule for OnlyUsedInRecursion {
                     return;
                 }
             }
+
             _ => return,
         };
 
@@ -114,6 +117,7 @@ impl Rule for OnlyUsedInRecursion {
                         );
                     }
                 }
+
                 BindingPatternKind::ObjectPattern(pattern) => {
                     for property in &pattern.properties {
                         let Some(ident) = property.value.get_binding_identifier() else {
@@ -123,11 +127,13 @@ impl Rule for OnlyUsedInRecursion {
                         let Some(name) = property.key.name() else {
                             continue;
                         };
+
                         if is_property_only_used_in_recursion_jsx(ident, &name, function_id, ctx) {
                             create_diagnostic_jsx(ctx, function_id, property);
                         }
                     }
                 }
+
                 _ => continue,
             }
         }
@@ -156,10 +162,12 @@ fn create_diagnostic(
             let mut fix = fixer.new_fix_with_capacity(
                 ctx.semantic().symbol_references(arg.symbol_id()).count() + 1,
             );
+
             fix.push(Fix::delete(arg.span()));
 
             for reference in ctx.semantic().symbol_references(arg.symbol_id()) {
                 let node = ctx.nodes().get_node(reference.node_id());
+
                 fix.push(Fix::delete(node.span()));
             }
 
@@ -176,6 +184,7 @@ fn create_diagnostic(
                     }
 
                     let arg_to_delete = call_expr.arguments[arg_index].span();
+
                     fix.push(Fix::delete(Span::new(
                         arg_to_delete.start,
                         skip_to_next_char(
@@ -199,12 +208,15 @@ fn create_diagnostic_jsx(
     property: &BindingProperty,
 ) {
     let Some(property_name) = &property.key.static_name() else { return };
+
     if is_exported(function_id, ctx) {
         return ctx.diagnostic(only_used_in_recursion_diagnostic(property.span(), property_name));
     }
 
     let Some(property_ident) = property.value.get_binding_identifier() else { return };
+
     let property_symbol_id = property_ident.symbol_id();
+
     let mut references = ctx.semantic().symbol_references(property_symbol_id);
 
     let has_spread_attribute = references.any(|x| used_with_spread_attribute(x.node_id(), ctx));
@@ -225,8 +237,10 @@ fn create_diagnostic_jsx(
             let mut fix = fixer.new_fix_with_capacity(references.count() + 1);
 
             let source = ctx.source_text();
+
             let span_start = skip_to_next_char(source, property.span.start, &Direction::Backward)
                 .unwrap_or(property.span.start);
+
             let span_end =
                 skip_to_next_char(ctx.source_text(), property.span.end, &Direction::Forward)
                     .unwrap_or(property.span.end);
@@ -283,6 +297,7 @@ fn is_argument_only_used_in_recursion<'a>(
         let Some(AstKind::Argument(argument)) = ctx.nodes().parent_kind(reference.node_id()) else {
             return false;
         };
+
         let Some(AstKind::CallExpression(call_expr)) =
             ctx.nodes().parent_kind(ctx.nodes().parent_node(reference.node_id()).unwrap().id())
         else {
@@ -312,11 +327,13 @@ fn is_property_only_used_in_recursion_jsx(
     ctx: &LintContext,
 ) -> bool {
     let mut references = ctx.semantic().symbol_references(ident.symbol_id()).peekable();
+
     if references.peek().is_none() {
         return false;
     }
 
     let function_symbol_id = function_ident.symbol_id();
+
     for reference in references {
         // Conditions:
         // 1. The reference is inside a JSXExpressionContainer.
@@ -325,6 +342,7 @@ fn is_property_only_used_in_recursion_jsx(
         let Some(may_jsx_expr_container) = ctx.nodes().parent_node(reference.node_id()) else {
             return false;
         };
+
         let AstKind::JSXExpressionContainer(_) = may_jsx_expr_container.kind() else {
             // In this case, we simply ignore the references inside JSXExpressionContainer that are not single-node expression.
             //   e.g. <Increment count={count+1} />
@@ -346,9 +364,11 @@ fn is_property_only_used_in_recursion_jsx(
         let JSXAttributeItem::Attribute(jsx_attr_name) = attr else {
             return false;
         };
+
         let Some(attr_name) = jsx_attr_name.name.as_identifier() else {
             return false;
         };
+
         if attr_name.name != property_name {
             return false;
         }
@@ -369,6 +389,7 @@ fn is_property_only_used_in_recursion_jsx(
         else {
             return false;
         };
+
         if jsx_ident_symbol_id != function_symbol_id {
             return false;
         }
@@ -388,6 +409,7 @@ fn is_recursive_call(
             return symbol_id == function_symbol_id;
         }
     }
+
     false
 }
 
@@ -430,6 +452,7 @@ fn skip_to_next_char(s: &str, start: u32, direction: &Direction) -> Option<u32> 
     // span is a half-open interval: [start, end)
     // so we should return in that way.
     let start = start as usize;
+
     match direction {
         Direction::Forward => s
             .char_indices()
@@ -542,24 +565,32 @@ fn test() {
             } else {
                 _get = function get(target, property, receiver) {
                     var base = _super_prop_base(target, property);
+
                     if (!base) return;
+
                     var desc = Object.getOwnPropertyDescriptor(base, property);
+
                     if (desc.get) {
                         return desc.get.call(receiver || target);
                     }
+
                     return desc.value;
                 };
             }
+
             return _get(target, property, receiver || target);
         }
         "#,
         "function foo() {}
+
         declare function foo() {}",
         r#"
         var validator = function validator(node, key, val) {
             var validator = node.operator === "in" ? inOp : expression;
+
             validator(node, key, val);
         };
+
         validator()
         "#,
         // no params, no recursion
@@ -580,6 +611,7 @@ fn test() {
         "
             function Listitem({ depth }) {
                 console.log(depth);
+
                 return <Listitem depth={depth}/>;
             }
         ",
@@ -596,6 +628,7 @@ fn test() {
                 if (depth < 10) {
                     return <Listitem depth={depth + 1} />;
                 }
+
                 return null;
             }
         ",
@@ -746,12 +779,14 @@ function writeChunks(a,callac){writeChunks(m,callac)}writeChunks(i,{})",
         (
             r#"
             test(foo, bar);
+
             function test(arg0, arg1) {
                 return test("", arg1);
             }
             "#,
             r#"
             test(foo, );
+
             function test(arg0, ) {
                 return test("", );
             }
@@ -825,11 +860,13 @@ function writeChunks(a,callac){writeChunks(m,callac)}writeChunks(i,{})",
         (
             r"function Test({a, b}) {
                 b++;
+
                 return (<Test a={a} b={b}/>)
             }
             ",
             r"function Test({b}) {
                 b++;
+
                 return (<Test  b={b}/>)
             }
             ",

@@ -40,6 +40,7 @@ impl FromIterator<String> for OxlintEnv {
 impl Default for OxlintEnv {
     fn default() -> Self {
         let mut map = FxHashMap::default();
+
         map.insert("builtin".to_string(), true);
 
         Self(map)
@@ -58,16 +59,23 @@ mod test {
             "browser": true, "node": true, "es6": false
         }))
         .unwrap();
+
         assert_eq!(env.iter().count(), 2);
+
         assert!(env.contains("browser"));
+
         assert!(env.contains("node"));
+
         assert!(!env.contains("es6"));
+
         assert!(!env.contains("builtin"));
     }
     #[test]
     fn test_parse_env_default() {
         let env = OxlintEnv::default();
+
         assert_eq!(env.iter().count(), 1);
+
         assert!(env.contains("builtin"));
     }
 }

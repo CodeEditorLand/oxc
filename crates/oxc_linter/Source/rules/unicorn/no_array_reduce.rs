@@ -82,6 +82,7 @@ impl Rule for NoArrayReduce {
             if self.allow_simple_operations && is_simple_operation(call_expr) {
                 return;
             }
+
             ctx.diagnostic(no_array_reduce_diagnostic(span));
         }
 
@@ -104,6 +105,7 @@ fn is_simple_operation(node: &CallExpression) -> bool {
     let Some(callback_arg) = node.arguments.first() else {
         return false;
     };
+
     let function_body = match callback_arg {
         // `array.reduce((accumulator, element) => accumulator + element)`
         Argument::ArrowFunctionExpression(callback) => &callback.body,
@@ -111,8 +113,10 @@ fn is_simple_operation(node: &CallExpression) -> bool {
             let Some(body) = &callback.body else {
                 return false;
             };
+
             body
         }
+
         _ => return false,
     };
 
@@ -124,9 +128,11 @@ fn is_simple_operation(node: &CallExpression) -> bool {
         Statement::ExpressionStatement(expr) => {
             matches!(expr.expression, Expression::BinaryExpression(_))
         }
+
         Statement::ReturnStatement(ret) => {
             matches!(&ret.argument, Some(Expression::BinaryExpression(_)))
         }
+
         Statement::BlockStatement(block) => {
             if block.body.len() != 1 {
                 return false;
@@ -136,9 +142,11 @@ fn is_simple_operation(node: &CallExpression) -> bool {
                 Statement::ReturnStatement(ret) => {
                     matches!(&ret.argument, Some(Expression::BinaryExpression(_)))
                 }
+
                 _ => false,
             }
         }
+
         _ => false,
     }
 }
@@ -338,6 +346,7 @@ fn test() {
             r"
 			array.reduce((obj, item) => {
 				obj[item] = null;
+
 				return obj;
 			}, {})
 			",
@@ -364,6 +373,7 @@ fn test() {
             r"
 			array.reduce((total, item) => {
 				return total + doComplicatedThings(item);
+
 				function doComplicatedThings(item) {
 					return item + 1;
 				}
@@ -409,6 +419,7 @@ fn test() {
             r"
 			array.reduceRight((obj, item) => {
 				obj[item] = null;
+
 				return obj;
 			}, {})
 			",
@@ -435,6 +446,7 @@ fn test() {
             r"
 			array.reduceRight((total, item) => {
 				return total + doComplicatedThings(item);
+
 				function doComplicatedThings(item) {
 					return item + 1;
 				}
@@ -476,5 +488,6 @@ fn test() {
             Some(json!({ "allowSimpleOperations": false})),
         ),
     ];
+
     Tester::new(NoArrayReduce::NAME, pass, fail).test_and_snapshot();
 }

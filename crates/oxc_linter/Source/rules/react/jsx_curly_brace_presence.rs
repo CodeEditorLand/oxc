@@ -302,26 +302,32 @@ declare_oxc_lint!(
 impl Rule for JsxCurlyBracePresence {
     fn from_configuration(value: Value) -> Self {
         let default = Self::default();
+
         let value = if let Some(arr) = value.as_array() { &arr[0] } else { &value };
+
         match value {
             Value::String(s) => {
                 let allowed = Allowed::try_from(s.as_str())
 				.map_err(|()| Error::msg(
 					r#"Invalid string config for eslint-plugin-react/jsx-curly-brace-presence: only "always", "never", or "ignored" are allowed. "#
 				)).unwrap();
+
                 Self { props: allowed, children: allowed, prop_element_values: allowed }
             }
+
             Value::Object(obj) => {
                 let props = obj
                     .get("props")
                     .and_then(Value::as_str)
                     .and_then(|props| Allowed::try_from(props).ok())
                     .unwrap_or(default.props);
+
                 let children = obj
                     .get("children")
                     .and_then(Value::as_str)
                     .and_then(|children| Allowed::try_from(children).ok())
                     .unwrap_or(default.children);
+
                 let prop_element_values = obj
                     .get("propElementValues")
                     .and_then(Value::as_str)
@@ -330,6 +336,7 @@ impl Rule for JsxCurlyBracePresence {
 
                 Self { props, children, prop_element_values }
             }
+
             _ => default,
         }
     }
@@ -340,16 +347,20 @@ impl Rule for JsxCurlyBracePresence {
                 el.opening_element.attributes.iter().for_each(|attr| {
                     self.check_jsx_attribute(ctx, attr, node);
                 });
+
                 if self.children.is_never()
                     && matches!(&el.opening_element.name, JSXElementName::Identifier(ident) if ident.name == "script")
                 {
                     return;
                 }
+
                 self.check_jsx_child(ctx, &el.children, node);
             }
+
             AstKind::JSXFragment(fragment) => {
                 self.check_jsx_child(ctx, &fragment.children, node);
             }
+
             _ => {}
         }
     }
@@ -371,6 +382,7 @@ impl JsxCurlyBracePresence {
                 JSXChild::ExpressionContainer(container) => {
                     self.check_expression_container(ctx, container, node, false);
                 }
+
                 JSXChild::Text(text) => {
                     if self.children.is_always()
                         && children.len() == 1
@@ -379,6 +391,7 @@ impl JsxCurlyBracePresence {
                         ctx.diagnostic(jsx_curly_brace_presence_necessary_diagnostic(text.span));
                     }
                 }
+
                 _ => {}
             }
         }
@@ -393,22 +406,26 @@ impl JsxCurlyBracePresence {
         let JSXAttributeItem::Attribute(attr) = attr else {
             return;
         };
+
         let Some(value) = attr.value.as_ref() else { return };
 
         match value {
             JSXAttributeValue::ExpressionContainer(container) => {
                 self.check_expression_container(ctx, container, node, true);
             }
+
             JSXAttributeValue::Element(el) => {
                 if self.prop_element_values.is_always() {
                     ctx.diagnostic(jsx_curly_brace_presence_necessary_diagnostic(el.span));
                 }
             }
+
             JSXAttributeValue::Fragment(fragment) => {
                 if self.prop_element_values.is_always() {
                     ctx.diagnostic(jsx_curly_brace_presence_necessary_diagnostic(fragment.span));
                 }
             }
+
             JSXAttributeValue::StringLiteral(string) => {
                 if self.props.is_always() {
                     ctx.diagnostic(jsx_curly_brace_presence_necessary_diagnostic(string.span));
@@ -426,7 +443,9 @@ impl JsxCurlyBracePresence {
         is_prop: bool,
     ) {
         let Some(inner) = container.expression.as_expression() else { return };
+
         let allowed = if is_prop { self.props } else { self.children };
+
         match inner {
             Expression::JSXFragment(_) => {
                 if !is_prop
@@ -436,6 +455,7 @@ impl JsxCurlyBracePresence {
                     report_unnecessary_curly(ctx, container, inner.span());
                 }
             }
+
             Expression::JSXElement(el) => {
                 if is_prop {
                     if self.prop_element_values.is_never() && el.closing_element.is_none() {
@@ -447,24 +467,31 @@ impl JsxCurlyBracePresence {
                     report_unnecessary_curly(ctx, container, inner.span());
                 }
             }
+
             Expression::StringLiteral(string) => {
                 if allowed.is_never() {
                     let raw = ctx.source_range(string.span().shrink_left(1).shrink_right(1));
+
                     if is_allowed_string_like(ctx, raw, container, node.id(), is_prop) {
                         return;
                     }
+
                     report_unnecessary_curly(ctx, container, string.span);
                 }
             }
+
             Expression::TemplateLiteral(template) => {
                 if allowed.is_never() && template.is_no_substitution_template() {
                     let string = template.quasi().unwrap();
+
                     if is_allowed_string_like(ctx, string.as_str(), container, node.id(), is_prop) {
                         return;
                     }
+
                     report_unnecessary_curly(ctx, container, template.span);
                 }
             }
+
             _ => {}
         }
     }
@@ -519,7 +546,9 @@ fn contains_utf8_escape(s: &str) -> bool {
 
 fn contains_html_entity(s: &str) -> bool {
     let and = s.find('&');
+
     let semi = s.find(';');
+
     matches!((and, semi), (Some(and), Some(semi)) if and < semi)
 }
 
@@ -538,6 +567,7 @@ fn has_adjacent_jsx_expression_containers<'a>(
     // element: &JSXElement<'a>,
 ) -> bool {
     let Some(parent) = ctx.semantic().nodes().parent_kind(node_id) else { return false };
+
     let children = match parent {
         AstKind::JSXElement(el) => &el.children,
         AstKind::JSXFragment(fragment) => &fragment.children,
@@ -552,6 +582,7 @@ fn has_adjacent_jsx_expression_containers<'a>(
             return false;
         }
     };
+
     let Some(this_container_idx) = children.iter().position(|child| child.span() == container.span)
     else {
         return false;

@@ -73,6 +73,7 @@ impl<'a, 'ctx> Traverse<'a> for ES2018<'a, 'ctx> {
         if self.options.async_generator_functions {
             self.async_generator_functions.enter_for_of_statement(stmt, ctx);
         }
+
         if self.options.object_rest_spread.is_some() {
             self.object_rest_spread.enter_for_of_statement(stmt, ctx);
         }

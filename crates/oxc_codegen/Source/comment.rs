@@ -22,6 +22,7 @@ impl<'a> Codegen<'a> {
         if !self.options.print_annotation_comments() {
             return false;
         }
+
         self.comments.get(&start).is_some_and(|comments| {
             comments.iter().any(|comment| self.is_annotation_comment(comment))
         })
@@ -42,6 +43,7 @@ impl<'a> Codegen<'a> {
     /// <https://github.com/javascript-compiler-hints/compiler-notations-spec/blob/c14f7e197cb225c9eee877143536665ce3150712/pure-notation-spec.md>
     fn is_annotation_comment(&self, comment: &Comment) -> bool {
         let s = comment.content_span().source_text(self.source_text).trim_start();
+
         if let Some(s) = s.strip_prefix(['@', '#']) {
             s.starts_with("__PURE__") || s.starts_with("__NO_SIDE_EFFECTS__")
         } else {
@@ -62,11 +64,14 @@ impl<'a> Codegen<'a> {
         if self.options.minify {
             return;
         }
+
         let Some(comments) = self.comments.remove(&start) else {
             return;
         };
+
         let (comments, unused_comments): (Vec<_>, Vec<_>) =
             comments.into_iter().partition(|comment| self.is_leading_comments(comment));
+
         self.print_comments(start, &comments, unused_comments);
     }
 
@@ -81,30 +86,40 @@ impl<'a> Codegen<'a> {
         let comments = self.comments.remove(&start)?;
 
         let mut leading_comments = vec![];
+
         let mut unused_comments = vec![];
 
         for comment in comments {
             if self.is_leading_comments(&comment) {
                 leading_comments.push(comment);
+
                 continue;
             }
+
             if comment.is_legal(self.source_text) {
                 match &self.options.legal_comments {
                     LegalComment::None if self.options.comments => {
                         leading_comments.push(comment);
+
                         continue;
                     }
+
                     LegalComment::Inline => {
                         leading_comments.push(comment);
+
                         continue;
                     }
+
                     LegalComment::Eof | LegalComment::Linked(_) | LegalComment::External => {
                         self.legal_comments.push(comment);
+
                         continue;
                     }
+
                     LegalComment::None => {}
                 }
             }
+
             unused_comments.push(comment);
         }
 
@@ -132,13 +147,17 @@ impl<'a> Codegen<'a> {
             if !self.is_annotation_comment(&comment) {
                 continue;
             }
+
             if comment.is_line() {
                 self.print_str("/*");
+
                 self.print_str(comment.content_span().source_text(self.source_text));
+
                 self.print_str("*/");
             } else {
                 self.print_str(comment.span.source_text(self.source_text));
             }
+
             self.print_hard_space();
         }
     }
@@ -147,6 +166,7 @@ impl<'a> Codegen<'a> {
         if self.options.minify {
             return false;
         }
+
         let Some(comments) = self.comments.remove(&start) else { return false };
 
         let (annotation_comments, comments): (Vec<_>, Vec<_>) =
@@ -158,7 +178,9 @@ impl<'a> Codegen<'a> {
 
         for comment in &comments {
             self.print_hard_newline();
+
             self.print_indent();
+
             self.print_comment(comment);
         }
 
@@ -166,6 +188,7 @@ impl<'a> Codegen<'a> {
             false
         } else {
             self.print_hard_newline();
+
             true
         }
     }
@@ -184,8 +207,10 @@ impl<'a> Codegen<'a> {
                         match b {
                             b'\n' => self.print_indent(),
                             b'\t' => { /* noop */ }
+
                             _ => {
                                 self.print_hard_newline();
+
                                 self.print_indent();
                             }
                         }
@@ -194,15 +219,19 @@ impl<'a> Codegen<'a> {
                     self.print_indent();
                 }
             }
+
             if i >= 1 {
                 if comment.preceded_by_newline {
                     self.print_hard_newline();
+
                     self.print_indent();
                 } else if comment.is_legal(self.source_text) {
                     self.print_hard_newline();
                 }
             }
+
             self.print_comment(comment);
+
             if i == comments.len() - 1 {
                 if comment.is_line() || comment.followed_by_newline {
                     self.print_hard_newline();
@@ -219,18 +248,23 @@ impl<'a> Codegen<'a> {
 
     fn print_comment(&mut self, comment: &Comment) {
         let comment_source = comment.span.source_text(self.source_text);
+
         match comment.kind {
             CommentKind::Line => {
                 self.print_str(comment_source);
             }
+
             CommentKind::Block => {
                 // Print block comments with our own indentation.
                 let lines = comment_source.split(is_line_terminator);
+
                 for line in lines {
                     if !line.starts_with("/*") {
                         self.print_indent();
                     }
+
                     self.print_str(line.trim_start());
+
                     if !line.ends_with("*/") {
                         self.print_hard_newline();
                     }
@@ -243,16 +277,22 @@ impl<'a> Codegen<'a> {
         match self.options.legal_comments.clone() {
             LegalComment::Eof => {
                 let comments = self.legal_comments.drain(..).collect::<Vec<_>>();
+
                 for c in comments {
                     self.print_comment(&c);
+
                     self.print_hard_newline();
                 }
             }
+
             LegalComment::Linked(path) => {
                 self.print_str("/*! For license information please see ");
+
                 self.print_str(&path);
+
                 self.print_str(" */");
             }
+
             _ => {}
         }
     }

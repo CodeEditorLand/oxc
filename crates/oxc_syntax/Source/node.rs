@@ -23,6 +23,7 @@ impl NodeId {
         if let Some(idx) = NonMaxU32::new(idx) {
             return Self(idx);
         }
+
         panic!();
     }
 

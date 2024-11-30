@@ -60,6 +60,7 @@ impl<'a, 'ctx> Traverse<'a> for JsxSelf<'a, 'ctx> {
 impl<'a, 'ctx> JsxSelf<'a, 'ctx> {
     pub fn report_error(&self, span: Span) {
         let error = OxcDiagnostic::warn("Duplicate __self prop found.").with_label(span);
+
         self.ctx.error(error);
     }
 
@@ -67,11 +68,14 @@ impl<'a, 'ctx> JsxSelf<'a, 'ctx> {
     fn is_inside_constructor(&self, ctx: &TraverseCtx<'a>) -> bool {
         for scope_id in ctx.ancestor_scopes() {
             let flags = ctx.scopes().get_flags(scope_id);
+
             if flags.is_block() || flags.is_arrow() {
                 continue;
             }
+
             return flags.is_constructor();
         }
+
         unreachable!(); // Always hit `Program` and exit before loop ends
     }
 
@@ -81,6 +85,7 @@ impl<'a, 'ctx> JsxSelf<'a, 'ctx> {
                 return class.super_class().is_none();
             }
         }
+
         true
     }
 
@@ -88,8 +93,11 @@ impl<'a, 'ctx> JsxSelf<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> ObjectPropertyKind<'a> {
         let kind = PropertyKind::Init;
+
         let key = ctx.ast.property_key_identifier_name(SPAN, SELF);
+
         let value = ctx.ast.expression_this(SPAN);
+
         ctx.ast
             .object_property_kind_object_property(SPAN, kind, key, value, None, false, false, false)
     }
@@ -107,6 +115,7 @@ impl<'a, 'ctx> JsxSelf<'a, 'ctx> {
                 if let JSXAttributeName::Identifier(ident) = &attribute.name {
                     if ident.name == SELF {
                         self.report_error(ident.span);
+
                         return;
                     }
                 }
@@ -114,11 +123,15 @@ impl<'a, 'ctx> JsxSelf<'a, 'ctx> {
         }
 
         let name = ctx.ast.jsx_attribute_name_jsx_identifier(SPAN, SELF);
+
         let value = {
             let jsx_expr = JSXExpression::from(ctx.ast.expression_this(SPAN));
+
             ctx.ast.jsx_attribute_value_jsx_expression_container(SPAN, jsx_expr)
         };
+
         let attribute = ctx.ast.jsx_attribute_item_jsx_attribute(SPAN, name, Some(value));
+
         elem.attributes.push(attribute);
     }
 }

@@ -19,12 +19,16 @@ impl<'a> FlagsParser<'a> {
     /// Returns: (is_unicode_mode, is_unicode_sets_mode)
     pub fn parse(mut self) -> Result<(bool, bool)> {
         let mut is_unicode_mode = false;
+
         let mut is_unicode_sets_mode = false;
+
         let mut unique_flags = FxHashSet::default();
 
         while let Some(cp) = self.reader.peek() {
             let span_start = self.reader.offset();
+
             self.reader.advance();
+
             let span_end = self.reader.offset();
 
             if unique_flags.contains(&cp) {
@@ -33,6 +37,7 @@ impl<'a> FlagsParser<'a> {
                     &self.reader.atom(span_start, span_end),
                 ));
             }
+
             if char::try_from(cp)
                 .map_or(true, |c| !matches!(c, 'd' | 'g' | 'i' | 'm' | 's' | 'u' | 'v' | 'y'))
             {
@@ -48,15 +53,19 @@ impl<'a> FlagsParser<'a> {
                         self.span_factory.create(span_start, span_end),
                     ));
                 }
+
                 is_unicode_mode = true;
             }
+
             if cp == 'v' as u32 {
                 if unique_flags.contains(&('u' as u32)) {
                     return Err(diagnostics::invalid_unicode_flags(
                         self.span_factory.create(span_start, span_end),
                     ));
                 }
+
                 is_unicode_mode = true;
+
                 is_unicode_sets_mode = true;
             }
 
@@ -81,7 +90,9 @@ mod test {
             ("vg", (true, true)),
         ] {
             let reader = Reader::initialize(flags_text, true, false).unwrap();
+
             let result = FlagsParser::new(reader, 0).parse().unwrap();
+
             assert_eq!(result, *expected);
         }
     }
@@ -90,13 +101,18 @@ mod test {
     fn should_fail() {
         for flags_text in &["uv", "vu", "uu", "vv", "gg", "$"] {
             let reader = Reader::initialize(flags_text, true, false).unwrap();
+
             let err = FlagsParser::new(reader, 0).parse();
+
             assert!(err.is_err());
             // println!("{:?}", err.unwrap_err().with_source_code(*flags_text));
         }
+
         for flags_text in &[r#""uv""#, "'V'", "\"-\"", r#""\162""#] {
             let reader = Reader::initialize(flags_text, true, true).unwrap();
+
             let err = FlagsParser::new(reader, 0).parse();
+
             assert!(err.is_err());
             // println!("{:?}", err.unwrap_err().with_source_code(*flags_text));
         }
@@ -113,6 +129,7 @@ mod test {
             Reader::initialize(r#""\u{0075}""#, true, true).unwrap(),
         ] {
             let result = FlagsParser::new(reader, 0).parse().unwrap();
+
             assert_eq!(result, (true, false));
         }
     }

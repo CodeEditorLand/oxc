@@ -110,6 +110,7 @@ impl Rule for NoCallbackInPromise {
                 };
 
                 let name = id.name.as_str();
+
                 if self.callbacks.binary_search(&name.into()).is_ok() {
                     ctx.diagnostic(no_callback_in_promise_diagnostic(id.span));
                 }

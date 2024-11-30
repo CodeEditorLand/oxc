@@ -20,7 +20,9 @@ where
     G: FnMut(&BlockNodeId, State) -> (State, bool),
 {
     let mut q = vec![];
+
     let mut final_states = vec![];
+
     let mut visited = FxHashSet::default();
 
     // for initial node
@@ -39,17 +41,22 @@ where
             if visited.contains(&edge.target()) {
                 continue;
             }
+
             if let Some(result_of_edge_filtering) = edge_filter(edge.weight()) {
                 final_states.push(result_of_edge_filtering);
             } else {
                 let target = edge.target();
+
                 let (new_state, keep_walking_this_path) = visitor(&target, state.clone());
+
                 visited.insert(target);
+
                 if keep_walking_this_path {
                     q.push((target, new_state.clone()));
                 } else {
                     final_states.push(new_state.clone());
                 }
+
                 edges += 1;
             }
         }
@@ -96,7 +103,9 @@ where
     C: ControlFlow,
 {
     let time = &mut Time(0);
+
     let discovered = &mut FxHashSet::<G::NodeId>::default();
+
     let finished = &mut FxHashSet::<G::NodeId>::default();
 
     for start in starts {
@@ -105,6 +114,7 @@ where
             unreachable!()
         );
     }
+
     C::continuing()
 }
 
@@ -132,6 +142,7 @@ where
         for v in graph.neighbors(u) {
             if !discovered.is_visited(&v) {
                 try_control!(visitor(DfsEvent::TreeEdge(u, v)), continue);
+
                 try_control!(
                     dfs_visitor(graph, v, visitor, discovered, finished, time),
                     unreachable!()
@@ -143,17 +154,23 @@ where
             }
         }
     );
+
     let first_finish = finished.visit(u);
+
     debug_assert!(first_finish);
+
     try_control!(
         visitor(DfsEvent::Finish(u, time_post_inc(time))),
         panic!("Pruning on the `DfsEvent::Finish` is not supported!")
     );
+
     C::continuing()
 }
 
 fn time_post_inc(x: &mut Time) -> Time {
     let v = *x;
+
     x.0 += 1;
+
     v
 }

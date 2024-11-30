@@ -125,6 +125,7 @@ impl<'a> Default for SemanticBuilder<'a> {
 impl<'a> SemanticBuilder<'a> {
     pub fn new() -> Self {
         let scope = ScopeTree::default();
+
         let current_scope_id = scope.root_scope_id();
 
         Self {
@@ -166,6 +167,7 @@ impl<'a> SemanticBuilder<'a> {
     #[must_use]
     pub fn with_check_syntax_error(mut self, yes: bool) -> Self {
         self.check_syntax_error = yes;
+
         self
     }
 
@@ -173,6 +175,7 @@ impl<'a> SemanticBuilder<'a> {
     #[must_use]
     pub fn with_build_jsdoc(mut self, yes: bool) -> Self {
         self.build_jsdoc = yes;
+
         self
     }
 
@@ -182,12 +185,14 @@ impl<'a> SemanticBuilder<'a> {
     #[must_use]
     pub fn with_cfg(mut self, cfg: bool) -> Self {
         self.cfg = if cfg { Some(ControlFlowGraphBuilder::default()) } else { None };
+
         self
     }
 
     #[must_use]
     pub fn with_scope_tree_child_ids(mut self, yes: bool) -> Self {
         self.scope.build_child_ids = yes;
+
         self
     }
 
@@ -201,6 +206,7 @@ impl<'a> SemanticBuilder<'a> {
     #[must_use]
     pub fn with_stats(mut self, stats: Stats) -> Self {
         self.stats = Some(stats);
+
         self
     }
 
@@ -219,6 +225,7 @@ impl<'a> SemanticBuilder<'a> {
     #[must_use]
     pub fn with_excess_capacity(mut self, excess_capacity: f64) -> Self {
         self.excess_capacity = excess_capacity;
+
         self
     }
 
@@ -236,8 +243,11 @@ impl<'a> SemanticBuilder<'a> {
     ) -> Self {
         let mut module_record_builder =
             ModuleRecordBuilder::new(resolved_absolute_path.to_path_buf());
+
         module_record_builder.visit(program);
+
         self.module_record = Arc::new(module_record_builder.build());
+
         self
     }
 
@@ -246,12 +256,16 @@ impl<'a> SemanticBuilder<'a> {
     /// # Panics
     pub fn build(mut self, program: &Program<'a>) -> SemanticBuilderReturn<'a> {
         self.source_text = program.source_text;
+
         self.source_type = program.source_type;
+
         if self.build_jsdoc {
             self.jsdoc = JSDocBuilder::new(self.source_text, &program.comments);
         }
+
         if self.source_type.is_typescript_definition() {
             let scope_id = self.scope.add_scope(None, NodeId::DUMMY, ScopeFlags::Top);
+
             program.scope_id.set(Some(scope_id));
         } else {
             // Use counts of nodes, scopes, symbols, and references to pre-allocate sufficient capacity
@@ -270,11 +284,15 @@ impl<'a> SemanticBuilder<'a> {
                 (stats, None)
             } else {
                 let stats = Stats::count(program);
+
                 let stats_with_excess = stats.increase_by(self.excess_capacity);
                 (stats_with_excess, Some(stats))
             };
+
             self.nodes.reserve(stats.nodes as usize);
+
             self.scope.reserve(stats.scopes as usize);
+
             self.symbols.reserve(stats.symbols as usize, stats.references as usize);
 
             // Visit AST to generate scopes tree etc
@@ -290,6 +308,7 @@ impl<'a> SemanticBuilder<'a> {
                     self.symbols.len() as u32,
                     self.symbols.references.len() as u32,
                 );
+
                 stats.assert_accurate(actual_stats);
             }
 
@@ -302,6 +321,7 @@ impl<'a> SemanticBuilder<'a> {
         let comments = self.alloc(&program.comments);
 
         debug_assert_eq!(self.unresolved_references.scope_depth(), 1);
+
         self.scope.root_unresolved_references = self
             .unresolved_references
             .into_root()
@@ -325,6 +345,7 @@ impl<'a> SemanticBuilder<'a> {
             unused_labels: self.unused_labels.labels,
             cfg: self.cfg.map(ControlFlowGraphBuilder::build),
         };
+
         SemanticBuilderReturn { semantic, errors: self.errors.into_inner() }
     }
 
@@ -335,6 +356,7 @@ impl<'a> SemanticBuilder<'a> {
 
     fn create_ast_node(&mut self, kind: AstKind<'a>) {
         let mut flags = self.current_node_flags;
+
         if self.build_jsdoc && self.jsdoc.retrieve_attached_jsdoc(&kind) {
             flags |= NodeFlags::JSDoc;
         }
@@ -346,6 +368,7 @@ impl<'a> SemanticBuilder<'a> {
             control_flow!(self, |cfg| cfg.current_node_ix),
             flags,
         );
+
         self.record_ast_node();
     }
 
@@ -418,12 +441,16 @@ impl<'a> SemanticBuilder<'a> {
     ) -> SymbolId {
         if let Some(symbol_id) = self.check_redeclaration(scope_id, span, name, excludes, true) {
             self.symbols.union_flag(symbol_id, includes);
+
             self.add_redeclare_variable(symbol_id, span);
+
             return symbol_id;
         }
 
         let includes = includes | self.current_symbol_flags;
+
         let name = CompactStr::new(name);
+
         let symbol_id = self.symbols.create_symbol(
             span,
             name.clone(),
@@ -431,7 +458,9 @@ impl<'a> SemanticBuilder<'a> {
             scope_id,
             self.current_node_id,
         );
+
         self.scope.add_binding(scope_id, name, symbol_id);
+
         symbol_id
     }
 
@@ -461,10 +490,13 @@ impl<'a> SemanticBuilder<'a> {
         let symbol_id = self.scope.get_binding(scope_id, name).or_else(|| {
             self.hoisting_variables.get(&scope_id).and_then(|symbols| symbols.get(name).copied())
         })?;
+
         if report_error && self.symbols.get_flags(symbol_id).intersects(excludes) {
             let symbol_span = self.symbols.get_span(symbol_id);
+
             self.error(redeclaration(name, symbol_span, span));
         }
+
         Some(symbol_id)
     }
 
@@ -479,6 +511,7 @@ impl<'a> SemanticBuilder<'a> {
         let reference_id = self.symbols.create_reference(reference);
 
         self.unresolved_references.current_mut().entry(name).or_default().push(reference_id);
+
         reference_id
     }
 
@@ -491,7 +524,9 @@ impl<'a> SemanticBuilder<'a> {
         includes: SymbolFlags,
     ) -> SymbolId {
         let includes = includes | self.current_symbol_flags;
+
         let name = CompactStr::new(name);
+
         let symbol_id = self.symbols.create_symbol(
             span,
             name.clone(),
@@ -499,7 +534,9 @@ impl<'a> SemanticBuilder<'a> {
             self.current_scope_id,
             self.current_node_id,
         );
+
         self.scope.get_bindings_mut(scope_id).insert(name, symbol_id);
+
         symbol_id
     }
 
@@ -514,6 +551,7 @@ impl<'a> SemanticBuilder<'a> {
             // Try to resolve a reference.
             // If unresolved, transfer it to parent scope's unresolved references.
             let bindings = self.scope.get_bindings(self.current_scope_id);
+
             if let Some(symbol_id) = bindings.get(name.as_str()).copied() {
                 let symbol_flags = self.symbols.get_flags(symbol_id);
 
@@ -521,7 +559,9 @@ impl<'a> SemanticBuilder<'a> {
 
                 references.retain(|&reference_id| {
                     let reference = &mut self.symbols.references[reference_id];
+
                     let flags = reference.flags();
+
                     if flags.is_type() && symbol_flags.can_be_referenced_by_type()
                         || flags.is_value() && symbol_flags.can_be_referenced_by_value()
                         || flags.is_value_as_type()
@@ -541,7 +581,9 @@ impl<'a> SemanticBuilder<'a> {
                         }
 
                         reference.set_symbol_id(symbol_id);
+
                         resolved_references.push(reference_id);
+
                         false
                     } else {
                         true
@@ -570,9 +612,12 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
     // NB: Not called for `Program`
     fn enter_scope(&mut self, flags: ScopeFlags, scope_id: &Cell<Option<ScopeId>>) {
         let parent_scope_id = self.current_scope_id;
+
         let flags = self.scope.get_new_scope_flags(flags, parent_scope_id);
+
         self.current_scope_id =
             self.scope.add_scope(Some(parent_scope_id), self.current_node_id, flags);
+
         scope_id.set(Some(self.current_scope_id));
 
         self.unresolved_references.increment_scope_depth();
@@ -586,7 +631,9 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         // So we could `.unwrap()` here. But that seems to produce a small perf impact, probably because
         // `leave_scope` then doesn't get inlined because of its larger size due to the panic code.
         let parent_id = self.scope.get_parent_id(self.current_scope_id);
+
         debug_assert!(parent_id.is_some());
+
         if let Some(parent_id) = parent_id {
             self.current_scope_id = parent_id;
         }
@@ -599,15 +646,19 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
     // NB: Not called for `Program`.
     fn enter_node(&mut self, kind: AstKind<'a>) {
         self.create_ast_node(kind);
+
         self.enter_kind(kind);
     }
 
     fn leave_node(&mut self, kind: AstKind<'a>) {
         if self.check_syntax_error {
             let node = self.nodes.get_node(self.current_node_id);
+
             checker::check(node, self);
         }
+
         self.leave_kind(kind);
+
         self.pop_ast_node();
     }
 
@@ -616,7 +667,9 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         let error_harness = control_flow!(self, |cfg| {
             let error_harness = cfg.attach_error_harness(ErrorEdgeKind::Implicit);
+
             let _program_basic_block = cfg.new_basic_block_normal();
+
             error_harness
         });
         /* cfg - must be above directives as directives are in cfg */
@@ -637,10 +690,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         // Inline the specific logic for `Program` here instead.
         // This simplifies logic in `enter_scope`, as it doesn't have to handle the special case.
         let mut flags = ScopeFlags::Top;
+
         if program.is_strict() {
             flags |= ScopeFlags::StrictMode;
         }
+
         self.current_scope_id = self.scope.add_scope(None, self.current_node_id, flags);
+
         program.scope_id.set(Some(self.current_scope_id));
         // NB: Don't call `self.unresolved_references.increment_scope_depth()`
         // as scope depth is initialized as 1 already (the scope depth for `Program`).
@@ -670,6 +726,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_break_statement(&mut self, stmt: &BreakStatement<'a>) {
         let kind = AstKind::BreakStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg */
@@ -690,14 +747,17 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_class(&mut self, class: &Class<'a>) {
         let kind = AstKind::Class(self.alloc(class));
+
         self.enter_node(kind);
 
         self.visit_decorators(&class.decorators);
+
         if let Some(id) = &class.id {
             self.visit_binding_identifier(id);
         }
 
         self.enter_scope(ScopeFlags::StrictMode, &class.scope_id);
+
         if class.is_expression() {
             // We need to bind class expression in the class scope
             class.bind(self);
@@ -706,34 +766,43 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         if let Some(type_parameters) = &class.type_parameters {
             self.visit_ts_type_parameter_declaration(type_parameters);
         }
+
         if let Some(super_class) = &class.super_class {
             self.visit_expression(super_class);
         }
+
         if let Some(super_type_parameters) = &class.super_type_parameters {
             self.visit_ts_type_parameter_instantiation(super_type_parameters);
         }
+
         if let Some(implements) = &class.implements {
             self.visit_ts_class_implementses(implements);
         }
+
         self.visit_class_body(&class.body);
 
         self.leave_scope();
+
         self.leave_node(kind);
     }
 
     fn visit_block_statement(&mut self, it: &BlockStatement<'a>) {
         let kind = AstKind::BlockStatement(self.alloc(it));
+
         self.enter_node(kind);
 
         let parent_scope_id = self.current_scope_id;
+
         self.enter_scope(ScopeFlags::empty(), &it.scope_id);
 
         // Move all bindings from catch clause param scope to catch clause body scope
         // to make it easier to resolve references and check redeclare errors
         if self.scope.get_flags(parent_scope_id).is_catch_clause() {
             let parent_bindings = self.scope.get_bindings_mut(parent_scope_id);
+
             if !parent_bindings.is_empty() {
                 let parent_bindings = parent_bindings.drain(..).collect::<Bindings>();
+
                 parent_bindings.values().for_each(|&symbol_id| {
                     self.symbols.set_scope_id(symbol_id, self.current_scope_id);
                 });
@@ -744,11 +813,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         self.visit_statements(&it.body);
 
         self.leave_scope();
+
         self.leave_node(kind);
     }
 
     fn visit_continue_statement(&mut self, stmt: &ContinueStatement<'a>) {
         let kind = AstKind::ContinueStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg */
@@ -769,12 +840,15 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_do_while_statement(&mut self, stmt: &DoWhileStatement<'a>) {
         let kind = AstKind::DoWhileStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg */
         let (before_do_while_stmt_graph_ix, start_body_graph_ix) = control_flow!(self, |cfg| {
             let before_do_while_stmt_graph_ix = cfg.current_node_ix;
+
             let start_body_graph_ix = cfg.new_basic_block_normal();
+
             cfg.ctx(None).default().allow_break().allow_continue();
             (before_do_while_stmt_graph_ix, start_body_graph_ix)
         });
@@ -785,18 +859,22 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg - condition basic block */
         let (after_body_graph_ix, start_of_condition_graph_ix) = control_flow!(self, |cfg| {
             let after_body_graph_ix = cfg.current_node_ix;
+
             let start_of_condition_graph_ix = cfg.new_basic_block_normal();
             (after_body_graph_ix, start_of_condition_graph_ix)
         });
         /* cfg */
 
         self.record_ast_nodes();
+
         self.visit_expression(&stmt.test);
+
         let test_node_id = self.retrieve_recorded_ast_node();
 
         /* cfg */
         control_flow!(self, |cfg| {
             cfg.append_condition_to(start_of_condition_graph_ix, test_node_id);
+
             let end_of_condition_graph_ix = cfg.current_node_ix;
 
             let end_do_while_graph_ix = cfg.new_basic_block_normal();
@@ -827,6 +905,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         //   foo && bar();
         // the bar() call will only be executed if foo is truthy.
         let kind = AstKind::LogicalExpression(self.alloc(expr));
+
         self.enter_node(kind);
 
         self.visit_expression(&expr.left);
@@ -834,6 +913,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg  */
         let (left_expr_end_ix, right_expr_start_ix) = control_flow!(self, |cfg| {
             let left_expr_end_ix = cfg.current_node_ix;
+
             let right_expr_start_ix = cfg.new_basic_block_normal();
             (left_expr_end_ix, right_expr_start_ix)
         });
@@ -844,10 +924,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         control_flow!(self, |cfg| {
             let right_expr_end_ix = cfg.current_node_ix;
+
             let after_logical_expr_ix = cfg.new_basic_block_normal();
 
             cfg.add_edge(left_expr_end_ix, right_expr_start_ix, EdgeType::Normal);
+
             cfg.add_edge(left_expr_end_ix, after_logical_expr_ix, EdgeType::Normal);
+
             cfg.add_edge(right_expr_end_ix, after_logical_expr_ix, EdgeType::Normal);
         });
         /* cfg */
@@ -863,6 +946,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         // the super() call will only be executed if foo is truthy.
 
         let kind = AstKind::AssignmentExpression(self.alloc(expr));
+
         self.enter_node(kind);
 
         if !expr.operator.is_assign() {
@@ -879,7 +963,9 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         let cfg_ixs = control_flow!(self, |cfg| {
             if expr.operator.is_logical() {
                 let target_end_ix = cfg.current_node_ix;
+
                 let expr_start_ix = cfg.new_basic_block_normal();
+
                 Some((target_end_ix, expr_start_ix))
             } else {
                 None
@@ -893,10 +979,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         control_flow!(self, |cfg| {
             if let Some((target_end_ix, expr_start_ix)) = cfg_ixs {
                 let expr_end_ix = cfg.current_node_ix;
+
                 let after_assignment_ix = cfg.new_basic_block_normal();
 
                 cfg.add_edge(target_end_ix, expr_start_ix, EdgeType::Normal);
+
                 cfg.add_edge(target_end_ix, after_assignment_ix, EdgeType::Normal);
+
                 cfg.add_edge(expr_end_ix, after_assignment_ix, EdgeType::Normal);
             }
         });
@@ -907,25 +996,30 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_conditional_expression(&mut self, expr: &ConditionalExpression<'a>) {
         let kind = AstKind::ConditionalExpression(self.alloc(expr));
+
         self.enter_node(kind);
 
         /* cfg - condition basic block */
         let (before_conditional_graph_ix, start_of_condition_graph_ix) =
             control_flow!(self, |cfg| {
                 let before_conditional_graph_ix = cfg.current_node_ix;
+
                 let start_of_condition_graph_ix = cfg.new_basic_block_normal();
                 (before_conditional_graph_ix, start_of_condition_graph_ix)
             });
         /* cfg */
 
         self.record_ast_nodes();
+
         self.visit_expression(&expr.test);
+
         let test_node_id = self.retrieve_recorded_ast_node();
 
         /* cfg */
         let (after_condition_graph_ix, before_consequent_expr_graph_ix) =
             control_flow!(self, |cfg| {
                 cfg.append_condition_to(start_of_condition_graph_ix, test_node_id);
+
                 let after_condition_graph_ix = cfg.current_node_ix;
                 // conditional expression basic block
                 let before_consequent_expr_graph_ix = cfg.new_basic_block_normal();
@@ -939,6 +1033,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         let (after_consequent_expr_graph_ix, start_alternate_graph_ix) =
             control_flow!(self, |cfg| {
                 let after_consequent_expr_graph_ix = cfg.current_node_ix;
+
                 let start_alternate_graph_ix = cfg.new_basic_block_normal();
                 (after_consequent_expr_graph_ix, start_alternate_graph_ix)
             });
@@ -963,9 +1058,11 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
                 after_conditional_graph_ix,
                 EdgeType::Normal,
             );
+
             cfg.add_edge(after_condition_graph_ix, before_consequent_expr_graph_ix, EdgeType::Jump);
 
             cfg.add_edge(after_condition_graph_ix, start_alternate_graph_ix, EdgeType::Normal);
+
             cfg.add_edge(after_alternate_graph_ix, after_conditional_graph_ix, EdgeType::Normal);
         });
         /* cfg */
@@ -975,14 +1072,18 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_for_statement(&mut self, stmt: &ForStatement<'a>) {
         let kind = AstKind::ForStatement(self.alloc(stmt));
+
         self.enter_node(kind);
+
         self.enter_scope(ScopeFlags::empty(), &stmt.scope_id);
+
         if let Some(init) = &stmt.init {
             self.visit_for_statement_init(init);
         }
         /* cfg */
         let (before_for_graph_ix, test_graph_ix) = control_flow!(self, |cfg| {
             let before_for_graph_ix = cfg.current_node_ix;
+
             let test_graph_ix = cfg.new_basic_block_normal();
             (before_for_graph_ix, test_graph_ix)
         });
@@ -990,7 +1091,9 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
         if let Some(test) = &stmt.test {
             self.record_ast_nodes();
+
             self.visit_expression(test);
+
             let test_node_id = self.retrieve_recorded_ast_node();
 
             /* cfg */
@@ -1010,7 +1113,9 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         let before_body_graph_ix = control_flow!(self, |cfg| {
             let before_body_graph_ix = cfg.new_basic_block_normal();
+
             cfg.ctx(None).default().allow_break().allow_continue();
+
             before_body_graph_ix
         });
         /* cfg */
@@ -1020,11 +1125,17 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         control_flow!(self, |cfg| {
             let after_body_graph_ix = cfg.current_node_ix;
+
             let after_for_stmt = cfg.new_basic_block_normal();
+
             cfg.add_edge(before_for_graph_ix, test_graph_ix, EdgeType::Normal);
+
             cfg.add_edge(after_test_graph_ix, before_body_graph_ix, EdgeType::Jump);
+
             cfg.add_edge(after_body_graph_ix, update_graph_ix, EdgeType::Backedge);
+
             cfg.add_edge(update_graph_ix, test_graph_ix, EdgeType::Backedge);
+
             cfg.add_edge(after_test_graph_ix, after_for_stmt, EdgeType::Normal);
 
             cfg.ctx(None)
@@ -1035,12 +1146,15 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
 
         self.leave_scope();
+
         self.leave_node(kind);
     }
 
     fn visit_for_in_statement(&mut self, stmt: &ForInStatement<'a>) {
         let kind = AstKind::ForInStatement(self.alloc(stmt));
+
         self.enter_node(kind);
+
         self.enter_scope(ScopeFlags::empty(), &stmt.scope_id);
 
         self.visit_for_statement_left(&stmt.left);
@@ -1051,15 +1165,20 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
 
         self.record_ast_nodes();
+
         self.visit_expression(&stmt.right);
+
         let right_node_id = self.retrieve_recorded_ast_node();
 
         /* cfg */
         let (end_of_prepare_cond_graph_ix, iteration_graph_ix, body_graph_ix) =
             control_flow!(self, |cfg| {
                 let end_of_prepare_cond_graph_ix = cfg.current_node_ix;
+
                 let iteration_graph_ix = cfg.new_basic_block_normal();
+
                 cfg.append_iteration(right_node_id, IterationInstructionKind::In);
+
                 let body_graph_ix = cfg.new_basic_block_normal();
 
                 cfg.ctx(None).default().allow_break().allow_continue();
@@ -1072,6 +1191,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         control_flow!(self, |cfg| {
             let end_of_body_graph_ix = cfg.current_node_ix;
+
             let after_for_graph_ix = cfg.new_basic_block_normal();
             // connect before for statement to the iterable expression
             cfg.add_edge(before_for_stmt_graph_ix, start_prepare_cond_graph_ix, EdgeType::Normal);
@@ -1094,12 +1214,15 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
 
         self.leave_scope();
+
         self.leave_node(kind);
     }
 
     fn visit_for_of_statement(&mut self, stmt: &ForOfStatement<'a>) {
         let kind = AstKind::ForOfStatement(self.alloc(stmt));
+
         self.enter_node(kind);
+
         self.enter_scope(ScopeFlags::empty(), &stmt.scope_id);
 
         self.visit_for_statement_left(&stmt.left);
@@ -1110,16 +1233,22 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
 
         self.record_ast_nodes();
+
         self.visit_expression(&stmt.right);
+
         let right_node_id = self.retrieve_recorded_ast_node();
 
         /* cfg */
         let (end_of_prepare_cond_graph_ix, iteration_graph_ix, body_graph_ix) =
             control_flow!(self, |cfg| {
                 let end_of_prepare_cond_graph_ix = cfg.current_node_ix;
+
                 let iteration_graph_ix = cfg.new_basic_block_normal();
+
                 cfg.append_iteration(right_node_id, IterationInstructionKind::Of);
+
                 let body_graph_ix = cfg.new_basic_block_normal();
+
                 cfg.ctx(None).default().allow_break().allow_continue();
                 (end_of_prepare_cond_graph_ix, iteration_graph_ix, body_graph_ix)
             });
@@ -1130,6 +1259,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         control_flow!(self, |cfg| {
             let end_of_body_graph_ix = cfg.current_node_ix;
+
             let after_for_graph_ix = cfg.new_basic_block_normal();
             // connect before for statement to the iterable expression
             cfg.add_edge(before_for_stmt_graph_ix, start_prepare_cond_graph_ix, EdgeType::Normal);
@@ -1152,11 +1282,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
 
         self.leave_scope();
+
         self.leave_node(kind);
     }
 
     fn visit_if_statement(&mut self, stmt: &IfStatement<'a>) {
         let kind = AstKind::IfStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg - condition basic block */
@@ -1165,7 +1297,9 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
 
         self.record_ast_nodes();
+
         self.visit_expression(&stmt.test);
+
         let test_node_id = self.retrieve_recorded_ast_node();
 
         /* cfg */
@@ -1211,6 +1345,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
                     start_of_alternate_stmt_graph_ix,
                     EdgeType::Normal,
                 );
+
                 cfg.add_edge(after_alternate_stmt_graph_ix, after_if_graph_ix, EdgeType::Normal);
             } else {
                 cfg.add_edge(before_if_stmt_graph_ix, after_if_graph_ix, EdgeType::Normal);
@@ -1223,12 +1358,15 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_labeled_statement(&mut self, stmt: &LabeledStatement<'a>) {
         let kind = AstKind::LabeledStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg */
         let label = &stmt.label.name;
+
         control_flow!(self, |cfg| {
             let ctx = cfg.ctx(Some(label.as_str())).default().allow_break();
+
             if stmt.body.is_iteration_statement() {
                 ctx.allow_continue();
             }
@@ -1242,7 +1380,9 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         control_flow!(self, |cfg| {
             let after_body_graph_ix = cfg.current_node_ix;
+
             let after_labeled_stmt_graph_ix = cfg.new_basic_block_normal();
+
             cfg.add_edge(after_body_graph_ix, after_labeled_stmt_graph_ix, EdgeType::Normal);
 
             cfg.ctx(Some(label.as_str())).mark_break(after_labeled_stmt_graph_ix).resolve();
@@ -1254,6 +1394,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_return_statement(&mut self, stmt: &ReturnStatement<'a>) {
         let kind = AstKind::ReturnStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg */
@@ -1262,6 +1403,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
         let ret_kind = if let Some(arg) = &stmt.argument {
             self.visit_expression(arg);
+
             ReturnInstructionKind::NotImplicitUndefined
         } else {
             ReturnInstructionKind::ImplicitUndefined
@@ -1270,6 +1412,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         control_flow!(self, |cfg| {
             cfg.push_return(ret_kind, Some(node_id));
+
             cfg.append_unreachable();
         });
         /* cfg */
@@ -1279,26 +1422,36 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_switch_statement(&mut self, stmt: &SwitchStatement<'a>) {
         let kind = AstKind::SwitchStatement(self.alloc(stmt));
+
         self.enter_node(kind);
+
         self.visit_expression(&stmt.discriminant);
+
         self.enter_scope(ScopeFlags::empty(), &stmt.scope_id);
 
         /* cfg */
         let discriminant_graph_ix = control_flow!(self, |cfg| {
             let discriminant_graph_ix = cfg.current_node_ix;
+
             cfg.ctx(None).default().allow_break();
+
             discriminant_graph_ix
         });
+
         let mut switch_case_graph_spans = vec![];
+
         let mut have_default_case = false;
         /* cfg */
 
         for case in &stmt.cases {
             let before_case_graph_ix = control_flow!(self, |cfg| cfg.new_basic_block_normal());
+
             self.visit_switch_case(case);
+
             if case.is_default_case() {
                 have_default_case = true;
             }
+
             control_flow!(self, |cfg| switch_case_graph_spans
                 .push((before_case_graph_ix, cfg.current_node_ix)));
         }
@@ -1319,6 +1472,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
                 // the condition of the next switch statement
                 if switch_case_graph_spans.len() > i + 1 {
                     let (_, end_of_switch_case) = switch_case_graph_spans[i];
+
                     let (next_switch_statement_condition, _) = switch_case_graph_spans[i + 1];
 
                     cfg.add_edge(
@@ -1348,24 +1502,31 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
 
         self.leave_scope();
+
         self.leave_node(kind);
     }
 
     fn visit_switch_case(&mut self, case: &SwitchCase<'a>) {
         let kind = AstKind::SwitchCase(self.alloc(case));
+
         self.enter_node(kind);
 
         if let Some(expr) = &case.test {
             self.record_ast_nodes();
+
             self.visit_expression(expr);
+
             let test_node_id = self.retrieve_recorded_ast_node();
+
             control_flow!(self, |cfg| cfg.append_condition_to(cfg.current_node_ix, test_node_id));
         }
 
         /* cfg */
         control_flow!(self, |cfg| {
             let after_test_graph_ix = cfg.current_node_ix;
+
             let statements_in_switch_graph_ix = cfg.new_basic_block_normal();
+
             cfg.add_edge(after_test_graph_ix, statements_in_switch_graph_ix, EdgeType::Jump);
         });
         /* cfg */
@@ -1377,6 +1538,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_throw_statement(&mut self, stmt: &ThrowStatement<'a>) {
         let kind = AstKind::ThrowStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg */
@@ -1394,6 +1556,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_try_statement(&mut self, stmt: &TryStatement<'a>) {
         let kind = AstKind::TryStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg */
@@ -1405,9 +1568,12 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
             before_try_block_graph_ix,
         ) = control_flow!(self, |cfg| {
             let before_try_statement_graph_ix = cfg.current_node_ix;
+
             let error_harness =
                 stmt.handler.as_ref().map(|_| cfg.attach_error_harness(ErrorEdgeKind::Explicit));
+
             let before_finalizer_graph_ix = stmt.finalizer.as_ref().map(|_| cfg.attach_finalizer());
+
             let before_try_block_graph_ix = cfg.new_basic_block_normal();
 
             (
@@ -1431,8 +1597,11 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
                 let Some(error_harness) = error_harness else {
                     unreachable!("we always create an error harness if we have a catch block.");
                 };
+
                 cfg.release_error_harness(error_harness);
+
                 let catch_block_start_ix = cfg.new_basic_block_normal();
+
                 cfg.add_edge(error_harness, catch_block_start_ix, EdgeType::Normal);
             });
             /* cfg */
@@ -1444,6 +1613,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
                 let catch_block_end_ix = cfg.current_node_ix;
                 // TODO: we shouldn't directly change the current node index.
                 cfg.current_node_ix = after_try_block_graph_ix;
+
                 Some(catch_block_end_ix)
             })
             /* cfg */
@@ -1457,8 +1627,11 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
                 let Some(before_finalizer_graph_ix) = before_finalizer_graph_ix else {
                     unreachable!("we always create a finalizer when there is a finally block.");
                 };
+
                 cfg.release_finalizer(before_finalizer_graph_ix);
+
                 let start_finally_graph_ix = cfg.new_basic_block_normal();
+
                 cfg.add_edge(before_finalizer_graph_ix, start_finally_graph_ix, EdgeType::Normal);
             });
             /* cfg */
@@ -1470,6 +1643,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
                 let finally_block_end_ix = cfg.current_node_ix;
                 // TODO: we shouldn't directly change the current node index.
                 cfg.current_node_ix = after_try_block_graph_ix;
+
                 Some(finally_block_end_ix)
             })
             /* cfg */
@@ -1480,11 +1654,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         control_flow!(self, |cfg| {
             let after_try_statement_block_ix = cfg.new_basic_block_normal();
+
             cfg.add_edge(
                 before_try_statement_graph_ix,
                 before_try_block_graph_ix,
                 EdgeType::Normal,
             );
+
             if let Some(catch_block_end_ix) = catch_block_end_ix {
                 if finally_block_end_ix.is_none() {
                     cfg.add_edge(
@@ -1500,6 +1676,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
                     );
                 }
             }
+
             if let Some(finally_block_end_ix) = finally_block_end_ix {
                 if catch_block_end_ix.is_some() {
                     cfg.add_edge(
@@ -1527,6 +1704,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_while_statement(&mut self, stmt: &WhileStatement<'a>) {
         let kind = AstKind::WhileStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg - condition basic block */
@@ -1535,15 +1713,19 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
 
         self.record_ast_nodes();
+
         self.visit_expression(&stmt.test);
+
         let test_node_id = self.retrieve_recorded_ast_node();
 
         /* cfg - body basic block */
         let body_graph_ix = control_flow!(self, |cfg| {
             cfg.append_condition_to(condition_graph_ix, test_node_id);
+
             let body_graph_ix = cfg.new_basic_block_normal();
 
             cfg.ctx(None).default().allow_break().allow_continue();
+
             body_graph_ix
         });
         /* cfg */
@@ -1553,11 +1735,15 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg - after body basic block */
         control_flow!(self, |cfg| {
             let after_body_graph_ix = cfg.current_node_ix;
+
             let after_while_graph_ix = cfg.new_basic_block_normal();
 
             cfg.add_edge(before_while_stmt_graph_ix, condition_graph_ix, EdgeType::Normal);
+
             cfg.add_edge(condition_graph_ix, body_graph_ix, EdgeType::Jump);
+
             cfg.add_edge(after_body_graph_ix, condition_graph_ix, EdgeType::Backedge);
+
             cfg.add_edge(condition_graph_ix, after_while_graph_ix, EdgeType::Normal);
 
             cfg.ctx(None)
@@ -1571,6 +1757,7 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
 
     fn visit_with_statement(&mut self, stmt: &WithStatement<'a>) {
         let kind = AstKind::WithStatement(self.alloc(stmt));
+
         self.enter_node(kind);
 
         /* cfg - condition basic block */
@@ -1591,8 +1778,11 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
             let after_body_graph_ix = cfg.new_basic_block_normal();
 
             cfg.add_edge(before_with_stmt_graph_ix, condition_graph_ix, EdgeType::Normal);
+
             cfg.add_edge(condition_graph_ix, body_graph_ix, EdgeType::Normal);
+
             cfg.add_edge(body_graph_ix, after_body_graph_ix, EdgeType::Normal);
+
             cfg.add_edge(condition_graph_ix, after_body_graph_ix, EdgeType::Normal);
         });
         /* cfg */
@@ -1605,9 +1795,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         let (before_function_graph_ix, error_harness, function_graph_ix) =
             control_flow!(self, |cfg| {
                 let before_function_graph_ix = cfg.current_node_ix;
+
                 cfg.push_finalization_stack();
+
                 let error_harness = cfg.attach_error_harness(ErrorEdgeKind::Implicit);
+
                 let function_graph_ix = cfg.new_basic_block_function();
+
                 cfg.ctx(None).new_function();
                 (before_function_graph_ix, error_harness, function_graph_ix)
             });
@@ -1616,13 +1810,17 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         // We add a new basic block to the cfg before entering the node
         // so that the correct cfg_ix is associated with the ast node.
         let kind = AstKind::Function(self.alloc(func));
+
         self.enter_node(kind);
+
         self.enter_scope(
             {
                 let mut flags = flags;
+
                 if func.is_strict() {
                     flags |= ScopeFlags::StrictMode;
                 }
+
                 flags
             },
             &func.scope_id,
@@ -1648,10 +1846,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         if let Some(type_parameters) = &func.type_parameters {
             self.visit_ts_type_parameter_declaration(type_parameters);
         }
+
         if let Some(this_param) = &func.this_param {
             self.visit_ts_this_parameter(this_param);
         }
+
         self.visit_formal_parameters(&func.params);
+
         if let Some(return_type) = &func.return_type {
             self.visit_ts_type_annotation(return_type);
         }
@@ -1683,15 +1884,21 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
             ) {
                 cfg.push_implicit_return();
             }
+
             cfg.ctx(None).resolve_expect(CtxFlags::FUNCTION);
+
             cfg.release_error_harness(error_harness);
+
             cfg.pop_finalization_stack();
+
             let after_function_graph_ix = cfg.new_basic_block_normal();
+
             cfg.add_edge(before_function_graph_ix, after_function_graph_ix, EdgeType::Normal);
         });
         /* cfg */
 
         self.leave_scope();
+
         self.leave_node(kind);
     }
 
@@ -1699,9 +1906,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         /* cfg */
         let (current_node_ix, error_harness, function_graph_ix) = control_flow!(self, |cfg| {
             let current_node_ix = cfg.current_node_ix;
+
             cfg.push_finalization_stack();
+
             let error_harness = cfg.attach_error_harness(ErrorEdgeKind::Implicit);
+
             let function_graph_ix = cfg.new_basic_block_function();
+
             cfg.ctx(None).new_function();
             (current_node_ix, error_harness, function_graph_ix)
         });
@@ -1710,7 +1921,9 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         // We add a new basic block to the cfg before entering the node
         // so that the correct cfg_ix is associated with the ast node.
         let kind = AstKind::ArrowFunctionExpression(self.alloc(expr));
+
         self.enter_node(kind);
+
         self.enter_scope(ScopeFlags::Function | ScopeFlags::Arrow, &expr.scope_id);
 
         if let Some(parameters) = &expr.type_parameters {
@@ -1756,30 +1969,40 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
             ) {
                 cfg.push_implicit_return();
             }
+
             cfg.ctx(None).resolve_expect(CtxFlags::FUNCTION);
+
             cfg.release_error_harness(error_harness);
+
             cfg.pop_finalization_stack();
+
             cfg.current_node_ix = current_node_ix;
         });
         /* cfg */
 
         self.leave_node(kind);
+
         self.leave_scope();
     }
 
     fn visit_update_expression(&mut self, it: &UpdateExpression<'a>) {
         let kind = AstKind::UpdateExpression(self.alloc(it));
+
         self.enter_node(kind);
         // `++a` or `a--`
         //    ^      ^ We always treat `a` as Read and Write reference,
         self.current_reference_flags = ReferenceFlags::read_write();
+
         self.visit_simple_assignment_target(&it.argument);
+
         self.current_reference_flags = ReferenceFlags::empty();
+
         self.leave_node(kind);
     }
 
     fn visit_member_expression(&mut self, it: &MemberExpression<'a>) {
         let kind = AstKind::MemberExpression(self.alloc(it));
+
         self.enter_node(kind);
 
         // A.B = 1;
@@ -1790,15 +2013,19 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
             MemberExpression::ComputedMemberExpression(it) => {
                 self.visit_computed_member_expression(it);
             }
+
             MemberExpression::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             MemberExpression::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
         }
+
         self.leave_node(kind);
     }
 
     fn visit_simple_assignment_target(&mut self, it: &SimpleAssignmentTarget<'a>) {
         let kind = AstKind::SimpleAssignmentTarget(self.alloc(it));
+
         self.enter_node(kind);
+
         let prev_reference_flags = self.current_reference_flags;
         // Except that the read-write flags has been set in visit_assignment_expression
         // and visit_update_expression, this is always a write-only reference here.
@@ -1810,26 +2037,34 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
             SimpleAssignmentTarget::AssignmentTargetIdentifier(it) => {
                 self.visit_identifier_reference(it);
             }
+
             SimpleAssignmentTarget::TSAsExpression(it) => {
                 self.visit_ts_as_expression(it);
             }
+
             SimpleAssignmentTarget::TSSatisfiesExpression(it) => {
                 self.visit_ts_satisfies_expression(it);
             }
+
             SimpleAssignmentTarget::TSNonNullExpression(it) => {
                 self.visit_ts_non_null_expression(it);
             }
+
             SimpleAssignmentTarget::TSTypeAssertion(it) => {
                 self.visit_ts_type_assertion(it);
             }
+
             SimpleAssignmentTarget::TSInstantiationExpression(it) => {
                 self.visit_ts_instantiation_expression(it);
             }
+
             match_member_expression!(SimpleAssignmentTarget) => {
                 self.visit_member_expression(it.to_member_expression());
             }
         }
+
         self.current_reference_flags = prev_reference_flags;
+
         self.leave_node(kind);
     }
 
@@ -1839,9 +2074,13 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
     ) {
         // NOTE: AstKind doesn't exists!
         let prev_reference_flags = self.current_reference_flags;
+
         self.current_reference_flags = ReferenceFlags::Write;
+
         self.visit_identifier_reference(&it.binding);
+
         self.current_reference_flags = prev_reference_flags;
+
         if let Some(init) = &it.init {
             self.visit_expression(init);
         }
@@ -1858,9 +2097,11 @@ impl<'a> SemanticBuilder<'a> {
                 | AstKind::ContinueStatement(_)
                 | AstKind::ThrowStatement(_) => { /* These types have their own `InstructionKind`. */
                 }
+
                 it if it.is_statement() => {
                     cfg.enter_statement(self.current_node_id);
                 }
+
                 _ => { /* ignore the rest */ }
             }
         });
@@ -1872,6 +2113,7 @@ impl<'a> SemanticBuilder<'a> {
                     self.current_reference_flags = ReferenceFlags::Type;
                 }
             }
+
             AstKind::ExportSpecifier(s) => {
                 if self.current_reference_flags.is_type() || s.export_kind.is_type() {
                     self.current_reference_flags = ReferenceFlags::Type;
@@ -1879,40 +2121,55 @@ impl<'a> SemanticBuilder<'a> {
                     self.current_reference_flags = ReferenceFlags::Read | ReferenceFlags::Type;
                 }
             }
+
             AstKind::ImportSpecifier(specifier) => {
                 specifier.bind(self);
             }
+
             AstKind::ImportDefaultSpecifier(specifier) => {
                 specifier.bind(self);
             }
+
             AstKind::ImportNamespaceSpecifier(specifier) => {
                 specifier.bind(self);
             }
+
             AstKind::TSImportEqualsDeclaration(decl) => {
                 decl.bind(self);
             }
+
             AstKind::VariableDeclarator(decl) => {
                 decl.bind(self);
+
                 self.make_all_namespaces_valuelike();
             }
+
             AstKind::Function(func) => {
                 self.function_stack.push(self.current_node_id);
+
                 if func.is_declaration() {
                     func.bind(self);
                 }
+
                 self.make_all_namespaces_valuelike();
             }
+
             AstKind::ArrowFunctionExpression(_) => {
                 self.function_stack.push(self.current_node_id);
+
                 self.make_all_namespaces_valuelike();
             }
+
             AstKind::Class(class) => {
                 self.current_node_flags |= NodeFlags::Class;
+
                 if class.is_declaration() {
                     class.bind(self);
                 }
+
                 self.make_all_namespaces_valuelike();
             }
+
             AstKind::ClassBody(body) => {
                 self.class_table_builder.declare_class_body(
                     body,
@@ -1920,6 +2177,7 @@ impl<'a> SemanticBuilder<'a> {
                     &self.nodes,
                 );
             }
+
             AstKind::PrivateIdentifier(ident) => {
                 self.class_table_builder.add_private_identifier_reference(
                     ident,
@@ -1927,44 +2185,57 @@ impl<'a> SemanticBuilder<'a> {
                     &self.nodes,
                 );
             }
+
             AstKind::BindingRestElement(element) => {
                 element.bind(self);
             }
+
             AstKind::FormalParameter(param) => {
                 param.bind(self);
             }
+
             AstKind::CatchParameter(param) => {
                 param.bind(self);
             }
+
             AstKind::TSModuleDeclaration(module_declaration) => {
                 module_declaration.bind(self);
+
                 let symbol_id = self
                     .scope
                     .get_bindings(self.current_scope_id)
                     .get(module_declaration.id.name().as_str())
                     .copied();
+
                 self.namespace_stack.push(symbol_id);
             }
+
             AstKind::TSTypeAliasDeclaration(type_alias_declaration) => {
                 type_alias_declaration.bind(self);
             }
+
             AstKind::TSInterfaceDeclaration(interface_declaration) => {
                 interface_declaration.bind(self);
             }
+
             AstKind::TSEnumDeclaration(enum_declaration) => {
                 enum_declaration.bind(self);
                 // TODO: const enum?
                 self.make_all_namespaces_valuelike();
             }
+
             AstKind::TSEnumMember(enum_member) => {
                 enum_member.bind(self);
             }
+
             AstKind::TSTypeParameter(type_parameter) => {
                 type_parameter.bind(self);
             }
+
             AstKind::TSInterfaceHeritage(_) => {
                 self.current_reference_flags = ReferenceFlags::Type;
             }
+
             AstKind::TSPropertySignature(signature) => {
                 if signature.key.is_expression() {
                     // interface A { [prop]: string }
@@ -1972,16 +2243,19 @@ impl<'a> SemanticBuilder<'a> {
                     self.current_reference_flags = ReferenceFlags::ValueAsType;
                 }
             }
+
             AstKind::TSTypeQuery(_) => {
                 // type A = typeof a;
                 //          ^^^^^^^^
                 self.current_reference_flags = ReferenceFlags::ValueAsType;
             }
+
             AstKind::TSTypeParameterInstantiation(_) => {
                 // type A<T> = typeof a<T>;
                 //                     ^^^ avoid treat T as a value and TSTypeQuery
                 self.current_reference_flags -= ReferenceFlags::ValueAsType;
             }
+
             AstKind::TSTypeName(_) => {
                 match self.nodes.parent_kind(self.current_node_id) {
                     Some(
@@ -1991,10 +2265,12 @@ impl<'a> SemanticBuilder<'a> {
                     ) => {
                         self.current_reference_flags = ReferenceFlags::Read;
                     }
+
                     Some(AstKind::TSQualifiedName(_)) => {
                         // import A = a.b
                         //            ^^^ Keep the current reference flag
                     }
+
                     _ => {
                         // Handled in `AstKind::PropertySignature` or `AstKind::TSTypeQuery`
                         if !self.current_reference_flags.is_value_as_type() {
@@ -2003,6 +2279,7 @@ impl<'a> SemanticBuilder<'a> {
                     }
                 }
             }
+
             AstKind::TSExportAssignment(export) => {
                 // export = a;
                 //          ^ can reference value or type
@@ -2010,21 +2287,26 @@ impl<'a> SemanticBuilder<'a> {
                     self.current_reference_flags = ReferenceFlags::Read | ReferenceFlags::Type;
                 }
             }
+
             AstKind::IdentifierReference(ident) => {
                 self.reference_identifier(ident);
             }
+
             AstKind::LabeledStatement(stmt) => {
                 self.unused_labels.add(stmt.label.name.as_str());
             }
+
             AstKind::ContinueStatement(ContinueStatement { label, .. })
             | AstKind::BreakStatement(BreakStatement { label, .. }) => {
                 if let Some(label) = &label {
                     self.unused_labels.reference(&label.name);
                 }
             }
+
             AstKind::YieldExpression(_) => {
                 self.set_function_node_flags(NodeFlags::HasYield);
             }
+
             _ => {}
         }
     }
@@ -2034,31 +2316,39 @@ impl<'a> SemanticBuilder<'a> {
         match kind {
             AstKind::Class(_) => {
                 self.current_node_flags -= NodeFlags::Class;
+
                 self.class_table_builder.pop_class();
             }
+
             AstKind::ExportSpecifier(_) => {
                 if !self.current_reference_flags.is_type_only() {
                     self.current_reference_flags = ReferenceFlags::empty();
                 }
             }
+
             AstKind::Function(_) | AstKind::ArrowFunctionExpression(_) => {
                 self.function_stack.pop();
             }
+
             AstKind::CatchParameter(_) => {
                 self.resolve_references_for_current_scope();
             }
+
             AstKind::TSModuleBlock(_) => {
                 self.namespace_stack.pop();
             }
+
             AstKind::TSTypeName(_) => {
                 self.current_reference_flags -= ReferenceFlags::Type;
             }
+
             AstKind::ExportNamedDeclaration(_)
             | AstKind::TSTypeQuery(_)
             // Clear the reference flags that are set in AstKind::PropertySignature
             | AstKind::PropertyKey(_) => {
                 self.current_reference_flags = ReferenceFlags::empty();
             }
+
             AstKind::LabeledStatement(_) => self.unused_labels.mark_unused(self.current_node_id),
             _ => {}
         }
@@ -2074,14 +2364,18 @@ impl<'a> SemanticBuilder<'a> {
             if self.symbols.get_flags(symbol_id).intersects(SymbolFlags::Ambient) {
                 continue;
             }
+
             self.symbols.union_flag(symbol_id, SymbolFlags::ValueModule);
         }
     }
 
     fn reference_identifier(&mut self, ident: &IdentifierReference<'a>) {
         let flags = self.resolve_reference_usages();
+
         let reference = Reference::new(self.current_node_id, flags);
+
         let reference_id = self.declare_reference(ident.name.clone(), reference);
+
         ident.reference_id.set(Some(reference_id));
     }
 

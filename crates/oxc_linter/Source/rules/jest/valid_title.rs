@@ -71,6 +71,7 @@ declare_oxc_lint!(
 impl Rule for ValidTitle {
     fn from_configuration(value: serde_json::Value) -> Self {
         let config = value.get(0);
+
         let get_as_bool = |name: &str| -> bool {
             config
                 .and_then(|v| v.get(name))
@@ -79,20 +80,25 @@ impl Rule for ValidTitle {
         };
 
         let ignore_type_of_describe_name = get_as_bool("ignoreTypeOfDescribeName");
+
         let ignore_space = get_as_bool("ignoreSpaces");
+
         let disallowed_words = config
             .and_then(|v| v.get("disallowedWords"))
             .and_then(|v| v.as_array())
             .map(|v| v.iter().filter_map(|v| v.as_str().map(CompactStr::from)).collect())
             .unwrap_or_default();
+
         let must_not_match_patterns = config
             .and_then(|v| v.get("mustNotMatch"))
             .and_then(compile_matcher_patterns)
             .unwrap_or_default();
+
         let must_match_patterns = config
             .and_then(|v| v.get("mustMatch"))
             .and_then(compile_matcher_patterns)
             .unwrap_or_default();
+
         Self(Box::new(ValidTitleConfig {
             ignore_type_of_describe_name,
             disallowed_words,
@@ -114,9 +120,11 @@ impl Rule for ValidTitle {
 impl ValidTitle {
     fn run<'a>(&self, possible_jest_fn_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_fn_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(jest_fn_call) = parse_general_jest_fn_call(call_expr, possible_jest_fn_node, ctx)
         else {
             return;
@@ -146,10 +154,12 @@ impl ValidTitle {
                     ctx,
                 );
             }
+
             Argument::TemplateLiteral(template_literal) => {
                 if !template_literal.is_no_substitution_template() {
                     return;
                 }
+
                 if let Some(quasi) = template_literal.quasi() {
                     validate_title(
                         quasi.as_str(),
@@ -160,14 +170,17 @@ impl ValidTitle {
                     );
                 }
             }
+
             Argument::BinaryExpression(binary_expr) => {
                 if does_binary_expression_contain_string_node(binary_expr) {
                     return;
                 }
+
                 if need_report_describe_name {
                     Message::TitleMustBeString.diagnostic(ctx, arg.span());
                 }
             }
+
             _ => {
                 if need_report_describe_name {
                     Message::TitleMustBeString.diagnostic(ctx, arg.span());
@@ -212,11 +225,14 @@ fn compile_matcher_patterns(
             || {
                 // for `{ "describe": "/pattern/" }`
                 let obj = matcher_patterns.as_object()?;
+
                 let mut map: FxHashMap<MatchKind, CompiledMatcherAndMessage> = FxHashMap::default();
+
                 for (key, value) in obj {
                     let Some(v) = compile_matcher_pattern(MatcherPattern::String(value)) else {
                         continue;
                     };
+
                     if let Some(kind) = MatchKind::from(key) {
                         map.insert(kind, v);
                     }
@@ -227,10 +243,15 @@ fn compile_matcher_patterns(
             |value| {
                 // for `["/pattern/", "message"]`
                 let mut map: FxHashMap<MatchKind, CompiledMatcherAndMessage> = FxHashMap::default();
+
                 let v = &compile_matcher_pattern(MatcherPattern::Vec(value))?;
+
                 map.insert(MatchKind::Describe, v.clone());
+
                 map.insert(MatchKind::Test, v.clone());
+
                 map.insert(MatchKind::It, v.clone());
+
                 Some(map)
             },
         )
@@ -238,13 +259,19 @@ fn compile_matcher_patterns(
             || {
                 // for `"/pattern/"`
                 let string = matcher_patterns.as_str()?;
+
                 let mut map: FxHashMap<MatchKind, CompiledMatcherAndMessage> = FxHashMap::default();
+
                 let v = &compile_matcher_pattern(MatcherPattern::String(
                     &serde_json::Value::String(string.to_string()),
                 ))?;
+
                 map.insert(MatchKind::Describe, v.clone());
+
                 map.insert(MatchKind::Test, v.clone());
+
                 map.insert(MatchKind::It, v.clone());
+
                 Some(map)
             },
             Some,
@@ -255,13 +282,19 @@ fn compile_matcher_pattern(pattern: MatcherPattern) -> Option<CompiledMatcherAnd
     match pattern {
         MatcherPattern::String(pattern) => {
             let reg_str = format!("(?u){}", pattern.as_str()?);
+
             let reg = Regex::new(&reg_str).ok()?;
+
             Some((reg, None))
         }
+
         MatcherPattern::Vec(pattern) => {
             let reg_str = pattern.first().and_then(|v| v.as_str()).map(|v| format!("(?u){v}"))?;
+
             let reg = Regex::new(&reg_str).ok()?;
+
             let message = pattern.get(1).and_then(serde_json::Value::as_str).map(CompactStr::from);
+
             Some((reg, message))
         }
     }
@@ -288,34 +321,42 @@ fn validate_title(
 
         if let Some(matched) = disallowed_words_reg.find(title) {
             let error = format!("{} is not allowed in test title", matched.as_str());
+
             ctx.diagnostic(valid_title_diagnostic(
                 &error,
                 "It is included in the `disallowedWords` of your config file, try to remove it from your title",
                 span,
             ));
         }
+
         return;
     }
 
     let trimmed_title = title.trim();
+
     if !valid_title.ignore_space && trimmed_title != title {
         let (error, help) = Message::AccidentalSpace.detail();
+
         ctx.diagnostic_with_fix(valid_title_diagnostic(error, help, span), |fixer| {
             fixer.replace(span.shrink(1), trimmed_title.to_string())
         });
     }
 
     let un_prefixed_name = name.trim_start_matches(['f', 'x']);
+
     let Some(first_word) = title.split(' ').next() else {
         return;
     };
 
     if first_word == un_prefixed_name {
         let (error, help) = Message::DuplicatePrefix.detail();
+
         ctx.diagnostic_with_fix(valid_title_diagnostic(error, help, span), |fixer| {
             let replaced_title = title[first_word.len()..].trim().to_string();
+
             fixer.replace(span.shrink(1), replaced_title)
         });
+
         return;
     }
 
@@ -326,10 +367,12 @@ fn validate_title(
     if let Some((regex, message)) = valid_title.must_match_patterns.get(&jest_fn_name) {
         if !regex.is_match(title) {
             let raw_pattern = regex.as_str();
+
             let message = match message.as_ref() {
                 Some(message) => message.as_str(),
                 None => &format!("{un_prefixed_name} should match {raw_pattern}"),
             };
+
             ctx.diagnostic(valid_title_diagnostic(
                 message,
                 "Make sure the title matches the `mustMatch` of your config file",
@@ -341,6 +384,7 @@ fn validate_title(
     if let Some((regex, message)) = valid_title.must_not_match_patterns.get(&jest_fn_name) {
         if regex.is_match(title) {
             let raw_pattern = regex.as_str();
+
             let message = match message.as_ref() {
                 Some(message) => message.as_str(),
                 None => &format!("{un_prefixed_name} should not match {raw_pattern}"),
@@ -379,9 +423,11 @@ impl Message {
             Self::TitleMustBeString => {
                 ("Title must be a string", "Replace your title with a string")
             }
+
             Self::EmptyTitle => {
                 ("Should not have an empty title", "Write a meaningful title for your test")
             }
+
             Self::DuplicatePrefix => (
                 "Should not have duplicate prefix",
                 "The function name has already contains the prefix, try remove the duplicate prefix",
@@ -395,6 +441,7 @@ impl Message {
 
     fn diagnostic(&self, ctx: &LintContext, span: Span) {
         let (error, help) = self.detail();
+
         ctx.diagnostic(valid_title_diagnostic(error, help, span));
     }
 }

@@ -36,6 +36,7 @@ struct GroupIdBuilder {
 impl GroupIdBuilder {
     pub fn next_id(&mut self) -> GroupId {
         self.id += 1;
+
         self.id
     }
 }
@@ -83,7 +84,9 @@ impl<'a> Prettier<'a> {
 
     pub fn build(&mut self, program: &Program<'a>) -> String {
         self.source_text = program.source_text;
+
         let doc = program.format(self);
+
         Printer::new(doc, program.source_text, self.options, self.allocator).build()
     }
 
@@ -142,6 +145,7 @@ impl<'a> Prettier<'a> {
 
     fn should_print_comma_impl(&self, level_all: bool) -> bool {
         let trailing_comma = self.options.trailing_comma;
+
         trailing_comma.is_all() || (trailing_comma.is_es5() && !level_all)
     }
 
@@ -151,35 +155,50 @@ impl<'a> Prettier<'a> {
 
     fn is_next_line_empty_after_index(&self, start_index: u32) -> bool {
         let mut old_idx = None;
+
         let mut idx = Some(start_index);
+
         while idx != old_idx {
             old_idx = idx;
+
             idx = self.skip_to_line_end(idx);
+
             idx = self.skip_inline_comment(idx);
+
             idx = self.skip_spaces(idx, /* backwards */ false);
         }
+
         idx = self.skip_trailing_comment(idx);
+
         idx = self.skip_newline(idx, /* backwards */ false);
+
         idx.is_some_and(|idx| self.has_newline(idx, /* backwards */ false))
     }
 
     fn skip_trailing_comment(&self, start_index: Option<u32>) -> Option<u32> {
         let start_index = start_index?;
+
         let mut chars = self.source_text[start_index as usize..].chars();
+
         let c = chars.next()?;
+
         if c != '/' {
             return Some(start_index);
         }
+
         let c = chars.next()?;
+
         if c != '/' {
             return Some(start_index);
         }
+
         self.skip_everything_but_new_line(Some(start_index), /* backwards */ false)
     }
 
     #[allow(clippy::unused_self)]
     fn skip_inline_comment(&self, start_index: Option<u32>) -> Option<u32> {
         let start_index = start_index?;
+
         Some(start_index)
     }
 
@@ -204,12 +223,15 @@ impl<'a> Prettier<'a> {
         F: Fn(char) -> bool,
     {
         let start_index = start_index?;
+
         let mut index = start_index;
+
         if backwards {
             for c in self.source_text[..=start_index as usize].chars().rev() {
                 if !f(c) {
                     return Some(index);
                 }
+
                 index -= 1_u32;
             }
         } else {
@@ -217,24 +239,30 @@ impl<'a> Prettier<'a> {
                 if !f(c) {
                     return Some(index);
                 }
+
                 index += 1_u32;
             }
         }
+
         None
     }
 
     #[allow(clippy::cast_possible_truncation)]
     fn skip_newline(&self, start_index: Option<u32>, backwards: bool) -> Option<u32> {
         let start_index = start_index?;
+
         let c = if backwards {
             self.source_text[..=start_index as usize].chars().next_back()
         } else {
             self.source_text[start_index as usize..].chars().next()
         }?;
+
         if is_line_terminator(c) {
             let len = c.len_utf8() as u32;
+
             return Some(if backwards { start_index - len } else { start_index + len });
         }
+
         Some(start_index)
     }
 
@@ -244,18 +272,27 @@ impl<'a> Prettier<'a> {
         {
             return false;
         }
+
         let start_index = if backwards { start_index - 1 } else { start_index };
+
         let idx = self.skip_spaces(Some(start_index), backwards);
+
         let idx2 = self.skip_newline(idx, backwards);
+
         idx != idx2
     }
 
     fn is_previous_line_empty(&self, start_index: u32) -> bool {
         let idx = start_index - 1;
+
         let idx = self.skip_spaces(Some(idx), true);
+
         let idx = self.skip_newline(idx, true);
+
         let idx = self.skip_spaces(idx, true);
+
         let idx2 = self.skip_newline(idx, true);
+
         idx != idx2
     }
 

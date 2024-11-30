@@ -106,12 +106,16 @@ fn should_ignore(callee: &Expression) -> bool {
     match callee {
         Expression::Identifier(identifier) => {
             let name = identifier.name.as_str();
+
             is_match_ignore_func_name(name)
         }
+
         Expression::StaticMemberExpression(static_assertions) => {
             let name = static_assertions.property.name.as_str();
+
             is_match_ignore_func_name(name)
         }
+
         _ => false,
     }
 }
@@ -124,10 +128,13 @@ fn is_undefined(arg: &Argument) -> bool {
     if !arg.is_expression() {
         return false;
     };
+
     let expr: &Expression = arg.to_expression();
+
     if let Expression::Identifier(_) = expr {
         return expr.is_undefined();
     }
+
     false
 }
 
@@ -135,10 +142,12 @@ fn is_has_function_return_type(node: &AstNode, ctx: &LintContext<'_>) -> bool {
     let Some(parent_node) = ctx.nodes().parent_node(node.id()) else {
         return false;
     };
+
     match parent_node.kind() {
         AstKind::ArrowFunctionExpression(arrow_func_express) => {
             arrow_func_express.return_type.is_some()
         }
+
         AstKind::Function(func) => func.return_type.is_some(),
         _ => is_has_function_return_type(parent_node, ctx),
     }
@@ -148,10 +157,12 @@ impl Rule for NoUselessUndefined {
     fn from_configuration(value: serde_json::Value) -> Self {
         let check_arguments =
             value.get("checkArguments").and_then(serde_json::Value::as_bool).unwrap_or(true);
+
         let check_arrow_function_body = value
             .get("checkArrowFunctionBody")
             .and_then(serde_json::Value::as_bool)
             .unwrap_or(true);
+
         Self { check_arguments, check_arrow_function_body }
     }
 
@@ -161,6 +172,7 @@ impl Rule for NoUselessUndefined {
                 if undefined_literal.name == "undefined" =>
             {
                 let mut parent_node: &AstNode<'a> = node;
+
                 while let Some(parent) = ctx.nodes().parent_node(parent_node.id()) {
                     let parent_kind = parent.kind();
 
@@ -170,7 +182,9 @@ impl Rule for NoUselessUndefined {
                         break;
                     }
                 }
+
                 let Some(parent_node) = ctx.nodes().parent_node(parent_node.id()) else { return };
+
                 let parent_node_kind = parent_node.kind();
 
                 match parent_node_kind {
@@ -179,6 +193,7 @@ impl Rule for NoUselessUndefined {
                         if is_has_function_return_type(parent_node, ctx) {
                             return;
                         }
+
                         ctx.diagnostic_with_fix(
                             no_useless_undefined_diagnostic(undefined_literal.span),
                             |fixer| {
@@ -191,6 +206,7 @@ impl Rule for NoUselessUndefined {
                                 } else {
                                     Span::new(ret_stmt.span().start + 6, undefined_literal.span.end)
                                 };
+
                                 fixer.delete_range(delete_span)
                             },
                         );
@@ -200,6 +216,7 @@ impl Rule for NoUselessUndefined {
                         if yield_expr.delegate {
                             return;
                         }
+
                         ctx.diagnostic_with_fix(
                             no_useless_undefined_diagnostic(undefined_literal.span),
                             |fixer| fixer.replace(yield_expr.span, "yield"),
@@ -210,20 +227,26 @@ impl Rule for NoUselessUndefined {
                         if !self.check_arrow_function_body {
                             return;
                         }
+
                         let Some(grand_parent_node) = ctx.nodes().parent_node(parent_node.id())
                         else {
                             return;
                         };
+
                         let grand_parent_node_kind = grand_parent_node.kind();
+
                         let AstKind::FunctionBody(func_body) = grand_parent_node_kind else {
                             return;
                         };
+
                         let Some(grand_grand_parent_node) =
                             ctx.nodes().parent_node(grand_parent_node.id())
                         else {
                             return;
                         };
+
                         let grand_grand_parent_node_kind = grand_grand_parent_node.kind();
+
                         let AstKind::ArrowFunctionExpression(_) = grand_grand_parent_node_kind
                         else {
                             return;
@@ -244,16 +267,21 @@ impl Rule for NoUselessUndefined {
                         else {
                             return;
                         };
+
                         let grand_parent_node_kind = grand_parent_node.kind();
+
                         let AstKind::VariableDeclaration(_) = grand_parent_node_kind else {
                             return;
                         };
+
                         if variable_declarator.kind == VariableDeclarationKind::Const {
                             return;
                         }
+
                         if is_has_function_return_type(parent_node, ctx) {
                             return;
                         }
+
                         return ctx.diagnostic_with_fix(
                             no_useless_undefined_diagnostic(undefined_literal.span),
                             |fixer| {
@@ -267,18 +295,23 @@ impl Rule for NoUselessUndefined {
                     // `const {foo = undefined} = {}`
                     AstKind::AssignmentPattern(assign_pattern) => {
                         let left = &assign_pattern.left;
+
                         let delete_span = Span::new(left.span().end, undefined_literal.span.end);
+
                         if is_has_function_return_type(parent_node, ctx) {
                             return;
                         }
+
                         return ctx.diagnostic_with_fix(
                             no_useless_undefined_diagnostic(undefined_literal.span),
                             |fixer| fixer.delete_range(delete_span),
                         );
                     }
+
                     _ => {}
                 }
             }
+
             AstKind::CallExpression(call_expr) => {
                 if !self.check_arguments {
                     return;
@@ -294,11 +327,15 @@ impl Rule for NoUselessUndefined {
                 if is_function_bind_call(call_expr) && arguments.len() != 1 {
                     return;
                 }
+
                 let mut undefined_args_spans = Vec::new();
+
                 for i in (0..arguments.len()).rev() {
                     let arg = &arguments[i];
+
                     if is_undefined(arg) {
                         let span = arg.span();
+
                         undefined_args_spans.insert(0, span);
                     } else {
                         break;
@@ -308,15 +345,20 @@ impl Rule for NoUselessUndefined {
                 if undefined_args_spans.is_empty() {
                     return;
                 }
+
                 let first_undefined_span = undefined_args_spans[0];
+
                 let last_undefined_span = undefined_args_spans[undefined_args_spans.len() - 1];
+
                 let mut start = first_undefined_span.start;
+
                 let mut end = last_undefined_span.end;
 
                 let remaining_count = arguments.len() - undefined_args_spans.len();
 
                 if remaining_count > 0 {
                     let previous_argument = &arguments[remaining_count - 1];
+
                     start = previous_argument.span().end;
                 }
                 // If all arguments removed, and there is trailing comma, we need remove it.
@@ -325,11 +367,13 @@ impl Rule for NoUselessUndefined {
                 }
 
                 let delete_span = Span::new(start, end);
+
                 return ctx.diagnostic_with_fix(
                     no_useless_undefined_diagnostic_spans(undefined_args_spans),
                     |fixer| fixer.delete_range(delete_span),
                 );
             }
+
             _ => {}
         }
     }
@@ -338,9 +382,12 @@ impl Rule for NoUselessUndefined {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     let options_ignore_arguments = || Some(serde_json::json!({ "checkArguments": false }));
+
     let options_ignore_arrow_function_body =
         || Some(serde_json::json!({"checkArrowFunctionBody": false}));
+
     let pass = vec![
         (r"function foo() {return;}", None),
         (r"const foo = () => {};", None),
@@ -521,6 +568,7 @@ fn test() {
         (
             r"
             const y: any = {}
+
             y.foo = undefined
         ",
             None,

@@ -18,15 +18,20 @@ impl<'a> Prettier<'a> {
     ) -> Doc<'a> {
         if before.is_some() || after.is_some() {
             let mut parts = self.vec();
+
             if let Some(doc) = before {
                 parts.push(doc);
             }
+
             parts.push(doc);
+
             if let Some(doc) = after {
                 parts.push(doc);
             }
+
             return Doc::Array(parts);
         }
+
         doc
     }
 

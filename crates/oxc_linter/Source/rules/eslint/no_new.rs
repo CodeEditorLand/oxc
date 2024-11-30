@@ -37,18 +37,23 @@ impl Rule for NoNew {
         };
 
         let mut ancestors = ctx.nodes().ancestor_ids(node.id()).skip(1);
+
         let Some(node_id) = ancestors.next() else { return };
 
         let kind = ctx.nodes().kind(node_id);
+
         if matches!(kind, AstKind::ExpressionStatement(_)) {
             ancestors.next(); // skip `FunctionBody`
             if let Some(node_id) = ancestors.next() {
                 let kind = ctx.nodes().kind(node_id);
+
                 if matches!(kind, AstKind::ArrowFunctionExpression(e) if e.expression) {
                     return;
                 }
             }
+
             let span = Span::new(expr.span.start, expr.callee.span().end);
+
             ctx.diagnostic(no_new_diagnostic(span));
         }
     }

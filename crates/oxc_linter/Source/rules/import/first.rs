@@ -110,11 +110,13 @@ impl Rule for First {
 
     fn run_once(&self, ctx: &LintContext<'_>) {
         let mut non_import_count = 0;
+
         let mut any_relative = false;
 
         let Some(root) = ctx.nodes().root_node() else {
             return;
         };
+
         let AstKind::Program(program) = root.kind() else { unreachable!() };
 
         for statement in &program.body {
@@ -128,10 +130,12 @@ impl Rule for First {
                                 ctx.diagnostic(absolute_first_diagnostic(mod_ref.expression.span));
                             }
                         }
+
                         if non_import_count > 0 {
                             ctx.diagnostic(first_diagnostic(decl.span));
                         }
                     }
+
                     TSModuleReference::IdentifierReference(_)
                     | TSModuleReference::QualifiedName(_) => {}
                 },
@@ -143,10 +147,12 @@ impl Rule for First {
                             ctx.diagnostic(absolute_first_diagnostic(decl.source.span));
                         }
                     }
+
                     if non_import_count > 0 {
                         ctx.diagnostic(first_diagnostic(decl.span));
                     }
                 }
+
                 _ => {
                     non_import_count += 1;
                 }
@@ -164,6 +170,7 @@ fn test() {
     let pass = vec![
         (
             r"import { x } from './foo'; import { y } from './bar';
+
             export { x, y }",
             None,
         ),
@@ -177,6 +184,7 @@ fn test() {
         // which is not implemented in oxc
         (
             r"'use directive';
+
             import { x } from 'foo';",
             None,
         ),
@@ -184,6 +192,7 @@ fn test() {
         (
             r"import { x } from './foo'; 
             import F3 = require('mod');
+
             export { x, y }",
             None,
         ),

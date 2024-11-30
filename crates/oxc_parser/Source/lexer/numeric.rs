@@ -12,16 +12,22 @@ impl<'a> Lexer<'a> {
             Some(b'x' | b'X') => self.read_non_decimal(Kind::Hex),
             Some(b'e' | b'E') => {
                 self.consume_char();
+
                 self.read_decimal_exponent()
             }
+
             Some(b'.') => {
                 self.consume_char();
+
                 self.decimal_literal_after_decimal_point_after_digits()
             }
+
             Some(b'n') => {
                 self.consume_char();
+
                 self.check_after_numeric_literal(Kind::Decimal)
             }
+
             Some(n) if n.is_ascii_digit() => self.read_legacy_octal(),
             _ => self.check_after_numeric_literal(Kind::Decimal),
         }
@@ -29,6 +35,7 @@ impl<'a> Lexer<'a> {
 
     pub(super) fn decimal_literal_after_first_digit(&mut self) -> Kind {
         self.read_decimal_digits_after_first_digit();
+
         if self.next_ascii_byte_eq(b'.') {
             return self.decimal_literal_after_decimal_point_after_digits();
         } else if self.next_ascii_byte_eq(b'n') {
@@ -36,6 +43,7 @@ impl<'a> Lexer<'a> {
         }
 
         let kind = self.optional_exponent().map_or(Kind::Decimal, |kind| kind);
+
         self.check_after_numeric_literal(kind)
     }
 
@@ -50,6 +58,7 @@ impl<'a> Lexer<'a> {
             self.consume_char();
         } else {
             self.unexpected_err();
+
             return Kind::Undetermined;
         }
 
@@ -62,34 +71,44 @@ impl<'a> Lexer<'a> {
                     // call here instead of after we ensure the next character
                     // is a number character
                     self.token.set_has_separator();
+
                     if self.peek_byte().is_some_and(|b| kind.matches_number_byte(b)) {
                         self.consume_char();
                     } else {
                         self.unexpected_err();
+
                         return Kind::Undetermined;
                     }
                 }
+
                 b if kind.matches_number_byte(b) => {
                     self.consume_char();
                 }
+
                 _ => break,
             }
         }
+
         self.next_ascii_byte_eq(b'n');
+
         self.check_after_numeric_literal(kind)
     }
 
     fn read_legacy_octal(&mut self) -> Kind {
         let mut kind = Kind::Octal;
+
         loop {
             match self.peek_byte() {
                 Some(b'0'..=b'7') => {
                     self.consume_char();
                 }
+
                 Some(b'8'..=b'9') => {
                     self.consume_char();
+
                     kind = Kind::Decimal;
                 }
+
                 _ => break,
             }
         }
@@ -98,13 +117,16 @@ impl<'a> Lexer<'a> {
             // allow 08.5 and 09.5
             Some(b'.') if kind == Kind::Decimal => {
                 self.consume_char();
+
                 self.decimal_literal_after_decimal_point_after_digits()
             }
             // allow 08e1 and 09e1
             Some(b'e') if kind == Kind::Decimal => {
                 self.consume_char();
+
                 self.read_decimal_exponent()
             }
+
             _ => self.check_after_numeric_literal(kind),
         }
     }
@@ -113,15 +135,21 @@ impl<'a> Lexer<'a> {
         let kind = match self.peek_byte() {
             Some(b'-') => {
                 self.consume_char();
+
                 Kind::NegativeExponential
             }
+
             Some(b'+') => {
                 self.consume_char();
+
                 Kind::PositiveExponential
             }
+
             _ => Kind::PositiveExponential,
         };
+
         self.read_decimal_digits();
+
         kind
     }
 
@@ -130,6 +158,7 @@ impl<'a> Lexer<'a> {
             self.consume_char();
         } else {
             self.unexpected_err();
+
             return;
         }
 
@@ -146,16 +175,20 @@ impl<'a> Lexer<'a> {
                     // call here instead of after we ensure the next character
                     // is an ASCII digit
                     self.token.set_has_separator();
+
                     if self.peek_byte().is_some_and(|b| b.is_ascii_digit()) {
                         self.consume_char();
                     } else {
                         self.unexpected_err();
+
                         return;
                     }
                 }
+
                 b'0'..=b'9' => {
                     self.consume_char();
                 }
+
                 _ => break,
             }
         }
@@ -163,19 +196,24 @@ impl<'a> Lexer<'a> {
 
     pub(super) fn decimal_literal_after_decimal_point(&mut self) -> Kind {
         self.read_decimal_digits();
+
         self.optional_exponent();
+
         self.check_after_numeric_literal(Kind::Float)
     }
 
     fn decimal_literal_after_decimal_point_after_digits(&mut self) -> Kind {
         self.optional_decimal_digits();
+
         self.optional_exponent();
+
         self.check_after_numeric_literal(Kind::Float)
     }
 
     fn optional_decimal_digits(&mut self) {
         if self.peek_byte().is_some_and(|b| b.is_ascii_digit()) {
             self.consume_char();
+
             self.read_decimal_digits_after_first_digit();
         }
     }
@@ -183,8 +221,10 @@ impl<'a> Lexer<'a> {
     fn optional_exponent(&mut self) -> Option<Kind> {
         if matches!(self.peek_byte(), Some(b'e' | b'E')) {
             self.consume_char();
+
             return Some(self.read_decimal_exponent());
         }
+
         None
     }
 
@@ -200,19 +240,24 @@ impl<'a> Lexer<'a> {
                     return kind;
                 }
             }
+
             Some(_) => {
                 // Unicode
                 let c = self.peek_char().unwrap();
+
                 if !is_identifier_start(c) {
                     return kind;
                 }
             }
+
             None => return kind,
         }
 
         // Invalid next char
         let offset = self.offset();
+
         self.consume_char();
+
         while let Some(c) = self.peek_char() {
             if is_identifier_start(c) {
                 self.consume_char();
@@ -220,7 +265,9 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
+
         self.error(diagnostics::invalid_number_end(Span::new(offset, self.offset())));
+
         Kind::Undetermined
     }
 }

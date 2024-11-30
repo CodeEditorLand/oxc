@@ -124,6 +124,7 @@ fn is_conditional(parent_node: &AstNode, ctx: &LintContext) -> bool {
         let Some(parent) = ctx.nodes().parent_node(parent_node.id()) else {
             return false;
         };
+
         is_conditional(parent, ctx)
     }
 }
@@ -131,6 +132,7 @@ fn is_conditional(parent_node: &AstNode, ctx: &LintContext) -> bool {
 impl Rule for NoCommonjs {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         Self {
             allow_primitive_modules: obj
                 .and_then(|v| v.get("allowPrimitiveModules"))
@@ -187,6 +189,7 @@ impl Rule for NoCommonjs {
                             property_name,
                         ));
                     };
+
                     return;
                 }
 
@@ -203,6 +206,7 @@ impl Rule for NoCommonjs {
                     ));
                 }
             }
+
             AstKind::CallExpression(call_expr) => {
                 if self.allow_conditional_require && node.scope_id() != ctx.scopes().root_scope_id()
                 {
@@ -241,6 +245,7 @@ impl Rule for NoCommonjs {
 
                 ctx.diagnostic(no_commonjs_diagnostic(call_expr.span, "import", callee_name));
             }
+
             _ => {}
         }
     }
@@ -306,7 +311,9 @@ fn test() {
         (
             "
             import { createRequire } from 'module';
+
             const require = createRequire();
+
             require('remark-preset-prettier');
             ",
             None,

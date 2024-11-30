@@ -5,12 +5,15 @@ pub fn is_valid_unicode_property(name: &str, value: &str) -> bool {
     if matches!(name, "General_Category" | "gc") {
         return GC_PROPERTY_VALUES.contains(value);
     }
+
     if matches!(name, "Script" | "sc") {
         return SC_PROPERTY_VALUES.contains(value);
     }
+
     if matches!(name, "Script_Extensions" | "scx") {
         return SC_PROPERTY_VALUES.contains(value) || SCX_PROPERTY_VALUES.contains(value);
     }
+
     false
 }
 

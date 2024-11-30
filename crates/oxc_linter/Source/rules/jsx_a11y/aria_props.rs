@@ -54,9 +54,12 @@ impl Rule for AriaProps {
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         if let AstKind::JSXAttributeItem(JSXAttributeItem::Attribute(attr)) = node.kind() {
             let name = get_jsx_attribute_name(&attr.name);
+
             let name = name.cow_to_lowercase();
+
             if name.starts_with("aria-") && !VALID_ARIA_PROPS.contains(&name) {
                 let suggestion = COMMON_TYPOS.get(&name).copied();
+
                 let diagnostic = aria_props_diagnostic(attr.span, &name, suggestion);
 
                 if let Some(suggestion) = suggestion {
@@ -99,6 +102,7 @@ fn test() {
         r#"<div aria-labeledby="foobar" />"#,
         r#"<div aria-skldjfaria-klajsd="foobar" />"#,
     ];
+
     let fix =
         vec![(r#"<div aria-labeledby="foobar" />"#, r#"<div aria-labelledby="foobar" />"#, None)];
 

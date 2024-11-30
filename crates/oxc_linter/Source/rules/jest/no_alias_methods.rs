@@ -70,12 +70,15 @@ impl Rule for NoAliasMethods {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
     let node = possible_jest_node.node;
+
     if let AstKind::CallExpression(call_expr) = node.kind() {
         if let Some(jest_fn_call) = parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx) {
             let parsed_expect_call = jest_fn_call;
+
             let Some(matcher) = parsed_expect_call.matcher() else {
                 return;
             };
+
             let Some(alias) = matcher.name() else {
                 return;
             };
@@ -88,6 +91,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
                 // matcher is the node of `toThrowError`, we only what to replace the content in the quotes.
                 if matcher.element.is_string_literal() {
                     span.start += 1;
+
                     span.end -= 1;
                 }
 
@@ -223,7 +227,9 @@ fn test() {
     ];
 
     pass.extend(pass_vitest.into_iter().map(|x| (x, None)));
+
     fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
+
     fix.extend(fix_vitest);
 
     Tester::new(NoAliasMethods::NAME, pass, fail)

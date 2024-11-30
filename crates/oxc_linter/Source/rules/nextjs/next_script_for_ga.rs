@@ -62,6 +62,7 @@ impl Rule for NextScriptForGa {
             if let Some(src_prop_value) = get_string_literal_prop_value(src_prop) {
                 if SUPPORTED_SRCS.iter().any(|s| src_prop_value.contains(s)) {
                     ctx.diagnostic(next_script_for_ga_diagnostic(jsx_opening_element_name.span));
+
                     return;
                 }
             }
@@ -74,7 +75,9 @@ impl Rule for NextScriptForGa {
             let Expression::TemplateLiteral(template_literal) = &danger_value.value else {
                 return;
             };
+
             let template_literal = template_literal.quasis[0].value.raw.as_str();
+
             if SUPPORTED_HTML_CONTENT_URLS.iter().any(|s| template_literal.contains(s)) {
                 ctx.diagnostic(next_script_for_ga_diagnostic(jsx_opening_element_name.span));
             }
@@ -96,11 +99,13 @@ fn get_dangerously_set_inner_html_prop_value<'a>(
     else {
         return None;
     };
+
     let Some(JSXAttributeValue::ExpressionContainer(object_expr)) =
         &dangerously_set_inner_html_prop.value
     else {
         return None;
     };
+
     let JSXExpression::ObjectExpression(object_expr) = &object_expr.expression else {
         return None;
     };
@@ -169,6 +174,7 @@ fn test() {
 			                    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 			
 			                    ga('create', 'UA-XXXXX-Y', 'auto');
+
 			                    ga('send', 'pageview');
 			                })`}
 			              </Script>
@@ -185,7 +191,9 @@ fn test() {
 			                <h1>Hello title</h1>
 			                <Script id="google-analytics">
 			                    {`window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+
 			                    ga('create', 'UA-XXXXX-Y', 'auto');
+
 			                    ga('send', 'pageview');
 			                    })`}
 			                </Script>
@@ -263,6 +271,7 @@ fn test() {
 			                        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 			
 			                        ga('create', 'UA-XXXXX-Y', 'auto');
+
 			                        ga('send', 'pageview');
 			                    `,
 			                  }}/>
@@ -279,7 +288,9 @@ fn test() {
 			                <script dangerouslySetInnerHTML={{
 			                    __html: `
 			                        window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+
 			                        ga('create', 'UA-XXXXX-Y', 'auto');
+
 			                        ga('send', 'pageview');
 			                    `,
 			                  }}/>
@@ -294,8 +305,11 @@ fn test() {
 			            return {
 			              __html: `
 			                window.dataLayer = window.dataLayer || [];
+
 			                function gtag(){dataLayer.push(arguments);}
+
 			                gtag('js', new Date());
+
 			                gtag('config', 'UA-148481588-2');`,
 			            };
 			          }

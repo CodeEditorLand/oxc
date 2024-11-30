@@ -74,6 +74,7 @@ impl<'a> TraverseAncestry<'a> {
         // `level <= last_index` would also work here, but `level < last_index` avoids a read from memory
         // when that read would just get `Ancestor::None` anyway.
         let last_index = self.stack.len() - 1;
+
         if level < last_index {
             // SAFETY: We just checked that `level < last_index` so `last_index - level` cannot wrap around,
             // and `last_index - level` must be a valid index
@@ -94,6 +95,7 @@ impl<'a> TraverseAncestry<'a> {
     pub fn ancestors<'t>(&'t self) -> impl Iterator<Item = Ancestor<'a, 't>> {
         // SAFETY: Stack always has at least 1 entry
         let stack_without_first = unsafe { self.stack.get_unchecked(1..) };
+
         stack_without_first.iter().rev().map(|&ancestor| {
             // Shrink `Ancestor`'s `'t` lifetime to lifetime of `&'t self`.
             // SAFETY: The `Ancestor` is guaranteed valid for `'t`. It is not possible to obtain

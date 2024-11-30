@@ -16,12 +16,14 @@ pub struct JSDocBuilder<'a> {
 impl<'a> JSDocBuilder<'a> {
     pub fn new(source_text: &'a str, comments: &[Comment]) -> Self {
         let mut not_attached_docs: FxHashMap<u32, Vec<_>> = FxHashMap::default();
+
         for comment in comments.iter().filter(|comment| comment.is_jsdoc(source_text)) {
             not_attached_docs
                 .entry(comment.attached_to)
                 .or_default()
                 .push(Self::parse_jsdoc_comment(comment, source_text));
         }
+
         Self { not_attached_docs, attached_docs: FxHashMap::default() }
     }
 
@@ -110,11 +112,14 @@ impl<'a> JSDocBuilder<'a> {
     pub fn retrieve_attached_jsdoc(&mut self, kind: &AstKind<'a>) -> bool {
         if should_attach_jsdoc(kind) {
             let start = kind.span().start;
+
             if let Some(docs) = self.not_attached_docs.remove(&start) {
                 self.attached_docs.insert(start, docs);
+
                 return true;
             }
         }
+
         false
     }
 
@@ -122,7 +127,9 @@ impl<'a> JSDocBuilder<'a> {
         let span = comment.content_span();
         // Remove the very first `*`
         let jsdoc_span = Span::new(span.start + 1, span.end);
+
         let comment_content = jsdoc_span.source_text(source_text);
+
         JSDoc::new(comment_content, jsdoc_span)
     }
 }
@@ -194,10 +201,13 @@ fn should_attach_jsdoc(kind: &AstKind) -> bool {
 #[cfg(test)]
 mod test {
     use oxc_allocator::Allocator;
+
     use oxc_parser::Parser;
+
     use oxc_span::{SourceType, Span};
 
     use super::JSDoc;
+
     use crate::{Semantic, SemanticBuilder};
 
     fn build_semantic<'a>(
@@ -206,7 +216,9 @@ mod test {
         source_type: Option<SourceType>,
     ) -> Semantic<'a> {
         let source_type = source_type.unwrap_or_default();
+
         let ret = Parser::new(allocator, source_text, source_type).parse();
+
         SemanticBuilder::new().with_build_jsdoc(true).build(&ret.program).semantic
     }
 
@@ -217,13 +229,17 @@ mod test {
         source_type: Option<SourceType>,
     ) -> Option<Vec<JSDoc<'a>>> {
         let semantic = build_semantic(allocator, source_text, source_type);
+
         let start = u32::try_from(source_text.find(symbol).unwrap_or(0)).unwrap();
+
         let span = Span::new(start, start + u32::try_from(symbol.len()).unwrap());
+
         semantic.jsdoc().get_all_by_span(span)
     }
 
     fn test_jsdoc_found(source_text: &str, symbol: &str, source_type: Option<SourceType>) {
         let allocator = Allocator::default();
+
         assert!(
             get_jsdocs(&allocator, source_text, symbol, source_type).is_some(),
             "JSDoc should found for\n  {symbol} \nin\n  {source_text}"
@@ -232,6 +248,7 @@ mod test {
 
     fn test_jsdoc_not_found(source_text: &str, symbol: &str) {
         let allocator = Allocator::default();
+
         assert!(
             get_jsdocs(&allocator, source_text, symbol, None).is_none(),
             "JSDoc should NOT found for\n  {symbol} \nin\n  {source_text}"
@@ -262,11 +279,13 @@ mod test {
                 "class C1 {
                     /** for m1 */
                     m1() {}
+
                     m2() {}
                 }",
                 "m2() {}",
             ),
         ];
+
         for (source_text, target) in source_texts {
             test_jsdoc_not_found(source_text, target);
         }
@@ -341,6 +360,7 @@ mod test {
             ("/** test */ import I from 'i2'", "import I from 'i2'"),
             ("/** test */ import { I } from 'i3'", "import { I } from 'i3'"),
         ];
+
         for (source_text, target) in source_texts {
             test_jsdoc_found(source_text, target, None);
         }
@@ -357,6 +377,7 @@ mod test {
         )];
 
         let source_type = SourceType::default().with_typescript(true);
+
         for (source_text, target) in source_texts {
             test_jsdoc_found(source_text, target, Some(source_type));
         }
@@ -365,6 +386,7 @@ mod test {
     #[test]
     fn get_all_by_span_order() {
         let allocator = Allocator::default();
+
         let source_text = r"
             /**c0*/
             function foo() {}
@@ -376,26 +398,37 @@ mod test {
             /**c3*/
             const x = () => {};
         ";
+
         let symbol = "const x = () => {};";
+
         let jsdocs = get_jsdocs(&allocator, source_text, symbol, None);
 
         assert!(jsdocs.is_some());
+
         let jsdocs = jsdocs.unwrap();
+
         assert_eq!(jsdocs.len(), 3);
 
         // Should be [farthest, ..., nearest]
         let mut iter = jsdocs.iter();
+
         let c1 = iter.next().unwrap();
+
         assert_eq!(c1.comment().parsed(), "c1");
+
         let c2 = iter.next().unwrap();
+
         assert_eq!(c2.comment().parsed(), "c2");
+
         let c3 = iter.next().unwrap();
+
         assert_eq!(c3.comment().parsed(), "c3");
     }
 
     #[test]
     fn get_all_jsdoc() {
         let allocator = Allocator::default();
+
         let semantic = build_semantic(
             &allocator,
             r"
@@ -420,6 +453,7 @@ mod test {
             ",
             Some(SourceType::default()),
         );
+
         assert_eq!(semantic.jsdoc().iter_all().count(), 7);
     }
 }

@@ -9,6 +9,7 @@ pub fn function_must_have_explicit_return_type(func: &Function<'_>) -> OxcDiagno
     .with_label(func.id.as_ref().map_or_else(
         || {
             let start = func.params.span.start;
+
             Span::new(start, start)
         },
         |id| id.span,

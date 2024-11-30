@@ -105,6 +105,7 @@ impl Rule for NoUselessRename {
                                 BindingPatternKind::BindingIdentifier(binding_ident) => {
                                     &binding_ident.name
                                 }
+
                                 _ => continue,
                             }
                         }
@@ -118,12 +119,14 @@ impl Rule for NoUselessRename {
                     }
                 }
             }
+
             AstKind::AssignmentTarget(AssignmentTarget::ObjectAssignmentTarget(
                 object_assignment_target,
             )) => {
                 if self.ignore_destructuring {
                     return;
                 }
+
                 for property in &object_assignment_target.properties {
                     let AssignmentTargetProperty::AssignmentTargetPropertyProperty(property) =
                         property
@@ -134,6 +137,7 @@ impl Rule for NoUselessRename {
                     let Some(key) = property.name.static_name() else {
                         continue;
                     };
+
                     let Some(renamed_key) = property.binding.name() else {
                         continue;
                     };
@@ -143,6 +147,7 @@ impl Rule for NoUselessRename {
                     }
                 }
             }
+
             AstKind::ImportSpecifier(import_specifier) => {
                 if !self.ignore_import
                     && import_specifier.imported.span() != import_specifier.local.span
@@ -151,10 +156,12 @@ impl Rule for NoUselessRename {
                     ctx.diagnostic(no_useless_rename_diagnostic(import_specifier.local.span));
                 }
             }
+
             AstKind::ExportNamedDeclaration(export_named_decl) => {
                 if self.ignore_export {
                     return;
                 }
+
                 for specifier in &export_named_decl.specifiers {
                     if specifier.local.span() != specifier.exported.span()
                         && specifier.local.name() == specifier.exported.name()
@@ -163,6 +170,7 @@ impl Rule for NoUselessRename {
                     }
                 }
             }
+
             _ => {}
         }
     }

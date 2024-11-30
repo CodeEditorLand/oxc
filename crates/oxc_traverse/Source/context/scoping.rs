@@ -87,6 +87,7 @@ impl TraverseScoping {
     /// `flags` provided are amended to inherit from parent scope's flags.
     pub fn create_child_scope(&mut self, parent_id: ScopeId, flags: ScopeFlags) -> ScopeId {
         let flags = self.scopes.get_new_scope_flags(flags, parent_id);
+
         self.scopes.add_scope(Some(parent_id), NodeId::DUMMY, flags)
     }
 
@@ -106,7 +107,9 @@ impl TraverseScoping {
     /// `flags` provided are amended to inherit from parent scope's flags.
     pub fn insert_scope_below_statement(&mut self, stmt: &Statement, flags: ScopeFlags) -> ScopeId {
         let mut collector = ChildScopeCollector::new();
+
         collector.visit_statement(stmt);
+
         self.insert_scope_below(&collector.scope_ids, flags)
     }
 
@@ -123,7 +126,9 @@ impl TraverseScoping {
         flags: ScopeFlags,
     ) -> ScopeId {
         let mut collector = ChildScopeCollector::new();
+
         collector.visit_expression(expr);
+
         self.insert_scope_below(&collector.scope_ids, flags)
     }
 
@@ -131,6 +136,7 @@ impl TraverseScoping {
         // Remove these scopes from parent's children
         if self.scopes.has_child_ids() {
             let current_child_scope_ids = self.scopes.get_child_ids_mut(self.current_scope_id);
+
             current_child_scope_ids.retain(|scope_id| !child_scope_ids.contains(scope_id));
         }
 
@@ -158,11 +164,14 @@ impl TraverseScoping {
     /// `foo` here could be an expression which itself contains scopes.
     pub fn remove_scope_for_expression(&mut self, scope_id: ScopeId, expr: &Expression) {
         let mut collector = ChildScopeCollector::new();
+
         collector.visit_expression(expr);
 
         let child_ids = collector.scope_ids;
+
         if !child_ids.is_empty() {
             let parent_id = self.scopes.get_parent_id(scope_id);
+
             for child_id in child_ids {
                 self.scopes.set_parent_id(child_id, parent_id);
             }
@@ -181,6 +190,7 @@ impl TraverseScoping {
     ) -> SymbolId {
         let symbol_id =
             self.symbols.create_symbol(SPAN, name.clone(), flags, scope_id, NodeId::DUMMY);
+
         self.scopes.add_binding(scope_id, name, symbol_id);
 
         symbol_id
@@ -196,6 +206,7 @@ impl TraverseScoping {
         flags: SymbolFlags,
     ) -> BoundIdentifier<'a> {
         let symbol_id = self.add_binding(name.to_compact_str(), scope_id, flags);
+
         BoundIdentifier::new(name, symbol_id)
     }
 
@@ -291,11 +302,15 @@ impl TraverseScoping {
         if self.uid_names.is_none() {
             self.uid_names = Some(self.get_uid_names());
         }
+
         let uid_names = self.uid_names.as_mut().unwrap();
 
         let base = get_uid_name_base(name);
+
         let uid = get_unique_name(base, uid_names);
+
         uid_names.insert(uid.clone());
+
         uid
     }
 
@@ -306,8 +321,11 @@ impl TraverseScoping {
         flags: ReferenceFlags,
     ) -> ReferenceId {
         let reference = Reference::new_with_symbol_id(NodeId::DUMMY, symbol_id, flags);
+
         let reference_id = self.symbols.create_reference(reference);
+
         self.symbols.resolved_references[symbol_id].push(reference_id);
+
         reference_id
     }
 
@@ -318,8 +336,11 @@ impl TraverseScoping {
         flags: ReferenceFlags,
     ) -> ReferenceId {
         let reference = Reference::new(NodeId::DUMMY, flags);
+
         let reference_id = self.symbols.create_reference(reference);
+
         self.scopes.add_root_unresolved_reference(name, reference_id);
+
         reference_id
     }
 
@@ -347,6 +368,7 @@ impl TraverseScoping {
         flags: ReferenceFlags,
     ) -> ReferenceId {
         let symbol_id = self.scopes.find_binding(self.current_scope_id, name.as_str());
+
         self.create_reference(name, symbol_id, flags)
     }
 
@@ -355,6 +377,7 @@ impl TraverseScoping {
     /// Provided `name` must match `reference_id`.
     pub fn delete_reference(&mut self, reference_id: ReferenceId, name: &str) {
         let symbol_id = self.symbols.get_reference(reference_id).symbol_id();
+
         if let Some(symbol_id) = symbol_id {
             self.symbols.delete_resolved_reference(symbol_id, reference_id);
         } else {
@@ -389,6 +412,7 @@ impl TraverseScoping {
                     },
                 )
             }
+
             _ => false,
         }
     }
@@ -450,9 +474,11 @@ fn get_uid_name_base(name: &str) -> &str {
     // Equivalent to `name.trim_start_matches('_').trim_end_matches(|c: char| c.is_ascii_digit())`
     // but more efficient as operates on bytes not chars
     let mut bytes = name.as_bytes();
+
     while bytes.first() == Some(&b'_') {
         bytes = &bytes[1..];
     }
+
     while matches!(bytes.last(), Some(b) if b.is_ascii_digit()) {
         bytes = &bytes[0..bytes.len() - 1];
     }
@@ -479,7 +505,9 @@ fn get_unique_name_impl(base: &str, uid_names: &FxHashSet<CompactStr>) -> Compac
     // which will not be too uncommon.
     // Having to add 2 digits will be uncommon, so we don't allocate 2 extra bytes for 2 digits.
     let mut name = CompactString::with_capacity(base.len() + 2);
+
     name.push('_');
+
     name.push_str(base);
 
     // It's fairly common that UIDs may need a numerical postfix, so we try to keep string
@@ -499,20 +527,25 @@ fn get_unique_name_impl(base: &str, uid_names: &FxHashSet<CompactStr>) -> Compac
 
         // Try the name without a numerical postfix (i.e. plain `_temp`)
         let bytes = name.as_bytes_mut();
+
         if name_is_unique(bytes) {
             return name;
         }
 
         // Try single-digit postfixes (i.e. `_temp2`, `_temp3` ... `_temp9`)
         name.push('2');
+
         let bytes = name.as_bytes_mut();
+
         if name_is_unique(bytes) {
             return name;
         }
 
         let last_index = bytes.len() - 1;
+
         for c in b'3'..=b'9' {
             *bytes.get_unchecked_mut(last_index) = c;
+
             if name_is_unique(bytes) {
                 return name;
             }
@@ -520,24 +553,32 @@ fn get_unique_name_impl(base: &str, uid_names: &FxHashSet<CompactStr>) -> Compac
 
         // Try double-digit postfixes (i.e. `_temp10` ... `_temp99`)
         *bytes.get_unchecked_mut(last_index) = b'1';
+
         name.push('0');
+
         let bytes = name.as_bytes_mut();
+
         let last_index = last_index + 1;
 
         let mut c1 = b'1';
+
         loop {
             if name_is_unique(bytes) {
                 return name;
             }
+
             for c2 in b'1'..=b'9' {
                 *bytes.get_unchecked_mut(last_index) = c2;
+
                 if name_is_unique(bytes) {
                     return name;
                 }
             }
+
             if c1 == b'9' {
                 break;
             }
+
             c1 += 1;
 
             let last_two: &mut [u8; 2] =
@@ -558,12 +599,15 @@ fn get_unique_name_impl(base: &str, uid_names: &FxHashSet<CompactStr>) -> Compac
     let base_len = name.len() - 2;
 
     let mut buffer = ItoaBuffer::new();
+
     for n in 100..=u32::MAX {
         let digits = buffer.format(n);
         // SAFETY: `base_len` is always shorter than current `name.len()`, on a UTF-8 char boundary,
         // and `name` contains at least `base_len` initialized bytes
         unsafe { name.set_len(base_len) };
+
         name.push_str(digits);
+
         if !uid_names.contains(name.as_str()) {
             return name;
         }
@@ -694,6 +738,7 @@ fn test_get_unique_name() {
 
     for (used, name, expected) in cases {
         let used = used.iter().map(|name| CompactStr::from(*name)).collect();
+
         assert_eq!(get_unique_name(name, &used), expected);
     }
 }

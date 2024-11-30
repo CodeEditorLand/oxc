@@ -98,6 +98,7 @@ impl Rule for PreferModernMathApis {
                 };
 
                 let expressions = flat_plus_expression(arg);
+
                 if expressions.iter().any(|expr| !is_pow_2_expression(expr, ctx)) {
                     return;
                 }
@@ -108,6 +109,7 @@ impl Rule for PreferModernMathApis {
                     ctx.diagnostic(prefer_math_hypot(call_expr.span));
                 }
             }
+
             _ => {}
         }
     }
@@ -117,8 +119,10 @@ fn check_prefer_log<'a>(expr: &BinaryExpression<'a>, ctx: &LintContext<'a>) {
     match expr.operator {
         BinaryOperator::Multiplication => {
             check_multiplication(expr.span, &expr.left, &expr.right, ctx);
+
             check_multiplication(expr.span, &expr.right, &expr.left, ctx);
         }
+
         BinaryOperator::Division => {
             let Expression::CallExpression(call_expr) = &expr.left else {
                 return;
@@ -161,6 +165,7 @@ fn check_prefer_log<'a>(expr: &BinaryExpression<'a>, ctx: &LintContext<'a>) {
                 &clean_string(expr.span.source_text(ctx.source_text())),
             ));
         }
+
         _ => {}
     }
 }
@@ -225,11 +230,13 @@ fn flat_plus_expression<'a>(expression: &'a Expression<'a>) -> Vec<&'a Expressio
         Expression::BinaryExpression(bin_expr) => {
             if matches!(bin_expr.operator, BinaryOperator::Addition) {
                 expressions.append(&mut flat_plus_expression(&bin_expr.left));
+
                 expressions.append(&mut flat_plus_expression(&bin_expr.right));
             } else {
                 expressions.push(expression);
             }
         }
+
         _ => expressions.push(expression),
     }
 
@@ -248,9 +255,11 @@ fn is_pow_2_expression(expression: &Expression, ctx: &LintContext<'_>) -> bool {
                     false
                 }
             }
+
             BinaryOperator::Multiplication => {
                 is_same_reference(&bin_expr.left, &bin_expr.right, ctx)
             }
+
             _ => false,
         }
     } else {
@@ -262,11 +271,13 @@ fn is_pow_2_expression(expression: &Expression, ctx: &LintContext<'_>) -> bool {
 /// removes any duplicate spaces
 fn clean_string(input: &str) -> String {
     let mut result = String::new();
+
     let mut prev_char = ' ';
 
     for c in input.chars() {
         if c != '\n' {
             let current_char = if c == '\t' { ' ' } else { c };
+
             if !(current_char == ' ' && prev_char == ' ') {
                 result.push(current_char);
             }

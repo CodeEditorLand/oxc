@@ -63,6 +63,7 @@ impl KnownLayout {
 
     pub fn with_offsets(mut self, offsets: Vec<usize>) -> Self {
         self.offsets = Some(offsets);
+
         self
     }
 
@@ -73,8 +74,11 @@ impl KnownLayout {
             self.niches -= n;
         } else if can_resize {
             let align = self.align();
+
             self.size += align;
+
             self.niches += max_val_of_bytes(align);
+
             self.consume_niches(n, can_resize);
         } else {
             panic!("`{}` called on a layout without enough space.", stringify!(consume_niches));
@@ -93,16 +97,25 @@ impl Layout {
     pub const fn of<T>() -> Self {
         // TODO: find a better way of calculating this.
         struct N1<T>(Option<T>);
+
         struct N2<T>(N1<N1<T>>);
+
         struct N3<T>(N1<N2<T>>);
+
         struct N4<T>(N1<N3<T>>);
+
         struct N5<T>(N1<N4<T>>);
+
         struct N6<T>(N1<N5<T>>);
+
         struct N7<T>(N1<N6<T>>);
+
         struct N8<T>(N1<N7<T>>);
 
         let size = size_of::<T>();
+
         let align = align_of::<T>();
+
         let niches = if size_of::<N1<T>>() > size {
             0
         } else if size_of::<N2<T>>() > size {
@@ -131,6 +144,7 @@ impl Layout {
     pub const fn zero() -> Self {
         #[repr(C)]
         struct Empty;
+
         Self::of::<Empty>()
     }
 

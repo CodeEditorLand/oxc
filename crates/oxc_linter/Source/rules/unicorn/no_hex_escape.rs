@@ -47,28 +47,38 @@ declare_oxc_lint!(
 // \x -> \u00
 fn check_escape(value: &str) -> Option<String> {
     let mut in_escape = false;
+
     let mut matched = Vec::new();
+
     for (index, c) in value.char_indices() {
         if c == '\\' && !in_escape {
             in_escape = true;
         } else if c == 'x' && in_escape {
             matched.push(index);
+
             in_escape = false;
         } else {
             in_escape = false;
         }
     }
+
     if matched.is_empty() {
         None
     } else {
         let mut fixed: String = String::with_capacity(value.len() + matched.len() * 2);
+
         let mut last = 0;
+
         for index in matched {
             fixed.push_str(&value[last..index - 1]);
+
             fixed.push_str("\\u00");
+
             last = index + 1;
         }
+
         fixed.push_str(&value[last..]);
+
         Some(fixed)
     }
 }
@@ -78,12 +88,14 @@ impl Rule for NoHexEscape {
         match node.kind() {
             AstKind::StringLiteral(StringLiteral { span, .. }) => {
                 let text = span.source_text(ctx.source_text());
+
                 if let Some(fixed) = check_escape(&text[1..text.len() - 1]) {
                     ctx.diagnostic_with_fix(no_hex_escape_diagnostic(*span), |fixer| {
                         fixer.replace(*span, format!("'{fixed}'"))
                     });
                 }
             }
+
             AstKind::TemplateLiteral(TemplateLiteral { quasis, .. }) => {
                 quasis.iter().for_each(|quasi| {
                     if let Some(fixed) = check_escape(quasi.span.source_text(ctx.source_text())) {
@@ -93,12 +105,14 @@ impl Rule for NoHexEscape {
                     }
                 });
             }
+
             AstKind::RegExpLiteral(regex) => {
                 let Some(pattern) = regex.regex.pattern.as_pattern() else {
                     return;
                 };
 
                 let mut finder = HexEscapeFinder { hex_escapes: vec![] };
+
                 finder.visit_pattern(pattern);
 
                 for span in finder.hex_escapes {
@@ -110,6 +124,7 @@ impl Rule for NoHexEscape {
                     });
                 }
             }
+
             _ => {}
         }
     }
@@ -218,13 +233,22 @@ fn test() {
 #[test]
 fn test_check_escape() {
     let result = check_escape(r"\x1B").unwrap();
+
     assert_eq!(result, r"\u001B");
+
     let result = check_escape(r"a\x1B").unwrap();
+
     assert_eq!(result, r"a\u001B");
+
     assert!(check_escape(r"\\x1B").is_none());
+
     let result = check_escape(r"\\\x1B").unwrap();
+
     assert_eq!(result, r"\\\u001B");
+
     let result = check_escape(r"\\\a\x1B").unwrap();
+
     assert_eq!(result, r"\\\a\u001B");
+
     assert!(check_escape(r"\\xb1").is_none());
 }

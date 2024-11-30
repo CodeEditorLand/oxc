@@ -67,10 +67,13 @@ impl DebugDot for ControlFlowGraph {
                 &[Config::EdgeNoLabel, Config::NodeNoLabel],
                 &|_graph, edge| {
                     let weight = edge.weight();
+
                     if !ctx.verbose && matches!(weight, EdgeType::Error(ErrorEdgeKind::Implicit)) {
                         return String::new();
                     }
+
                     let mut attrs = Attrs::from_iter([("label", format!("{weight:?}"))]);
+
                     if matches!(weight, EdgeType::Unreachable)
                         || self.basic_block(edge.source()).is_unreachable()
                     {
@@ -80,16 +83,20 @@ impl DebugDot for ControlFlowGraph {
                     match weight {
                         EdgeType::Error(kind) => {
                             attrs += ("color", Attr::ident("red"));
+
                             if matches!(kind, ErrorEdgeKind::Implicit) {
                                 attrs += ("style", Attr::ident("dashed"));
                             }
                         }
+
                         EdgeType::Backedge => {
                             attrs += ("color", Attr::ident("grey"));
                         }
+
                         EdgeType::Jump => {
                             attrs += ("color", Attr::ident("green"));
                         }
+
                         _ => {}
                     }
 
@@ -97,8 +104,11 @@ impl DebugDot for ControlFlowGraph {
                 },
                 &|_graph, node| {
                     let basic_block_index = *node.1;
+
                     let basic_block_debug_str = self.basic_blocks[*node.1].debug_dot(ctx);
+
                     let trimmed_debug_str = basic_block_debug_str.trim();
+
                     if trimmed_debug_str.is_empty() {
                         format!("label = \"bb{basic_block_index}\" shape = box",)
                     } else {
@@ -116,7 +126,9 @@ impl DebugDot for BasicBlock {
     fn debug_dot(&self, ctx: DebugDotContext) -> String {
         self.instructions().iter().fold(String::new(), |mut acc, it| {
             acc.push_str(it.debug_dot(ctx).as_str());
+
             acc.push('\n');
+
             acc
         })
     }
@@ -128,6 +140,7 @@ impl DebugDot for Instruction {
             InstructionKind::Statement => {
                 self.node_id.map_or("None".to_string(), |id| ctx.debug_ast_kind(id))
             }
+
             InstructionKind::Unreachable => "unreachable".to_string(),
             InstructionKind::Throw => "throw".to_string(),
             InstructionKind::Condition => self.node_id.map_or("None".to_string(), |id| {
@@ -145,6 +158,7 @@ impl DebugDot for Instruction {
                     "expr"
                 )
             }
+
             InstructionKind::Break(LabeledInstruction::Labeled) => {
                 let Some(AstKind::BreakStatement(BreakStatement { label: Some(label), .. })) =
                     self.node_id.map(|id| ctx.nodes.get_node(id)).map(AstNode::kind)
@@ -154,8 +168,10 @@ impl DebugDot for Instruction {
                         ctx.nodes.kind(self.node_id.unwrap())
                     )
                 };
+
                 format!("break <{}>", label.name)
             }
+
             InstructionKind::Break(LabeledInstruction::Unlabeled) => "break".to_string(),
             InstructionKind::Continue(LabeledInstruction::Labeled) => {
                 let Some(AstKind::ContinueStatement(ContinueStatement {
@@ -167,12 +183,15 @@ impl DebugDot for Instruction {
                         ctx.nodes.kind(self.node_id.unwrap())
                     )
                 };
+
                 format!("continue <{}>", label.name)
             }
+
             InstructionKind::Continue(LabeledInstruction::Unlabeled) => "continue".to_string(),
             InstructionKind::Return(ReturnInstructionKind::ImplicitUndefined) => {
                 "return <implicit undefined>".to_string()
             }
+
             InstructionKind::ImplicitReturn => "return".to_string(),
             InstructionKind::Return(ReturnInstructionKind::NotImplicitUndefined) => {
                 "return <value>".to_string()

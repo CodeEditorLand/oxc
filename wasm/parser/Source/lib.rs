@@ -87,6 +87,7 @@ pub fn parse_sync(
             .iter()
             .flat_map(|error| {
                 let Some(labels) = &error.labels else { return vec![] };
+
                 labels
                     .iter()
                     .map(|label| {

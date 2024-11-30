@@ -65,6 +65,7 @@ declare_oxc_lint! {
 impl Rule for NoMixedOperators {
 	fn run<'a>(&self, node:&AstNode<'a>, ctx:&LintContext<'a>) {
 		let node_kind = node.kind();
+
 		if !matches!(node_kind, AstKind::BinaryExpression(_) | AstKind::LogicalExpression(_)) {
 			return;
 		}
@@ -100,6 +101,7 @@ impl NoMixedOperators {
 		let config = value.get(0)?;
 
 		let mut groups = vec![];
+
 		if let Some(groups_config) = config.get("groups") {
 			if let Some(groups_config) = groups_config.as_array() {
 				'outer: for group_config in groups_config {
@@ -107,15 +109,19 @@ impl NoMixedOperators {
 					// through to next group.
 					if let Some(group_config) = group_config.as_array() {
 						let mut group = vec![];
+
 						for val in group_config {
 							let Some(val) = val.as_str() else {
 								continue 'outer;
 							};
+
 							let Some((operator, _)) = operator_and_precedence(val) else {
 								continue 'outer;
 							};
+
 							group.push(operator);
 						}
+
 						groups.push(group);
 					}
 				}
@@ -177,12 +183,15 @@ impl NoMixedOperators {
 			},
 			_ => unreachable!(),
 		};
+
 		let parent_operator_span =
 			get_op_span(parent_left_span, parent_right_span, parent_operator, ctx);
 
 		let (node_operator, node_precedence) = operator_and_precedence(node_operator).unwrap();
+
 		let (parent_operator, parent_precedence) =
 			operator_and_precedence(parent_operator).unwrap();
+
 		if !(self.allow_same_precedence && node_precedence == parent_precedence)
 			&& self.in_the_same_group(node_operator, parent_operator)
 		{
@@ -199,15 +208,19 @@ impl NoMixedOperators {
 	fn in_the_same_group(&self, op1:&str, op2:&str) -> bool {
 		self.groups.iter().any(|group| {
 			let mut contains_op1 = false;
+
 			let mut contains_op2 = false;
+
 			for &op in group {
 				if op == op1 {
 					contains_op1 = true;
 				}
+
 				if op == op2 {
 					contains_op2 = true;
 				}
 			}
+
 			contains_op1 && contains_op2
 		})
 	}
@@ -239,11 +252,17 @@ const PRECEDENCES: [u8; 27] = [
 #[inline]
 fn default_groups() -> Vec<Vec<&'static str>> {
 	let arithmetic:&[&str] = &OPERATORS[..6];
+
 	let bitwise:&[&str] = &OPERATORS[6..13];
+
 	let compare:&[&str] = &OPERATORS[13..21];
+
 	let logical:&[&str] = &OPERATORS[21..23];
+
 	let relational:&[&str] = &OPERATORS[23..25];
+
 	let default_operators:[&[&str]; 5] = [arithmetic, bitwise, compare, logical, relational];
+
 	default_operators.iter().map(|operators| operators.to_vec()).collect()
 }
 
@@ -269,7 +288,9 @@ fn get_op_span(
 			|| Span::new(node_left_span.end, node_right_span.start),
 			|v| {
 				let length = node_operator.len() as u32;
+
 				let length = if length == 1 { 0 } else { length };
+
 				Span::new(node_left_span.end + v as u32, node_left_span.end + v as u32 + length)
 			},
 		)
@@ -363,7 +384,9 @@ mod internal_tests {
 			],
 			"allowSamePrecedence": true
 		}]);
+
 		let rule = NoMixedOperators::try_from_configuration(&config);
+
 		assert_eq!(Some(NoMixedOperators::default()), rule);
 	}
 
@@ -372,12 +395,14 @@ mod internal_tests {
 		let config = json!([
 		  { "allowSamePrecedence": false }
 		]);
+
 		let rule = NoMixedOperators::try_from_configuration(&config);
 		// missing groups should fall back to default
 		let expected = NoMixedOperators(Box::new(NoMixedOperatorsConfig {
 			groups:default_groups(),
 			allow_same_precedence:false,
 		}));
+
 		assert_eq!(Some(expected), rule);
 	}
 }

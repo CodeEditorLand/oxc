@@ -48,12 +48,15 @@ pub trait Derive {
         // from `x::y::z` to `crate::y::z::*`
         let use_modules = module_paths.into_iter().map(|module_path| {
             let module_path = module_path.strip_suffix("::mod").unwrap_or(module_path);
+
             let local_path = ["crate"]
                 .into_iter()
                 .chain(module_path.split("::").skip(1))
                 .chain(["*"])
                 .join("::");
+
             let use_module: ItemUse = parse_str(format!("use {local_path};").as_str()).unwrap();
+
             quote! {
                 ///@@line_break
                 #use_module
@@ -72,7 +75,9 @@ pub trait Derive {
 
     fn output(&mut self, schema: &Schema) -> Result<Vec<Output>> {
         let trait_name = Self::trait_name();
+
         let filename = format!("derive_{}.rs", Self::snake_name());
+
         let output = schema
             .defs
             .iter()
@@ -82,10 +87,15 @@ pub trait Derive {
                 FxHashMap::<&str, (FxHashSet<&str>, Vec<TokenStream>)>::default(),
                 |mut acc, (def, stream)| {
                     let module_path = def.module_path();
+
                     let krate = module_path.split("::").next().unwrap();
+
                     let streams = acc.entry(krate).or_default();
+
                     streams.0.insert(module_path);
+
                     streams.1.push(stream);
+
                     acc
                 },
             )
@@ -93,6 +103,7 @@ pub trait Derive {
             .sorted_by(|lhs, rhs| lhs.0.cmp(rhs.0))
             .fold(Vec::new(), |mut acc, (krate, (modules, streams))| {
                 let mut modules = Vec::from_iter(modules);
+
                 modules.sort_unstable();
 
                 let output = Output::Rust {
@@ -103,15 +114,19 @@ pub trait Derive {
                             acc.extend(quote! {
                                 ///@@line_break
                             });
+
                             acc.extend(it);
+
                             acc
                         }),
                     ),
                 };
 
                 acc.push(output);
+
                 acc
             });
+
         Ok(output)
     }
 }

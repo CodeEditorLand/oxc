@@ -86,11 +86,14 @@ impl Generator for AstKindGenerator {
             .iter()
             .filter(|def| {
                 let is_visitable = def.is_visitable();
+
                 let is_blacklisted = BLACK_LIST.contains(&def.name());
+
                 is_visitable && !is_blacklisted
             })
             .map(|def| {
                 let ident = def.ident();
+
                 let typ = def.to_type();
                 (ident, typ)
             })
@@ -111,6 +114,7 @@ impl Generator for AstKindGenerator {
             .map(|(ident, typ)| {
                 let snake_case_name =
                     format_ident!("as_{}", ident.to_string().to_case(Case::Snake));
+
                 parse_quote!(
                     ///@@line_break
                     #[inline]

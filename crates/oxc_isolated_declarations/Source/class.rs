@@ -28,6 +28,7 @@ impl<'a> IsolatedDeclarations<'a> {
                         Expression::NumericLiteral(_) | Expression::BigIntLiteral(_)
                     )
             }
+
             _ => false,
         }
     }
@@ -35,6 +36,7 @@ impl<'a> IsolatedDeclarations<'a> {
     pub(crate) fn report_property_key(&self, key: &PropertyKey<'a>, computed: bool) -> bool {
         if computed && !self.is_literal_key(key) {
             self.error(computed_property_name(key.span()));
+
             true
         } else {
             false
@@ -58,6 +60,7 @@ impl<'a> IsolatedDeclarations<'a> {
         property: &PropertyDefinition<'a>,
     ) -> ClassElement<'a> {
         let mut type_annotations = None;
+
         let mut value = None;
 
         if property.accessibility.map_or(true, |a| !a.is_private()) {
@@ -76,6 +79,7 @@ impl<'a> IsolatedDeclarations<'a> {
                         } else {
                             value = Some(expr.clone_in(self.ast.allocator));
                         }
+
                         None
                     }
                 } else {
@@ -181,7 +185,9 @@ impl<'a> IsolatedDeclarations<'a> {
             // A parameter property may not be declared using a binding pattern.(1187)
             return None;
         };
+
         let key = self.ast.property_key_identifier_name(SPAN, ident_name);
+
         Some(self.ast.class_element_property_definition(
             PropertyDefinitionType::PropertyDefinition,
             param.span,
@@ -207,10 +213,12 @@ impl<'a> IsolatedDeclarations<'a> {
                     MethodDefinitionType::MethodDefinition => {
                         PropertyDefinitionType::PropertyDefinition
                     }
+
                     MethodDefinitionType::TSAbstractMethodDefinition => {
                         PropertyDefinitionType::TSAbstractPropertyDefinition
                     }
                 };
+
                 self.create_class_property(
                     r#type,
                     method.span,
@@ -220,6 +228,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     self.transform_accessibility(method.accessibility),
                 )
             }
+
             MethodDefinitionKind::Get | MethodDefinitionKind::Constructor => {
                 let params = self.ast.alloc_formal_parameters(
                     SPAN,
@@ -227,12 +236,15 @@ impl<'a> IsolatedDeclarations<'a> {
                     self.ast.vec(),
                     NONE,
                 );
+
                 self.transform_class_method_definition(method, params, None)
             }
+
             MethodDefinitionKind::Set => {
                 let params = self.create_formal_parameters(
                     self.ast.binding_pattern_kind_binding_identifier(SPAN, "value"),
                 );
+
                 self.transform_class_method_definition(method, params, None)
             }
         }
@@ -244,6 +256,7 @@ impl<'a> IsolatedDeclarations<'a> {
         params: &FormalParameters<'a>,
     ) -> oxc_allocator::Vec<'a, ClassElement<'a>> {
         let mut elements = self.ast.vec();
+
         for (index, param) in function.params.items.iter().enumerate() {
             if param.accessibility.is_some() || param.readonly {
                 let type_annotation =
@@ -254,6 +267,7 @@ impl<'a> IsolatedDeclarations<'a> {
 
                         params.items[index].pattern.type_annotation.clone_in(self.ast.allocator)
                     };
+
                 if let Some(new_element) =
                     self.transform_formal_parameter_to_class_property(param, type_annotation)
                 {
@@ -261,6 +275,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 }
             }
         }
+
         elements
     }
 
@@ -279,6 +294,7 @@ impl<'a> IsolatedDeclarations<'a> {
         decl: &Class<'a>,
     ) -> FxHashMap<Cow<str>, Box<'a, TSTypeAnnotation<'a>>> {
         let mut method_annotations = FxHashMap::default();
+
         for element in &decl.body.body {
             if let ClassElement::MethodDefinition(method) = element {
                 if (method.key.is_private_identifier()
@@ -297,14 +313,17 @@ impl<'a> IsolatedDeclarations<'a> {
                         let Some(first_param) = method.value.params.items.first() else {
                             continue;
                         };
+
                         if let Some(annotation) =
                             first_param.pattern.type_annotation.clone_in(self.ast.allocator)
                         {
                             method_annotations.insert(name, annotation);
                         }
                     }
+
                     MethodDefinitionKind::Get => {
                         let function = &method.value;
+
                         if let Some(annotation) = function
                             .return_type
                             .clone_in(self.ast.allocator)
@@ -313,6 +332,7 @@ impl<'a> IsolatedDeclarations<'a> {
                             method_annotations.insert(name, annotation);
                         }
                     }
+
                     _ => continue,
                 };
             }
@@ -336,24 +356,32 @@ impl<'a> IsolatedDeclarations<'a> {
                 Expression::StaticMemberExpression(expr) => {
                     !expr.get_first_object().is_identifier_reference()
                 }
+
                 _ => true,
             };
+
             if is_not_allowed {
                 self.error(extends_clause_expression(super_class.span()));
             }
         }
 
         let setter_getter_annotations = self.collect_getter_or_setter_annotations(decl);
+
         let mut has_private_key = false;
+
         let mut elements = self.ast.vec();
+
         let mut is_function_overloads = false;
+
         for element in &decl.body.body {
             match element {
                 ClassElement::StaticBlock(_) => {}
+
                 ClassElement::MethodDefinition(ref method) => {
                     if self.has_internal_annotation(method.span) {
                         continue;
                     }
+
                     if !(method.r#type.is_abstract() || method.optional)
                         && method.value.body.is_none()
                     {
@@ -361,30 +389,39 @@ impl<'a> IsolatedDeclarations<'a> {
                     } else if is_function_overloads {
                         // Skip implementation of function overloads
                         is_function_overloads = false;
+
                         continue;
                     }
+
                     if method.key.is_private_identifier() {
                         has_private_key = true;
+
                         continue;
                     }
+
                     if self.report_property_key(&method.key, method.computed) {
                         continue;
                     }
 
                     let function = &method.value;
+
                     let params = match method.kind {
                         MethodDefinitionKind::Set => {
                             if method.accessibility.is_some_and(TSAccessibility::is_private) {
                                 elements.push(self.transform_private_modifier_method(method));
+
                                 continue;
                             }
+
                             let params = &method.value.params;
+
                             if params.items.is_empty() {
                                 self.create_formal_parameters(
                                     self.ast.binding_pattern_kind_binding_identifier(SPAN, "value"),
                                 )
                             } else {
                                 let mut params = params.clone_in(self.ast.allocator);
+
                                 if let Some(param) = params.items.first_mut() {
                                     if let Some(annotation) =
                                         method.key.static_name().and_then(|name| {
@@ -396,11 +433,14 @@ impl<'a> IsolatedDeclarations<'a> {
                                         param.pattern.type_annotation = Some(annotation);
                                     }
                                 }
+
                                 params
                             }
                         }
+
                         MethodDefinitionKind::Constructor => {
                             let params = self.transform_formal_parameters(&function.params);
+
                             elements.splice(
                                 0..0,
                                 self.transform_constructor_params_to_class_properties(
@@ -410,16 +450,20 @@ impl<'a> IsolatedDeclarations<'a> {
 
                             if method.accessibility.is_some_and(TSAccessibility::is_private) {
                                 elements.push(self.transform_private_modifier_method(method));
+
                                 continue;
                             }
 
                             params
                         }
+
                         _ => {
                             if method.accessibility.is_some_and(TSAccessibility::is_private) {
                                 elements.push(self.transform_private_modifier_method(method));
+
                                 continue;
                             }
+
                             self.transform_formal_parameters(&function.params)
                         }
                     };
@@ -427,13 +471,16 @@ impl<'a> IsolatedDeclarations<'a> {
                     let return_type = match method.kind {
                         MethodDefinitionKind::Method => {
                             let rt = self.infer_function_return_type(function);
+
                             if rt.is_none() {
                                 self.error(method_must_have_explicit_return_type(
                                     method.key.span(),
                                 ));
                             }
+
                             rt
                         }
+
                         MethodDefinitionKind::Get => {
                             let rt = method.value.return_type.clone_in(self.ast.allocator).or_else(
                                 || {
@@ -444,19 +491,25 @@ impl<'a> IsolatedDeclarations<'a> {
                                         .map(|a| a.clone_in(self.ast.allocator))
                                 },
                             );
+
                             if rt.is_none() {
                                 self.error(accessor_must_have_explicit_return_type(
                                     method.key.span(),
                                 ));
                             }
+
                             rt
                         }
+
                         MethodDefinitionKind::Set | MethodDefinitionKind::Constructor => None,
                     };
+
                     let new_element =
                         self.transform_class_method_definition(method, params, return_type);
+
                     elements.push(new_element);
                 }
+
                 ClassElement::PropertyDefinition(property) => {
                     if self.has_internal_annotation(property.span) {
                         continue;
@@ -472,6 +525,7 @@ impl<'a> IsolatedDeclarations<'a> {
                         elements.push(self.transform_class_property_definition(property));
                     }
                 }
+
                 ClassElement::AccessorProperty(property) => {
                     if self.has_internal_annotation(property.span) {
                         continue;
@@ -483,6 +537,7 @@ impl<'a> IsolatedDeclarations<'a> {
 
                     if property.key.is_private_identifier() {
                         has_private_key = true;
+
                         continue;
                     }
 
@@ -499,8 +554,10 @@ impl<'a> IsolatedDeclarations<'a> {
                         property.type_annotation.clone_in(self.ast.allocator),
                         property.accessibility,
                     );
+
                     elements.push(new_element);
                 }
+
                 ClassElement::TSIndexSignature(signature) => elements.push({
                     if self.has_internal_annotation(signature.span) {
                         continue;
@@ -516,8 +573,11 @@ impl<'a> IsolatedDeclarations<'a> {
             // When the class has at least one private identifier, create a unique constant identifier to retain the nominal typing behavior
             // Prevents other classes with the same public members from being used in place of the current class
             let ident = self.ast.property_key_private_identifier(SPAN, "private");
+
             let r#type = PropertyDefinitionType::PropertyDefinition;
+
             let decorators = self.ast.vec();
+
             let element = self.ast.class_element_property_definition(
                 r#type, SPAN, decorators, ident, None, false, false, false, false, false, false,
                 false, NONE, None,
@@ -548,9 +608,12 @@ impl<'a> IsolatedDeclarations<'a> {
         kind: BindingPatternKind<'a>,
     ) -> Box<'a, FormalParameters<'a>> {
         let pattern = self.ast.binding_pattern(kind, None::<TSTypeAnnotation<'a>>, false);
+
         let parameter =
             self.ast.formal_parameter(SPAN, self.ast.vec(), pattern, None, false, false);
+
         let items = self.ast.vec1(parameter);
+
         self.ast.alloc_formal_parameters(SPAN, FormalParameterKind::Signature, items, NONE)
     }
 }

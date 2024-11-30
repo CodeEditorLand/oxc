@@ -82,8 +82,10 @@ impl<'a> SubstituteAlternateSyntax {
 	fn compress_undefined(&self, expr:&mut Expression<'a>, ctx:&mut TraverseCtx<'a>) -> bool {
 		if ctx.is_expression_undefined(expr) {
 			*expr = ctx.ast.void_0();
+
 			return true;
 		};
+
 		false
 	}
 
@@ -92,6 +94,7 @@ impl<'a> SubstituteAlternateSyntax {
 		let Some(Argument::Identifier(ident)) = call_expr.arguments.first() else {
 			return false;
 		};
+
 		if ident.name != "exports" {
 			return false;
 		}
@@ -108,6 +111,7 @@ impl<'a> SubstituteAlternateSyntax {
 				}
 			}
 		}
+
 		false
 	}
 
@@ -123,6 +127,7 @@ impl<'a> SubstituteAlternateSyntax {
 			// different semantics.
 			if block.body.len() == 1 && !block.body[0].is_declaration() {
 				*stmt = block.body.remove(0);
+
 				self.compress_block(stmt);
 			}
 		}
@@ -149,6 +154,7 @@ impl<'a> SubstituteAlternateSyntax {
 		let Expression::BooleanLiteral(lit) = expr else {
 			return false;
 		};
+
 		if self.options.booleans && !self.in_define_export {
 			let num = ctx.ast.expression_numeric_literal(
 				SPAN,
@@ -157,8 +163,10 @@ impl<'a> SubstituteAlternateSyntax {
 				NumberBase::Decimal,
 			);
 			*expr = ctx.ast.expression_unary(SPAN, UnaryOperator::LogicalNot, num);
+
 			return true;
 		}
+
 		false
 	}
 
@@ -168,9 +176,11 @@ impl<'a> SubstituteAlternateSyntax {
 		if !self.options.typeofs {
 			return;
 		}
+
 		if !matches!(expr.operator, BinaryOperator::Equality | BinaryOperator::StrictEquality) {
 			return;
 		}
+
 		let pair = Self::commutative_pair(
 			(&expr.left, &expr.right),
 			|a| a.is_specific_string_literal("undefined").then_some(()),
@@ -182,15 +192,21 @@ impl<'a> SubstituteAlternateSyntax {
 						}
 					}
 				}
+
 				None
 			},
 		);
+
 		let Some((_void_exp, id_ref)) = pair else {
 			return;
 		};
+
 		let argument = ctx.ast.expression_from_identifier_reference(id_ref);
+
 		let left = ctx.ast.unary_expression(SPAN, UnaryOperator::Typeof, argument);
+
 		let right = ctx.ast.string_literal(SPAN, "u");
+
 		let binary_expr = ctx.ast.binary_expression(
 			expr.span,
 			ctx.ast.expression_from_unary(left),
@@ -217,6 +233,7 @@ impl<'a> SubstituteAlternateSyntax {
 				return Some((a, b));
 			}
 		}
+
 		None
 	}
 
@@ -238,6 +255,7 @@ impl<'a> SubstituteAlternateSyntax {
 		if decl.kind.is_const() {
 			return;
 		}
+
 		if decl.init.as_ref().is_some_and(|init| init.is_undefined() || init.is_void_0()) {
 			decl.init = None;
 		}

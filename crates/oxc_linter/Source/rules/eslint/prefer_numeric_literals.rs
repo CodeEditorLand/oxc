@@ -69,6 +69,7 @@ impl Rule for PreferNumericLiterals {
                     check_arguments(call_expr, ctx);
                 }
             }
+
             Expression::StaticMemberExpression(member_expr) => {
                 if let Expression::Identifier(ident) = &member_expr.object {
                     if is_parse_int_call(ctx, ident, Some(member_expr)) {
@@ -83,6 +84,7 @@ impl Rule for PreferNumericLiterals {
                     }
                 }
             }
+
             Expression::ChainExpression(chain_expr) => {
                 if let Some(MemberExpression::StaticMemberExpression(member_expr)) =
                     chain_expr.expression.as_member_expression()
@@ -94,6 +96,7 @@ impl Rule for PreferNumericLiterals {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -127,17 +130,20 @@ fn check_arguments<'a>(call_expr: &CallExpression<'a>, ctx: &LintContext<'a>) {
     }
 
     let string_arg = &call_expr.arguments[0];
+
     if !is_string_type(string_arg) {
         return;
     }
 
     let radix_arg = &call_expr.arguments[1];
+
     let Expression::NumericLiteral(numeric_lit) = &radix_arg.to_expression() else {
         return;
     };
 
     if let Some(name_prefix_set) = RADIX_MAP.get(numeric_lit.raw) {
         let name = name_prefix_set.index(0).unwrap();
+
         let prefix = name_prefix_set.index(1).unwrap();
 
         match is_fixable(call_expr, numeric_lit.raw) {
@@ -152,6 +158,7 @@ fn check_arguments<'a>(call_expr: &CallExpression<'a>, ctx: &LintContext<'a>) {
                     },
                 );
             }
+
             Err(_) => ctx.diagnostic(prefer_numeric_literals_diagnostic(call_expr.span, name)),
         }
     }
@@ -170,6 +177,7 @@ fn is_fixable(
     }
 
     let radix_num = radix.parse::<u32>()?;
+
     i64::from_str_radix(&string_argument, radix_num)?;
 
     Ok(string_argument)
@@ -182,6 +190,7 @@ fn get_string_argument(call_expr: &CallExpression) -> Option<String> {
         if temp.quasis.is_empty() {
             return None;
         }
+
         return Some(temp.quasis[0].value.raw.to_string());
     }
 
@@ -196,20 +205,24 @@ fn generate_fix<'a>(
     prefix: &str,
 ) -> String {
     let mut formatter = fixer.codegen();
+
     let span = call_expr.span;
 
     if span.start > 1 {
         let start = ctx.source_text().as_bytes()[span.start as usize - 1];
+
         if start.is_ascii_alphabetic() || !start.is_ascii() {
             formatter.print_str(" ");
         }
     }
 
     formatter.print_str(prefix);
+
     formatter.print_str(argument);
 
     if (span.end as usize) < ctx.source_text().len() {
         let end = ctx.source_text().as_bytes()[span.end as usize];
+
         if end.is_ascii_alphabetic() || !end.is_ascii() {
             formatter.print_str(" ");
         }
@@ -318,6 +331,7 @@ fn test() {
         "Number.parseInt('0_0', 16);",
         r#"
             parseInt("767", 8) === 503;
+
             function foo() {
                 function parseInt() {
                     throw new Error()

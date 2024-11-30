@@ -97,6 +97,7 @@ fn is_type_checking_expr(expr: &Expression) -> bool {
         match_member_expression!(Expression) => {
             is_type_checking_member_expr(expr.to_member_expression())
         }
+
         Expression::CallExpression(call_expr) => is_typechecking_call_expr(call_expr),
         Expression::UnaryExpression(unary_expr) => {
             if unary_expr.operator == UnaryOperator::Typeof {
@@ -106,17 +107,22 @@ fn is_type_checking_expr(expr: &Expression) -> bool {
             if unary_expr.operator == UnaryOperator::LogicalNot {
                 return is_type_checking_expr(&unary_expr.argument);
             }
+
             false
         }
+
         Expression::BinaryExpression(bin_expr) => {
             if bin_expr.operator == BinaryOperator::Instanceof {
                 return true;
             }
+
             is_type_checking_expr(&bin_expr.left) || is_type_checking_expr(&bin_expr.right)
         }
+
         Expression::LogicalExpression(logical_expr) => {
             is_type_checking_expr(&logical_expr.left) && is_type_checking_expr(&logical_expr.right)
         }
+
         _ => false,
     }
 }
@@ -130,12 +136,15 @@ fn is_typechecking_call_expr(call_expr: &CallExpression) -> bool {
         Expression::Identifier(ident) => {
             TYPE_CHECKING_GLOBAL_IDENTIFIERS.contains(ident.name.as_str())
         }
+
         callee @ match_member_expression!(Expression) => {
             if let Some(ident) = callee.to_member_expression().static_property_name() {
                 return TYPE_CHECKING_IDENTIFIERS.contains(ident);
             }
+
             false
         }
+
         _ => false,
     }
 }
@@ -260,6 +269,7 @@ fn test() {
                 if (Array.isArray(foo) || ArrayBuffer.isView(foo)) {
                     return new Error('This is for FooBar', foo);
                 }
+
                 return foo;
             }
         ",
@@ -296,6 +306,7 @@ fn test() {
         r"
             if (typeof boo === 'Boo') {
                 some.thing.else.happens.before();
+
                 throw new Error();
             }
         ",
@@ -364,11 +375,13 @@ fn test() {
             function foo(foo) {
                 if (!Number.isNaN(foo) && foo === 10) {
                     timesFooWas10 += 1;
+
                     if (calculateAnswerToLife() !== 42) {
                         openIssue('Your program is buggy!');
                     } else {
                         return printAwesomeAnswer(42);
                     }
+
                     throw new Error('foo is 10');
                 }
             }
@@ -377,11 +390,13 @@ fn test() {
             function foo(foo) {
                 if (!Number.isNaN(foo)) {
                     timesFooWas10 += 1;
+
                     if (calculateAnswerToLife({with: foo}) !== 42) {
                         openIssue('Your program is buggy!');
                     } else {
                         return printAwesomeAnswer(42);
                     }
+
                     throw new Error('foo is 10');
                 }
             }
@@ -400,6 +415,7 @@ fn test() {
             switch (something) {
                 case 1:
                     break;
+
                 default:
                     throw new Error('Unknown');
             }
@@ -451,6 +467,7 @@ fn test() {
             if (typeof foo == 'Foo' || 'Foo' === typeof foo) {
                 throw new Error();
             }
+
         r#"
             if (Number.isFinite(foo) && Number.isSafeInteger(foo) && Number.isInteger(foo)) {
                 throw new Error();

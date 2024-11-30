@@ -139,12 +139,15 @@ impl<'a> ModuleImportsStore<'a> {
         match self.imports.borrow_mut().entry(source) {
             IndexMapEntry::Occupied(mut entry) => {
                 entry.get_mut().push(import);
+
                 if front && entry.index() != 0 {
                     entry.move_index(0);
                 }
             }
+
             IndexMapEntry::Vacant(entry) => {
                 let named_imports = vec![import];
+
                 if front {
                     entry.shift_insert(0, named_imports);
                 } else {
@@ -169,7 +172,9 @@ impl<'a> ModuleImportsStore<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let mut imports = self.imports.borrow_mut();
+
         let stmts = imports.drain(..).map(|(source, names)| Self::get_import(source, names, ctx));
+
         transform_ctx.top_level_statements.insert_statements(stmts);
     }
 
@@ -179,14 +184,17 @@ impl<'a> ModuleImportsStore<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let mut imports = self.imports.borrow_mut();
+
         if imports.is_empty() {
             return;
         }
 
         let require_symbol_id = ctx.scopes().get_root_binding("require");
+
         let stmts = imports
             .drain(..)
             .map(|(source, names)| Self::get_require(source, names, require_symbol_id, ctx));
+
         transform_ctx.top_level_statements.insert_statements(stmts);
     }
 
@@ -206,6 +214,7 @@ impl<'a> ModuleImportsStore<'a> {
                     ImportOrExportKind::Value,
                 ))
             }
+
             Import::Default(local) => ImportDeclarationSpecifier::ImportDefaultSpecifier(
                 ctx.ast.alloc_import_default_specifier(SPAN, local.create_binding_identifier(ctx)),
             ),
@@ -235,16 +244,24 @@ impl<'a> ModuleImportsStore<'a> {
 
         let args = {
             let arg = Argument::from(ctx.ast.expression_string_literal(SPAN, source, None));
+
             ctx.ast.vec1(arg)
         };
+
         let Some(Import::Default(local)) = names.into_iter().next() else { unreachable!() };
+
         let id = local.create_binding_pattern(ctx);
+
         let var_kind = VariableDeclarationKind::Var;
+
         let decl = {
             let init = ctx.ast.expression_call(SPAN, callee, NONE, args, false);
+
             let decl = ctx.ast.variable_declarator(SPAN, var_kind, id, Some(init), false);
+
             ctx.ast.vec1(decl)
         };
+
         Statement::from(ctx.ast.declaration_variable(SPAN, var_kind, decl, false))
     }
 }

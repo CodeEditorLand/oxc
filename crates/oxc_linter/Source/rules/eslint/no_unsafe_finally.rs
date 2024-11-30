@@ -64,11 +64,14 @@ impl Rule for NoUnsafeFinally {
             | AstKind::ContinueStatement(ContinueStatement { label, .. }) => {
                 label.as_ref().map(|label| &label.name)
             }
+
             _ => None,
         };
 
         let nodes = ctx.nodes();
+
         let mut label_inside = false;
+
         for node_id in nodes.ancestor_ids(node.id()) {
             let ast_kind = nodes.kind(node_id);
 
@@ -77,6 +80,7 @@ impl Rule for NoUnsafeFinally {
             }
 
             let Some(parent_node_id) = nodes.parent_id(node_id) else { break };
+
             let parent_kind = nodes.kind(parent_node_id);
 
             if let AstKind::LabeledStatement(labeled_stmt) = parent_kind {
@@ -87,6 +91,7 @@ impl Rule for NoUnsafeFinally {
 
             // Finally Block
             let parent_parent_kind = nodes.parent_kind(node_id);
+
             if let Some(AstKind::TryStatement(try_stmt)) = parent_parent_kind {
                 if let Some(try_block_stmt) = &try_stmt.finalizer {
                     if let AstKind::BlockStatement(block_stmt) = ast_kind {
@@ -94,7 +99,9 @@ impl Rule for NoUnsafeFinally {
                             if label_name.is_some() && label_inside {
                                 break;
                             }
+
                             ctx.diagnostic(no_unsafe_finally_diagnostic(node.kind().span()));
+
                             return;
                         }
                     }
@@ -118,6 +125,7 @@ impl SentinelNodeType {
                 Self::Break => {
                     kind.is_iteration_statement() || matches!(kind, AstKind::SwitchStatement(_))
                 }
+
                 Self::Continue => kind.is_iteration_statement(),
                 Self::ReturnThrow => false,
             }

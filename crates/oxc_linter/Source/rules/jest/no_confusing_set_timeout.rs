@@ -77,15 +77,20 @@ declare_oxc_lint!(
 impl Rule for NoConfusingSetTimeout {
     fn run_once(&self, ctx: &LintContext) {
         let scopes = ctx.scopes();
+
         let symbol_table = ctx.symbols();
+
         let possible_nodes = collect_possible_jest_call_node(ctx);
+
         let id_to_jest_node_map =
             possible_nodes.iter().fold(FxHashMap::default(), |mut acc, cur| {
                 acc.insert(cur.node.id(), cur);
+
                 acc
             });
 
         let mut jest_reference_id_list: Vec<(ReferenceId, Span)> = vec![];
+
         let mut seen_jest_set_timeout = false;
 
         for reference_ids in scopes.root_unresolved_references_ids() {
@@ -128,6 +133,7 @@ fn collect_jest_reference_id(
     ctx: &LintContext,
 ) {
     let symbol_table = ctx.symbols();
+
     let nodes = ctx.nodes();
 
     for reference_id in reference_id_list {
@@ -136,12 +142,15 @@ fn collect_jest_reference_id(
         if !is_jest_call(ctx.semantic().reference_name(reference)) {
             continue;
         }
+
         let Some(parent_node) = nodes.parent_node(reference.node_id()) else {
             continue;
         };
+
         let AstKind::MemberExpression(member_expr) = parent_node.kind() else {
             continue;
         };
+
         jest_reference_list.push((reference_id, member_expr.span()));
     }
 }
@@ -154,7 +163,9 @@ fn handle_jest_set_time_out<'a>(
     id_to_jest_node_map: &FxHashMap<NodeId, &PossibleJestNode<'a, '_>>,
 ) {
     let nodes = ctx.nodes();
+
     let scopes = ctx.scopes();
+
     let symbol_table = ctx.symbols();
 
     for reference_id in reference_id_list {
@@ -172,6 +183,7 @@ fn handle_jest_set_time_out<'a>(
                     }
                 }
             }
+
             continue;
         }
 
@@ -203,10 +215,13 @@ fn is_jest_fn_call<'a>(
     ctx: &LintContext<'a>,
 ) -> bool {
     let mut id = parent_node.id();
+
     loop {
         let parent = ctx.nodes().parent_node(id);
+
         if let Some(parent) = parent {
             let parent_kind = parent.kind();
+
             if matches!(
                 parent_kind,
                 AstKind::CallExpression(_)
@@ -225,9 +240,11 @@ fn is_jest_fn_call<'a>(
     let Some(possible_jest_node) = id_to_jest_node_map.get(&id) else {
         return false;
     };
+
     let AstKind::CallExpression(call_expr) = parent_node.kind() else {
         return false;
     };
+
     parse_jest_fn_call(call_expr, possible_jest_node, ctx).is_some()
 }
 
@@ -247,11 +264,15 @@ fn test() {
         (
             "
                 import { jest as Jest } from '@jest/globals';
+
                 import ReactDom from 'react-dom';
+
                 Jest.setTimeout(800);
+
                 test('test', () => {
                     expect(1 + 2).toEqual(3);
                 });
+
                 setTimeout(800);
             ",
             None,
@@ -259,6 +280,7 @@ fn test() {
         (
             "
                 jest.setTimeout(600);
+
                 setTimeout(900);
             ",
             None,
@@ -267,9 +289,12 @@ fn test() {
         (
             "
                 jest.setTimeout(1002);
+
                 describe('A', () => {
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.1', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.2', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
             ",
@@ -278,7 +303,9 @@ fn test() {
         (
             "
                 import { jest as Jest } from '@jest/globals';
+
                 Jest.setTimeout(800);
+
                 setTimeout(800);
             ",
             None,
@@ -286,9 +313,11 @@ fn test() {
         (
             "
                 jest.setTimeout(1003);
+
                 window.setTimeout(6000)
                 describe('A', () => {
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('test foo', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
             ",
@@ -297,10 +326,14 @@ fn test() {
         (
             "
                 import { handler } from 'dep/mod';
+
                 jest.setTimeout(801);
+
                 describe('A', () => {
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.1', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.2', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
             ",
@@ -309,10 +342,14 @@ fn test() {
         (
             "
                 function handler() {}
+
                 jest.setTimeout(802);
+
                 describe('A', () => {
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.1', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.2', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
             ",
@@ -321,10 +358,14 @@ fn test() {
         (
             "
                 const { handler } = require('dep/mod');
+
                 jest.setTimeout(803);
+
                 describe('A', () => {
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.1', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.2', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
             ",
@@ -333,6 +374,7 @@ fn test() {
         (
             "
                 jest.setTimeout(1004);
+
                 window.setTimeout(60000);
             ",
             None,
@@ -342,6 +384,7 @@ fn test() {
         (
             "
                 jest.setTimeout(1006);
+
                 test('test case', () => {
                     setTimeout(() => {
                     Promise.resolv();
@@ -366,13 +409,19 @@ fn test() {
         (
             "
                 jest.setTimeout(1000);
+
                 setTimeout(1000);
+
                 window.setTimeout(1000);
+
                 describe('A', () => {
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.1', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.2', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
+
                 jest.setTimeout(800);
             ",
             None,
@@ -381,8 +430,11 @@ fn test() {
             "
                 describe('A', () => {
                     jest.setTimeout(800);
+
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.1', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.2', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
             ",
@@ -394,9 +446,11 @@ fn test() {
                     it('B.1', async () => {
                         await new Promise((resolve) => {
                         jest.setTimeout(1000);
+
                         setTimeout(resolve, 10000).unref();
                         });
                     });
+
                     it('B.2', async () => {
                         await new Promise((resolve) => { setTimeout(resolve, 10000).unref(); });
                     });
@@ -416,9 +470,12 @@ fn test() {
             "
                 describe('A', () => {
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.1', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.2', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
+
                 jest.setTimeout(1000);
             ",
             None,
@@ -429,9 +486,12 @@ fn test() {
                 {
                    jest.setTimeout(800);
                 }
+
                 describe('A', () => {
                     beforeEach(async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.1', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
+
                     it('A.2', async () => { await new Promise(resolve => { setTimeout(resolve, 10000).unref(); });});
                 });
             ",
@@ -440,6 +500,7 @@ fn test() {
         (
             "
                 jest.setTimeout(800);
+
                 jest.setTimeout(900);
             ",
             None,
@@ -456,6 +517,7 @@ fn test() {
         (
             "
                 expect(1 + 2).toEqual(3);
+
                 jest.setTimeout(1000);
             ",
             None,
@@ -463,12 +525,15 @@ fn test() {
         (
             "
                 import { jest as Jest } from '@jest/globals';
+
                 import ReactDom from 'react-dom';
 
                 test('test', () => {
                     expect(1 + 2).toEqual(3);
                 });
+
                 Jest.setTimeout(800);
+
                 setTimeout(800);
             ",
             None,
@@ -478,6 +543,7 @@ fn test() {
                     test('test-suite', () => {
                         expect(1 + 2).toEqual(3);
                     });
+
                     jest.setTimeout(1000);
                 ",
             None,

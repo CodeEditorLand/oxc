@@ -52,6 +52,7 @@ impl Rule for NoUnsafeDeclarationMerging {
                     }
                 }
             }
+
             AstKind::TSInterfaceDeclaration(decl) => {
                 for (_, &symbol_id) in ctx.semantic().scopes().get_bindings(node.scope_id()) {
                     if let AstKind::Class(scope_class) = get_symbol_kind(symbol_id, ctx) {
@@ -61,6 +62,7 @@ impl Rule for NoUnsafeDeclarationMerging {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -92,6 +94,7 @@ fn test() {
         (
             "
 			interface Foo {}
+
 			class Bar implements Foo {}
 			    ",
             None,
@@ -163,6 +166,7 @@ fn test() {
         (
             "
 			interface Foo {}
+
 			class Foo {}
 			      ",
             None,

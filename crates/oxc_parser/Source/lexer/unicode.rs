@@ -19,27 +19,41 @@ enum SurrogatePair {
 impl<'a> Lexer<'a> {
     pub(super) fn unicode_char_handler(&mut self) -> Kind {
         let c = self.peek_char().unwrap();
+
         match c {
             c if is_identifier_start_unicode(c) => {
                 let start_pos = self.source.position();
+
                 self.consume_char();
+
                 self.identifier_tail_after_unicode(start_pos);
+
                 Kind::Ident
             }
+
             c if is_irregular_whitespace(c) => {
                 self.consume_char();
+
                 self.trivia_builder.add_irregular_whitespace(self.token.start, self.offset());
+
                 Kind::Skip
             }
+
             c if is_irregular_line_terminator(c) => {
                 self.consume_char();
+
                 self.token.is_on_new_line = true;
+
                 self.trivia_builder.add_irregular_whitespace(self.token.start, self.offset());
+
                 Kind::Skip
             }
+
             _ => {
                 self.consume_char();
+
                 self.error(diagnostics::invalid_character(c, self.unterminated_range()));
+
                 Kind::Undetermined
             }
         }
@@ -48,18 +62,23 @@ impl<'a> Lexer<'a> {
     /// Identifier `UnicodeEscapeSequence`
     ///   \u `Hex4Digits`
     ///   \u{ `CodePoint` }
+
     pub(super) fn identifier_unicode_escape_sequence(
         &mut self,
         str: &mut String<'a>,
         check_identifier_start: bool,
     ) {
         let start = self.offset();
+
         if self.peek_byte() == Some(b'u') {
             self.consume_char();
         } else {
             self.next_char();
+
             let range = Span::new(start, self.offset());
+
             self.error(diagnostics::unicode_escape_sequence(range));
+
             return;
         }
 
@@ -70,7 +89,9 @@ impl<'a> Lexer<'a> {
 
         let Some(value) = value else {
             let range = Span::new(start, self.offset());
+
             self.error(diagnostics::unicode_escape_sequence(range));
+
             return;
         };
 
@@ -78,15 +99,20 @@ impl<'a> Lexer<'a> {
         let ch = match value {
             SurrogatePair::Astral(..) | SurrogatePair::HighLow(..) => {
                 let range = Span::new(start, self.offset());
+
                 self.error(diagnostics::unicode_escape_sequence(range));
+
                 return;
             }
+
             SurrogatePair::CodePoint(code_point) => {
                 if let Ok(ch) = char::try_from(code_point) {
                     ch
                 } else {
                     let range = Span::new(start, self.offset());
+
                     self.error(diagnostics::unicode_escape_sequence(range));
+
                     return;
                 }
             }
@@ -97,6 +123,7 @@ impl<'a> Lexer<'a> {
 
         if !is_valid {
             self.error(diagnostics::invalid_character(ch, self.current_offset()));
+
             return;
         }
 
@@ -107,6 +134,7 @@ impl<'a> Lexer<'a> {
     ///   \u `Hex4Digits`
     ///   \u `Hex4Digits` \u `Hex4Digits`
     ///   \u{ `CodePoint` }
+
     fn string_unicode_escape_sequence(
         &mut self,
         text: &mut String<'a>,
@@ -120,6 +148,7 @@ impl<'a> Lexer<'a> {
         let Some(value) = value else {
             // error raised within the parser by `diagnostics::template_literal`
             *is_valid_escape_sequence = false;
+
             return;
         };
 
@@ -131,13 +160,18 @@ impl<'a> Lexer<'a> {
                     text.push(ch);
                 } else {
                     text.push_str("\\u");
+
                     text.push_str(format!("{code_point:x}").as_str());
                 }
             }
+
             SurrogatePair::HighLow(high, low) => {
                 text.push_str("\\u");
+
                 text.push_str(format!("{high:x}").as_str());
+
                 text.push_str("\\u");
+
                 text.push_str(format!("{low:x}").as_str());
             }
         }
@@ -147,18 +181,23 @@ impl<'a> Lexer<'a> {
         if !self.next_ascii_byte_eq(b'{') {
             return None;
         }
+
         let value = self.code_point()?;
+
         if !self.next_ascii_byte_eq(b'}') {
             return None;
         }
+
         Some(SurrogatePair::CodePoint(value))
     }
 
     fn hex_4_digits(&mut self) -> Option<u32> {
         let mut value = 0;
+
         for _ in 0..4 {
             value = (value << 4) | self.hex_digit()?;
         }
+
         Some(value)
     }
 
@@ -172,6 +211,7 @@ impl<'a> Lexer<'a> {
                 // Match `A-F` or `a-f`. `b | 32` converts uppercase letters to lowercase,
                 // but leaves lowercase as they are
                 let lower_case = b | 32;
+
                 if matches!(lower_case, b'a'..=b'f') {
                     lower_case + 10 - b'a'
                 } else {
@@ -186,17 +226,21 @@ impl<'a> Lexer<'a> {
         // SAFETY: This code is only reachable if there is a byte remaining, and it's ASCII.
         // Therefore it's safe to consume that byte, and will leave position on a UTF-8 char boundary.
         unsafe { self.source.next_byte_unchecked() };
+
         Some(u32::from(value))
     }
 
     fn code_point(&mut self) -> Option<u32> {
         let mut value = self.hex_digit()?;
+
         while let Some(next) = self.hex_digit() {
             value = (value << 4) | next;
+
             if value > 0x0010_FFFF {
                 return None;
             }
         }
+
         Some(value)
     }
 
@@ -209,6 +253,7 @@ impl<'a> Lexer<'a> {
         // The first code unit of a surrogate pair is always in the range from 0xD800 to 0xDBFF, and is called a high surrogate or a lead surrogate.
         let is_pair =
             (0xD800..=0xDBFF).contains(&high) && self.peek_2_bytes() == Some([b'\\', b'u']);
+
         if !is_pair {
             return Some(SurrogatePair::CodePoint(high));
         }
@@ -239,6 +284,7 @@ impl<'a> Lexer<'a> {
             None => {
                 self.error(diagnostics::unterminated_string(self.unterminated_range()));
             }
+
             Some(c) => match c {
                 // \ LineTerminatorSequence
                 // LineTerminatorSequence ::
@@ -248,6 +294,7 @@ impl<'a> Lexer<'a> {
                 // <PS>
                 // <CR> <LF>
                 LF | LS | PS => {}
+
                 CR => {
                     self.next_ascii_byte_eq(b'\n');
                 }
@@ -265,6 +312,7 @@ impl<'a> Lexer<'a> {
                     self.hex_digit()
                         .and_then(|value1| {
                             let value2 = self.hex_digit()?;
+
                             Some((value1, value2))
                         })
                         .map(|(value1, value2)| (value1 << 4) | value2)
@@ -289,29 +337,37 @@ impl<'a> Lexer<'a> {
                 // NonOctalDecimalEscapeSequence
                 a @ '0'..='7' if !in_template => {
                     let mut num = String::new_in(self.allocator);
+
                     num.push(a);
+
                     match a {
                         '4'..='7' => {
                             if matches!(self.peek_byte(), Some(b'0'..=b'7')) {
                                 let b = self.consume_char();
+
                                 num.push(b);
                             }
                         }
                         '0'..='3' => {
                             if matches!(self.peek_byte(), Some(b'0'..=b'7')) {
                                 let b = self.consume_char();
+
                                 num.push(b);
+
                                 if matches!(self.peek_byte(), Some(b'0'..=b'7')) {
                                     let c = self.consume_char();
+
                                     num.push(c);
                                 }
                             }
                         }
+
                         _ => {}
                     }
 
                     let value =
                         char::from_u32(u32::from_str_radix(num.as_str(), 8).unwrap()).unwrap();
+
                     text.push(value);
                 }
                 '0' if in_template && self.peek_byte().is_some_and(|b| b.is_ascii_digit()) => {
@@ -324,6 +380,7 @@ impl<'a> Lexer<'a> {
                     // error raised within the parser by `diagnostics::template_literal`
                     *is_valid_escape_sequence = false;
                 }
+
                 other => {
                     // NonOctalDecimalEscapeSequence \8 \9 in strict mode
                     text.push(other);

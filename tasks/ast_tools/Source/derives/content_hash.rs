@@ -56,19 +56,24 @@ fn derive_enum(def: &EnumDef) -> (&str, TokenStream) {
         TokenStream::default()
     } else {
         let mut non_exhaustive = false;
+
         let matches = def
             .all_variants()
             .filter_map(|var| {
                 let ident = var.ident();
+
                 if var.is_unit() {
                     non_exhaustive = true;
+
                     None
                 } else {
                     Some(quote!(Self :: #ident(it) => ContentHash::content_hash(it, state)))
                 }
             })
             .collect_vec();
+
         let exhaust = non_exhaustive.then(|| quote!(_ => {}));
+
         quote! {
             match self {
                 #(#matches),*
@@ -92,9 +97,11 @@ fn derive_struct(def: &StructDef) -> (&str, TokenStream) {
             })
             .map(|field| {
                 let ident = field.ident();
+
                 quote!(ContentHash::content_hash(&self.#ident, state);)
             })
             .collect_vec();
+
         if fields.is_empty() {
             ("_", TokenStream::default())
         } else {
@@ -105,7 +112,9 @@ fn derive_struct(def: &StructDef) -> (&str, TokenStream) {
 
 fn impl_content_hash(def: &TypeDef, hasher_name: &str, body: &TokenStream) -> TokenStream {
     let ty = def.to_type();
+
     let generics = def.generics();
+
     let hasher = hasher_name.to_ident();
 
     quote! {

@@ -39,9 +39,13 @@ impl Case for MinifierTest262Case {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let source_type = SourceType::default().with_module(is_module);
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
@@ -75,15 +79,20 @@ impl Case for MinifierBabelCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
 // Test minification by minifying twice because it is a idempotent
 fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
     let source_text1 = minify(source_text, source_type);
+
     let source_text2 = minify(&source_text1, source_type);
+
     if source_text1 == source_text2 {
         TestResult::Passed
     } else {
@@ -93,8 +102,12 @@ fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
 
 fn minify(source_text: &str, source_type: SourceType) -> String {
     let allocator = Allocator::default();
+
     let ret = Parser::new(&allocator, source_text, source_type).parse();
+
     let program = allocator.alloc(ret.program);
+
     Compressor::new(&allocator, CompressOptions::all_true()).build(program);
+
     CodeGenerator::new().build(program).source_text
 }

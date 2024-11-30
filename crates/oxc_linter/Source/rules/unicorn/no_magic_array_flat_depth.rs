@@ -58,6 +58,7 @@ impl Rule for NoMagicArrayFlatDepth {
         }
 
         let first_arg = call_expression.arguments.first().expect("missing argument");
+
         let Some(Expression::NumericLiteral(arg)) =
             first_arg.as_expression().map(oxc_ast::ast::Expression::without_parentheses)
         else {

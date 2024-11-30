@@ -58,18 +58,29 @@ mod generated {
     #![allow(missing_docs)]
     #[cfg(debug_assertions)]
     pub mod assert_layouts;
+
     pub mod ast_builder;
+
     pub mod ast_kind;
+
     pub mod derive_clone_in;
+
     pub mod derive_content_eq;
+
     pub mod derive_content_hash;
     #[cfg(feature = "serialize")]
     pub mod derive_estree;
+
     pub mod derive_get_address;
+
     pub mod derive_get_span;
+
     pub mod derive_get_span_mut;
+
     pub mod get_id;
+
     pub mod visit;
+
     pub mod visit_mut;
 }
 
@@ -120,16 +131,27 @@ fn size_asserts() {
     use crate::ast;
 
     assert!(size_of::<ast::Statement>() == 16);
+
     assert!(size_of::<ast::Expression>() == 16);
+
     assert!(size_of::<ast::Declaration>() == 16);
+
     assert!(size_of::<ast::BindingPatternKind>() == 16);
+
     assert!(size_of::<ast::ModuleDeclaration>() == 16);
+
     assert!(size_of::<ast::ClassElement>() == 16);
+
     assert!(size_of::<ast::ExportDefaultDeclarationKind>() == 16);
+
     assert!(size_of::<ast::AssignmentTargetPattern>() == 16);
+
     assert!(size_of::<ast::AssignmentTargetMaybeDefault>() == 16);
+
     assert!(size_of::<ast::AssignmentTargetProperty>() == 16);
+
     assert!(size_of::<ast::TSLiteral>() == 16);
+
     assert!(size_of::<ast::TSType>() == 16);
 }
 

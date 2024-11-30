@@ -79,6 +79,7 @@ declare_oxc_lint!(
 impl Rule for NoThisAlias {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         let allowed_names: FxHashSet<CompactStr> = value
             .get(0)
             .and_then(|v| v.get("allow_names"))
@@ -120,39 +121,49 @@ impl Rule for NoThisAlias {
 
                     return;
                 }
+
                 ctx.diagnostic(no_this_destructure_diagnostic(decl.id.kind.span()));
             }
+
             AstKind::AssignmentExpression(assignment) => {
                 if !rhs_is_this_reference(&assignment.right) {
                     return;
                 }
+
                 match &assignment.left {
                     left @ (AssignmentTarget::ArrayAssignmentTarget(_)
                     | AssignmentTarget::ObjectAssignmentTarget(_)) => {
                         if self.allow_destructuring {
                             return;
                         }
+
                         ctx.diagnostic(no_this_destructure_diagnostic(left.span()));
                     }
+
                     AssignmentTarget::AssignmentTargetIdentifier(id) => {
                         if !self.is_allowed(&id.name) {
                             ctx.diagnostic(no_this_alias_diagnostic(id.span));
                         }
                     }
+
                     left @ match_simple_assignment_target!(AssignmentTarget) => {
                         let pat = left.to_simple_assignment_target();
+
                         let Some(expr) = pat.get_expression() else {
                             return;
                         };
+
                         let Some(id) = expr.get_identifier_reference() else {
                             return;
                         };
+
                         if !self.is_allowed(&id.name) {
                             ctx.diagnostic(no_this_alias_diagnostic(id.span));
                         }
                     }
                 }
             }
+
             _ => {}
         }
     }

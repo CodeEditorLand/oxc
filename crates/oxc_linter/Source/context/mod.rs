@@ -71,13 +71,16 @@ impl<'a> LintContext<'a> {
     /// Set the plugin name for the current rule.
     pub fn with_plugin_name(mut self, plugin: &'static str) -> Self {
         self.current_plugin_name = plugin;
+
         self.current_plugin_prefix = plugin_name_to_prefix(plugin);
+
         self
     }
 
     /// Set the current rule name. Name should be kebab-cased like: `no-unused-vars` or `no-undef`.
     pub fn with_rule_name(mut self, name: &'static str) -> Self {
         self.current_rule_name = name;
+
         self
     }
 
@@ -85,6 +88,7 @@ impl<'a> LintContext<'a> {
     #[cfg(debug_assertions)]
     pub fn with_rule_fix_capabilities(mut self, capabilities: RuleFixMeta) -> Self {
         self.current_rule_fix_capabilities = capabilities;
+
         self
     }
 
@@ -93,6 +97,7 @@ impl<'a> LintContext<'a> {
     #[inline]
     pub fn with_severity(mut self, severity: AllowWarnDeny) -> Self {
         self.severity = Severity::from(severity);
+
         self
     }
 
@@ -161,6 +166,7 @@ impl<'a> LintContext<'a> {
         if GLOBALS["builtin"].contains_key(var) {
             return true;
         }
+
         for env in self.env().iter() {
             if let Some(env) = GLOBALS.get(env) {
                 if env.contains_key(var) {
@@ -168,6 +174,7 @@ impl<'a> LintContext<'a> {
                 }
             }
         }
+
         false
     }
 
@@ -179,6 +186,7 @@ impl<'a> LintContext<'a> {
         if self.parent.disable_directives.contains(self.current_rule_name, message.span()) {
             return;
         }
+
         message.error = message
             .error
             .with_error_code(self.current_plugin_prefix, self.current_rule_name)
@@ -188,6 +196,7 @@ impl<'a> LintContext<'a> {
                 self.current_plugin_name,
                 self.current_rule_name
             ));
+
         if message.error.severity != self.severity {
             message.error = message.error.with_severity(self.severity);
         }
@@ -290,6 +299,7 @@ impl<'a> LintContext<'a> {
         F: FnOnce(RuleFixer<'_, 'a>) -> C,
     {
         let fixer = RuleFixer::new(fix_kind, self);
+
         let rule_fix: RuleFix<'a> = fix(fixer).into();
         #[cfg(debug_assertions)]
         {
@@ -301,12 +311,15 @@ impl<'a> LintContext<'a> {
                 rule_fix.kind()
             );
         }
+
         let diagnostic = match (rule_fix.message(), &diagnostic.help) {
             (Some(message), None) => diagnostic.with_help(message.to_owned()),
             _ => diagnostic,
         };
+
         if self.parent.fix.can_apply(rule_fix.kind()) && !rule_fix.is_empty() {
             let fix = rule_fix.into_fix(self.source_text());
+
             self.add_diagnostic(Message::new(diagnostic, Some(fix)));
         } else {
             self.diagnostic(diagnostic);

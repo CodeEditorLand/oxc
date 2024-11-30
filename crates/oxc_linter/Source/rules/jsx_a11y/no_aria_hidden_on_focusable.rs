@@ -50,6 +50,7 @@ impl Rule for NoAriaHiddenOnFocusable {
         let AstKind::JSXOpeningElement(jsx_el) = node.kind() else {
             return;
         };
+
         if let Some(aria_hidden_prop) = has_jsx_prop_ignore_case(jsx_el, "aria-hidden") {
             if is_aria_hidden_true(aria_hidden_prop) && is_focusable(ctx, jsx_el) {
                 if let JSXAttributeItem::Attribute(boxed_attr) = aria_hidden_prop {
@@ -107,6 +108,7 @@ fn is_focusable<'a>(ctx: &LintContext<'a>, element: &JSXOpeningElement<'a>) -> b
         "button" | "input" | "select" | "textarea" => {
             has_jsx_prop_ignore_case(element, "disabled").is_none()
         }
+
         _ => false,
     }
 }

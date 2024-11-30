@@ -110,6 +110,7 @@ fn generate_ci_filter(outputs: &[RawOutput]) -> RawOutput {
     log!("Generate CI filter... ");
 
     let mut code = "src:\n".to_string();
+
     let mut push_item = |path: &str| code.push_str(format!("  - '{path}'\n").as_str());
 
     for input in SOURCE_PATHS {
@@ -121,6 +122,7 @@ fn generate_ci_filter(outputs: &[RawOutput]) -> RawOutput {
     }
 
     push_item("tasks/ast_tools/src/**");
+
     push_item(GITHUB_WATCH_LIST_PATH);
 
     log_success!();
@@ -130,9 +132,14 @@ fn generate_ci_filter(outputs: &[RawOutput]) -> RawOutput {
 
 fn generate_json_schema(schema: &Schema) -> Result<RawOutput> {
     log!("Generate JSON schema... ");
+
     let result = serde_json::to_string_pretty(&schema.defs).normalize();
+
     log_result!(result);
+
     let schema = result?;
+
     let output = Output::Raw { path: SCHEMA_PATH.to_string(), code: schema }.into_raw(file!());
+
     Ok(output)
 }

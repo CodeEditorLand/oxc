@@ -21,6 +21,7 @@ use crate::{
 impl<'a> IsolatedDeclarations<'a> {
     pub(crate) fn transform_function_to_ts_type(&self, func: &Function<'a>) -> Option<TSType<'a>> {
         let return_type = self.infer_function_return_type(func);
+
         if return_type.is_none() {
             self.error(function_must_have_explicit_return_type(get_function_span(func)));
         }
@@ -90,13 +91,16 @@ impl<'a> IsolatedDeclarations<'a> {
 
                     if object.shorthand {
                         self.error(shorthand_property(object.span));
+
                         return None;
                     }
 
                     if let Expression::FunctionExpression(function) = &object.value {
                         if !is_const && object.method {
                             let return_type = self.infer_function_return_type(function);
+
                             let params = self.transform_formal_parameters(&function.params);
+
                             return Some(self.ast.ts_signature_method_signature(
                                 object.span,
                                 object.key.clone_in(self.ast.allocator),
@@ -119,6 +123,7 @@ impl<'a> IsolatedDeclarations<'a> {
 
                     if type_annotation.is_none() {
                         self.error(inferred_type_of_expression(object.value.span()));
+
                         return None;
                     }
 
@@ -132,13 +137,17 @@ impl<'a> IsolatedDeclarations<'a> {
                             self.ast.ts_type_annotation(SPAN, type_annotation)
                         }),
                     );
+
                     Some(property_signature)
                 }
+
                 ObjectPropertyKind::SpreadProperty(spread) => {
                     self.error(object_with_spread_assignments(spread.span));
+
                     None
                 }
             }));
+
         self.ast.ts_type_type_literal(SPAN, members)
     }
 
@@ -151,22 +160,27 @@ impl<'a> IsolatedDeclarations<'a> {
             match element {
                 ArrayExpressionElement::SpreadElement(spread) => {
                     self.error(arrays_with_spread_elements(spread.span));
+
                     None
                 }
+
                 ArrayExpressionElement::Elision(elision) => {
                     Some(TSTupleElement::from(self.ast.ts_type_undefined_keyword(elision.span)))
                 }
+
                 _ => self
                     .transform_expression_to_ts_type(element.to_expression())
                     .map(TSTupleElement::from)
                     .or_else(|| {
                         self.error(inferred_type_of_expression(element.span()));
+
                         None
                     }),
             }
         }));
 
         let ts_type = self.ast.ts_type_tuple_type(SPAN, element_types);
+
         if is_const {
             self.ast.ts_type_type_operator(SPAN, TSTypeOperatorOperator::Readonly, ts_type)
         } else {
@@ -206,6 +220,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     self.ast.ts_type_literal_type(lit.span, TSLiteral::StringLiteral(string))
                 })
             }
+
             Expression::UnaryExpression(expr) => {
                 if Self::can_infer_unary_expression(expr) {
                     Some(self.ast.ts_type_literal_type(
@@ -216,16 +231,20 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+
             Expression::ArrayExpression(expr) => {
                 Some(self.transform_array_expression_to_ts_type(expr, true))
             }
+
             Expression::ObjectExpression(expr) => {
                 Some(self.transform_object_expression_to_ts_type(expr, true))
             }
+
             Expression::FunctionExpression(func) => self.transform_function_to_ts_type(func),
             Expression::ArrowFunctionExpression(func) => {
                 self.transform_arrow_function_to_ts_type(func)
             }
+
             Expression::TSAsExpression(expr) => {
                 if expr.type_annotation.is_const_type_reference() {
                     self.transform_expression_to_ts_type(&expr.expression)
@@ -233,6 +252,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     Some(expr.type_annotation.clone_in(self.ast.allocator))
                 }
             }
+
             _ => None,
         }
     }

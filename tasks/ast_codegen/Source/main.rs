@@ -43,6 +43,7 @@ struct AstCodegen {
 
 trait Generator {
     fn name(&self) -> &'static str;
+
     fn generate(&mut self, ctx: &CodegenCtx) -> GeneratorOutput;
 }
 
@@ -105,18 +106,25 @@ impl CodegenCtx {
     fn new(mods: Vec<Module>) -> Self {
         // worst case len
         let len = mods.iter().fold(0, |acc, it| acc + it.items.len());
+
         let defs = mods.iter().flat_map(|it| it.items.iter());
 
         let mut ty_table = TypeTable::with_capacity(len);
+
         let mut ident_table = IdentTable::with_capacity(len);
+
         for def in defs {
             if let Some(ident) = def.borrow().ident() {
                 let ident = ident.to_string();
+
                 let type_id = ty_table.len();
+
                 ty_table.push(TypeRef::clone(def));
+
                 ident_table.insert(ident, type_id);
             }
         }
+
         Self { modules: mods, ty_table, ident_table }
     }
 
@@ -136,6 +144,7 @@ impl AstCodegen {
         P: AsRef<str>,
     {
         self.files.push(path.as_ref().into());
+
         self
     }
 
@@ -145,6 +154,7 @@ impl AstCodegen {
         G: Generator + 'static,
     {
         self.generators.push(Box::new(generator));
+
         self
     }
 
@@ -160,6 +170,7 @@ impl AstCodegen {
             .collect::<Result<Result<Vec<_>>>>()??;
 
         let ctx = CodegenCtx::new(modules);
+
         ctx.link(linker)?;
 
         let outputs = self
@@ -169,6 +180,7 @@ impl AstCodegen {
             .collect_vec();
 
         let schema = ctx.modules.into_iter().map(Module::build).collect::<Result<Vec<_>>>()?;
+
         Ok(CodegenResult { schema, outputs })
     }
 }
@@ -185,7 +197,9 @@ fn files() -> impl std::iter::Iterator<Item = String> {
 
 fn output_dir() -> Result<String> {
     let dir = format!("{AST_ROOT_DIR}/src/generated");
+
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+
     Ok(dir)
 }
 
@@ -200,14 +214,17 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .generate()?;
 
     let output_dir = output_dir()?;
+
     let outputs: HashMap<_, _> = outputs.into_iter().collect();
 
     {
         // write `span.rs` file
         let output = outputs[ImplGetSpanGenerator.name()].as_one();
+
         let span_content = pprint(output);
 
         let path = format!("{output_dir}/span.rs");
+
         let mut file = fs::File::create(path)?;
 
         file.write_all(span_content.as_bytes())?;
@@ -216,9 +233,11 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     {
         // write `ast_kind.rs` file
         let output = outputs[AstKindGenerator.name()].as_one();
+
         let span_content = pprint(output);
 
         let path = format!("{output_dir}/ast_kind.rs");
+
         let mut file = fs::File::create(path)?;
 
         file.write_all(span_content.as_bytes())?;
@@ -227,13 +246,17 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     {
         // write `visit.rs` and `visit_mut.rs` files
         let output = outputs[VisitGenerator.name()].as_many();
+
         let content = pprint(&output["visit"]);
+
         let content_mut = pprint(&output["visit_mut"]);
 
         let mut visit = fs::File::create(format!("{output_dir}/visit.rs"))?;
+
         let mut visit_mut = fs::File::create(format!("{output_dir}/visit_mut.rs"))?;
 
         visit.write_all(content.as_bytes())?;
+
         visit_mut.write_all(content_mut.as_bytes())?;
     }
 
@@ -241,5 +264,6 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // let schema = serde_json::to_string_pretty(&schema).map_err(|e|
     // e.to_string())?; println!("{schema}");
+
     Ok(())
 }

@@ -88,6 +88,7 @@ pub trait SecretScanner: SecretScannerMeta {
 impl<'a> Secret<'a> {
     pub fn new(secret: &'a str, span: Span, identifier: Option<Atom<'a>>) -> Self {
         let entropy = secret.entropy();
+
         Self { secret, span, identifier, entropy }
     }
 }

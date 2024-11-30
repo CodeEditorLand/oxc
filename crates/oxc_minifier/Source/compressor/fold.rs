@@ -146,9 +146,11 @@ impl<'a> From<&Expression<'a>> for Ty {
 					UnaryOperator::Void => Self::Void,
 					UnaryOperator::UnaryNegation => {
 						let argument_ty = Self::from(&unary_expr.argument);
+
 						if argument_ty == Self::BigInt {
 							return Self::BigInt;
 						}
+
 						Self::Number
 					},
 					UnaryOperator::UnaryPlus => Self::Number,
@@ -161,6 +163,7 @@ impl<'a> From<&Expression<'a>> for Ty {
 				match binary_expr.operator {
 					BinaryOperator::Addition => {
 						let left_ty = Self::from(&binary_expr.left);
+
 						let right_ty = Self::from(&binary_expr.right);
 
 						if left_ty == Self::Str || right_ty == Self::Str {
@@ -260,6 +263,7 @@ impl<'a> Compressor<'a> {
 			},
 			_ => None,
 		};
+
 		if let Some(folded_expr) = folded_expr {
 			*expr = folded_expr;
 		}
@@ -277,7 +281,9 @@ impl<'a> Compressor<'a> {
 		}
 
 		let left_type = Ty::from(left);
+
 		let right_type = Ty::from(right);
+
 		match (left_type, right_type) {
             (Ty::Undetermined, _) | (_, Ty::Undetermined) => None,
 
@@ -286,10 +292,13 @@ impl<'a> Compressor<'a> {
                 // no need to use get_side_effect_free_string_value b/c we checked for side effects
                 // at the beginning
                 let left_string = get_string_value(left)?;
+
                 let right_string = get_string_value(right)?;
                 // let value = left_string.to_owned().
                 let value = left_string + right_string;
+
                 let string_literal = StringLiteral::new(span, self.ast.new_atom(&value));
+
                 Some(self.ast.literal_string_expression(string_literal))
             },
 
@@ -298,10 +307,13 @@ impl<'a> Compressor<'a> {
                 // when added, booleans get treated as numbers where `true` is 1 and `false` is 0
                 | (Ty::Boolean, Ty::Boolean) => {
                 let left_number = get_number_value(left)?;
+
                 let right_number = get_number_value(right)?;
+
                 let Ok(value) = TryInto::<f64>::try_into(left_number + right_number) else { return None };
                 // Float if value has a fractional part, otherwise Decimal
                 let number_base = if is_exact_int64(value) { NumberBase::Decimal } else { NumberBase::Float };
+
                 let number_literal = self.ast.number_literal(span, value, "", number_base);
                 // todo: add raw &str
                 Some(self.ast.literal_number_expression(number_literal))
@@ -322,7 +334,9 @@ impl<'a> Compressor<'a> {
 			Tri::False => false,
 			Tri::Unknown => return None,
 		};
+
 		let boolean_literal = self.ast.boolean_literal(span, value);
+
 		Some(self.ast.literal_boolean_expression(boolean_literal))
 	}
 
@@ -364,11 +378,14 @@ impl<'a> Compressor<'a> {
 		right_expr:&'b Expression<'a>,
 	) -> Tri {
 		let left = Ty::from(left_expr);
+
 		let right = Ty::from(right_expr);
+
 		if left != Ty::Undetermined && right != Ty::Undetermined {
 			if left == right {
 				return self.try_strict_equality_comparison(left_expr, right_expr);
 			}
+
 			if matches!((left, right), (Ty::Null, Ty::Void) | (Ty::Void, Ty::Null)) {
 				return Tri::True;
 			}
@@ -385,6 +402,7 @@ impl<'a> Compressor<'a> {
 						raw,
 						if num.fract() == 0.0 { NumberBase::Decimal } else { NumberBase::Float },
 					);
+
 					let number_literal_expr = self.ast.literal_number_expression(number_literal);
 
 					return self.try_abstract_equality_comparison(left_expr, &number_literal_expr);
@@ -405,6 +423,7 @@ impl<'a> Compressor<'a> {
 						raw,
 						if num.fract() == 0.0 { NumberBase::Decimal } else { NumberBase::Float },
 					);
+
 					let number_literal_expr = self.ast.literal_number_expression(number_literal);
 
 					return self.try_abstract_equality_comparison(&number_literal_expr, right_expr);
@@ -415,6 +434,7 @@ impl<'a> Compressor<'a> {
 
 			if matches!(left, Ty::BigInt) || matches!(right, Ty::BigInt) {
 				let left_bigint = get_side_free_bigint_value(left_expr);
+
 				let right_bigint = get_side_free_bigint_value(right_expr);
 
 				if let (Some(l_big), Some(r_big)) = (left_bigint, right_bigint) {
@@ -432,6 +452,7 @@ impl<'a> Compressor<'a> {
 
 			return Tri::False;
 		}
+
 		Tri::Unknown
 	}
 
@@ -443,12 +464,15 @@ impl<'a> Compressor<'a> {
 		will_negative:bool,
 	) -> Tri {
 		let left = Ty::from(left_expr);
+
 		let right = Ty::from(right_expr);
 
 		// First, check for a string comparison.
 		if left == Ty::Str && right == Ty::Str {
 			let left_string = get_side_free_string_value(left_expr);
+
 			let right_string = get_side_free_string_value(right_expr);
+
 			if let (Some(left_string), Some(right_string)) = (left_string, right_string) {
 				// In JS, browsers parse \v differently. So do not compare
 				// strings if one contains \v.
@@ -478,9 +502,11 @@ impl<'a> Compressor<'a> {
 		}
 
 		let left_bigint = get_side_free_bigint_value(left_expr);
+
 		let right_bigint = get_side_free_bigint_value(right_expr);
 
 		let left_num = get_side_free_number_value(left_expr);
+
 		let right_num = get_side_free_number_value(right_expr);
 
 		match (left_bigint, right_bigint, left_num, right_num) {
@@ -521,15 +547,19 @@ impl<'a> Compressor<'a> {
 		right_expr:&'b Expression<'a>,
 	) -> Tri {
 		let left = Ty::from(left_expr);
+
 		let right = Ty::from(right_expr);
+
 		if left != Ty::Undetermined && right != Ty::Undetermined {
 			// Strict equality can only be true for values of the same type.
 			if left != right {
 				return Tri::False;
 			}
+
 			return match left {
 				Ty::Number => {
 					let left_number = get_side_free_number_value(left_expr);
+
 					let right_number = get_side_free_number_value(right_expr);
 
 					if let (Some(l_num), Some(r_num)) = (left_number, right_number) {
@@ -544,7 +574,9 @@ impl<'a> Compressor<'a> {
 				},
 				Ty::Str => {
 					let left_string = get_side_free_string_value(left_expr);
+
 					let right_string = get_side_free_string_value(right_expr);
+
 					if let (Some(left_string), Some(right_string)) = (left_string, right_string) {
 						// In JS, browsers parse \v differently. So do not
 						// compare strings if one contains \v.
@@ -586,6 +618,7 @@ impl<'a> Compressor<'a> {
 		if left_expr.is_nan() || right_expr.is_nan() {
 			return Tri::False;
 		}
+
 		Tri::Unknown
 	}
 
@@ -623,6 +656,7 @@ impl<'a> Compressor<'a> {
 
 			if let Some(type_name) = type_name {
 				let string_literal = StringLiteral::new(span, Atom::from(type_name));
+
 				return Some(self.ast.literal_string_expression(string_literal));
 			}
 		}
@@ -648,11 +682,14 @@ impl<'a> Compressor<'a> {
 							if value == 0_f64 || (value - 1_f64).abs() < f64::EPSILON {
 								return None;
 							}
+
 							let bool_literal = self.ast.boolean_literal(unary_expr.span, !boolean);
+
 							return Some(self.ast.literal_boolean_expression(bool_literal));
 						},
 						Expression::BigIntLiteral(_) => {
 							let bool_literal = self.ast.boolean_literal(unary_expr.span, !boolean);
+
 							return Some(self.ast.literal_boolean_expression(bool_literal));
 						},
 						_ => {},
@@ -670,6 +707,7 @@ impl<'a> Compressor<'a> {
 								number_literal.raw,
 								number_literal.base,
 							);
+
 							return Some(self.ast.literal_number_expression(literal));
 						},
 						Expression::Identifier(ident) => {
@@ -685,6 +723,7 @@ impl<'a> Compressor<'a> {
 								get_number_value(&unary_expr.argument)
 							{
 								let raw = self.ast.new_str(value.to_string().as_str());
+
 								let literal = self.ast.number_literal(
 									unary_expr.span,
 									value,
@@ -695,6 +734,7 @@ impl<'a> Compressor<'a> {
 										NumberBase::Float
 									},
 								);
+
 								return Some(self.ast.literal_number_expression(literal));
 							}
 						},
@@ -706,13 +746,16 @@ impl<'a> Compressor<'a> {
 					match &unary_expr.argument {
 						Expression::NumericLiteral(number_literal) => {
 							let value = -number_literal.value;
+
 							let raw = self.ast.new_str(value.to_string().as_str());
+
 							let literal = self.ast.number_literal(
 								unary_expr.span,
 								value,
 								raw,
 								number_literal.base,
 							);
+
 							return Some(self.ast.literal_number_expression(literal));
 						},
 						Expression::BigIntLiteral(_big_int_literal) => {
@@ -721,6 +764,7 @@ impl<'a> Compressor<'a> {
 							// self.ast.bigint_literal(unary_expr.span, value,
 							// big_int_literal.base); return Some(self.
 							// ast.literal_bigint_expression(literal));
+
 							return None;
 						},
 						Expression::Identifier(ident) => {
@@ -739,6 +783,7 @@ impl<'a> Compressor<'a> {
 							if number_literal.value.fract() == 0.0 {
 								let int_value =
 									NumericLiteral::ecmascript_to_int32(number_literal.value);
+
 								let literal = self.ast.number_literal(
 									unary_expr.span,
 									f64::from(!int_value),
@@ -749,6 +794,7 @@ impl<'a> Compressor<'a> {
 									                      * always be decimal.
 									                      */
 								);
+
 								return Some(self.ast.literal_number_expression(literal));
 							}
 						},
@@ -758,18 +804,22 @@ impl<'a> Compressor<'a> {
 							// self.ast.bigint_literal(unary_expr.span, value,
 							// big_int_literal.base); return Some(self.
 							// ast.literal_bigint_expression(leteral));
+
 							return None;
 						},
 						Expression::Identifier(ident) => {
 							if ident.name == "NaN" {
 								let value = -1_f64;
+
 								let raw = self.ast.new_str("-1");
+
 								let literal = self.ast.number_literal(
 									unary_expr.span,
 									value,
 									raw,
 									NumberBase::Decimal,
 								);
+
 								return Some(self.ast.literal_number_expression(literal));
 							}
 						},
@@ -794,6 +844,7 @@ impl<'a> Compressor<'a> {
 					reference_id:ident.reference_id.clone(),
 					reference_flag:ident.reference_flag,
 				};
+
 				return Some(self.ast.identifier_reference_expression(ident));
 			}
 		}
@@ -820,8 +871,10 @@ impl<'a> Compressor<'a> {
 			);
 
 			let argument = self.ast.literal_number_expression(number_literal);
+
 			return Some(self.ast.unary_expression(unary_expr.span, UnaryOperator::Void, argument));
 		}
+
 		None
 	}
 
@@ -835,6 +888,7 @@ impl<'a> Compressor<'a> {
 		right:&'b Expression<'a>,
 	) -> Option<Expression<'a>> {
 		let left_num = get_side_free_number_value(left);
+
 		let right_num = get_side_free_number_value(right);
 
 		if let (Some(NumberValue::Number(left_val)), Some(NumberValue::Number(right_val))) =
@@ -851,6 +905,7 @@ impl<'a> Compressor<'a> {
 			}
 
 			let right_val_int = right_val as i32;
+
 			let bits = NumericLiteral::ecmascript_to_int32(left_val);
 
 			let result_val:f64 = match op {
@@ -861,6 +916,7 @@ impl<'a> Compressor<'a> {
 					// We must force Rust to do the same here.
 					#[allow(clippy::cast_sign_loss)]
 					let res = bits as u32 >> right_val_int as u32;
+
 					f64::from(res)
 				},
 				_ => unreachable!("Unknown binary operator {:?}", op),
@@ -903,16 +959,24 @@ impl<'a> Compressor<'a> {
 			// foo() or: false_with_sideeffects && foo() =>
 			// false_with_sideeffects, foo()
 			let left = self.move_out_expression(&mut logic_expr.left);
+
 			let right = self.move_out_expression(&mut logic_expr.right);
+
 			let mut vec = self.ast.new_vec_with_capacity(2);
+
 			vec.push(left);
+
 			vec.push(right);
+
 			let sequence_expr = self.ast.sequence_expression(logic_expr.span, vec);
+
 			return Some(sequence_expr);
 		} else if let Expression::LogicalExpression(left_child) = &mut logic_expr.left {
 			if left_child.operator == logic_expr.operator {
 				let left_child_right_boolean = get_boolean_value(&left_child.right);
+
 				let left_child_op = left_child.operator;
+
 				if let Some(right_boolean) = left_child_right_boolean {
 					if !left_child.right.may_have_side_effects() {
 						// a || false || b => a || b
@@ -921,19 +985,23 @@ impl<'a> Compressor<'a> {
 							|| right_boolean && left_child_op == LogicalOperator::And
 						{
 							let left = self.move_out_expression(&mut left_child.left);
+
 							let right = self.move_out_expression(&mut logic_expr.right);
+
 							let logic_expr = self.ast.logical_expression(
 								logic_expr.span,
 								left,
 								left_child_op,
 								right,
 							);
+
 							return Some(logic_expr);
 						}
 					}
 				}
 			}
 		}
+
 		None
 	}
 
@@ -985,7 +1053,9 @@ impl<'a> Compressor<'a> {
 
 	fn move_out_expression(&mut self, expr:&mut Expression<'a>) -> Expression<'a> {
 		let null_literal = NullLiteral::new(expr.span());
+
 		let null_expr = self.ast.literal_null_expression(null_literal);
+
 		mem::replace(expr, null_expr)
 	}
 
@@ -1000,6 +1070,7 @@ impl<'a> Compressor<'a> {
 				match new_op {
 					Some(new_op) => {
 						binary_expr.operator = new_op;
+
 						binary_expr.span = *span;
 
 						true

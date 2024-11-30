@@ -84,6 +84,7 @@ pub fn check_variable_declaration(decl: &VariableDeclaration, ctx: &SemanticBuil
 
 fn unexpected_optional(span: Span, type_annotation: Option<&str>) -> OxcDiagnostic {
     let d = OxcDiagnostic::error("Unexpected `?` operator").with_label(span);
+
     if let Some(ty) = type_annotation {
         d.with_help(format!("If you want an optional type, use `{ty} | undefined` instead."))
     } else {
@@ -98,9 +99,12 @@ fn find_char(span: Span, source_text: &str, c: char) -> Option<Span> {
             false,
             "Flag {c} not found in source text. This is likely indicates a bug in the parser.",
         );
+
         return None;
     };
+
     let offset = span.start + offset as u32;
+
     Some(Span::new(offset, offset))
 }
 
@@ -114,20 +118,24 @@ pub fn check_variable_declarator(decl: &VariableDeclarator, ctx: &SemanticBuilde
             .as_ref()
             .map(|ty| ty.type_annotation.span())
             .map(|span| &ctx.source_text[span]);
+
         if let Some(span) = find_char(decl.span, ctx.source_text, '?') {
             ctx.error(unexpected_optional(span, ty));
         }
     }
+
     if decl.definite {
         // Check for `let x!: number = 1;`
         //                 ^
         let Some(span) = find_char(decl.span, ctx.source_text, '!') else { return };
+
         if decl.init.is_some() {
             let error = ts_error(
                 "1263",
                 "Declarations with initializers cannot also have definite assignment assertions.",
             )
             .with_label(span);
+
             ctx.error(error);
         } else if decl.id.type_annotation.is_none() {
             let error = ts_error(
@@ -135,6 +143,7 @@ pub fn check_variable_declarator(decl: &VariableDeclarator, ctx: &SemanticBuilde
                 "Declarations with definite assignment assertions must also have type annotations.",
             )
             .with_label(span);
+
             ctx.error(error);
         }
     }
@@ -157,18 +166,22 @@ pub fn check_formal_parameters(params: &FormalParameters, ctx: &SemanticBuilder<
 
     let is_inside_constructor =
         !params.kind.is_signature() && ctx.current_scope_flags().is_constructor();
+
     let mut has_optional = false;
 
     for item in &params.items {
         // function a(optional?: number, required: number) { }
+
         if has_optional && !item.pattern.optional && !item.pattern.kind.is_assignment_pattern() {
             ctx.error(required_parameter_after_optional_parameter(item.span));
         }
+
         if item.pattern.optional {
             has_optional = true;
         }
 
         // function a(public x: number) { }
+
         if !is_inside_constructor && item.accessibility.is_some() {
             ctx.error(parameter_property_outside_constructor(item.span));
         }
@@ -177,6 +190,7 @@ pub fn check_formal_parameters(params: &FormalParameters, ctx: &SemanticBuilder<
 
 fn check_duplicate_bound_names<'a, T: BoundNames<'a>>(bound_names: &T, ctx: &SemanticBuilder<'_>) {
     let mut idents: FxHashMap<Atom<'a>, Span> = FxHashMap::default();
+
     bound_names.bound_names(&mut |ident| {
         if let Some(old_span) = idents.insert(ident.name.clone(), ident.span) {
             ctx.error(redeclaration(&ident.name, old_span, ident.span));
@@ -199,7 +213,9 @@ pub fn check_simple_assignment_target<'a>(
         #[allow(clippy::match_same_arms)]
         match expression.get_inner_expression() {
             Expression::Identifier(_) => {}
+
             match_member_expression!(Expression) => {}
+
             _ => {
                 ctx.error(unexpected_assignment(target.span()));
             }
@@ -260,11 +276,13 @@ pub fn check_ts_module_declaration<'a>(decl: &TSModuleDeclaration<'a>, ctx: &Sem
             AstKind::Program(_) | AstKind::TSModuleBlock(_) | AstKind::TSModuleDeclaration(_) => {
                 break;
             }
+
             AstKind::ExportNamedDeclaration(_) | AstKind::ModuleDeclaration(_) => {
                 // export namespace N {}
                 // We need to check the parent of the parent
                 continue;
             }
+
             _ => {
                 ctx.error(not_allowed_namespace_declaration(decl.span));
             }
@@ -321,6 +339,7 @@ pub fn check_ts_import_equals_declaration<'a>(
 /// - Abstract methods can only appear within an abstract class. (1244)
 fn abstract_elem_in_concrete_class(is_property: bool, span: Span) -> OxcDiagnostic {
     let (code, elem_kind) = if is_property { ("1253", "properties") } else { ("1244", "methods") };
+
     ts_error(code, format!("Abstract {elem_kind} can only appear within an abstract class."))
         .with_label(span)
 }
@@ -330,6 +349,7 @@ pub fn check_class<'a>(class: &Class<'a>, ctx: &SemanticBuilder<'a>) {
         for elem in &class.body.body {
             if elem.is_abstract() {
                 let span = elem.property_key().map_or_else(|| elem.span(), GetSpan::span);
+
                 ctx.error(abstract_elem_in_concrete_class(elem.is_property(), span));
             }
         }
@@ -401,16 +421,19 @@ fn accessor_without_body(span: Span) -> OxcDiagnostic {
 
 pub fn check_method_definition<'a>(method: &MethodDefinition<'a>, ctx: &SemanticBuilder<'a>) {
     let is_abstract = method.r#type.is_abstract();
+
     let is_declare = ctx.class_table_builder.current_class_id.map_or(
         ctx.source_type.is_typescript_definition(),
         |id| {
             let node_id = ctx.class_table_builder.classes.declarations[id];
+
             let AstKind::Class(class) = ctx.nodes.get_node(node_id).kind() else {
                 #[cfg(debug_assertions)]
                 panic!("current_class_id is set, but does not point to a Class node.");
                 #[cfg(not(debug_assertions))]
                 return ctx.source_type.is_typescript_definition();
             };
+
             class.declare || ctx.source_type.is_typescript_definition()
         },
     );
@@ -425,10 +448,12 @@ pub fn check_method_definition<'a>(method: &MethodDefinition<'a>, ctx: &Semantic
                 let key_span = method.key.span();
                 (&ctx.source_text[key_span], key_span)
             });
+
             match method.kind {
                 MethodDefinitionKind::Method => {
                     ctx.error(abstract_method_cannot_have_implementation(method_name, span));
                 }
+
                 MethodDefinitionKind::Get | MethodDefinitionKind::Set => {
                     ctx.error(abstract_accessor_cannot_have_implementation(method_name, span));
                 }
@@ -436,6 +461,7 @@ pub fn check_method_definition<'a>(method: &MethodDefinition<'a>, ctx: &Semantic
                 // have abstract modifiers, but this gets checked during parsing
                 MethodDefinitionKind::Constructor => {}
             }
+
             ctx.error(abstract_method_cannot_have_implementation(method_name, span));
         }
     }
@@ -462,6 +488,7 @@ pub fn check_property_definition<'a>(prop: &PropertyDefinition<'a>, ctx: &Semant
             let key_span = prop.key.span();
             (&ctx.source_text[key_span], key_span)
         });
+
         ctx.error(abstract_property_cannot_have_initializer(prop_name, span));
     }
 }
@@ -479,6 +506,7 @@ pub fn check_object_property(prop: &ObjectProperty, ctx: &SemanticBuilder<'_>) {
 /// The left-hand side of a 'for...of' statement cannot use a type annotation. (2483)
 fn type_annotation_in_for_left(span: Span, is_for_in: bool) -> OxcDiagnostic {
     let for_of_or_in = if is_for_in { "for...in" } else { "for...of" };
+
     ts_error(
         "2483",
         format!(
@@ -495,6 +523,7 @@ pub fn check_for_statement_left(left: &ForStatementLeft, is_for_in: bool, ctx: &
     for decl in &decls.declarations {
         if decl.id.type_annotation.is_some() {
             let span = decl.id.span();
+
             ctx.error(type_annotation_in_for_left(span, is_for_in));
         }
     }

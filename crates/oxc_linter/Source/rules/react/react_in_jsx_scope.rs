@@ -52,8 +52,11 @@ impl Rule for ReactInJsxScope {
             AstKind::JSXFragment(v) => v.opening_fragment.span,
             _ => return,
         };
+
         let scope = ctx.scopes();
+
         let react_name = "React";
+
         if scope.get_binding(scope.root_scope_id(), react_name).is_some() {
             return;
         }
@@ -83,6 +86,7 @@ fn test() {
         (
             "
 			        import React from 'react/addons';
+
 			        const Button = createReactClass({
 			          render() {
 			            return (
@@ -90,6 +94,7 @@ fn test() {
 			            )
 			          }
 			        });
+
 			        export default Button;
 			      ",
             None,

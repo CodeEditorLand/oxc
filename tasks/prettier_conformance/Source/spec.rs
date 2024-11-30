@@ -20,11 +20,17 @@ pub struct SpecParser {
 impl SpecParser {
     pub fn parse(&mut self, spec: &Path) {
         let spec_content = fs::read_to_string(spec).unwrap_or_default();
+
         let allocator = Allocator::default();
+
         let source_type = SourceType::from_path(spec).unwrap_or_default();
+
         let mut ret = Parser::new(&allocator, &spec_content, source_type).parse();
+
         self.source_text.clone_from(&spec_content);
+
         self.calls = vec![];
+
         self.visit_program(&mut ret.program);
     }
 }
@@ -38,8 +44,11 @@ impl VisitMut<'_> for SpecParser {
         if ident.name != "runFormatTest" {
             return;
         }
+
         let mut parsers = vec![];
+
         let mut snapshot_options: Vec<(String, String)> = vec![];
+
         let mut options = PrettierOptions::default();
 
         if let Some(argument) = expr.arguments.get(1) {
@@ -55,6 +64,7 @@ impl VisitMut<'_> for SpecParser {
                         if let ArrayExpressionElement::StringLiteral(literal) = el {
                             return Some(literal.value.to_string());
                         }
+
                         None
                     })
                     .collect::<Vec<String>>();
@@ -77,6 +87,7 @@ impl VisitMut<'_> for SpecParser {
                                     options.single_quote = literal.value;
                                 }
                             }
+
                             Expression::NumericLiteral(literal) => match name.as_ref() {
                                 "printWidth" => options.print_width = literal.value as usize,
                                 "tabWidth" => options.tab_width = literal.value as usize,
@@ -99,10 +110,12 @@ impl VisitMut<'_> for SpecParser {
                                     options.arrow_parens =
                                         ArrowParens::from_str(literal.value.as_str()).unwrap();
                                 }
+
                                 _ => {}
                             },
                             _ => {}
                         };
+
                         if name != "errors" {
                             snapshot_options.push((
                                 name.to_string(),

@@ -30,5 +30,6 @@ pub(crate) fn eat_comma(input: &ParseStream) -> Result<()> {
     if input.peek(Token!(,)) {
         input.parse::<Token!(,)>()?;
     }
+
     Ok(())
 }

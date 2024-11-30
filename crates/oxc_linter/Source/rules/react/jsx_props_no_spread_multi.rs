@@ -66,7 +66,9 @@ impl Rule for JsxPropsNoSpreadMulti {
                 jsx_opening_el.attributes.iter().filter_map(JSXAttributeItem::as_spread);
 
             let mut identifier_names: FxHashMap<&Atom, Span> = FxHashMap::default();
+
             let mut member_expressions = Vec::new();
+
             let mut duplicate_spreads: FxHashMap<&Atom, Vec<Span>> = FxHashMap::default();
 
             for spread_attr in spread_attrs {
@@ -85,6 +87,7 @@ impl Rule for JsxPropsNoSpreadMulti {
                         })
                         .or_insert(spread_attr.span);
                 }
+
                 if let Some(member_expression) =
                     argument_without_parenthesized.as_member_expression()
                 {
@@ -114,6 +117,7 @@ impl Rule for JsxPropsNoSpreadMulti {
                     if is_same_member_expression(left, right, ctx) {
                         // 'foo.bar'
                         let member_prop_name = ctx.source_range(left.span());
+
                         ctx.diagnostic_with_fix(
                             jsx_props_no_spread_multiple_member_expressions_diagnostic(
                                 vec![*left_span, *right_span],
@@ -178,6 +182,7 @@ fn test() {
           <div {...props} {...props} {...props} />
         ",
     ];
+
     let fix = vec![
         ("<App {...props} {...props} />", "<App  {...props} />"),
         ("<App {...props.foo} {...props.foo} />", "<App  {...props.foo} />"),

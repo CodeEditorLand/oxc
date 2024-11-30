@@ -54,18 +54,22 @@ declare_oxc_lint!(
 impl Rule for Default {
     fn run_once(&self, ctx: &LintContext<'_>) {
         let module_record = ctx.module_record();
+
         for import_entry in &module_record.import_entries {
             let ImportImportName::Default(default_span) = import_entry.import_name else {
                 continue;
             };
 
             let specifier = import_entry.module_request.name();
+
             let Some(remote_module_record_ref) = module_record.loaded_modules.get(specifier) else {
                 continue;
             };
+
             if remote_module_record_ref.not_esm {
                 continue;
             }
+
             if !remote_module_record_ref
                 .resolved_absolute_path
                 .extension()
@@ -74,6 +78,7 @@ impl Rule for Default {
             {
                 continue;
             }
+
             if remote_module_record_ref.export_default.is_none()
                 && !remote_module_record_ref.exported_bindings.contains_key("default")
             {

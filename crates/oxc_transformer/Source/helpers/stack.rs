@@ -46,10 +46,12 @@ impl<T> SparseStack<T> {
 	pub fn push(&mut self, value:Option<T>) {
 		let has_value = if let Some(value) = value {
 			self.values.push(value);
+
 			true
 		} else {
 			false
 		};
+
 		self.has_values.push(has_value);
 	}
 
@@ -73,9 +75,13 @@ impl<T> SparseStack<T> {
 		// length first, and then checking for `new_len > 0`. https://godbolt.org/z/eqx385E5K
 		let has_value = unsafe {
 			let new_len = self.has_values.len() - 1;
+
 			assert!(new_len > 0);
+
 			let has_value = *self.has_values.get_unchecked(new_len);
+
 			self.has_values.set_len(new_len);
+
 			has_value
 		};
 
@@ -89,6 +95,7 @@ impl<T> SparseStack<T> {
 			// has been consumed at the same time we consume its corresponding
 			// value from `self.values`.
 			let value = unsafe { self.values.pop().unwrap_unchecked() };
+
 			Some(value)
 		} else {
 			None
@@ -103,6 +110,7 @@ impl<T> SparseStack<T> {
 		// entries from it, and it ensures `self.has_values` always has at
 		// least one entry.
 		let has_value = unsafe { self.has_values.last_mut().unwrap_unchecked() };
+
 		if *has_value {
 			*has_value = false;
 
@@ -114,6 +122,7 @@ impl<T> SparseStack<T> {
 			// last `self.has_values` to `false` at the same time as we
 			// consume the corresponding value from `self.values`.
 			let value = unsafe { self.values.pop().unwrap_unchecked() };
+
 			Some(value)
 		} else {
 			None
@@ -129,8 +138,10 @@ impl<T> SparseStack<T> {
 		// entries from it, and it ensures `self.has_values` always has at
 		// least one entry.
 		let has_value = unsafe { self.has_values.last_mut().unwrap_unchecked() };
+
 		if !*has_value {
 			*has_value = true;
+
 			self.values.push(init());
 		}
 
@@ -152,8 +163,10 @@ impl<T> SparseStack<T> {
 		// entries from it, and it ensures `self.has_values` always has at
 		// least one entry.
 		let has_value = unsafe { self.has_values.last_mut().unwrap_unchecked() };
+
 		if !*has_value {
 			*has_value = true;
+
 			self.values.push(init());
 		}
 

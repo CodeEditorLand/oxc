@@ -71,8 +71,11 @@ impl Rule for PreferArrayFlat {
         };
 
         check_array_flat_map_case(call_expr, ctx);
+
         check_array_reduce_case(call_expr, ctx);
+
         check_array_concat_case(call_expr, ctx);
+
         check_array_prototype_concat_case(call_expr, ctx);
     }
 }
@@ -124,9 +127,11 @@ fn check_array_reduce_case<'a>(call_expr: &CallExpression<'a>, ctx: &LintContext
     if !is_method_call(call_expr, None, Some(&["reduce"]), Some(2), Some(2)) {
         return;
     }
+
     let Argument::ArrowFunctionExpression(first_argument) = &call_expr.arguments[0] else {
         return;
     };
+
     let Some(second_argument) = call_expr.arguments[1].as_expression() else {
         return;
     };
@@ -253,6 +258,7 @@ fn check_array_concat_case<'a>(call_expr: &CallExpression<'a>, ctx: &LintContext
             if !array_expr.elements.is_empty() {
                 return;
             }
+
             ctx.diagnostic(prefer_array_flat_diagnostic(call_expr.span));
         }
     }

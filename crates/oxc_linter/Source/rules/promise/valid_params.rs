@@ -95,6 +95,7 @@ impl Rule for ValidParams {
                         &prop_name,
                         args_len,
                     ));
+
                     ctx.diagnostic(valid_params_diagnostic(call_expr.span, &format!("Promise.{prop_name}() requires 1 or 2 arguments, but received {args_len}")));
                 }
             }
@@ -107,6 +108,7 @@ impl Rule for ValidParams {
                     ));
                 }
             }
+
             _ => {}
         }
     }

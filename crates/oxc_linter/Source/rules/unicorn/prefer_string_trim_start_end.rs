@@ -66,6 +66,7 @@ impl Rule for PreferStringTrimStartEnd {
                 }
                 (v.property.span, &v.property.name)
             }
+
             _ => return,
         };
 

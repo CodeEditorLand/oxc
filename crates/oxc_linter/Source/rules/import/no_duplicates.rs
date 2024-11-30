@@ -24,6 +24,7 @@ where
     } else {
         Cow::Owned(format!("Module '{module_name}' is imported more than once in this file"))
     };
+
     let labels = std::iter::once(first_import.primary_label("It is first imported here"))
         .chain(other_imports.into_iter().map(LabeledSpan::underline));
 
@@ -109,17 +110,22 @@ impl Rule for NoDuplicates {
             // When prefer_inline is true, 0 is value and type named, 2 is type // namespace and 3 is type default
             let mut import_entries_maps: FxHashMap<u8, Vec<&RequestedModule>> =
                 FxHashMap::default();
+
             for requested_module in requested_modules {
                 let imports = module_record
                     .import_entries
                     .iter()
                     .filter(|entry| entry.module_request.span() == requested_module.span())
                     .collect::<Vec<_>>();
+
                 if imports.is_empty() {
                     import_entries_maps.entry(0).or_default().push(requested_module);
+
                     continue;
                 }
+
                 let mut flags = [true; 4];
+
                 for imports in imports {
                     let key = if imports.is_type {
                         match imports.import_name {
@@ -136,6 +142,7 @@ impl Rule for NoDuplicates {
 
                     if flags[key as usize] {
                         flags[key as usize] = false;
+
                         import_entries_maps.entry(key).or_default().push(requested_module);
                     }
                 }
@@ -152,8 +159,10 @@ fn check_duplicates(ctx: &LintContext, requested_modules: Option<&Vec<&Requested
     if let Some(requested_modules) = requested_modules {
         if requested_modules.len() > 1 {
             let mut labels = requested_modules.iter().map(|m| m.span());
+
             let first = labels.next().unwrap(); // we know there is at least one
             let module_name = ctx.source_range(first).trim_matches('\'').trim_matches('"');
+
             ctx.diagnostic(no_duplicates_diagnostic(module_name, first, labels));
         }
     }
@@ -183,6 +192,7 @@ fn test() {
         (r"import type x from './foo'; import type {y} from './foo'", None),
         (
             r"import type {} from './module';
+
         import {} from './module2';",
             None,
         ),
@@ -345,13 +355,17 @@ fn test() {
         ),
         (
             r"import { Foo } from './foo';
+
         import { Bar } from './foo';
+
         export const value = {}",
             None,
         ),
         (
             r"import { Foo } from './foo';
+
         import Bar from './foo';
+
         export const value = {}",
             None,
         ),
@@ -360,7 +374,9 @@ fn test() {
               DEFAULT_FILTER_KEYS,
               BULK_DISABLED,
             } from '../constants';
+
             import React from 'react';
+
             import {
               BULK_ACTIONS_ENABLED
             } from '../constants';
@@ -375,15 +391,19 @@ fn test() {
         ),
         (
             r"import {A1,} from 'foo';
+
             import {B1,} from 'foo';
+
             import {C1,} from 'foo';
 
             import {
             A2,
             } from 'bar';
+
             import {
             B2,
             } from 'bar';
+
             import {
             C2,
             } from 'bar';",

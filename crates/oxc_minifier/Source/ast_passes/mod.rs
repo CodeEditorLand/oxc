@@ -63,7 +63,9 @@ impl<'a> CompressorPass<'a> for EarlyPass {
 
     fn build(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.changed = false;
+
         oxc_traverse::walk_program(self, program, ctx);
+
         self.changed = self.x0_statement_fusion.changed()
             || self.x1_peephole_remove_dead_code.changed()
             || self.x2_peephole_minimize_conditions.changed()
@@ -80,11 +82,13 @@ impl<'a> Traverse<'a> for EarlyPass {
 
     fn exit_statement(&mut self, stmt: &mut Statement<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x1_peephole_remove_dead_code.exit_statement(stmt, ctx);
+
         self.x2_peephole_minimize_conditions.exit_statement(stmt, ctx);
     }
 
     fn exit_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x0_statement_fusion.exit_program(program, ctx);
+
         self.x1_peephole_remove_dead_code.exit_program(program, ctx);
     }
 
@@ -114,13 +118,17 @@ impl<'a> Traverse<'a> for EarlyPass {
 
     fn enter_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x3_peephole_substitute_alternate_syntax.enter_expression(expr, ctx);
+
         self.x4_peephole_replace_known_methods.enter_expression(expr, ctx);
     }
 
     fn exit_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x1_peephole_remove_dead_code.exit_expression(expr, ctx);
+
         self.x2_peephole_minimize_conditions.exit_expression(expr, ctx);
+
         self.x3_peephole_substitute_alternate_syntax.exit_expression(expr, ctx);
+
         self.x5_peephole_fold_constants.exit_expression(expr, ctx);
     }
 
@@ -169,7 +177,9 @@ impl<'a> CompressorPass<'a> for LatePass {
 
     fn build(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.changed = false;
+
         oxc_traverse::walk_program(self, program, ctx);
+
         self.changed = self.x0_exploit_assigns.changed()
             || self.x0_exploit_assigns.changed()
             || self.x1_collapse_variable_declarations.changed()

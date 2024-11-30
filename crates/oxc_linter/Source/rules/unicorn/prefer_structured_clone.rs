@@ -114,6 +114,7 @@ impl Rule for PreferStructuredClone {
             }
 
             let span = Span::new(call_expr.span.start, inner_call_expr.span.end);
+
             ctx.diagnostic(prefer_structured_clone_diagnostic(span));
         } else if !call_expr.arguments[0].is_spread() {
             for function in &self.allowed_functions {

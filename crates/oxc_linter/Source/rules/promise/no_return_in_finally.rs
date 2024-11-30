@@ -63,16 +63,20 @@ impl Rule for NoReturnInFinally {
             let Some(arg_expr) = argument.as_expression() else {
                 continue;
             };
+
             match arg_expr {
                 Expression::ArrowFunctionExpression(arrow_expr) => {
                     find_return_statement(&arrow_expr.body, ctx);
                 }
+
                 Expression::FunctionExpression(func_expr) => {
                     let Some(func_body) = &func_expr.body else {
                         continue;
                     };
+
                     find_return_statement(func_body, ctx);
                 }
+
                 _ => continue,
             }
         }

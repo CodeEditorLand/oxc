@@ -62,6 +62,7 @@ impl Span {
     /// ```
     pub const fn size(&self) -> u32 {
         debug_assert!(self.start <= self.end);
+
         self.end - self.start
     }
 
@@ -77,6 +78,7 @@ impl Span {
     /// ```
     pub const fn is_empty(&self) -> bool {
         debug_assert!(self.start <= self.end);
+
         self.start == self.end
     }
 
@@ -179,8 +181,11 @@ impl Span {
     #[must_use]
     pub fn shrink(self, offset: u32) -> Self {
         let start = self.start.saturating_add(offset);
+
         let end = self.end.saturating_sub(offset);
+
         debug_assert!(start <= end, "Cannot shrink span past zero length");
+
         Self::new(start, end)
     }
 
@@ -236,7 +241,9 @@ impl Span {
     #[must_use]
     pub const fn shrink_left(self, offset: u32) -> Self {
         let start = self.start.saturating_add(offset);
+
         debug_assert!(start <= self.end);
+
         Self::new(self.start.saturating_add(offset), self.end)
     }
 
@@ -292,7 +299,9 @@ impl Span {
     #[must_use]
     pub const fn shrink_right(self, offset: u32) -> Self {
         let end = self.end.saturating_sub(offset);
+
         debug_assert!(self.start <= end);
+
         Self::new(self.start, end)
     }
 
@@ -403,28 +412,37 @@ mod test {
     #[test]
     fn test_hash() {
         use std::hash::{DefaultHasher, Hash, Hasher};
+
         let mut first = DefaultHasher::new();
+
         let mut second = DefaultHasher::new();
+
         Span::new(0, 5).hash(&mut first);
+
         Span::new(0, 5).hash(&mut second);
+
         assert_eq!(first.finish(), second.finish());
     }
     #[test]
     fn test_eq() {
         assert_eq!(Span::new(0, 0), Span::new(0, 0));
+
         assert_eq!(Span::new(0, 1), Span::new(0, 1));
+
         assert_ne!(Span::new(0, 0), Span::new(0, 1));
     }
 
     #[test]
     fn test_ordering_less() {
         assert!(Span::new(0, 0) < Span::new(0, 1));
+
         assert!(Span::new(0, 3) < Span::new(2, 5));
     }
 
     #[test]
     fn test_ordering_greater() {
         assert!(Span::new(0, 1) > Span::new(0, 0));
+
         assert!(Span::new(2, 5) > Span::new(0, 3));
     }
 
@@ -433,20 +451,28 @@ mod test {
         let span = Span::new(5, 10);
 
         assert!(span.contains_inclusive(span));
+
         assert!(span.contains_inclusive(Span::new(5, 5)));
+
         assert!(span.contains_inclusive(Span::new(10, 10)));
+
         assert!(span.contains_inclusive(Span::new(6, 9)));
 
         assert!(!span.contains_inclusive(Span::new(0, 0)));
+
         assert!(!span.contains_inclusive(Span::new(4, 10)));
+
         assert!(!span.contains_inclusive(Span::new(5, 11)));
+
         assert!(!span.contains_inclusive(Span::new(4, 11)));
     }
 
     #[test]
     fn test_expand() {
         let span = Span::new(3, 5);
+
         assert_eq!(span.expand(0), Span::new(3, 5));
+
         assert_eq!(span.expand(1), Span::new(2, 6));
         // start and end cannot be expanded past `0` and `u32::MAX`,
         // respectively
@@ -456,7 +482,9 @@ mod test {
     #[test]
     fn test_shrink() {
         let span = Span::new(4, 8);
+
         assert_eq!(span.shrink(0), Span::new(4, 8));
+
         assert_eq!(span.shrink(1), Span::new(5, 7));
         // can be equal
         assert_eq!(span.shrink(2), Span::new(6, 6));
@@ -466,6 +494,7 @@ mod test {
     #[should_panic(expected = "Cannot shrink span past zero length")]
     fn test_shrink_past_start() {
         let span = Span::new(5, 10);
+
         let _ = span.shrink(5);
     }
 }

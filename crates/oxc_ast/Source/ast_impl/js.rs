@@ -114,6 +114,7 @@ impl<'a> Expression<'a> {
             Self::UnaryExpression(expr) if expr.operator == UnaryOperator::Void => {
                 matches!(&expr.argument, Self::NumericLiteral(lit) if lit.value == 0.0)
             }
+
             _ => false,
         }
     }
@@ -158,9 +159,11 @@ impl<'a> Expression<'a> {
     /// Remove nested parentheses from this expression.
     pub fn without_parentheses(&self) -> &Self {
         let mut expr = self;
+
         while let Expression::ParenthesizedExpression(paran_expr) = expr {
             expr = &paran_expr.expression;
         }
+
         expr
     }
 
@@ -178,12 +181,15 @@ impl<'a> Expression<'a> {
             expr if expr.is_member_expression() => {
                 expr.to_member_expression().is_specific_member_access(object, property)
             }
+
             Expression::ChainExpression(chain) => {
                 let Some(expr) = chain.expression.as_member_expression() else {
                     return false;
                 };
+
                 expr.is_specific_member_access(object, property)
             }
+
             _ => false,
         }
     }
@@ -191,6 +197,7 @@ impl<'a> Expression<'a> {
     #[allow(missing_docs)]
     pub fn get_inner_expression(&self) -> &Expression<'a> {
         let mut expr = self;
+
         loop {
             expr = match expr {
                 Expression::ParenthesizedExpression(e) => &e.expression,
@@ -202,12 +209,14 @@ impl<'a> Expression<'a> {
                 _ => break,
             };
         }
+
         expr
     }
 
     #[allow(missing_docs)]
     pub fn get_inner_expression_mut(&mut self) -> &mut Expression<'a> {
         let mut expr = self;
+
         loop {
             expr = match expr {
                 Expression::ParenthesizedExpression(e) => &mut e.expression,
@@ -219,6 +228,7 @@ impl<'a> Expression<'a> {
                 _ => break,
             };
         }
+
         expr
     }
 
@@ -332,6 +342,7 @@ impl<'a> PropertyKey<'a> {
             Self::TemplateLiteral(lit) => {
                 lit.expressions.is_empty().then(|| lit.quasi()).flatten().map(Into::into)
             }
+
             _ => None,
         }
     }
@@ -442,6 +453,7 @@ impl<'a> MemberExpression<'a> {
             MemberExpression::ComputedMemberExpression(expr) => {
                 expr.static_property_name().map(|name| name.as_str())
             }
+
             MemberExpression::StaticMemberExpression(expr) => Some(expr.property.name.as_str()),
             MemberExpression::PrivateFieldExpression(_) => None,
         }
@@ -459,11 +471,13 @@ impl<'a> MemberExpression<'a> {
                         None
                     }
                 }
+
                 _ => None,
             },
             MemberExpression::StaticMemberExpression(expr) => {
                 Some((expr.property.span, expr.property.name.as_str()))
             }
+
             MemberExpression::PrivateFieldExpression(_) => None,
         }
     }
@@ -502,6 +516,7 @@ impl<'a> ComputedMemberExpression<'a> {
             {
                 Some(lit.quasis[0].value.raw.clone())
             }
+
             _ => None,
         }
     }
@@ -511,18 +526,23 @@ impl<'a> StaticMemberExpression<'a> {
     #[allow(missing_docs)]
     pub fn get_first_object(&self) -> &Expression<'a> {
         let mut object = &self.object;
+
         loop {
             match object {
                 Expression::StaticMemberExpression(member) => {
                     object = &member.object;
+
                     continue;
                 }
+
                 Expression::ChainExpression(chain) => {
                     if let ChainElement::StaticMemberExpression(member) = &chain.expression {
                         object = &member.object;
+
                         continue;
                     }
                 }
+
                 _ => {}
             }
 
@@ -558,6 +578,7 @@ impl<'a> CallExpression<'a> {
         if self.arguments.len() != 1 {
             return false;
         }
+
         if let Expression::Identifier(id) = &self.callee {
             id.name == "require"
                 && matches!(
@@ -579,6 +600,7 @@ impl<'a> CallExpression<'a> {
                     matches!(member.object(), Expression::Identifier(id) if id.name == "Symbol")
                         && member.static_property_name() == Some("for")
                 }
+
                 None => false,
             },
         }
@@ -589,6 +611,7 @@ impl<'a> CallExpression<'a> {
         if !(self.callee.is_specific_id("require") && self.arguments.len() == 1) {
             return None;
         }
+
         match &self.arguments[0] {
             Argument::StringLiteral(str_literal) => Some(str_literal),
             _ => None,
@@ -696,6 +719,7 @@ impl<'a> AssignmentTargetMaybeDefault<'a> {
                     None
                 }
             }
+
             _ => None,
         }
     }
@@ -708,9 +732,11 @@ impl<'a> Statement<'a> {
             match_declaration!(Self) => {
                 self.as_declaration().is_some_and(Declaration::is_typescript_syntax)
             }
+
             match_module_declaration!(Self) => {
                 self.as_module_declaration().is_some_and(ModuleDeclaration::is_typescript_syntax)
             }
+
             _ => false,
         }
     }
@@ -839,6 +865,7 @@ impl VariableDeclarationKind {
 impl fmt::Display for VariableDeclarationKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = self.as_str();
+
         write!(f, "{s}")
     }
 }
@@ -846,6 +873,7 @@ impl fmt::Display for VariableDeclarationKind {
 impl<'a> ForStatementInit<'a> {
     /// LexicalDeclaration[In, Yield, Await] :
     ///   LetOrConst BindingList[?In, ?Yield, ?Await] ;
+
     pub fn is_lexical_declaration(&self) -> bool {
         matches!(self, Self::VariableDeclaration(decl) if decl.kind.is_lexical())
     }
@@ -854,6 +882,7 @@ impl<'a> ForStatementInit<'a> {
 impl<'a> ForStatementLeft<'a> {
     /// LexicalDeclaration[In, Yield, Await] :
     ///   LetOrConst BindingList[?In, ?Yield, ?Await] ;
+
     pub fn is_lexical_declaration(&self) -> bool {
         matches!(self, Self::VariableDeclaration(decl) if decl.kind.is_lexical())
     }
@@ -1030,6 +1059,7 @@ impl<'a> FormalParameter<'a> {
     ///         z: string          // <- false
     ///     ) {}
     /// }
+
     pub fn is_public(&self) -> bool {
         matches!(self.accessibility, Some(TSAccessibility::Public))
     }
@@ -1093,6 +1123,7 @@ impl<'a> ArrowFunctionExpression<'a> {
                 return Some(&expr_stmt.expression);
             }
         }
+
         None
     }
 }
@@ -1233,6 +1264,7 @@ impl<'a> ClassElement<'a> {
             Self::PropertyDefinition(property) => {
                 property.r#type == PropertyDefinitionType::TSAbstractPropertyDefinition
             }
+
             Self::AccessorProperty(property) => property.r#type.is_abstract(),
             Self::StaticBlock(_) => false,
         }
@@ -1454,6 +1486,7 @@ impl<'a> fmt::Display for ModuleExportName<'a> {
             Self::IdentifierReference(identifier) => identifier.name.to_string(),
             Self::StringLiteral(literal) => format!(r#""{}""#, literal.value),
         };
+
         write!(f, "{s}")
     }
 }

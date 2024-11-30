@@ -86,9 +86,11 @@ impl Rule for NoExtendNative {
 
     fn run_once(&self, ctx: &LintContext) {
         let symbols = ctx.symbols();
+
         for reference_id_list in ctx.scopes().root_unresolved_references_ids() {
             for reference_id in reference_id_list {
                 let reference = symbols.get_reference(reference_id);
+
                 let name = ctx.semantic().reference_name(reference);
                 // If the referenced name does not appear to be a global object, skip it.
                 if !ctx.env_contains_var(name) {
@@ -96,6 +98,7 @@ impl Rule for NoExtendNative {
                 }
                 // If the referenced name is explicitly allowed, skip it.
                 let compact_name = CompactStr::from(name);
+
                 if self.exceptions.contains(&compact_name) {
                     continue;
                 }
@@ -103,9 +106,11 @@ impl Rule for NoExtendNative {
                 let Some(first_char) = name.chars().next() else {
                     continue;
                 };
+
                 if first_char.is_lowercase() {
                     continue;
                 }
+
                 let node = ctx.nodes().get_node(reference.node_id());
                 // If this is not `*.prototype` access, skip it.
                 let Some(prop_access) = get_prototype_property_accessed(ctx, node) else {
@@ -149,6 +154,7 @@ fn get_define_property_call<'a>(
             }
         }
     }
+
     None
 }
 
@@ -161,14 +167,17 @@ fn is_define_property_call(call_expr: &CallExpression) -> bool {
     } else {
         callee.as_member_expression()
     };
+
     match member_expression {
         Some(me) => {
             let prop_name = me.static_property_name();
+
             me.object()
                 .get_identifier_reference()
                 .is_some_and(|ident_ref| ident_ref.name == "Object")
                 && (prop_name == Some("defineProperty") || prop_name == Some("defineProperties"))
         }
+
         _ => false,
     }
 }
@@ -193,12 +202,15 @@ fn get_property_assignment<'a>(
                     {
                         return None;
                     }
+
                     return None;
                 }
             }
+
             _ => {}
         }
     }
+
     None
 }
 
@@ -211,19 +223,26 @@ fn get_prototype_property_accessed<'a>(
     let AstKind::IdentifierReference(_) = node.kind() else {
         return None;
     };
+
     let parent = ctx.nodes().parent_node(node.id())?;
+
     let mut prototype_node = Some(parent);
+
     let AstKind::MemberExpression(prop_access_expr) = parent.kind() else {
         return None;
     };
+
     let prop_name = prop_access_expr.static_property_name()?;
+
     if prop_name != "prototype" {
         return None;
     }
+
     let grandparent_node = ctx.nodes().parent_node(parent.id())?;
 
     if let AstKind::ChainExpression(_) = grandparent_node.kind() {
         prototype_node = Some(grandparent_node);
+
         if let Some(grandparent_parent) = ctx.nodes().parent_node(grandparent_node.id()) {
             prototype_node = Some(grandparent_parent);
         }
@@ -249,14 +268,17 @@ fn is_computed_member_expression_matching(
                     .is_some_and(|object| object.content_eq(prop_access_expr));
             }
         }
+
         AstKind::MemberExpression(MemberExpression::ComputedMemberExpression(computed)) => {
             return computed
                 .object
                 .as_member_expression()
                 .is_some_and(|object| object.content_eq(prop_access_expr));
         }
+
         _ => {}
     }
+
     false
 }
 

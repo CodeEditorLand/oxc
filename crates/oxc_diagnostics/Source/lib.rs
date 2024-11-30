@@ -218,6 +218,7 @@ impl OxcDiagnostic {
             Some(scope) => Some(scope),
             None => Some(code_scope.into()),
         };
+
         debug_assert!(
             self.inner.code.scope.as_ref().is_some_and(|s| !s.is_empty()),
             "Error code scopes cannot be empty"
@@ -235,6 +236,7 @@ impl OxcDiagnostic {
             Some(num) => Some(num),
             None => Some(code_num.into()),
         };
+
         debug_assert!(
             self.inner.code.number.as_ref().is_some_and(|n| !n.is_empty()),
             "Error code numbers cannot be empty"
@@ -249,6 +251,7 @@ impl OxcDiagnostic {
     /// severity you want.
     pub fn with_severity(mut self, severity: Severity) -> Self {
         self.inner.severity = severity;
+
         self
     }
 
@@ -267,6 +270,7 @@ impl OxcDiagnostic {
     /// ```
     pub fn with_help<T: Into<Cow<'static, str>>>(mut self, help: T) -> Self {
         self.inner.help = Some(help.into());
+
         self
     }
 
@@ -284,6 +288,7 @@ impl OxcDiagnostic {
     /// [`label`]: https://docs.rs/oxc_span/latest/oxc_span/struct.Span.html#method.label
     pub fn with_label<T: Into<LabeledSpan>>(mut self, label: T) -> Self {
         self.inner.labels = Some(vec![label.into()]);
+
         self
     }
 
@@ -305,14 +310,18 @@ impl OxcDiagnostic {
         labels: T,
     ) -> Self {
         self.inner.labels = Some(labels.into_iter().map(Into::into).collect());
+
         self
     }
 
     /// Add a label to this diagnostic without clobbering existing labels.
     pub fn and_label<T: Into<LabeledSpan>>(mut self, label: T) -> Self {
         let mut labels = self.inner.labels.unwrap_or_default();
+
         labels.push(label.into());
+
         self.inner.labels = Some(labels);
+
         self
     }
 
@@ -322,14 +331,18 @@ impl OxcDiagnostic {
         labels: T,
     ) -> Self {
         let mut all_labels = self.inner.labels.unwrap_or_default();
+
         all_labels.extend(labels.into_iter().map(Into::into));
+
         self.inner.labels = Some(all_labels);
+
         self
     }
 
     /// Add a URL that provides more information about this diagnostic.
     pub fn with_url<S: Into<Cow<'static, str>>>(mut self, url: S) -> Self {
         self.inner.url = Some(url.into());
+
         self
     }
 

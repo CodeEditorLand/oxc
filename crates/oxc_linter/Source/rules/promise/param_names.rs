@@ -74,6 +74,7 @@ impl Rule for ParamNames {
             if let Some(val) = config.get("resolvePattern").and_then(serde_json::Value::as_str) {
                 cfg.resolve_pattern = Regex::new(val).ok();
             }
+
             if let Some(val) = config.get("rejectPattern").and_then(serde_json::Value::as_str) {
                 cfg.reject_pattern = Regex::new(val).ok();
             }
@@ -95,13 +96,16 @@ impl Rule for ParamNames {
             let Some(arg_expr) = argument.as_expression() else {
                 continue;
             };
+
             match arg_expr {
                 Expression::ArrowFunctionExpression(arrow_expr) => {
                     self.check_parameter_names(&arrow_expr.params, ctx);
                 }
+
                 Expression::FunctionExpression(func_expr) => {
                     self.check_parameter_names(&func_expr.params, ctx);
                 }
+
                 _ => continue,
             }
         }
@@ -138,6 +142,7 @@ impl ParamNames {
                     ctx.diagnostic(param_names_diagnostic(param_ident.span, pattern.as_str()));
                 }
             }
+
             None => {
                 if matches!(param_type, ParamType::Resolve)
                     && !matches!(param_ident.name.as_str(), "_resolve" | "resolve")

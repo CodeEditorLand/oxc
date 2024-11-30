@@ -100,8 +100,11 @@ struct DotDefineState<'a> {
 impl<'a> From<&InjectImport> for DotDefineState<'a> {
     fn from(inject: &InjectImport) -> Self {
         let parts = inject.specifier.local().split('.').map(CompactStr::from).collect::<Vec<_>>();
+
         let value = inject.replace_value.clone().unwrap();
+
         let dot_define = DotDefine { parts, value };
+
         Self { dot_define, value_atom: None }
     }
 }
@@ -153,6 +156,7 @@ impl<'a> InjectGlobalVariables<'a> {
         program: &mut Program<'a>,
     ) -> InjectGlobalVariablesReturn {
         let mut symbols = symbols;
+
         let mut scopes = scopes;
         // Step 1: slow path where visiting the AST is required to replace dot defines.
         let dot_defines = self
@@ -198,13 +202,18 @@ impl<'a> InjectGlobalVariables<'a> {
     fn inject_imports(&self, injects: &[InjectImport], program: &mut Program<'a>) {
         let imports = injects.iter().map(|inject| {
             let specifiers = Some(self.ast.vec1(self.inject_import_to_specifier(inject)));
+
             let source = self.ast.string_literal(SPAN, inject.source.as_str(), None);
+
             let kind = ImportOrExportKind::Value;
+
             let import_decl = self
                 .ast
                 .module_declaration_import_declaration(SPAN, specifiers, source, NONE, kind);
+
             Statement::from(import_decl)
         });
+
         program.body.splice(0..0, imports);
     }
 
@@ -212,7 +221,9 @@ impl<'a> InjectGlobalVariables<'a> {
         match &inject.specifier {
             InjectImportSpecifier::Specifier { imported, local } => {
                 let imported = imported.as_deref().unwrap_or("default");
+
                 let local = inject.replace_value.as_ref().unwrap_or(local).as_str();
+
                 self.ast.import_declaration_specifier_import_specifier(
                     SPAN,
                     self.ast.module_export_name_identifier_name(SPAN, imported),
@@ -220,14 +231,20 @@ impl<'a> InjectGlobalVariables<'a> {
                     ImportOrExportKind::Value,
                 )
             }
+
             InjectImportSpecifier::DefaultSpecifier { local } => {
                 let local = inject.replace_value.as_ref().unwrap_or(local).as_str();
+
                 let local = self.ast.binding_identifier(SPAN, local);
+
                 self.ast.import_declaration_specifier_import_default_specifier(SPAN, local)
             }
+
             InjectImportSpecifier::NamespaceSpecifier { local } => {
                 let local = inject.replace_value.as_ref().unwrap_or(local).as_str();
+
                 let local = self.ast.binding_identifier(SPAN, local);
+
                 self.ast.import_declaration_specifier_import_namespace_specifier(SPAN, local)
             }
         }
@@ -246,12 +263,15 @@ impl<'a> InjectGlobalVariables<'a> {
                     let value_atom = value_atom.get_or_insert_with(|| {
                         self.replaced_dot_defines
                             .push((dot_define.parts[0].clone(), dot_define.value.clone()));
+
                         self.ast.atom(dot_define.value.as_str())
                     });
+
                     let value_atom = value_atom.clone();
 
                     let value = self.ast.expression_identifier_reference(SPAN, value_atom);
                     *expr = value;
+
                     break;
                 }
             }

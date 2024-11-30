@@ -46,17 +46,24 @@ impl Rule for NoUselessConcat {
         }
 
         let left = get_left(binary_expr);
+
         let right = get_right(binary_expr);
 
         if left.is_string_literal() && right.is_string_literal() {
             let left_span = left.span();
+
             let right_span = right.span();
+
             let span = Span::new(left_span.end, right_span.start);
+
             let source_text = span.source_text(ctx.source_text());
+
             if source_text.chars().any(is_line_terminator) {
                 return;
             }
+
             let span = Span::new(left_span.start, right_span.end);
+
             ctx.diagnostic(no_useless_concat_diagnostic(span));
         }
     }
@@ -64,29 +71,37 @@ impl Rule for NoUselessConcat {
 
 fn get_left<'a>(expr: &'a BinaryExpression<'a>) -> &'a Expression<'a> {
     let mut left = &expr.left;
+
     loop {
         if let Expression::BinaryExpression(binary_expr) = left {
             if binary_expr.operator == BinaryOperator::Addition {
                 left = &binary_expr.right;
+
                 continue;
             }
         }
+
         break;
     }
+
     left
 }
 
 fn get_right<'a>(expr: &'a BinaryExpression<'a>) -> &'a Expression<'a> {
     let mut right = &expr.right;
+
     loop {
         if let Expression::BinaryExpression(binary_expr) = right {
             if binary_expr.operator == BinaryOperator::Addition {
                 right = &binary_expr.left;
+
                 continue;
             }
         }
+
         break;
     }
+
     right
 }
 

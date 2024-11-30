@@ -56,13 +56,17 @@ enum DefinitelyCallsThisBeforeSuper {
 impl Rule for NoThisBeforeSuper {
     fn run_once(&self, ctx: &LintContext) {
         let cfg = ctx.cfg();
+
         let semantic = ctx.semantic();
 
         // first pass -> find super calls and local violations
         let mut wanted_nodes = Vec::new();
+
         let mut basic_blocks_with_super_called = FxHashSet::<BlockNodeId>::default();
+
         let mut basic_blocks_with_local_violations =
             FxHashMap::<BlockNodeId, Vec<NodeId>>::default();
+
         for node in semantic.nodes() {
             match node.kind() {
                 AstKind::Function(_) | AstKind::ArrowFunctionExpression(_) => {
@@ -70,8 +74,10 @@ impl Rule for NoThisBeforeSuper {
                         wanted_nodes.push(node);
                     }
                 }
+
                 AstKind::Super(_) => {
                     let basic_block_id = node.cfg_id();
+
                     if let Some(parent) = semantic.nodes().parent_node(node.id()) {
                         if let AstKind::CallExpression(call_expr) = parent.kind() {
                             let has_this_or_super_in_args =
@@ -82,6 +88,7 @@ impl Rule for NoThisBeforeSuper {
                             }
                         }
                     }
+
                     if !basic_blocks_with_super_called.contains(&basic_block_id) {
                         basic_blocks_with_local_violations
                             .entry(basic_block_id)
@@ -89,8 +96,10 @@ impl Rule for NoThisBeforeSuper {
                             .push(node.id());
                     }
                 }
+
                 AstKind::ThisExpression(_) => {
                     let basic_block_id = node.cfg_id();
+
                     if !basic_blocks_with_super_called.contains(&basic_block_id) {
                         basic_blocks_with_local_violations
                             .entry(basic_block_id)
@@ -98,6 +107,7 @@ impl Rule for NoThisBeforeSuper {
                             .push(node.id());
                     }
                 }
+
                 _ => {}
             }
         }
@@ -126,6 +136,7 @@ impl Rule for NoThisBeforeSuper {
                 // so the unwrap() is safe here. The parent node is the
                 // AstKind::MethodDefinition for `constructor`.
                 let parent_span = ctx.nodes().parent_node(node.id()).unwrap().kind().span();
+
                 ctx.diagnostic(no_this_before_super_diagnostic(parent_span));
             }
         }
@@ -135,14 +146,18 @@ impl Rule for NoThisBeforeSuper {
 impl NoThisBeforeSuper {
     fn is_wanted_node(node: &AstNode, ctx: &LintContext<'_>) -> Option<bool> {
         let parent = ctx.nodes().parent_node(node.id())?;
+
         let method_def = parent.kind().as_method_definition()?;
 
         if matches!(method_def.kind, MethodDefinitionKind::Constructor) {
             let parent_2 = ctx.nodes().parent_node(parent.id())?;
+
             let parent_3 = ctx.nodes().parent_node(parent_2.id())?;
 
             let class = parent_3.kind().as_class()?;
+
             let super_class = class.super_class.as_ref()?;
+
             return Some(!matches!(super_class, Expression::NullLiteral(_)));
         }
 
@@ -171,6 +186,7 @@ impl NoThisBeforeSuper {
             },
             &mut |basic_block_id, _| {
                 let super_called = basic_blocks_with_super_called.contains(basic_block_id);
+
                 if basic_blocks_with_local_violations.contains_key(basic_block_id) {
                     // super was not called before this in the current code path:
                     return (DefinitelyCallsThisBeforeSuper::Yes, false);
@@ -222,7 +238,9 @@ impl NoThisBeforeSuper {
             DefinitelyCallsThisBeforeSuper::No => false,
             DefinitelyCallsThisBeforeSuper::Maybe(id) => cfg.graph.edges(id).any(|edge| {
                 let weight = edge.weight();
+
                 let is_explicit_error = matches!(weight, EdgeType::Error(ErrorEdgeKind::Explicit));
+
                 if is_explicit_error || matches!(weight, EdgeType::Finalize) {
                     Self::check_for_violation(
                         cfg,
@@ -253,9 +271,11 @@ impl NoThisBeforeSuper {
                     matches!(static_member.object, Expression::Super(_) | Expression::ThisExpression(_)))
                     || Self::contains_this_or_super_in_args(&call_expr.arguments)
             }
+
             Argument::StaticMemberExpression(call_expr) => {
                 matches!(&call_expr.object, Expression::Super(_) | Expression::ThisExpression(_))
             }
+
             _ => false,
         }
     }
@@ -268,6 +288,7 @@ impl NoThisBeforeSuper {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     let pass = vec![
         /*
          * if the class has no extends or `extends null`, just ignore.
@@ -288,6 +309,7 @@ fn test() {
             try {
                 return a();
             }
+
             catch (err) {
                 throw new class CustomError extends Error {
                     constructor() {
@@ -295,6 +317,7 @@ fn test() {
                     }
                 };
             }
+
             finally {
                 this.b();
             }
@@ -355,7 +378,9 @@ fn test() {
             r"class A extends Object {
                 constructor() {
                     super();
+
                     for (let i = 0; i < 0; i++);
+
                     this;
                 }
             }",
@@ -373,6 +398,7 @@ fn test() {
 
                     try {
                         let arr = [];
+
                         for (let a of arr) {
                         }
                     } catch (err) {
@@ -432,6 +458,7 @@ fn test() {
                     } else {
                       super();
                     }
+
                     this.a();
                 }
             }",
@@ -455,6 +482,7 @@ fn test() {
                     while (foo) {
                         super();
                     }
+
                     this.a();
                 }
             }",
@@ -465,6 +493,7 @@ fn test() {
                 constructor() {
                     while (foo) {
                         this.a();
+
                         super();
                     }
                 }
@@ -477,6 +506,7 @@ fn test() {
                     while (foo) {
                         if (init) {
                             this.a();
+
                             super();
                         }
                     }

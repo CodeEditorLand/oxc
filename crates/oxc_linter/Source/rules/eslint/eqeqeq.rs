@@ -42,6 +42,7 @@ declare_oxc_lint!(
 impl Rule for Eqeqeq {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj1 = value.get(0);
+
         let obj2 = value.get(1);
 
         Self {
@@ -61,8 +62,11 @@ impl Rule for Eqeqeq {
         let AstKind::BinaryExpression(binary_expr) = node.kind() else {
             return;
         };
+
         let is_null = is_null_check(binary_expr);
+
         let enforce_rule_for_null = matches!(self.null_type, NullType::Always);
+
         let enforce_inverse_rule_for_null = matches!(self.null_type, NullType::Never);
 
         if !matches!(binary_expr.operator, BinaryOperator::Equality | BinaryOperator::Inequality) {
@@ -82,6 +86,7 @@ impl Rule for Eqeqeq {
         }
 
         let is_type_of_binary_bool = is_type_of_binary(binary_expr);
+
         let are_literals_and_same_type_bool =
             are_literals_and_same_type(&binary_expr.left, &binary_expr.right);
         // The "smart" option enforces the use of `===` and `!==` except for these cases:
@@ -99,20 +104,25 @@ impl Rule for Eqeqeq {
         }
 
         let operator = binary_expr.operator.as_str();
+
         let (preferred_operator, preferred_operator_with_padding) =
             to_strict_eq_operator_str(binary_expr.operator);
 
         #[allow(clippy::cast_possible_truncation)]
         let operator_span = {
             let left_end = binary_expr.left.span().end;
+
             let right_start = binary_expr.right.span().start;
+
             let offset = Span::new(left_end, right_start)
                 .source_text(ctx.source_text())
                 .find(operator)
                 .unwrap_or(0) as u32;
 
             let operator_start = left_end + offset;
+
             let operator_end = operator_start + operator.len() as u32;
+
             Span::new(operator_start, operator_end)
         };
 
@@ -122,8 +132,11 @@ impl Rule for Eqeqeq {
                 eqeqeq_diagnostic(operator, preferred_operator, operator_span),
                 |fixer| {
                     let start = binary_expr.left.span().end;
+
                     let end = binary_expr.right.span().start;
+
                     let span = Span::new(start, end);
+
                     fixer.replace(span, preferred_operator_with_padding)
                 },
             );
@@ -182,6 +195,7 @@ fn is_type_of_binary(binary_expr: &BinaryExpression) -> bool {
         | (_, Expression::UnaryExpression(unary_expr)) => {
             matches!(unary_expr.operator, UnaryOperator::Typeof)
         }
+
         _ => false,
     }
 }

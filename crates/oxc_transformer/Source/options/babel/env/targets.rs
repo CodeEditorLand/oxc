@@ -34,12 +34,14 @@ pub enum BabelTargetsValue {
 
 impl TryFrom<BabelTargets> for EngineTargets {
     type Error = String;
+
     fn try_from(value: BabelTargets) -> Result<Self, Self::Error> {
         match value {
             BabelTargets::String(s) => BrowserslistQuery::Single(s).exec(),
             BabelTargets::Array(v) => BrowserslistQuery::Multiple(v).exec(),
             BabelTargets::Map(map) => {
                 let mut engine_targets = Self::default();
+
                 for (key, value) in map {
                     // TODO: Implement these targets.
                     if matches!(key.as_str(), "esmodules" | "browsers") {
@@ -49,6 +51,7 @@ impl TryFrom<BabelTargets> for EngineTargets {
                     if matches!(value, BabelTargetsValue::Int(_) | BabelTargetsValue::Float(_)) {
                         continue;
                     };
+
                     let BabelTargetsValue::String(v) = value else {
                         return Err(format!("{value:?} is not a string for {key}."));
                     };
@@ -66,15 +69,18 @@ impl TryFrom<BabelTargets> for EngineTargets {
                     let Ok(engine) = Engine::from_str(&key) else {
                         return Err(format!("engine '{key}' is not supported."));
                     };
+
                     match Version::parse(&v) {
                         Ok(version) => {
                             engine_targets.insert(engine, version);
                         }
+
                         Err(err) => {
                             return Err(format!("Failed to parse `{v}` for `{key}`\n{err:?}"))
                         }
                     }
                 }
+
                 Ok(engine_targets)
             }
         }

@@ -103,11 +103,14 @@ impl Rule for NoDuplicateHooks {
         let Some(root_node) = ctx.nodes().root_node() else {
             return;
         };
+
         let mut hook_contexts: FxHashMap<NodeId, Vec<FxHashMap<String, i32>>> =
             FxHashMap::default();
+
         hook_contexts.insert(root_node.id(), Vec::new());
 
         let mut possibles_jest_nodes = collect_possible_jest_call_node(ctx);
+
         possibles_jest_nodes.sort_by_key(|n| n.node.id());
 
         for possible_jest_node in possibles_jest_nodes {
@@ -124,9 +127,11 @@ impl NoDuplicateHooks {
         ctx: &LintContext<'a>,
     ) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
             parse_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
@@ -142,11 +147,13 @@ impl NoDuplicateHooks {
         }
 
         let hook_name = jest_fn_call.name.to_string();
+
         let parent_node_id =
             match ctx.nodes().ancestor_ids(node.id()).find(|n| hook_contexts.contains_key(n)) {
                 Some(n) => Some(n),
                 _ => Some(root_node_id),
             };
+
         let Some(parent_id) = parent_node_id else {
             return;
         };
@@ -154,19 +161,26 @@ impl NoDuplicateHooks {
         let Some(contexts) = hook_contexts.get_mut(&parent_id) else {
             return;
         };
+
         let last_context = if let Some(val) = contexts.last_mut() {
             Some(val)
         } else {
             let mut context = FxHashMap::default();
+
             context.insert(hook_name.clone(), 0);
+
             contexts.push(context);
+
             contexts.last_mut()
         };
+
         let Some(last_context) = last_context else {
             return;
         };
+
         let Some((_, count)) = last_context.get_key_value(&hook_name) else {
             last_context.insert(hook_name, 1);
+
             return;
         };
 
@@ -320,7 +334,9 @@ fn test() {
             "
                 describe(\"foo\", () => {
                     beforeEach(() => {});
+
                     beforeEach(() => {});
+
                     test(\"bar\", () => {
                         someFn();
                     })
@@ -472,6 +488,7 @@ fn test() {
             "
                 describe.each(['hello'])('%s', () => {
                     beforeEach(() => {});
+
                     beforeEach(() => {});
 
                     it(\"is not fine\", () => {});
@@ -490,6 +507,7 @@ fn test() {
 
                     describe.each(['world'])('%s', () => {
                         beforeEach(() => {});
+
                         beforeEach(() => {});
 
                         it('is not fine', () => {});
@@ -510,6 +528,7 @@ fn test() {
                     describe.each(['world'])('%s', () => {
                         describe('some more', () => {
                             beforeEach(() => {});
+
                             beforeEach(() => {});
 
                             it('is not fine', () => {});
@@ -523,6 +542,7 @@ fn test() {
             "
                 describe.each``('%s', () => {
                     beforeEach(() => {});
+
                     beforeEach(() => {});
 
                     it('is fine', () => {});
@@ -541,6 +561,7 @@ fn test() {
 
                     describe.each``('%s', () => {
                         beforeEach(() => {});
+
                         beforeEach(() => {});
 
                         it('is not fine', () => {});

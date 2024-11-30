@@ -79,15 +79,18 @@ impl Rule for PreferNativeCoercionFunctions {
                     ctx.diagnostic(array_callback(arrow_expr.span));
                 }
             }
+
             AstKind::Function(func) => {
                 if func.r#async || func.generator || func.params.items.len() == 0 {
                     return;
                 }
+
                 if let Some(parent) = ctx.nodes().parent_node(node.id()) {
                     if matches!(parent.kind(), AstKind::ObjectProperty(_)) {
                         return;
                     }
                 }
+
                 if let Some(function_body) = &func.body {
                     if let Some(call_expr_ident) =
                         check_function(&func.params, function_body, false)
@@ -96,6 +99,7 @@ impl Rule for PreferNativeCoercionFunctions {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -145,8 +149,10 @@ fn get_returned_ident<'a>(stmt: &'a Statement, is_arrow: bool) -> Option<&'a str
         if block_stmt.body.len() != 1 {
             return None;
         }
+
         return get_returned_ident(&block_stmt.body[0], is_arrow);
     }
+
     if let Statement::ReturnStatement(return_statement) = &stmt {
         if let Some(return_expr) = &return_statement.argument {
             return return_expr
@@ -184,6 +190,7 @@ fn is_matching_native_coercion_function_call(
     if arg_ident.name == first_arg_name {
         return Some(fn_name);
     }
+
     None
 }
 
@@ -197,12 +204,15 @@ fn check_array_callback_methods(
     let Some(parent) = ctx.nodes().parent_node(node_id) else {
         return false;
     };
+
     let AstKind::Argument(parent_call_expr_arg) = parent.kind() else {
         return false;
     };
+
     let Some(grand_parent) = ctx.nodes().parent_node(parent.id()) else {
         return false;
     };
+
     let AstKind::CallExpression(call_expr) = grand_parent.kind() else {
         return false;
     };
@@ -210,6 +220,7 @@ fn check_array_callback_methods(
     if !std::ptr::eq(&call_expr.arguments[0], parent_call_expr_arg) {
         return false;
     }
+
     if call_expr.optional {
         return false;
     }
@@ -217,12 +228,15 @@ fn check_array_callback_methods(
     let Some(callee_member_expr) = call_expr.callee.as_member_expression() else {
         return false;
     };
+
     if callee_member_expr.optional() {
         return false;
     }
+
     let Some(method_name) = callee_member_expr.static_property_name() else {
         return false;
     };
+
     if !ARRAY_METHODS_WITH_BOOLEAN_CALLBACK.contains(method_name) {
         return false;
     }

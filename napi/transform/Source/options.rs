@@ -30,6 +30,7 @@ pub struct TransformOptions {
     /// @default false
     ///
     /// @see {@link SourceMap}
+
     pub sourcemap: Option<bool>,
 
     /// Configure how TypeScript is transformed.
@@ -96,6 +97,7 @@ pub struct TypeScriptOptions {
 impl From<TypeScriptOptions> for oxc_transformer::TypeScriptOptions {
     fn from(options: TypeScriptOptions) -> Self {
         let ops = oxc_transformer::TypeScriptOptions::default();
+
         oxc_transformer::TypeScriptOptions {
             jsx_pragma: options.jsx_pragma.map(Into::into).unwrap_or(ops.jsx_pragma),
             jsx_pragma_frag: options.jsx_pragma_frag.map(Into::into).unwrap_or(ops.jsx_pragma_frag),
@@ -114,6 +116,7 @@ impl From<TypeScriptOptions> for oxc_transformer::TypeScriptOptions {
                             None
                         }
                     }
+
                     Either::B(v) => match v.as_str() {
                         "rewrite" => Some(RewriteExtensionsMode::Rewrite),
                         "remove" => Some(RewriteExtensionsMode::Remove),
@@ -144,6 +147,7 @@ pub struct JsxOptions {
     /// @default false
     ///
     /// @see {@link https://babeljs.io/docs/babel-plugin-transform-react-jsx-development}
+
     pub development: Option<bool>,
 
     /// Toggles whether or not to throw an error if an XML namespaced tag name
@@ -213,6 +217,7 @@ pub struct JsxOptions {
 impl From<JsxOptions> for oxc_transformer::JsxOptions {
     fn from(options: JsxOptions) -> Self {
         let ops = oxc_transformer::JsxOptions::default();
+
         oxc_transformer::JsxOptions {
             runtime: match options.runtime.as_deref() {
                 Some("classic") => JsxRuntime::Classic,
@@ -254,6 +259,7 @@ pub struct ReactRefreshOptions {
 impl From<ReactRefreshOptions> for oxc_transformer::ReactRefreshOptions {
     fn from(options: ReactRefreshOptions) -> Self {
         let ops = oxc_transformer::ReactRefreshOptions::default();
+
         oxc_transformer::ReactRefreshOptions {
             refresh_reg: options.refresh_reg.unwrap_or(ops.refresh_reg),
             refresh_sig: options.refresh_sig.unwrap_or(ops.refresh_sig),

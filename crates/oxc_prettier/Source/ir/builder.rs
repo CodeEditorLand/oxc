@@ -21,9 +21,12 @@ pub trait DocBuilder<'a> {
     fn vec<T>(&self) -> Vec<'a, T> {
         Vec::new_in(self.allocator())
     }
+
     fn vec_single<T>(&self, value: T) -> Vec<'a, T> {
         let mut vec = Vec::with_capacity_in(1, self.allocator());
+
         vec.push(value);
+
         vec
     }
 
@@ -39,6 +42,7 @@ pub trait DocBuilder<'a> {
 
     fn join(&self, separator: Separator, docs: std::vec::Vec<Doc<'a>>) -> Vec<'a, Doc<'a>> {
         let mut parts = self.vec();
+
         for (i, doc) in docs.into_iter().enumerate() {
             if i != 0 {
                 parts.push(match separator {
@@ -47,8 +51,10 @@ pub trait DocBuilder<'a> {
                     Separator::CommaLine => array![self, text!(","), line!()],
                 });
             }
+
             parts.push(doc);
         }
+
         parts
     }
 }

@@ -11,7 +11,9 @@ fn bench_minifier(criterion: &mut Criterion) {
 
     for file in TestFiles::minimal().files() {
         let id = BenchmarkId::from_parameter(&file.file_name);
+
         let source_type = SourceType::from_path(&file.file_name).unwrap();
+
         let source_text = file.source_text.as_str();
 
         // Create `Allocator` outside of `bench_function`, so same allocator is used for
@@ -25,6 +27,7 @@ fn bench_minifier(criterion: &mut Criterion) {
 
                 // Create fresh AST + semantic data for each iteration
                 let mut program = Parser::new(&allocator, source_text, source_type).parse().program;
+
                 let (symbols, scopes) = SemanticBuilder::new()
                     .build(&program)
                     .semantic

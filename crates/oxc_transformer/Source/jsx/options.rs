@@ -132,7 +132,9 @@ impl JsxOptions {
     pub fn conform(&mut self) {
         if self.development {
             self.jsx_plugin = true;
+
             self.jsx_self_plugin = true;
+
             self.jsx_source_plugin = true;
         }
     }

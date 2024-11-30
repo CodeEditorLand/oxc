@@ -25,11 +25,15 @@ impl<'a> IsolatedDeclarations<'a> {
 
     pub(crate) fn create_unique_name(&mut self, name: &str) -> Atom<'a> {
         let mut binding = self.ast.atom(name);
+
         let mut i = 1;
+
         while self.scope.has_reference(&binding) {
             binding = self.ast.atom(format!("{name}_{i}").as_str());
+
             i += 1;
         }
+
         binding
     }
 
@@ -47,6 +51,7 @@ impl<'a> IsolatedDeclarations<'a> {
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => {
                 Some((None, decl.declaration.clone_in(self.ast.allocator)))
             }
+
             declaration @ match_expression!(ExportDefaultDeclarationKind) => self
                 .transform_export_expression(declaration.to_expression())
                 .map(|(var_decl, expr)| (var_decl, ExportDefaultDeclarationKind::from(expr))),
@@ -55,6 +60,7 @@ impl<'a> IsolatedDeclarations<'a> {
         declaration.map(|(var_decl, declaration)| {
             let exported =
                 ModuleExportName::IdentifierName(self.ast.identifier_name(SPAN, "default"));
+
             let declaration = self.ast.module_declaration_export_default_declaration(
                 decl.span,
                 declaration,
@@ -73,8 +79,11 @@ impl<'a> IsolatedDeclarations<'a> {
         } else {
             // declare const _default: Type
             let kind = VariableDeclarationKind::Const;
+
             let name = self.create_unique_name("_default");
+
             let id = self.ast.binding_pattern_kind_binding_identifier(SPAN, &name);
+
             let type_annotation = self
                 .infer_type_from_expression(expr)
                 .map(|ts_type| self.ast.ts_type_annotation(SPAN, ts_type));
@@ -84,6 +93,7 @@ impl<'a> IsolatedDeclarations<'a> {
             }
 
             let id = self.ast.binding_pattern(id, type_annotation, false);
+
             let declarations =
                 self.ast.vec1(self.ast.variable_declarator(SPAN, kind, id, None, false));
 
@@ -93,6 +103,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 declarations,
                 self.is_declare(),
             ));
+
             Some((Some(variable_statement), self.ast.expression_identifier_reference(SPAN, &name)))
         }
     }
@@ -116,18 +127,22 @@ impl<'a> IsolatedDeclarations<'a> {
         let specifiers = decl.specifiers.as_ref()?;
 
         let mut new_specifiers = self.ast.vec_with_capacity(specifiers.len());
+
         specifiers.iter().for_each(|specifier| {
             let is_referenced = match specifier {
                 ImportDeclarationSpecifier::ImportSpecifier(specifier) => {
                     self.scope.has_reference(&specifier.local.name)
                 }
+
                 ImportDeclarationSpecifier::ImportDefaultSpecifier(specifier) => {
                     self.scope.has_reference(&specifier.local.name)
                 }
+
                 ImportDeclarationSpecifier::ImportNamespaceSpecifier(_) => {
                     self.scope.has_reference(&specifier.name())
                 }
             };
+
             if is_referenced {
                 new_specifiers.push(specifier.clone_in(self.ast.allocator));
             }

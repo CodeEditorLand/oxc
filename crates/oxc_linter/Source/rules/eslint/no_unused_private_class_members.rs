@@ -97,6 +97,7 @@ impl Rule for NoUnusedPrivateClassMembers {
                 if !element.kind.intersects(ElementKind::Property | ElementKind::Method) {
                     continue;
                 }
+
                 if element.is_private
                     && !ctx.semantic().classes().iter_private_identifiers(class_id).any(|ident| {
                         // If the element is a property, it must be read.
@@ -145,6 +146,7 @@ fn is_read(current_node_id: NodeId, nodes: &AstNodes) -> bool {
                     Some(AstKind::ExpressionStatement(_))
                 );
             }
+
             _ => return true,
         }
     }
@@ -163,16 +165,19 @@ fn test() {
 			}",
         r"class Foo {
 			    #usedMember = 42;
+
 			    method() {
 			        return this.#usedMember;
 			    }
 			}",
         r"class Foo {
 			    #usedMember = 42;
+
 			    anotherMember = this.#usedMember;
 			}",
         r"class Foo {
 			    #usedMember = 42;
+
 			    foo() {
 			        anotherMember = this.#usedMember;
 			    }
@@ -186,6 +191,7 @@ fn test() {
 			}",
         r"class Foo {
 			    #usedMember = 42;
+
 			    method() {
 			        return someGlobalMethod(this.#usedMember);
 			    }
@@ -203,6 +209,7 @@ fn test() {
 			}",
         r"class Foo {
 			    #usedInForInLoop;
+
 			    method() {
 			        for (const bar in this.#usedInForInLoop) {
 
@@ -211,6 +218,7 @@ fn test() {
 			}",
         r"class Foo {
 			    #usedInForOfLoop;
+
 			    method() {
 			        for (const bar of this.#usedInForOfLoop) {
 
@@ -219,18 +227,21 @@ fn test() {
 			}",
         r"class Foo {
 			    #usedInAssignmentPattern;
+
 			    method() {
 			        [bar = 1] = this.#usedInAssignmentPattern;
 			    }
 			}",
         r"class Foo {
 			    #usedInArrayPattern;
+
 			    method() {
 			        [bar] = this.#usedInArrayPattern;
 			    }
 			}",
         r"class Foo {
 			    #usedInAssignmentPattern;
+
 			    method() {
 			        [bar] = this.#usedInAssignmentPattern;
 			    }
@@ -246,9 +257,11 @@ fn test() {
             set #accessorWithSetterFirst(value) {
                 doSomething(value);
             }
+
             get #accessorWithSetterFirst() {
                 return something();
             }
+
             method() {
                 this.#accessorWithSetterFirst += 1;
             }
@@ -264,9 +277,11 @@ fn test() {
             get #accessorWithGetterFirst() {
                 return something();
             }
+
             set #accessorWithGetterFirst(value) {
                 doSomething(value);
             }
+
             method() {
                 this.#accessorWithGetterFirst += 1;
             }
@@ -285,6 +300,7 @@ fn test() {
 			    #usedMethod() {
 			        return 42;
 			    }
+
 			    anotherMethod() {
 			        return this.#usedMethod();
 			    }
@@ -305,12 +321,14 @@ fn test() {
 			    #unusedMember = 5;
 			}",
         r"class First {}
+
 			class Second {
 			    #unusedMemberInSecondClass = 5;
 			}",
         r"class First {
 			    #unusedMemberInFirstClass = 5;
 			}
+
 			class Second {}",
         r"class First {
 			    #firstUnusedMemberInSameClass = 5;
@@ -318,12 +336,14 @@ fn test() {
 			}",
         r"class Foo {
 			    #usedOnlyInWrite = 5;
+
 			    method() {
 			        this.#usedOnlyInWrite = 42;
 			    }
 			}",
         r"class Foo {
 			    #usedOnlyInWriteStatement = 5;
+
 			    method() {
 			        this.#usedOnlyInWriteStatement += 42;
 			    }
@@ -379,6 +399,7 @@ fn test() {
 			    #usedMethod() {
 			        return 42;
 			    }
+
 			    publicMethod() {
 			        return this.#usedMethod();
 			    }
@@ -388,6 +409,7 @@ fn test() {
 			}",
         r"class Foo {
 			    #unusedForInLoop;
+
 			    method() {
 			        for (this.#unusedForInLoop in bar) {
 
@@ -396,6 +418,7 @@ fn test() {
 			}",
         r"class Foo {
 			    #unusedForOfLoop;
+
 			    method() {
 			        for (this.#unusedForOfLoop of bar) {
 
@@ -404,24 +427,28 @@ fn test() {
 			}",
         r"class Foo {
 			    #unusedInDestructuring;
+
 			    method() {
 			        ({ x: this.#unusedInDestructuring } = bar);
 			    }
 			}",
         r"class Foo {
 			    #unusedInRestPattern;
+
 			    method() {
 			        [...this.#unusedInRestPattern] = bar;
 			    }
 			}",
         r"class Foo {
 			    #unusedInAssignmentPattern;
+
 			    method() {
 			        [this.#unusedInAssignmentPattern = 1] = bar;
 			    }
 			}",
         r"class Foo {
 			    #unusedInAssignmentPattern;
+
 			    method() {
 			        [this.#unusedInAssignmentPattern] = bar;
 			    }

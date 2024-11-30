@@ -45,9 +45,13 @@ impl Case for MinifierTest262Case {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let source_type = SourceType::default().with_module(is_module);
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
@@ -81,8 +85,11 @@ impl Case for MinifierBabelCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }

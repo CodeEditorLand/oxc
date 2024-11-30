@@ -52,21 +52,28 @@ const REFLECT_MUTATION_METHODS: phf::Set<&'static str> =
 impl Rule for NoImportAssign {
     fn run_on_symbol(&self, symbol_id: SymbolId, ctx: &LintContext<'_>) {
         let symbol_table = ctx.semantic().symbols();
+
         if symbol_table.get_flags(symbol_id).is_import() {
             let kind = ctx.nodes().kind(symbol_table.get_declaration(symbol_id));
+
             let is_namespace_specifier = matches!(kind, AstKind::ImportNamespaceSpecifier(_));
+
             for reference in symbol_table.get_resolved_references(symbol_id) {
                 if is_namespace_specifier {
                     let Some(parent_node) = ctx.nodes().parent_node(reference.node_id()) else {
                         return;
                     };
+
                     if let AstKind::MemberExpression(expr) = parent_node.kind() {
                         let Some(parent_parent_node) = ctx.nodes().parent_node(parent_node.id())
                         else {
                             return;
                         };
+
                         let is_unary_expression_with_delete_operator = |kind| matches!(kind, AstKind::UnaryExpression(expr) if expr.operator == UnaryOperator::Delete);
+
                         let parent_parent_kind = parent_parent_node.kind();
+
                         if matches!(parent_parent_kind, AstKind::SimpleAssignmentTarget(_))
                             // delete namespace.module
                             || is_unary_expression_with_delete_operator(parent_parent_kind)
@@ -108,6 +115,7 @@ impl Rule for NoImportAssign {
 /// - `Reflect.setPrototypeOf`
 fn is_argument_of_well_known_mutation_function(node_id: NodeId, ctx: &LintContext<'_>) -> bool {
     let current_node = ctx.nodes().get_node(node_id);
+
     let call_expression_node =
         ctx.nodes().parent_node(node_id).and_then(|node| ctx.nodes().parent_kind(node.id()));
 

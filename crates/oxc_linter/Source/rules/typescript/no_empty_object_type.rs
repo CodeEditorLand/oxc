@@ -110,6 +110,7 @@ impl Rule for NoEmptyObjectType {
                 )
             },
         );
+
         Self(Box::new(NoEmptyObjectTypeConfig {
             allow_interfaces,
             allow_object_types,
@@ -127,6 +128,7 @@ impl Rule for NoEmptyObjectType {
                     &self.allow_with_name,
                 );
             }
+
             AstKind::TSTypeLiteral(typeliteral) if typeliteral.members.len() == 0 => {
                 check_type_literal(
                     ctx,
@@ -136,6 +138,7 @@ impl Rule for NoEmptyObjectType {
                     &self.allow_with_name,
                 );
             }
+
             _ => {}
         }
     }
@@ -150,9 +153,11 @@ fn check_interface_declaration(
     if let AllowInterfaces::Always = allow_interfaces {
         return;
     };
+
     if interface.id.name.as_str() == allow_with_name {
         return;
     }
+
     match interface.extends.as_ref() {
         Some(extends) if extends.len() == 1 => {
             match allow_interfaces {
@@ -163,12 +168,14 @@ fn check_interface_declaration(
                 )),
             };
         }
+
         Some(extends) if extends.len() == 0 => {
             ctx.diagnostic(no_empty_object_type_diagnostic(
                 interface.body.span,
                 "Do not use an empty interface declaration.",
             ));
         }
+
         None => ctx.diagnostic(no_empty_object_type_diagnostic(
             interface.body.span,
             "Do not use an empty interface declaration.",
@@ -187,9 +194,11 @@ fn check_type_literal(
     if let AllowObjectTypes::Always = allow_object_types {
         return;
     };
+
     let Some(parent_node) = ctx.nodes().parent_node(node_id) else {
         return;
     };
+
     match parent_node.kind() {
         AstKind::TSIntersectionType(_) => return,
         AstKind::TSTypeAliasDeclaration(alias) => {
@@ -197,8 +206,10 @@ fn check_type_literal(
                 return;
             }
         }
+
         _ => (),
     }
+
     ctx.diagnostic(no_empty_object_type_diagnostic(
         type_literal.span,
         "Do not use the empty object type literal.",
@@ -398,6 +409,7 @@ fn test() {
 			interface Derived {
 			  property: string;
 			}
+
 			interface Base extends Array<Derived> {}
 			      ",
             None,
@@ -407,6 +419,7 @@ fn test() {
         (
             "
 			type R = Record<string, unknown>;
+
 			interface Base extends R {}
 			      ",
             None,

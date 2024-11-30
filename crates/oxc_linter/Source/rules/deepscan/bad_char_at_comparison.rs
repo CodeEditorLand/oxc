@@ -67,6 +67,7 @@ impl Rule for BadCharAtComparison {
 		let AstKind::BinaryExpression(binary_expr) = parent.kind() else {
 			return;
 		};
+
 		if !matches!(
 			binary_expr.operator,
 			BinaryOperator::Equality

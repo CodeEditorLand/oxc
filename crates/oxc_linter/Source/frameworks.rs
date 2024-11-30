@@ -16,24 +16,32 @@ bitflags! {
         const Preact = 1 << 1;
         /// Uses [Next.js](https://nextjs.org/).
         const NextOnly = 1 << 2;
+
         const Next = Self::NextOnly.bits() | Self::React.bits();
+
         const JsxLike = Self::React.bits() | Self::Preact.bits() | Self::Next.bits();
 
         const Vue = 1 << 3;
+
         const NuxtOnly = 1 << 4;
+
         const Nuxt = Self::NuxtOnly.bits() | Self::Vue.bits();
 
         const Angular = 1 << 5;
 
         const Svelte = 1 << 6;
+
         const SvelteKitOnly = 1 << 7;
+
         const SvelteKit = Self::SvelteKitOnly.bits() | Self::Svelte.bits();
 
         const Astro = 1 << 8;
 
         // Testing frameworks
         const Jest = 1 << 9;
+
         const Vitest = 1 << 10;
+
         const OtherTest = 1 << 11;
         /// Flag for if any test frameworks are used, such as Jest or Vitest.
         const Test = Self::Jest.bits() | Self::Vitest.bits() | Self::OtherTest.bits();

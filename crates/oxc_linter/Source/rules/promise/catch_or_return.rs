@@ -138,6 +138,7 @@ impl Rule for CatchOrReturn {
         }
 
         let termination_method = &self.termination_method[0];
+
         ctx.diagnostic(catch_or_return_diagnostic(termination_method, call_expr.span));
     }
 }

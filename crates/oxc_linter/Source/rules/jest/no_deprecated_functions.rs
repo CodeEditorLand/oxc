@@ -110,7 +110,9 @@ impl Rule for NoDeprecatedFunctions {
         let AstKind::MemberExpression(mem_expr) = node.kind() else {
             return;
         };
+
         let mut chain: Vec<Cow<'a, str>> = Vec::new();
+
         if let Expression::Identifier(ident) = mem_expr.object() {
             chain.push(Cow::Borrowed(ident.name.as_str()));
         }

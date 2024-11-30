@@ -45,18 +45,23 @@ impl Rule for BadArrayMethodOnArguments {
         if !node.kind().is_specific_id_reference("arguments") {
             return;
         }
+
         let Some(parent_node_id) = ctx.nodes().parent_id(node.id()) else {
             return;
         };
+
         let AstKind::MemberExpression(member_expr) = ctx.nodes().kind(parent_node_id) else {
             return;
         };
+
         let Some(parent_node_id) = ctx.nodes().parent_id(parent_node_id) else {
             return;
         };
+
         let AstKind::CallExpression(_) = ctx.nodes().kind(parent_node_id) else {
             return;
         };
+
         match member_expr {
             MemberExpression::StaticMemberExpression(expr) => {
                 if ARRAY_METHODS.binary_search(&expr.property.name.as_str()).is_ok() {
@@ -66,6 +71,7 @@ impl Rule for BadArrayMethodOnArguments {
                     ));
                 }
             }
+
             MemberExpression::ComputedMemberExpression(expr) => {
                 match &expr.expression {
                     Expression::StringLiteral(name) => {
@@ -76,6 +82,7 @@ impl Rule for BadArrayMethodOnArguments {
                             ));
                         }
                     }
+
                     Expression::TemplateLiteral(template) => {
                         // only check template string like "arguments[`METHOD_NAME`]" for Oxc compatible
                         if template.expressions.is_empty() && template.quasis.len() == 1 {
@@ -92,9 +99,11 @@ impl Rule for BadArrayMethodOnArguments {
                             }
                         }
                     }
+
                     _ => {}
                 }
             }
+
             MemberExpression::PrivateFieldExpression(_) => {}
         }
     }
@@ -191,6 +200,7 @@ fn test() {
 #[test]
 fn test_array_is_sorted() {
     let mut sorted_array = ARRAY_METHODS.to_vec();
+
     sorted_array.sort_unstable();
 
     assert_eq!(sorted_array, ARRAY_METHODS);

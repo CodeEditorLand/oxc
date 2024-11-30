@@ -63,13 +63,18 @@ impl ReactPerfRule for JsxNoNewObjectAsProp {
                 if let Some(init_span) = decl.init.as_ref().and_then(check_expression) {
                     return Some((decl.id.span(), Some(init_span)));
                 }
+
                 None
             }
+
             AstKind::FormalParameter(param) => {
                 let (id, init) = find_initialized_binding(&param.pattern, symbol_id)?;
+
                 let init_span = check_expression(init)?;
+
                 Some((id.span(), Some(init_span)))
             }
+
             _ => None,
         }
     }
@@ -93,6 +98,7 @@ fn check_expression(expr: &Expression) -> Option<Span> {
                 None
             }
         }
+
         Expression::NewExpression(expr) => {
             if is_constructor_matching_name(&expr.callee, "Object") {
                 Some(expr.span)
@@ -100,12 +106,15 @@ fn check_expression(expr: &Expression) -> Option<Span> {
                 None
             }
         }
+
         Expression::LogicalExpression(expr) => {
             check_expression(&expr.left).or_else(|| check_expression(&expr.right))
         }
+
         Expression::ConditionalExpression(expr) => {
             check_expression(&expr.consequent).or_else(|| check_expression(&expr.alternate))
         }
+
         _ => None,
     }
 }
@@ -126,18 +135,25 @@ fn test() {
         r"const DEFAULT_X = {}; const Foo = ({ x = DEFAULT_X }) => <Bar x={x} />",
         r"
         import { FC, useMemo } from 'react';
+
         import { Bar } from './bar';
+
         export const Foo: FC = () => {
             const x = useMemo(() => ({ foo: 'bar' }), []);
+
             return <Bar prop={x} />
         }
         ",
         r"
         import { FC, useMemo } from 'react';
+
         import { Bar } from './bar';
+
         export const Foo: FC = () => {
             const x = useMemo(() => ({ foo: 'bar' }), []);
+
             const y = x;
+
             return <Bar prop={y} />
         }
         ",

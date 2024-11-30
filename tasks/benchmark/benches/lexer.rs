@@ -24,6 +24,7 @@ fn bench_lexer(criterion: &mut Criterion) {
 
     for file in files {
         let source_type = SourceType::from_path(&file.file_name).unwrap();
+
         group.bench_with_input(
             BenchmarkId::from_parameter(&file.file_name),
             &file.source_text,
@@ -32,14 +33,18 @@ fn bench_lexer(criterion: &mut Criterion) {
                 // User code would likely reuse the same allocator over and over to parse multiple files,
                 // so we do the same here.
                 let mut allocator = Allocator::default();
+
                 b.iter(|| {
                     let mut lexer = Lexer::new_for_benchmarks(&allocator, source_text, source_type);
+
                     while lexer.next_token().kind != Kind::Eof {}
+
                     allocator.reset();
                 });
             },
         );
     }
+
     group.finish();
 }
 

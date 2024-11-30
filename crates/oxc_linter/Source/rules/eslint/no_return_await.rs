@@ -39,8 +39,11 @@ impl Rule for NoReturnAwait {
 		if let AstKind::AwaitExpression(await_expr) = node.kind() {
 			if is_in_tail_call_position(node, ctx) && !has_error_handler(node, ctx) {
 				let start = await_expr.span.start;
+
 				let end = start + 5;
+
 				let await_keyword_span = Span::new(start, end);
+
 				ctx.diagnostic_with_fix(NoReturnAwaitDiagnostic(await_keyword_span), || {
 					Fix::new("", await_keyword_span)
 				});
@@ -52,6 +55,7 @@ impl Rule for NoReturnAwait {
 fn is_in_tail_call_position<'a>(node:&AstNode<'a>, ctx:&LintContext<'a>) -> bool {
 	if let Some(parent) = ctx.nodes().parent_node(node.id()) {
 		let parent_kind = parent.kind();
+
 		match parent_kind {
 			AstKind::ArrowFunctionExpression(arrow_expr) => {
 				// async () => { await b(); })
@@ -106,14 +110,17 @@ fn is_in_tail_call_position<'a>(node:&AstNode<'a>, ctx:&LintContext<'a>) -> bool
 			},
 		}
 	}
+
 	false
 }
 
 fn has_error_handler<'a>(node:&AstNode<'a>, ctx:&LintContext<'a>) -> bool {
 	let mut current_node = node;
+
 	loop {
 		if let Some(parent_node) = ctx.nodes().parent_node(current_node.id()) {
 			let parent_node_kind = parent_node.kind();
+
 			if matches!(parent_node_kind, AstKind::Program(_)) {
 				break;
 			}
@@ -140,6 +147,7 @@ fn has_error_handler<'a>(node:&AstNode<'a>, ctx:&LintContext<'a>) -> bool {
 			current_node = parent_node;
 		}
 	}
+
 	false
 }
 

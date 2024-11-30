@@ -63,6 +63,7 @@ impl<'a> ToJsString<'a> for ConstantValue<'a> {
         match self {
             Self::Number(n) => {
                 use oxc_syntax::number::ToJsString;
+
                 Some(Cow::Owned(n.to_js_string()))
             }
             // https://tc39.es/ecma262/#sec-numeric-types-bigint-tostring
@@ -78,6 +79,7 @@ impl<'a> ToJsString<'a> for ConstantValue<'a> {
 impl<'a> ToNumber<'a> for ConstantValue<'a> {
     fn to_number(&self) -> Option<f64> {
         use crate::StringToNumber;
+
         match self {
             Self::Number(n) => Some(*n),
             Self::BigInt(_) => None,

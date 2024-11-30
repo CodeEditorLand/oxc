@@ -82,7 +82,9 @@ impl PreferJestMocked {
         let TSType::TSTypeReference(ts_reference) = &as_expr.type_annotation else {
             return;
         };
+
         let arg_span = as_expr.expression.get_inner_expression().span();
+
         Self::check(node, ts_reference, arg_span, as_expr.span, ctx);
     }
 
@@ -94,7 +96,9 @@ impl PreferJestMocked {
         let TSType::TSTypeReference(ts_reference) = &assert_type.type_annotation else {
             return;
         };
+
         let arg_span = assert_type.expression.get_inner_expression().span();
+
         Self::check(node, ts_reference, arg_span, assert_type.span, ctx);
     }
 
@@ -108,6 +112,7 @@ impl PreferJestMocked {
         let TSTypeName::QualifiedName(qualified_name) = &ts_reference.type_name else {
             return;
         };
+
         let TSTypeName::IdentifierReference(ident) = &qualified_name.left else {
             return;
         };
@@ -121,6 +126,7 @@ impl PreferJestMocked {
         if can_fix(node, ctx) {
             ctx.diagnostic_with_fix(use_jest_mocked(span), |fixer| {
                 let span_source_code = fixer.source_range(arg_span);
+
                 fixer.replace(span, format!("jest.mocked({span_source_code})"))
             });
         } else {
@@ -155,6 +161,7 @@ fn test() {
         (
             "
                 type MockType = jest.Mock;
+
                 const mockFn = jest.fn();
                 (mockFn as MockType).mockReturnValue(1);
             ",

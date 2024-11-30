@@ -47,12 +47,14 @@ impl LintOptions {
         if !filter.is_empty() {
             self.filter = filter;
         }
+
         self
     }
 
     #[must_use]
     pub fn with_config_path(mut self, filter: Option<PathBuf>) -> Self {
         self.config_path = filter;
+
         self
     }
 
@@ -69,84 +71,98 @@ impl LintOptions {
     #[must_use]
     pub fn with_fix(mut self, kind: FixKind) -> Self {
         self.fix = kind;
+
         self
     }
 
     #[must_use]
     pub fn with_react_plugin(mut self, yes: bool) -> Self {
         self.plugins.react = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_unicorn_plugin(mut self, yes: bool) -> Self {
         self.plugins.unicorn = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_typescript_plugin(mut self, yes: bool) -> Self {
         self.plugins.typescript = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_oxc_plugin(mut self, yes: bool) -> Self {
         self.plugins.oxc = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_import_plugin(mut self, yes: bool) -> Self {
         self.plugins.import = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_jsdoc_plugin(mut self, yes: bool) -> Self {
         self.plugins.jsdoc = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_jest_plugin(mut self, yes: bool) -> Self {
         self.plugins.jest = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_vitest_plugin(mut self, yes: bool) -> Self {
         self.plugins.vitest = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_jsx_a11y_plugin(mut self, yes: bool) -> Self {
         self.plugins.jsx_a11y = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_nextjs_plugin(mut self, yes: bool) -> Self {
         self.plugins.nextjs = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_react_perf_plugin(mut self, yes: bool) -> Self {
         self.plugins.react_perf = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_promise_plugin(mut self, yes: bool) -> Self {
         self.plugins.promise = yes;
+
         self
     }
 
     #[must_use]
     pub fn with_node_plugin(mut self, yes: bool) -> Self {
         self.plugins.node = yes;
+
         self
     }
 }
@@ -160,10 +176,12 @@ impl LintOptions {
             self.config_path.as_ref().map(|path| OxlintConfig::from_file(path)).transpose()?;
 
         let mut rules: FxHashSet<RuleWithSeverity> = FxHashSet::default();
+
         let all_rules = self.get_filtered_rules();
 
         for (severity, name_or_category) in &self.filter {
             let maybe_category = RuleCategory::from(name_or_category.as_str());
+
             match severity {
                 AllowWarnDeny::Deny | AllowWarnDeny::Warn => {
                     match maybe_category {
@@ -192,6 +210,7 @@ impl LintOptions {
                         }
                     };
                 }
+
                 AllowWarnDeny::Allow => {
                     match maybe_category {
                         Some(category) => rules.retain(|rule| rule.category() != category),
@@ -233,9 +252,11 @@ impl LintOptions {
                     if self.plugins.jest {
                         return true;
                     }
+
                     if self.plugins.vitest && is_jest_rule_adapted_to_vitest(rule.name()) {
                         return true;
                     }
+
                     false
                 }
                 "vitest" => self.plugins.vitest,

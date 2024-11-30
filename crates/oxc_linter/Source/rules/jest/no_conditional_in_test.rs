@@ -102,6 +102,7 @@ impl Rule for NoConditionalInTest {
         ) {
             let is_if_statement_in_test = ctx.nodes().ancestors(node.id()).any(|node| {
                 let AstKind::CallExpression(call_expr) = node.kind() else { return false };
+
                 let vitest_node = PossibleJestNode { node, original: None };
 
                 is_type_of_jest_fn_call(
@@ -232,10 +233,12 @@ fn test() {
 			          switch (thing.isFoo) {
 			            case true:
 			              return thing.foo;
+
 			            default:
 			              return thing.bar;
 			          }
 			        });
+
 			        it('still valid', () => {
 			          expect(values).toStrictEqual(['foo']);
 			        });
@@ -453,6 +456,7 @@ fn test() {
 			          })
 			          it('baz', () => {
 			            switch('qux') {}
+
 			            switch('quux') {}
 			          })
 			        })
@@ -570,6 +574,7 @@ fn test() {
 			          })
 			          it('baz', () => {
 			            if ('qux') {}
+
 			            if ('quux') {}
 			          })
 			        })

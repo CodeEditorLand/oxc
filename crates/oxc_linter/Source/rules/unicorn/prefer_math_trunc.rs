@@ -53,9 +53,11 @@ impl Rule for PreferMathTrunc {
                 if !matches!(unary_expr.operator, UnaryOperator::BitwiseNot) {
                     return;
                 }
+
                 let Expression::UnaryExpression(inner_unary_expr) = &unary_expr.argument else {
                     return;
                 };
+
                 if !matches!(inner_unary_expr.operator, UnaryOperator::BitwiseNot) {
                     return;
                 };
@@ -70,13 +72,16 @@ impl Rule for PreferMathTrunc {
 
                 UnaryOperator::BitwiseNot.as_str()
             }
+
             AstKind::BinaryExpression(bin_expr) => {
                 let Expression::NumericLiteral(right_num_lit) = &bin_expr.right else {
                     return;
                 };
+
                 if right_num_lit.value != 0.0 {
                     return;
                 }
+
                 if !matches!(
                     bin_expr.operator,
                     BinaryOperator::BitwiseOR
@@ -90,6 +95,7 @@ impl Rule for PreferMathTrunc {
 
                 bin_expr.operator.as_str()
             }
+
             AstKind::AssignmentExpression(assignment_expr) => {
                 let Expression::NumericLiteral(right_num_lit) = &assignment_expr.right else {
                     return;
@@ -112,6 +118,7 @@ impl Rule for PreferMathTrunc {
 
                 assignment_expr.operator.as_str()
             }
+
             _ => {
                 return;
             }

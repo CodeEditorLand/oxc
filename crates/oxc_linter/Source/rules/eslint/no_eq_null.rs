@@ -77,6 +77,7 @@ impl Rule for NoEqNull {
                 } else {
                     " !== "
                 };
+
                 ctx.diagnostic_with_dangerous_fix(
                     no_eq_null_diagnostic(
                         //     Span::new(
@@ -88,8 +89,11 @@ impl Rule for NoEqNull {
                     ),
                     |fixer| {
                         let start = binary_expression.left.span().end;
+
                         let end = binary_expression.right.span().start;
+
                         let span = Span::new(start, end);
+
                         fixer.replace(span, suggested_operator)
                     },
                 );

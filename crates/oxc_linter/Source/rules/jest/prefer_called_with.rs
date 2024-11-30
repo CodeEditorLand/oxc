@@ -60,6 +60,7 @@ impl Rule for PreferCalledWith {
 impl PreferCalledWith {
     pub fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };

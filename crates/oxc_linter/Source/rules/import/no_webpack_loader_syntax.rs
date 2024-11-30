@@ -81,6 +81,7 @@ impl Rule for NoWebpackLoaderSyntax {
                     }
                 }
             }
+
             AstKind::ImportDeclaration(import_decl) => {
                 if import_decl.source.value.contains('!') {
                     ctx.diagnostic(no_named_as_default_diagnostic(
@@ -89,6 +90,7 @@ impl Rule for NoWebpackLoaderSyntax {
                     ));
                 }
             }
+
             _ => {}
         }
     }

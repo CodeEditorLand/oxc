@@ -86,9 +86,11 @@ impl Rule for GetterReturn {
             AstKind::Function(func) if !func.is_typescript_syntax() => {
                 self.run_diagnostic(node, ctx, func.span);
             }
+
             AstKind::ArrowFunctionExpression(expr) => {
                 self.run_diagnostic(node, ctx, expr.span);
             }
+
             _ => {}
         }
     }
@@ -125,10 +127,12 @@ impl GetterReturn {
             expr @ match_member_expression!(Expression) => {
                 Self::handle_member_expression(expr.to_member_expression())
             }
+
             Expression::ChainExpression(ce) => match &ce.expression {
                 match_member_expression!(ChainElement) => {
                     Self::handle_member_expression(ce.expression.to_member_expression())
                 }
+
                 ChainElement::CallExpression(_) | ChainElement::TSNonNullExpression(_) => {
                     false // todo: make a test for this
                 }
@@ -147,22 +151,27 @@ impl GetterReturn {
     /// Checks whether it is necessary to check the node
     fn is_wanted_node(node: &AstNode, ctx: &LintContext<'_>) -> Option<bool> {
         let parent = ctx.nodes().parent_node(node.id())?;
+
         match parent.kind() {
             AstKind::MethodDefinition(mdef) => {
                 if matches!(mdef.kind, MethodDefinitionKind::Get) {
                     return Some(true);
                 }
             }
+
             AstKind::ObjectProperty(ObjectProperty { kind, key: prop_key, .. }) => {
                 if matches!(kind, PropertyKind::Get) {
                     return Some(true);
                 }
+
                 if prop_key.name().is_some_and(|key| key != "get") {
                     return Some(false);
                 }
 
                 let parent_2 = ctx.nodes().parent_node(parent.id())?;
+
                 let parent_3 = ctx.nodes().parent_node(parent_2.id())?;
+
                 let parent_4 = ctx.nodes().parent_node(parent_3.id())?;
                 // handle (X())
                 match parent_4.kind() {
@@ -171,32 +180,39 @@ impl GetterReturn {
                             return Some(true);
                         }
                     }
+
                     AstKind::CallExpression(ce) => {
                         if Self::handle_actual_expression(&ce.callee) {
                             return Some(true);
                         }
                     }
+
                     _ => {}
                 }
 
                 let parent_5 = ctx.nodes().parent_node(parent_4.id())?;
+
                 let parent_6 = ctx.nodes().parent_node(parent_5.id())?;
+
                 match parent_6.kind() {
                     AstKind::ParenthesizedExpression(p) => {
                         if Self::handle_paren_expr(&p.expression) {
                             return Some(true);
                         }
                     }
+
                     AstKind::CallExpression(ce) => {
                         if Self::handle_actual_expression(&ce.callee) {
                             return Some(true);
                         }
                     }
+
                     _ => {
                         return Some(false);
                     }
                 };
             }
+
             _ => {}
         }
 
@@ -211,6 +227,7 @@ impl GetterReturn {
         let cfg = ctx.cfg();
 
         let graph = cfg.graph();
+
         let definitely_returns_in_all_codepaths = 'returns: {
             // The expression is the equivalent of return.
             // Therefore, if a function is an expression, it always returns its value.
@@ -233,11 +250,13 @@ impl GetterReturn {
                     }
                 }
             }
+
             let output = set_depth_first_search(graph, Some(node.cfg_id()), |event| {
                 match event {
                     // We only need to check paths that are normal or jump.
                     DfsEvent::TreeEdge(a, b) => {
                         let edges = graph.edges_connecting(a, b).collect::<Vec<_>>();
+
                         if edges.iter().any(|e| {
                             matches!(
                                 e.weight(),
@@ -251,6 +270,7 @@ impl GetterReturn {
                             Control::Prune
                         }
                     }
+
                     DfsEvent::Discover(basic_block_id, _) => {
                         let return_instruction =
                             cfg.basic_block(basic_block_id).instructions().iter().find(|it| {
@@ -296,6 +316,7 @@ impl GetterReturn {
                             Control::Break(())
                         }
                     }
+
                     _ => Control::Continue,
                 }
             });
@@ -312,6 +333,7 @@ impl GetterReturn {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     let pass = vec![
         ("var foo = { get bar(){return true;} };", None),
         ("var foo = { get bar() {return;} };", Some(serde_json::json!([{ "allowImplicit": true }]))),
@@ -355,6 +377,7 @@ fn test() {
         ("var foo = { get willThrowSoValid() { throw MyException() } };", None),
         (
             "const originalClearTimeout = targetWindow.clearTimeout;
+
         Object.defineProperty(targetWindow, 'vscodeOriginalClearTimeout', { get: () => originalClearTimeout });
         ",
             None,
@@ -363,6 +386,7 @@ fn test() {
         var foo = {
                 get bar() {
                         let name = ([] || [])[1];
+
                         return name;
                 },
         };
@@ -373,8 +397,11 @@ fn test() {
             get bar() {
                 switch (baz) {
                     case VS_LIGHT_THEME: return a;
+
                     case VS_HC_THEME: return b;
+
                     case VS_HC_LIGHT_THEME: return c;
+
                     default: return d;
                 }
             }
@@ -403,6 +430,7 @@ fn test() {
                         return i;
                     }
                 }
+
                 return 0;
             }
         }", None),
@@ -410,12 +438,15 @@ fn test() {
         var foo = {
             get bar() {
                 let i = 0;
+
                 while (i < 10) {
                     if (i === 5) {
                         return i;
                     }
+
                     i++;
                 }
+
                 return 0;
             }
         }", None),
@@ -510,6 +541,7 @@ fn test() {
         var foo = {
             get bar() {
                 let i = 0;
+
                 while (i < 10) {
                     return i;
                 }

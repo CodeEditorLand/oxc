@@ -80,6 +80,7 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
     pub fn get_line_column(&mut self, offset: u32) -> (usize, usize) {
         let source_rope =
             self.source_rope.get_or_insert_with(|| Rope::from_str(self.ctx.source_text));
+
         get_line_column(source_rope, offset, self.ctx.source_text)
     }
 
@@ -90,14 +91,18 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> ObjectPropertyKind<'a> {
         let kind = PropertyKind::Init;
+
         let key = ctx.ast.property_key_identifier_name(SPAN, SOURCE);
+
         let value = self.get_source_object(line, column, ctx);
+
         ctx.ast
             .object_property_kind_object_property(SPAN, kind, key, value, None, false, false, false)
     }
 
     pub fn report_error(&self, span: Span) {
         let error = OxcDiagnostic::warn("Duplicate __source prop found.").with_label(span);
+
         self.ctx.error(error);
     }
 
@@ -119,6 +124,7 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
                 if let JSXAttributeName::Identifier(ident) = &attribute.name {
                     if ident.name == SOURCE {
                         self.report_error(ident.span);
+
                         return;
                     }
                 }
@@ -130,10 +136,14 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
         // Build a table of byte indexes of each line's start on first usage, and save it.
         // Then calculate line and column from that.
         let (line, column) = self.get_line_column(elem.span.start);
+
         let object = self.get_source_object(line, column, ctx);
+
         let value =
             ctx.ast.jsx_attribute_value_jsx_expression_container(SPAN, JSXExpression::from(object));
+
         let attribute_item = ctx.ast.jsx_attribute_item_jsx_attribute(SPAN, key, Some(value));
+
         elem.attributes.push(attribute_item);
     }
 
@@ -148,7 +158,9 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
 
         let filename = {
             let key = ctx.ast.property_key_identifier_name(SPAN, "fileName");
+
             let value = self.get_filename_var(ctx).create_read_expression(ctx);
+
             ctx.ast.object_property_kind_object_property(
                 SPAN, kind, key, value, None, false, false, false,
             )
@@ -156,12 +168,14 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
 
         let line_number = {
             let key = ctx.ast.property_key_identifier_name(SPAN, "lineNumber");
+
             let value = ctx.ast.expression_numeric_literal(
                 SPAN,
                 line as f64,
                 line.to_string(),
                 NumberBase::Decimal,
             );
+
             ctx.ast.object_property_kind_object_property(
                 SPAN, kind, key, value, None, false, false, false,
             )
@@ -169,21 +183,27 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
 
         let column_number = {
             let key = ctx.ast.property_key_identifier_name(SPAN, "columnNumber");
+
             let value = ctx.ast.expression_numeric_literal(
                 SPAN,
                 column as f64,
                 column.to_string(),
                 NumberBase::Decimal,
             );
+
             ctx.ast.object_property_kind_object_property(
                 SPAN, kind, key, value, None, false, false, false,
             )
         };
 
         let mut properties = ctx.ast.vec_with_capacity(3);
+
         properties.push(filename);
+
         properties.push(line_number);
+
         properties.push(column_number);
+
         ctx.ast.expression_object(SPAN, properties, None)
     }
 
@@ -196,6 +216,7 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
             ctx.ast.vec1(decl),
             false,
         ));
+
         Some(var_decl)
     }
 
@@ -206,9 +227,12 @@ impl<'a, 'ctx> JsxSource<'a, 'ctx> {
         let filename_var = self.filename_var.as_ref()?;
 
         let id = filename_var.create_binding_pattern(ctx);
+
         let init = ctx.ast.expression_string_literal(SPAN, self.ctx.source_path.to_string_lossy());
+
         let decl =
             ctx.ast.variable_declarator(SPAN, VariableDeclarationKind::Var, id, Some(init), false);
+
         Some(decl)
     }
 

@@ -88,6 +88,7 @@ without continuation""#,
             r#"'str'+"str""#,
         ] {
             let result = Parser::new(source_text, Options::default()).parse();
+
             assert!(result.is_err(), "Expect to fail: {source_text} but passed...");
             // println!("{:?}", result.unwrap_err().with_source_code(source_text));
         }
@@ -100,12 +101,14 @@ without continuation""#,
             let result =
                 Parser::new(source_text, Options { strict_mode: false, ..Options::default() })
                     .parse();
+
             assert!(result.is_ok(), "Expect to parse: {source_text} but failed...");
 
             // But not in strict mode.
             let result =
                 Parser::new(source_text, Options { strict_mode: true, ..Options::default() })
                     .parse();
+
             assert!(result.is_err(), "Expect to fail w/ early error: {source_text} but passed...");
             // println!("{:?}", result.unwrap_err().with_source_code(source_text));
         }
@@ -116,9 +119,11 @@ without continuation""#,
         let options = Options::default();
 
         let ast = Parser::new(r#""double""#, options).parse().unwrap();
+
         assert_eq!(ast.kind, ast::StringLiteralKind::Double);
 
         let ast = Parser::new(r"'single'", options).parse().unwrap();
+
         assert_eq!(ast.kind, ast::StringLiteralKind::Single);
     }
 
@@ -132,6 +137,7 @@ without continuation""#,
         )
         .parse()
         .unwrap();
+
         assert_eq!(ast.body.len(), 10);
 
         let ast = Parser::new(
@@ -140,20 +146,24 @@ without continuation""#,
         )
         .parse()
         .unwrap();
+
         assert_eq!(ast.body.len(), 8);
     }
 
     #[test]
     fn span_offset() {
         let source_text = "\"Adjust span but should have no side effect for parsing\"";
+
         let ret1 = Parser::new(source_text, Options { span_offset: 0, ..Options::default() })
             .parse()
             .unwrap();
+
         let ret2 = Parser::new(source_text, Options { span_offset: 10, ..Options::default() })
             .parse()
             .unwrap();
 
         assert_ne!(ret1.span, ret2.span);
+
         for (a, b) in ret1.body.iter().zip(ret2.body.iter()) {
             assert_ne!(a.span, b.span);
         }
@@ -162,6 +172,7 @@ without continuation""#,
     #[test]
     fn restore_span() {
         let source_text = "'123'";
+
         let ast = Parser::new(
             source_text,
             Options { span_offset: 0, combine_surrogate_pair: false, strict_mode: false },
@@ -172,6 +183,7 @@ without continuation""#,
         assert_eq!(ast.span.source_text(source_text), source_text);
 
         let source_text = "\"Hi,\\n🦄\\w\"";
+
         let ast = Parser::new(
             source_text,
             Options { span_offset: 0, combine_surrogate_pair: true, strict_mode: false },
@@ -180,40 +192,61 @@ without continuation""#,
         .unwrap();
 
         assert_eq!(ast.span.source_text(source_text), source_text);
+
         let mut units = ast.body.iter();
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"H");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"i");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r",");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"\n");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"🦄");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"\w");
+
         assert!(units.next().is_none());
 
         let source_text = "...'<-HERE->'...";
+
         let ast =
             Parser::new(&source_text[3..13], Options { span_offset: 3, ..Options::default() })
                 .parse()
                 .unwrap();
 
         assert_eq!(ast.span.source_text(source_text), "'<-HERE->'");
+
         let mut units = ast.body.iter();
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"<");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"-");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"H");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"E");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"R");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"E");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r"-");
+
         assert_eq!(units.next().unwrap().span.source_text(source_text), r">");
+
         assert!(units.next().is_none());
     }
 
     #[test]
     fn regexp_literal() {
         let source_text1 = r"re = new RegExp('^12🥳3\\d(?=4)\\\\$')";
+
         let offset1 = (16, 39);
 
         let source_text2 = r"re = /^12🥳3\d(?=4)\\$/";
+
         let offset2 = (6, 24);
 
         let combine_surrogate_pair = false;
@@ -229,6 +262,7 @@ without continuation""#,
         .parse()
         .unwrap()
         .body;
+
         let ret2 = parse_regexp_literal(
             &source_text2[offset2.0..offset2.1],
             u32::try_from(offset2.0).unwrap(),
@@ -236,6 +270,7 @@ without continuation""#,
         );
 
         assert_eq!(ret1.len(), ret2.len());
+
         for (a, b) in ret1.iter().zip(ret2.iter()) {
             assert_eq!(a.value, b.value);
         }

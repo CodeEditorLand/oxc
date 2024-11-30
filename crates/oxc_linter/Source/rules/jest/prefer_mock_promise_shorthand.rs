@@ -60,6 +60,7 @@ impl Rule for PreferMockPromiseShorthand {
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(mem_expr) = call_expr.callee.as_member_expression() else {
             return;
         };
@@ -71,9 +72,11 @@ impl Rule for PreferMockPromiseShorthand {
         let Some((property_span, property_name)) = mem_expr.static_property_info() else {
             return;
         };
+
         let Some(expr) = call_expr.arguments.first().and_then(Argument::as_expression) else {
             return;
         };
+
         let is_once = property_name.ends_with("Once");
 
         if property_name.eq("mockReturnValue") || property_name.eq("mockReturnValueOnce") {
@@ -86,6 +89,7 @@ impl Rule for PreferMockPromiseShorthand {
                     if !arrow_func.params.is_empty() {
                         return;
                     }
+
                     let Some(stmt) = arrow_func.body.statements.first() else {
                         return;
                     };
@@ -96,27 +100,35 @@ impl Rule for PreferMockPromiseShorthand {
                         let Some(arg_expr) = &return_stmt.argument else {
                             return;
                         };
+
                         Self::report(is_once, property_span, Some(arrow_func.span), arg_expr, ctx);
                     }
                 }
+
                 Expression::FunctionExpression(func_expr) => {
                     if !func_expr.params.is_empty() {
                         return;
                     }
+
                     let Some(func_body) = &func_expr.body else {
                         return;
                     };
+
                     let Some(stmt) = func_body.statements.first() else {
                         return;
                     };
+
                     let Statement::ReturnStatement(return_stmt) = stmt else {
                         return;
                     };
+
                     let Some(arg_expr) = &return_stmt.argument else {
                         return;
                     };
+
                     Self::report(is_once, property_span, Some(func_expr.span), arg_expr, ctx);
                 }
+
                 _ => (),
             };
         }
@@ -134,6 +146,7 @@ impl PreferMockPromiseShorthand {
         let Expression::CallExpression(call_expr) = arg_expr else {
             return;
         };
+
         let arg_name = get_node_name(arg_expr);
 
         if !arg_name.eq("Promise.resolve") && !arg_name.eq("Promise.reject") {
@@ -142,10 +155,13 @@ impl PreferMockPromiseShorthand {
 
         let mock_promise_resolve =
             if is_once { "mockResolvedValueOnce" } else { "mockResolvedValue" };
+
         let mock_promise_reject =
             if is_once { "mockRejectedValueOnce" } else { "mockRejectedValue" };
+
         let prefer_name: &'static str =
             if arg_name.ends_with("reject") { mock_promise_reject } else { mock_promise_resolve };
+
         let fix_span = arg_span.unwrap_or(call_expr.span);
 
         // if arguments is more than one, just report it instead of fixing it.
@@ -154,7 +170,9 @@ impl PreferMockPromiseShorthand {
                 use_mock_shorthand(Atom::from(prefer_name).as_str(), property_span),
                 |fixer| {
                     let content = Self::fix(fixer, prefer_name, call_expr);
+
                     let span = Span::new(property_span.start, fix_span.end);
+
                     fixer.replace(span, content)
                 },
             );
@@ -169,8 +187,11 @@ impl PreferMockPromiseShorthand {
         call_expr: &CallExpression<'a>,
     ) -> String {
         let mut content = fixer.codegen();
+
         content.print_str(prefer_name);
+
         content.print_ascii_byte(b'(');
+
         if call_expr.arguments.is_empty() {
             content.print_str("undefined");
         } else {
@@ -180,6 +201,7 @@ impl PreferMockPromiseShorthand {
                 }
             }
         }
+
         content.into_source_text()
     }
 }
@@ -221,6 +243,7 @@ fn test() {
             "
                 aVariable.mockImplementation(() => {
                     const value = new Date();
+
                     return Promise.resolve(value);
                 });
             ",

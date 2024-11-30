@@ -25,6 +25,7 @@ impl SecretScanner for AwsAccessToken {
         }
 
         let prefix = &candidate[..4];
+
         AWS_TOKEN_PREFIXES.contains_key(prefix) || &prefix[0..3] == "A3T"
     }
 
@@ -36,6 +37,7 @@ impl SecretScanner for AwsAccessToken {
         }
 
         let name = AWS_TOKEN_PREFIXES.get(prefix).copied().unwrap_or("AWS access token");
+
         let a_or_an = match name.chars().next().unwrap() {
             'A' | 'E' | 'I' | 'O' | 'U' => "an",
             _ => "a",

@@ -78,6 +78,7 @@ impl<'a> PatternParser<'a> {
 
 		if self.reader.peek().is_some() {
 			let span_start = self.reader.offset();
+
 			return Err(diagnostics::parse_pattern_incomplete(
 				self.span_factory.create(span_start, span_start),
 			));
@@ -98,6 +99,7 @@ impl<'a> PatternParser<'a> {
 		let span_start = self.reader.offset();
 
 		let mut body = Vec::new_in(self.allocator);
+
 		loop {
 			body.push(self.parse_alternative()?);
 
@@ -121,6 +123,7 @@ impl<'a> PatternParser<'a> {
 		let span_start = self.reader.offset();
 
 		let mut body = Vec::new_in(self.allocator);
+
 		while let Some(term) = self.parse_term()? {
 			body.push(term);
 		}
@@ -152,6 +155,7 @@ impl<'a> PatternParser<'a> {
 			}
 
 			let span_start = self.reader.offset();
+
 			return match (self.parse_atom()?, self.consume_quantifier()?) {
 				(Some(atom), Some(((min, max), greedy))) => {
 					Ok(Some(ast::Term::Quantifier(Box::new_in(
@@ -181,6 +185,7 @@ impl<'a> PatternParser<'a> {
 		// [~UnicodeMode] ExtendedAtom Quantifier
 		// [~UnicodeMode] ExtendedAtom
 		let span_start = self.reader.offset();
+
 		if let Some(assertion) = self.parse_assertion()? {
 			// `QuantifiableAssertion` = (Negative)Lookahead: `(?=...)` or
 			// `(?!...)`
@@ -446,6 +451,7 @@ impl<'a> PatternParser<'a> {
 
 		// InvalidBracedQuantifier
 		let span_start = self.reader.offset();
+
 		if self.consume_quantifier()?.is_some() {
 			// [SS:EE] ExtendedAtom :: InvalidBracedQuantifier
 			// It is a Syntax Error if any source text is matched by this
@@ -519,12 +525,14 @@ impl<'a> PatternParser<'a> {
 		}
 
 		// CharacterClassEscape: \d, \p{...}
+
 		if let Some(character_class_escape) = self.parse_character_class_escape(span_start) {
 			return Ok(Some(ast::Term::CharacterClassEscape(Box::new_in(
 				character_class_escape,
 				self.allocator,
 			))));
 		}
+
 		if let Some(unicode_property_escape) =
 			self.parse_character_class_escape_unicode(span_start)?
 		{
@@ -686,6 +694,7 @@ impl<'a> PatternParser<'a> {
 
 		// e.g. \cM
 		let checkpoint = self.reader.checkpoint();
+
 		if self.reader.eat('c') {
 			if let Some(cp) = self.reader.peek().and_then(unicode::map_c_ascii_letter) {
 				self.reader.advance();
@@ -696,6 +705,7 @@ impl<'a> PatternParser<'a> {
 					value:cp,
 				}));
 			}
+
 			self.reader.rewind(checkpoint);
 		}
 
@@ -721,10 +731,12 @@ impl<'a> PatternParser<'a> {
 					value:cp,
 				}));
 			}
+
 			self.reader.rewind(checkpoint);
 		}
 
 		// e.g. \u{1f600}
+
 		if let Some(cp) = self.consume_reg_exp_unicode_escape_sequence(self.state.unicode_mode)? {
 			return Ok(Some(ast::Character {
 				span:self.span_factory.create(span_start, self.reader.offset()),
@@ -776,6 +788,7 @@ impl<'a> PatternParser<'a> {
 
 		if self.reader.eat('[') {
 			let negative = self.reader.eat('^');
+
 			let (kind, body) = self.parse_class_contents()?;
 
 			if self.reader.eat(']') {
@@ -858,9 +871,11 @@ impl<'a> PatternParser<'a> {
 			};
 
 			let span_start = self.reader.offset();
+
 			if !self.reader.eat('-') {
 				// ClassAtom[?UnicodeMode]
 				body.push(class_atom);
+
 				continue;
 			}
 
@@ -879,7 +894,9 @@ impl<'a> PatternParser<'a> {
 				// UnicodeMode] ClassAtom[?UnicodeMode] => ClassAtom[?
 				// UnicodeMode] -
 				body.push(class_atom);
+
 				body.push(dash);
+
 				continue;
 			};
 
@@ -913,6 +930,7 @@ impl<'a> PatternParser<'a> {
 					},
 					self.allocator,
 				)));
+
 				continue;
 			}
 
@@ -931,7 +949,9 @@ impl<'a> PatternParser<'a> {
 			}
 
 			body.push(class_atom);
+
 			body.push(dash);
+
 			body.push(class_atom_to);
 		}
 
@@ -1088,6 +1108,7 @@ impl<'a> PatternParser<'a> {
 				self.allocator,
 			))));
 		}
+
 		if let Some(unicode_property_escape) =
 			self.parse_character_class_escape_unicode(span_start)?
 		{
@@ -1141,6 +1162,7 @@ impl<'a> PatternParser<'a> {
 		}
 
 		let span_start = self.reader.offset();
+
 		Err(diagnostics::empty_class_set_expression(
 			self.span_factory.create(span_start, self.reader.offset()),
 		))
@@ -1156,15 +1178,19 @@ impl<'a> PatternParser<'a> {
 		class_set_range_or_class_set_operand:ast::CharacterClassContents<'a>,
 	) -> Result<(ast::CharacterClassContentsKind, Vec<'a, ast::CharacterClassContents<'a>>)> {
 		let mut body = Vec::new_in(self.allocator);
+
 		body.push(class_set_range_or_class_set_operand);
 
 		loop {
 			if let Some(class_set_range) = self.parse_class_set_range()? {
 				body.push(class_set_range);
+
 				continue;
 			}
+
 			if let Some(class_set_operand) = self.parse_class_set_operand()? {
 				body.push(class_set_operand);
+
 				continue;
 			}
 
@@ -1184,6 +1210,7 @@ impl<'a> PatternParser<'a> {
 		class_set_operand:ast::CharacterClassContents<'a>,
 	) -> Result<(ast::CharacterClassContentsKind, Vec<'a, ast::CharacterClassContents<'a>>)> {
 		let mut body = Vec::new_in(self.allocator);
+
 		body.push(class_set_operand);
 
 		loop {
@@ -1193,6 +1220,7 @@ impl<'a> PatternParser<'a> {
 
 			if self.reader.eat2('&', '&') {
 				let span_start = self.reader.offset();
+
 				if self.reader.eat('&') {
 					return Err(diagnostics::class_intersection_unexpected_ampersand(
 						self.span_factory.create(span_start, self.reader.offset()),
@@ -1201,11 +1229,13 @@ impl<'a> PatternParser<'a> {
 
 				if let Some(class_set_operand) = self.parse_class_set_operand()? {
 					body.push(class_set_operand);
+
 					continue;
 				}
 			}
 
 			let span_start = self.reader.offset();
+
 			return Err(diagnostics::class_set_expression_invalid_character(
 				self.span_factory.create(span_start, self.reader.offset()),
 				"class intersection",
@@ -1225,6 +1255,7 @@ impl<'a> PatternParser<'a> {
 		class_set_operand:ast::CharacterClassContents<'a>,
 	) -> Result<(ast::CharacterClassContentsKind, Vec<'a, ast::CharacterClassContents<'a>>)> {
 		let mut body = Vec::new_in(self.allocator);
+
 		body.push(class_set_operand);
 
 		loop {
@@ -1235,11 +1266,13 @@ impl<'a> PatternParser<'a> {
 			if self.reader.eat2('-', '-') {
 				if let Some(class_set_operand) = self.parse_class_set_operand()? {
 					body.push(class_set_operand);
+
 					continue;
 				}
 			}
 
 			let span_start = self.reader.offset();
+
 			return Err(diagnostics::class_set_expression_invalid_character(
 				self.span_factory.create(span_start, self.reader.offset()),
 				"class subtraction",
@@ -1283,6 +1316,7 @@ impl<'a> PatternParser<'a> {
 				}
 			}
 		}
+
 		self.reader.rewind(checkpoint);
 
 		Ok(None)
@@ -1303,6 +1337,7 @@ impl<'a> PatternParser<'a> {
 		}
 
 		let span_start = self.reader.offset();
+
 		if self.reader.eat3('\\', 'q', '{') {
 			let (class_string_disjunction_contents, strings) =
 				self.parse_class_string_disjunction_contents()?;
@@ -1347,6 +1382,7 @@ impl<'a> PatternParser<'a> {
 		// [^ ClassContents[+UnicodeMode, +UnicodeSetsMode] ]
 		if self.reader.eat('[') {
 			let negative = self.reader.eat('^');
+
 			let (kind, body) = self.parse_class_contents()?;
 
 			if self.reader.eat(']') {
@@ -1381,7 +1417,9 @@ impl<'a> PatternParser<'a> {
 
 		// \ CharacterClassEscape[+UnicodeMode]
 		let span_start = self.reader.offset();
+
 		let checkpoint = self.reader.checkpoint();
+
 		if self.reader.eat('\\') {
 			if let Some(character_class_escape) = self.parse_character_class_escape(span_start) {
 				return Ok(Some(ast::CharacterClassContents::CharacterClassEscape(Box::new_in(
@@ -1389,6 +1427,7 @@ impl<'a> PatternParser<'a> {
 					self.allocator,
 				))));
 			}
+
 			if let Some(unicode_property_escape) =
 				self.parse_character_class_escape_unicode(span_start)?
 			{
@@ -1414,6 +1453,7 @@ impl<'a> PatternParser<'a> {
 		&mut self,
 	) -> Result<(Vec<'a, ast::ClassString<'a>>, bool)> {
 		let mut body = Vec::new_in(self.allocator);
+
 		let mut strings = false;
 
 		loop {
@@ -1423,6 +1463,7 @@ impl<'a> PatternParser<'a> {
 			if class_string.strings {
 				strings = true;
 			}
+
 			body.push(class_string);
 
 			if !self.reader.eat('|') {
@@ -1450,6 +1491,7 @@ impl<'a> PatternParser<'a> {
 		let span_start = self.reader.offset();
 
 		let mut body = Vec::new_in(self.allocator);
+
 		while let Some(class_set_character) = self.parse_class_set_character()? {
 			body.push(class_set_character);
 		}
@@ -1489,6 +1531,7 @@ impl<'a> PatternParser<'a> {
 		}
 
 		let checkpoint = self.reader.checkpoint();
+
 		if self.reader.eat('\\') {
 			if let Some(character_escape) = self.parse_character_escape(span_start)? {
 				return Ok(Some(character_escape));
@@ -1498,6 +1541,7 @@ impl<'a> PatternParser<'a> {
 				self.reader.peek().filter(|&cp| unicode::is_class_set_reserved_punctuator(cp))
 			{
 				self.reader.advance();
+
 				return Ok(Some(ast::Character {
 					span:self.span_factory.create(span_start, self.reader.offset()),
 					kind:ast::CharacterKind::Identifier,
@@ -1539,10 +1583,12 @@ impl<'a> PatternParser<'a> {
 						self.span_factory.create(span_start, self.reader.offset()),
 					));
 				};
+
 				group_name = Some(name);
 			}
 
 			let disjunction = self.parse_disjunction()?;
+
 			if self.reader.eat(')') {
 				return Ok(Some(ast::CapturingGroup {
 					span:self.span_factory.create(span_start, self.reader.offset()),
@@ -1612,15 +1658,19 @@ impl<'a> PatternParser<'a> {
 		if self.reader.eat('*') {
 			return Ok(Some(((0, None), is_greedy(&mut self.reader))));
 		}
+
 		if self.reader.eat('+') {
 			return Ok(Some(((1, None), is_greedy(&mut self.reader))));
 		}
+
 		if self.reader.eat('?') {
 			return Ok(Some(((0, Some(1)), is_greedy(&mut self.reader))));
 		}
 
 		let span_start = self.reader.offset();
+
 		let checkpoint = self.reader.checkpoint();
+
 		if self.reader.eat('{') {
 			if let Some(min) = self.consume_decimal_digits()? {
 				if self.reader.eat('}') {
@@ -1656,6 +1706,7 @@ impl<'a> PatternParser<'a> {
 									self.span_factory.create(span_start, self.reader.offset()),
 								));
 							}
+
 							if MAX_QUANTIFIER < min || MAX_QUANTIFIER < max {
 								return Err(diagnostics::too_large_number_in_braced_quantifier(
 									self.span_factory.create(span_start, self.reader.offset()),
@@ -1703,9 +1754,11 @@ impl<'a> PatternParser<'a> {
 	// ([Sep] is disabled for `QuantifierPrefix` and `DecimalEscape`, skip it)
 	fn consume_decimal_digits(&mut self) -> Result<Option<u64>> {
 		let span_start = self.reader.offset();
+
 		let checkpoint = self.reader.checkpoint();
 
 		let mut value:u64 = 0;
+
 		while let Some(cp) = self.reader.peek().filter(|&cp| unicode::is_decimal_digit(cp)) {
 			// `- '0' as u32`: convert code point to digit
 			#[allow(clippy::cast_lossless)]
@@ -1715,6 +1768,7 @@ impl<'a> PatternParser<'a> {
 			// `a{999999999999999999999}`
 			if let Some(v) = value.checked_mul(10).and_then(|v| v.checked_add(d)) {
 				value = v;
+
 				self.reader.advance();
 			} else {
 				return Err(diagnostics::too_large_number_digits(
@@ -1772,6 +1826,7 @@ impl<'a> PatternParser<'a> {
 				}
 			}
 		}
+
 		self.reader.rewind(checkpoint);
 
 		let span_start = self.reader.offset();
@@ -1789,6 +1844,7 @@ impl<'a> PatternParser<'a> {
 			if unicode_property::is_valid_unicode_property("General_Category", &name_or_value) {
 				return Ok(Some(("General_Category".into(), Some(name_or_value), false)));
 			}
+
 			if unicode_property::is_valid_lone_unicode_property(&name_or_value) {
 				return Ok(Some((name_or_value, None, false)));
 			}
@@ -1822,6 +1878,7 @@ impl<'a> PatternParser<'a> {
 		let span_start = self.reader.offset();
 
 		let checkpoint = self.reader.checkpoint();
+
 		while unicode::is_unicode_property_name_character(self.reader.peek()?) {
 			self.reader.advance();
 		}
@@ -1837,6 +1894,7 @@ impl<'a> PatternParser<'a> {
 		let span_start = self.reader.offset();
 
 		let checkpoint = self.reader.checkpoint();
+
 		while unicode::is_unicode_property_value_character(self.reader.peek()?) {
 			self.reader.advance();
 		}
@@ -1897,10 +1955,12 @@ impl<'a> PatternParser<'a> {
 	fn consume_reg_exp_idenfigier_start(&mut self) -> Result<Option<u32>> {
 		if let Some(cp) = self.reader.peek().filter(|&cp| unicode::is_identifier_start_char(cp)) {
 			self.reader.advance();
+
 			return Ok(Some(cp));
 		}
 
 		let span_start = self.reader.offset();
+
 		if self.reader.eat('\\') {
 			if let Some(cp) = self.consume_reg_exp_unicode_escape_sequence(true)? {
 				// [SS:EE] RegExpIdentifierStart :: \
@@ -1932,7 +1992,9 @@ impl<'a> PatternParser<'a> {
 					self.reader.peek2().filter(|&cp| surrogate_pair::is_trail_surrogate(cp))
 				{
 					self.reader.advance();
+
 					self.reader.advance();
+
 					let cp =
 						surrogate_pair::combine_surrogate_pair(lead_surrogate, trail_surrogate);
 
@@ -1963,10 +2025,12 @@ impl<'a> PatternParser<'a> {
 	fn consume_reg_exp_idenfigier_part(&mut self) -> Result<Option<u32>> {
 		if let Some(cp) = self.reader.peek().filter(|&cp| unicode::is_identifier_part_char(cp)) {
 			self.reader.advance();
+
 			return Ok(Some(cp));
 		}
 
 		let span_start = self.reader.offset();
+
 		if self.reader.eat('\\') {
 			if let Some(cp) = self.consume_reg_exp_unicode_escape_sequence(true)? {
 				// [SS:EE] RegExpIdentifierPart :: \ RegExpUnicodeEscapeSequence
@@ -1998,6 +2062,7 @@ impl<'a> PatternParser<'a> {
 					self.reader.peek2().filter(|&cp| surrogate_pair::is_trail_surrogate(cp))
 				{
 					self.reader.advance();
+
 					self.reader.advance();
 
 					let cp =
@@ -2035,6 +2100,7 @@ impl<'a> PatternParser<'a> {
 		unicode_mode:bool,
 	) -> Result<Option<u32>> {
 		let span_start = self.reader.offset();
+
 		let checkpoint = self.reader.checkpoint();
 
 		if self.reader.eat('u') {
@@ -2058,6 +2124,7 @@ impl<'a> PatternParser<'a> {
 						}
 					}
 				}
+
 				self.reader.rewind(checkpoint);
 
 				// HexLeadSurrogate
@@ -2067,6 +2134,7 @@ impl<'a> PatternParser<'a> {
 				{
 					return Ok(Some(lead_surrogate));
 				}
+
 				self.reader.rewind(checkpoint);
 
 				// HexTrailSurrogate
@@ -2076,6 +2144,7 @@ impl<'a> PatternParser<'a> {
 				{
 					return Ok(Some(trail_surrogate));
 				}
+
 				self.reader.rewind(checkpoint);
 			}
 
@@ -2085,6 +2154,7 @@ impl<'a> PatternParser<'a> {
 			}
 
 			// {CodePoint}
+
 			if unicode_mode {
 				let checkpoint = self.reader.checkpoint();
 
@@ -2097,6 +2167,7 @@ impl<'a> PatternParser<'a> {
 						}
 					}
 				}
+
 				self.reader.rewind(checkpoint);
 			}
 
@@ -2178,21 +2249,26 @@ impl<'a> PatternParser<'a> {
 		if self.state.unicode_mode {
 			if unicode::is_syntax_character(cp) || cp == '/' as u32 {
 				self.reader.advance();
+
 				return Some(cp);
 			}
+
 			return None;
 		}
 
 		if self.state.named_capture_groups {
 			if cp != 'c' as u32 && cp != 'k' as u32 {
 				self.reader.advance();
+
 				return Some(cp);
 			}
+
 			return None;
 		}
 
 		if cp != 'c' as u32 {
 			self.reader.advance();
+
 			return Some(cp);
 		}
 
@@ -2222,19 +2298,23 @@ impl<'a> PatternParser<'a> {
 		}
 
 		self.reader.advance();
+
 		Some(cp)
 	}
 
 	fn consume_hex_digits(&mut self) -> Result<Option<u32>> {
 		let span_start = self.reader.offset();
+
 		let checkpoint = self.reader.checkpoint();
 
 		let mut value:u32 = 0;
+
 		while let Some(hex) = self.reader.peek().and_then(unicode::map_hex_digit) {
 			// To prevent panic on overflow cases like
 			// `\u{FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}`
 			if let Some(v) = value.checked_mul(16).and_then(|v| v.checked_add(hex)) {
 				value = v;
+
 				self.reader.advance();
 			} else {
 				return Err(diagnostics::too_large_number_digits(
@@ -2255,13 +2335,16 @@ impl<'a> PatternParser<'a> {
 		let checkpoint = self.reader.checkpoint();
 
 		let mut value = 0;
+
 		for _ in 0..len {
 			let Some(hex) = self.reader.peek().and_then(unicode::map_hex_digit) else {
 				self.reader.rewind(checkpoint);
+
 				return None;
 			};
 
 			value = (16 * value) + hex;
+
 			self.reader.advance();
 		}
 

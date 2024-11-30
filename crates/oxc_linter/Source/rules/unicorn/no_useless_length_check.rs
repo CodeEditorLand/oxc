@@ -69,12 +69,14 @@ fn is_useless_check<'a>(
         property_name: "every",
         binary_operators: vec![BinaryOperator::StrictEquality],
     };
+
     let some_condition = ConditionDTO {
         property_name: "some",
         binary_operators: vec![BinaryOperator::StrictInequality, BinaryOperator::GreaterThan],
     };
 
     let mut array_name: &str = "";
+
     let active_condition = {
         if operator == LogicalOperator::Or {
             every_condition
@@ -82,40 +84,52 @@ fn is_useless_check<'a>(
             some_condition
         }
     };
+
     let mut binary_expression_span: Option<Span> = None;
+
     let mut call_expression_span: Option<Span> = None;
 
     let l = match left.without_parentheses() {
         Expression::BinaryExpression(expr) => {
             let left_expr = expr.left.get_inner_expression().as_member_expression()?;
+
             array_name = left_expr.object().get_identifier_reference()?.name.as_str();
+
             binary_expression_span = Some(expr.span);
 
             active_condition.binary_operators.contains(&expr.operator)
                 && left_expr.is_specific_member_access(array_name, "length")
                 && expr.right.is_specific_raw_number_literal("0")
         }
+
         Expression::CallExpression(expr) => {
             array_name =
                 expr.callee.get_member_expr()?.object().get_identifier_reference()?.name.as_str();
+
             let property_name = expr.callee.get_member_expr()?.static_property_name()?;
+
             call_expression_span = Some(expr.span);
 
             let is_same_method = property_name == active_condition.property_name;
+
             let is_optional = expr.optional;
 
             is_same_method && !is_optional
         }
+
         _ => false,
     };
 
     let r = match right.without_parentheses() {
         Expression::BinaryExpression(expr) => {
             let left_expr = expr.left.get_inner_expression().as_member_expression()?;
+
             let ident_name = left_expr.object().get_identifier_reference()?.name.as_str();
+
             if binary_expression_span.is_some() {
                 return None;
             }
+
             binary_expression_span = Some(expr.span);
 
             active_condition.binary_operators.contains(&expr.operator)
@@ -123,6 +137,7 @@ fn is_useless_check<'a>(
                 && expr.right.is_specific_raw_number_literal("0")
                 && ident_name == array_name
         }
+
         Expression::CallExpression(expr) => {
             let is_same_name =
                 expr.callee.get_member_expr()?.object().get_identifier_reference()?.name.as_str()
@@ -131,12 +146,16 @@ fn is_useless_check<'a>(
             if call_expression_span.is_some() {
                 return None;
             }
+
             let property_name = expr.callee.get_member_expr()?.static_property_name()?;
+
             let is_same_method = property_name == active_condition.property_name;
+
             let is_optional = expr.optional;
 
             is_same_method && !is_optional && is_same_name
         }
+
         _ => false,
     };
 
@@ -157,8 +176,11 @@ impl Rule for NoUselessLengthCheck {
             if ![LogicalOperator::And, LogicalOperator::Or].contains(&log_expr.operator) {
                 return;
             }
+
             let mut flat_exprs = Vec::new();
+
             make_flat_logical_expression(log_expr, &mut flat_exprs);
+
             for window in flat_exprs.windows(2) {
                 if let Some(diag) = is_useless_check(window[0], window[1], log_expr.operator) {
                     ctx.diagnostic(diag);
@@ -180,6 +202,7 @@ fn make_flat_logical_expression<'a>(
                 result.push(&node.left);
             }
         }
+
         _ => result.push(&node.left),
     };
 
@@ -191,6 +214,7 @@ fn make_flat_logical_expression<'a>(
                 result.push(&node.right);
             }
         }
+
         _ => result.push(&node.right),
     };
 }

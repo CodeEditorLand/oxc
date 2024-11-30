@@ -60,11 +60,14 @@ impl Rule for SwitchCaseBraces {
                             );
                         }
                     }
+
                     Statement::EmptyStatement(_) => {}
+
                     _ => {
                         let Some(first_statement) = &case.consequent.first() else {
                             return;
                         };
+
                         let Some(last_statement) = &case.consequent.last() else {
                             return;
                         };
@@ -80,16 +83,20 @@ impl Rule for SwitchCaseBraces {
 
                                     if let Some(case_test) = &case.test {
                                         formatter.print_str("case ");
+
                                         formatter.print_expression(case_test);
                                     } else {
                                         formatter.print_str("default");
                                     }
 
                                     formatter.print_ascii_byte(b':');
+
                                     formatter.print_ascii_byte(b' ');
+
                                     formatter.print_ascii_byte(b'{');
 
                                     let source_text = ctx.source_text();
+
                                     for x in &case.consequent {
                                         formatter.print_str(x.span().source_text(source_text));
                                     }

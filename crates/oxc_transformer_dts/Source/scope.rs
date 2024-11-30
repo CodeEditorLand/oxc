@@ -19,6 +19,7 @@ pub struct ScopeTree<'a> {
 impl<'a> ScopeTree<'a> {
     pub fn new(allocator: &'a Allocator) -> Self {
         let ast = AstBuilder::new(allocator);
+
         let mut scope = Self {
             type_bindings: ast.new_vec(),
             value_bindings: ast.new_vec(),
@@ -26,7 +27,9 @@ impl<'a> ScopeTree<'a> {
             value_references: ast.new_vec(),
             flags: ast.new_vec(),
         };
+
         scope.enter_scope(ScopeFlags::Top);
+
         scope
     }
 
@@ -64,14 +67,18 @@ impl<'a> ScopeTree<'a> {
     /// and remove the current scope
     fn resolve_references(&mut self) {
         let current_value_bindings = self.value_bindings.pop().unwrap_or_default();
+
         let current_value_references = self.value_references.pop().unwrap_or_default();
+
         self.type_references
             .last_mut()
             .unwrap()
             .extend(current_value_references.difference(&current_value_bindings).cloned());
 
         let current_type_bindings = self.type_bindings.pop().unwrap_or_default();
+
         let current_type_references = self.type_references.pop().unwrap_or_default();
+
         self.type_references
             .last_mut()
             .unwrap()
@@ -82,14 +89,19 @@ impl<'a> ScopeTree<'a> {
 impl<'a> Visit<'a> for ScopeTree<'a> {
     fn enter_scope(&mut self, flags: ScopeFlags) {
         self.flags.push(flags);
+
         self.value_bindings.push(FxHashSet::default());
+
         self.type_bindings.push(FxHashSet::default());
+
         self.type_references.push(FxHashSet::default());
+
         self.value_references.push(FxHashSet::default());
     }
 
     fn leave_scope(&mut self) {
         self.resolve_references();
+
         self.flags.pop();
     }
 
@@ -101,6 +113,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
         if let BindingPatternKind::BindingIdentifier(ident) = &pattern.kind {
             self.add_value_binding(&ident.name);
         }
+
         walk_binding_pattern(self, pattern);
     }
 
@@ -115,6 +128,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
     fn visit_ts_type_query(&mut self, ty: &TSTypeQuery<'a>) {
         if let Some(type_name) = ty.expr_name.as_ts_type_name() {
             let ident = TSTypeName::get_first_name(type_name);
+
             self.add_value_reference(&ident.name);
         } else {
             walk_ts_type_query(self, ty);
@@ -125,6 +139,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
         for specifier in &decl.specifiers {
             if let ModuleExportName::Identifier(ident) = &specifier.local {
                 self.add_type_reference(&ident.name);
+
                 self.add_value_reference(&ident.name);
             }
         }
@@ -133,6 +148,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
     fn visit_export_default_declaration(&mut self, decl: &ExportDefaultDeclaration<'a>) {
         if let ExportDefaultDeclarationKind::Identifier(ident) = &decl.declaration {
             self.add_type_binding(&ident.name);
+
             self.add_value_binding(&ident.name);
         } else {
             walk_export_default_declaration(self, decl);
@@ -144,36 +160,46 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
             Declaration::VariableDeclaration(_) | Declaration::UsingDeclaration(_) => {
                 // add binding in BindingPattern
             }
+
             Declaration::FunctionDeclaration(decl) => {
                 if let Some(id) = decl.id.as_ref() {
                     self.add_value_binding(&id.name);
                 }
             }
+
             Declaration::ClassDeclaration(decl) => {
                 if let Some(id) = decl.id.as_ref() {
                     self.add_value_binding(&id.name);
                 }
             }
+
             Declaration::TSTypeAliasDeclaration(decl) => {
                 self.add_type_binding(&decl.id.name);
             }
+
             Declaration::TSInterfaceDeclaration(decl) => {
                 self.add_type_binding(&decl.id.name);
             }
+
             Declaration::TSEnumDeclaration(decl) => {
                 self.add_value_binding(&decl.id.name);
+
                 self.add_type_binding(&decl.id.name);
             }
+
             Declaration::TSModuleDeclaration(decl) => {
                 if let TSModuleDeclarationName::Identifier(ident) = &decl.id {
                     self.add_value_binding(&ident.name);
+
                     self.add_type_binding(&ident.name);
                 }
             }
+
             Declaration::TSImportEqualsDeclaration(decl) => {
                 self.add_value_binding(&decl.id.name);
             }
         }
+
         walk_declaration(self, declaration);
     }
 
@@ -194,12 +220,14 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
     /// (Function)
     fn visit_ts_type_parameter_declaration(&mut self, decl: &TSTypeParameterDeclaration<'a>) {
         self.enter_scope(ScopeFlags::empty());
+
         walk_ts_type_parameter_declaration(self, decl);
         // exit scope in parent AST node
     }
 
     fn visit_class(&mut self, class: &Class<'a>) {
         walk_class(self, class);
+
         if class.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -207,6 +235,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 
     fn visit_function(&mut self, func: &Function<'a>, flags: Option<ScopeFlags>) {
         walk_function(self, func, flags);
+
         if func.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -214,6 +243,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 
     fn visit_arrow_expression(&mut self, expr: &ArrowFunctionExpression<'a>) {
         walk_arrow_expression(self, expr);
+
         if expr.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -221,6 +251,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 
     fn visit_ts_type_alias_declaration(&mut self, decl: &TSTypeAliasDeclaration<'a>) {
         walk_ts_type_alias_declaration(self, decl);
+
         if decl.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -228,6 +259,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 
     fn visit_ts_interface_declaration(&mut self, decl: &TSInterfaceDeclaration<'a>) {
         walk_ts_interface_declaration(self, decl);
+
         if decl.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -235,6 +267,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 
     fn visit_ts_call_signature_declaration(&mut self, signature: &TSCallSignatureDeclaration<'a>) {
         walk_ts_call_signature_declaration(self, signature);
+
         if signature.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -242,6 +275,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 
     fn visit_ts_method_signature(&mut self, signature: &TSMethodSignature<'a>) {
         walk_ts_method_signature(self, signature);
+
         if signature.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -252,6 +286,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
         signature: &TSConstructSignatureDeclaration<'a>,
     ) {
         walk_ts_construct_signature_declaration(self, signature);
+
         if signature.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -259,6 +294,7 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
 
     fn visit_ts_function_type(&mut self, signature: &TSFunctionType<'a>) {
         walk_ts_function_type(self, signature);
+
         if signature.type_parameters.is_some() {
             self.leave_scope();
         }
@@ -271,13 +307,17 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
     fn visit_ts_mapped_type(&mut self, ty: &TSMappedType<'a>) {
         // copy from walk_ts_mapped_type
         self.enter_scope(ScopeFlags::empty());
+
         self.add_type_binding(&ty.type_parameter.name.name);
+
         if let Some(name) = &ty.name_type {
             self.visit_ts_type(name);
         }
+
         if let Some(type_annotation) = &ty.type_annotation {
             self.visit_ts_type(type_annotation);
         }
+
         self.leave_scope();
     }
 
@@ -287,7 +327,9 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
     /// parameter We need to add `Item` to the scope
     fn visit_conditional_expression(&mut self, expr: &ConditionalExpression<'a>) {
         self.enter_scope(ScopeFlags::empty());
+
         walk_conditional_expression(self, expr);
+
         self.leave_scope();
     }
 

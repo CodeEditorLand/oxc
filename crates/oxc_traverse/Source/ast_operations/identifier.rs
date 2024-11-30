@@ -15,6 +15,7 @@ pub fn to_identifier(input: String) -> String {
     let mut capitalize_next = false;
 
     let mut chars = input.chars();
+
     if let Some(first) = chars.next() {
         if is_identifier_start(first) {
             name.push(first);
@@ -28,6 +29,7 @@ pub fn to_identifier(input: String) -> String {
             capitalize_next = true;
         } else if capitalize_next {
             name.push(c.to_ascii_uppercase());
+
             capitalize_next = false;
         } else {
             name.push(c);

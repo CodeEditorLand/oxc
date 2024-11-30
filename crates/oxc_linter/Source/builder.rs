@@ -35,9 +35,13 @@ impl LinterBuilder {
     /// You can think of this as `oxlint -A all`.
     pub fn empty() -> Self {
         let options = LintOptions::default();
+
         let config = LintConfig::default();
+
         let rules = FxHashSet::default();
+
         let overrides = OxlintOverrides::default();
+
         let cache = RulesCache::new(config.plugins);
 
         Self { rules, options, config, overrides, cache }
@@ -49,9 +53,13 @@ impl LinterBuilder {
     /// You can think of this as `oxlint -W all -W nursery`.
     pub fn all() -> Self {
         let options = LintOptions::default();
+
         let config = LintConfig { plugins: LintPlugins::all(), ..LintConfig::default() };
+
         let overrides = OxlintOverrides::default();
+
         let cache = RulesCache::new(config.plugins);
+
         Self {
             rules: RULES
                 .iter()
@@ -98,10 +106,14 @@ impl LinterBuilder {
         } = oxlintrc;
 
         let config = LintConfig { plugins, settings, env, globals, path: Some(path) };
+
         let options = LintOptions::default();
+
         let rules =
             if start_empty { FxHashSet::default() } else { Self::warn_correctness(plugins) };
+
         let cache = RulesCache::new(config.plugins);
+
         let mut builder = Self { rules, options, config, overrides, cache };
 
         if !categories.is_empty() {
@@ -110,6 +122,7 @@ impl LinterBuilder {
 
         {
             let all_rules = builder.cache.borrow();
+
             oxlintrc_rules.override_rules(&mut builder.rules, all_rules.as_slice());
         }
 
@@ -119,18 +132,21 @@ impl LinterBuilder {
     #[inline]
     pub fn with_framework_hints(mut self, flags: FrameworkFlags) -> Self {
         self.options.framework_hints = flags;
+
         self
     }
 
     #[inline]
     pub fn and_framework_hints(mut self, flags: FrameworkFlags) -> Self {
         self.options.framework_hints |= flags;
+
         self
     }
 
     #[inline]
     pub fn with_fix(mut self, fix: FixKind) -> Self {
         self.options.fix = fix;
+
         self
     }
 
@@ -150,7 +166,9 @@ impl LinterBuilder {
     #[inline]
     pub fn with_plugins(mut self, plugins: LintPlugins) -> Self {
         self.config.plugins = plugins;
+
         self.cache.set_plugins(plugins);
+
         self
     }
 
@@ -161,7 +179,9 @@ impl LinterBuilder {
     #[inline]
     pub fn and_plugins(mut self, plugins: LintPlugins, enabled: bool) -> Self {
         self.config.plugins.set(plugins, enabled);
+
         self.cache.set_plugins(self.config.plugins);
+
         self
     }
 
@@ -173,6 +193,7 @@ impl LinterBuilder {
     #[cfg(test)]
     pub(crate) fn with_rule(mut self, rule: RuleWithSeverity) -> Self {
         self.rules.insert(rule);
+
         self
     }
 
@@ -180,6 +201,7 @@ impl LinterBuilder {
         for filter in filters {
             self = self.with_filter(filter);
         }
+
         self
     }
 
@@ -191,6 +213,7 @@ impl LinterBuilder {
                 LintFilterKind::Category(category) => {
                     self.upsert_where(severity, |r| r.category() == category);
                 }
+
                 LintFilterKind::Rule(_, name) => self.upsert_where(severity, |r| r.name() == name),
                 LintFilterKind::Generic(name_or_category) => {
                     if name_or_category == "all" {
@@ -204,9 +227,11 @@ impl LinterBuilder {
                 LintFilterKind::Category(category) => {
                     self.rules.retain(|rule| rule.category() != category);
                 }
+
                 LintFilterKind::Rule(_, name) => {
                     self.rules.retain(|rule| rule.name() != name);
                 }
+
                 LintFilterKind::Generic(name_or_category) => {
                     if name_or_category == "all" {
                         self.rules.clear();
@@ -230,9 +255,11 @@ impl LinterBuilder {
         let all_rules = self.cache.borrow();
         // NOTE: we may want to warn users if they're configuring a rule that does not exist.
         let rules_to_configure = all_rules.iter().filter(query);
+
         for rule in rules_to_configure {
             if let Some(mut existing_rule) = self.rules.take(rule) {
                 existing_rule.severity = severity;
+
                 self.rules.insert(existing_rule);
             } else {
                 self.rules.insert(RuleWithSeverity::new(rule.clone(), severity));
@@ -246,13 +273,17 @@ impl LinterBuilder {
         // with_filters() gets called. If the user never calls it, those now-undesired rules need
         // to be taken out.
         let plugins = self.plugins();
+
         let mut rules = if self.cache.is_stale() {
             self.rules.into_iter().filter(|r| plugins.contains(r.plugin_name().into())).collect()
         } else {
             self.rules.into_iter().collect::<Vec<_>>()
         };
+
         rules.sort_unstable_by_key(|r| r.id());
+
         let config = ConfigStore::new(rules, self.config, self.overrides);
+
         Linter::new(self.options, config)
     }
 
@@ -274,6 +305,7 @@ impl LinterBuilder {
     /// This function will panic if the `oxlintrc` is not valid JSON.
     pub fn resolve_final_config_file(&self, oxlintrc: Oxlintrc) -> String {
         let mut oxlintrc = oxlintrc;
+
         let previous_rules = std::mem::take(&mut oxlintrc.rules);
 
         let rule_name_to_rule = previous_rules
@@ -298,6 +330,7 @@ impl LinterBuilder {
             .collect();
 
         oxlintrc.rules = OxlintRules::new(new_rules);
+
         serde_json::to_string_pretty(&oxlintrc).unwrap()
     }
 }
@@ -341,9 +374,11 @@ impl std::fmt::Display for LinterBuilderError {
         match self {
             LinterBuilderError::UnknownRules { rules } => {
                 write!(f, "unknown rules: ")?;
+
                 for rule in rules {
                     write!(f, "{}", rule.full_name())?;
                 }
+
                 Ok(())
             }
         }
@@ -369,8 +404,11 @@ impl RulesCache {
         if self.plugins == plugins {
             return;
         }
+
         self.last_fresh_plugins = self.plugins;
+
         self.plugins = plugins;
+
         self.clear();
     }
 
@@ -389,11 +427,14 @@ impl RulesCache {
     #[must_use]
     fn borrow(&self) -> Ref<'_, Vec<RuleEnum>> {
         let cached = self.all_rules.borrow();
+
         if cached.is_some() {
             Ref::map(cached, |cached| cached.as_ref().unwrap())
         } else {
             drop(cached);
+
             self.initialize();
+
             Ref::map(self.all_rules.borrow(), |cached| cached.as_ref().unwrap())
         }
     }
@@ -428,6 +469,7 @@ impl RulesCache {
                 .cloned()
                 .collect()
         };
+
         all_rules.sort_unstable(); // TODO: do we need to sort? is is already sorted?
 
         *self.all_rules.borrow_mut() = Some(all_rules);
@@ -441,15 +483,21 @@ mod test {
     #[test]
     fn test_builder_default() {
         let builder = LinterBuilder::default();
+
         assert_eq!(builder.plugins(), LintPlugins::default());
 
         // populated with all correctness-level ESLint rules at a "warn" severity
         assert!(!builder.rules.is_empty());
+
         for rule in &builder.rules {
             assert_eq!(rule.category(), RuleCategory::Correctness);
+
             assert_eq!(rule.severity, AllowWarnDeny::Warn);
+
             let plugin = rule.rule.plugin_name();
+
             let name = rule.name();
+
             assert!(
                 builder.plugins().contains(plugin.into()),
                 "{plugin}/{name} is in the default rule set but its plugin is not enabled"
@@ -460,29 +508,37 @@ mod test {
     #[test]
     fn test_builder_empty() {
         let builder = LinterBuilder::empty();
+
         assert_eq!(builder.plugins(), LintPlugins::default());
+
         assert!(builder.rules.is_empty());
     }
 
     #[test]
     fn test_filter_deny_on_default() {
         let builder = LinterBuilder::default();
+
         let initial_rule_count = builder.rules.len();
 
         let builder = builder.with_filters([LintFilter::deny(RuleCategory::Correctness)]);
+
         let rule_count_after_deny = builder.rules.len();
 
         // By default, all correctness rules are set to warn. the above filter should only
         // re-configure those rules, and not add/remove any others.
         assert!(!builder.rules.is_empty());
+
         assert_eq!(initial_rule_count, rule_count_after_deny);
 
         for rule in &builder.rules {
             assert_eq!(rule.category(), RuleCategory::Correctness);
+
             assert_eq!(rule.severity, AllowWarnDeny::Deny);
 
             let plugin = rule.plugin_name();
+
             let name = rule.name();
+
             assert!(
                 builder.plugins().contains(plugin.into()),
                 "{plugin}/{name} is in the default rule set but its plugin is not enabled"
@@ -495,12 +551,15 @@ mod test {
     fn test_filter_deny_single_enabled_rule_on_default() {
         for filter_string in ["no-const-assign", "eslint/no-const-assign"] {
             let builder = LinterBuilder::default();
+
             let initial_rule_count = builder.rules.len();
 
             let builder =
                 builder
                     .with_filters([LintFilter::new(AllowWarnDeny::Deny, filter_string).unwrap()]);
+
             let rule_count_after_deny = builder.rules.len();
+
             assert_eq!(initial_rule_count, rule_count_after_deny, "Changing a single rule from warn to deny should not add a new one, just modify what's already there.");
 
             let no_const_assign = builder
@@ -508,6 +567,7 @@ mod test {
                 .iter()
                 .find(|r| r.plugin_name() == "eslint" && r.name() == "no-const-assign")
                 .expect("Could not find eslint/no-const-assign after configuring it to 'deny'");
+
             assert_eq!(no_const_assign.severity, AllowWarnDeny::Deny);
         }
     }
@@ -517,10 +577,13 @@ mod test {
     fn test_filter_warn_single_disabled_rule_on_default() {
         for filter_string in ["no-console", "eslint/no-console"] {
             let filter = LintFilter::new(AllowWarnDeny::Warn, filter_string).unwrap();
+
             let builder = LinterBuilder::default();
             // sanity check: not already turned on
             assert!(!builder.rules.iter().any(|r| r.name() == "no-console"));
+
             let builder = builder.with_filter(filter);
+
             let no_console = builder
                 .rules
                 .iter()
@@ -536,21 +599,27 @@ mod test {
         let builder =
             LinterBuilder::default()
                 .with_filters([LintFilter::new(AllowWarnDeny::Allow, "all").unwrap()]);
+
         assert!(builder.rules.is_empty(), "Allowing all rules should empty out the rules list");
 
         let builder = builder.with_filters([LintFilter::warn(RuleCategory::Correctness)]);
+
         assert!(
             !builder.rules.is_empty(),
             "warning on categories after allowing all rules should populate the rules set"
         );
+
         for rule in &builder.rules {
             let plugin = rule.plugin_name();
+
             let name = rule.name();
+
             assert_eq!(
                 rule.severity,
                 AllowWarnDeny::Warn,
                 "{plugin}/{name} should have a warning severity"
             );
+
             assert_eq!(
                 rule.category(),
                 RuleCategory::Correctness,
@@ -562,9 +631,11 @@ mod test {
     #[test]
     fn test_rules_after_plugin_added() {
         let builder = LinterBuilder::default();
+
         let initial_rule_count = builder.rules.len();
 
         let builder = builder.and_plugins(LintPlugins::IMPORT, true);
+
         assert_eq!(initial_rule_count, builder.rules.len(), "Enabling a plugin should not add any rules, since we don't know which categories to turn on.");
     }
 
@@ -574,12 +645,16 @@ mod test {
         assert!(LintPlugins::default().contains(LintPlugins::TYPESCRIPT));
 
         let mut desired_plugins = LintPlugins::default();
+
         desired_plugins.set(LintPlugins::TYPESCRIPT, false);
 
         let linter = LinterBuilder::default().with_plugins(desired_plugins).build();
+
         for rule in linter.rules().iter() {
             let name = rule.name();
+
             let plugin = rule.plugin_name();
+
             assert_ne!(
                 LintPlugins::from(plugin),
                 LintPlugins::TYPESCRIPT,
@@ -591,6 +666,7 @@ mod test {
     #[test]
     fn test_plugin_configuration() {
         let builder = LinterBuilder::default();
+
         let initial_plugins = builder.plugins();
 
         // ==========================================================================================
@@ -601,21 +677,26 @@ mod test {
         assert!(initial_plugins.contains(LintPlugins::ESLINT)); // sanity check that eslint is
                                                                 // enabled
         let builder = builder.and_plugins(LintPlugins::ESLINT, true);
+
         assert_eq!(initial_plugins, builder.plugins());
 
         // Disable import plugin. Since it's not already enabled, this is also a no-op.
         assert!(!builder.plugins().contains(LintPlugins::IMPORT)); // sanity check that it's not
                                                                    // already enabled
         let builder = builder.and_plugins(LintPlugins::IMPORT, false);
+
         assert_eq!(initial_plugins, builder.plugins());
 
         // Enable import plugin. Since it's not already enabled, this turns it on.
         let builder = builder.and_plugins(LintPlugins::IMPORT, true);
+
         assert_eq!(LintPlugins::default().union(LintPlugins::IMPORT), builder.plugins());
+
         assert_ne!(initial_plugins, builder.plugins());
 
         // Turn import back off, resetting plugins to the initial state
         let builder = builder.and_plugins(LintPlugins::IMPORT, false);
+
         assert_eq!(initial_plugins, builder.plugins());
 
         // ==========================================================================================
@@ -623,11 +704,14 @@ mod test {
         // ==========================================================================================
 
         let builder = builder.with_plugins(LintPlugins::ESLINT);
+
         assert_eq!(LintPlugins::ESLINT, builder.plugins());
 
         let expected_plugins =
             LintPlugins::ESLINT.union(LintPlugins::TYPESCRIPT).union(LintPlugins::NEXTJS);
+
         let builder = builder.with_plugins(expected_plugins);
+
         assert_eq!(expected_plugins, builder.plugins());
     }
 
@@ -647,11 +731,16 @@ mod test {
         "#,
         )
         .unwrap();
+
         let builder = LinterBuilder::from_oxlintrc(false, oxlintrc);
+
         for rule in &builder.rules {
             let name = rule.name();
+
             let plugin = rule.plugin_name();
+
             let category = rule.category();
+
             match category {
                 RuleCategory::Correctness => {
                     if name == "no-const-assign" {
@@ -668,6 +757,7 @@ mod test {
                         );
                     }
                 }
+
                 RuleCategory::Suspicious => {
                     assert_eq!(
                         rule.severity,
@@ -675,6 +765,7 @@ mod test {
                         "{plugin}/{name} should be denied"
                     );
                 }
+
                 invalid => {
                     panic!("Found rule {plugin}/{name} with an unexpected category {invalid:?}");
                 }

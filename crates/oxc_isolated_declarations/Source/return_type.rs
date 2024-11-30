@@ -63,6 +63,7 @@ impl<'a> FunctionReturnType<'a> {
         visitor.visit_function_body(body);
 
         let expr = visitor.return_expression??;
+
         let Some(mut expr_type) = transformer.infer_type_from_expression(&expr) else {
             // Avoid report error in parent function
             return if expr.is_function() {
@@ -80,6 +81,7 @@ impl<'a> FunctionReturnType<'a> {
                     None
                 }
             }
+
             TSType::TSTypeQuery(query) => {
                 if let TSTypeQueryExprName::IdentifierReference(ident) = &query.expr_name {
                     Some((ident.name.clone(), true))
@@ -87,6 +89,7 @@ impl<'a> FunctionReturnType<'a> {
                     None
                 }
             }
+
             _ => None,
         } {
             let is_defined_in_current_scope = if is_value {
@@ -115,8 +118,10 @@ impl<'a> FunctionReturnType<'a> {
             let types = transformer
                 .ast
                 .vec_from_array([expr_type, transformer.ast.ts_type_undefined_keyword(SPAN)]);
+
             expr_type = transformer.ast.ts_type_union_type(SPAN, types);
         }
+
         Some(expr_type)
     }
 }
@@ -152,11 +157,13 @@ impl<'a> Visit<'a> for FunctionReturnType<'a> {
 
     fn visit_return_statement(&mut self, stmt: &ReturnStatement<'a>) {
         self.return_statement_count += 1;
+
         if self.return_statement_count > 1 {
             if let Some(expr) = &self.return_expression {
                 // if last return statement is not empty, we can't infer return type
                 if expr.is_some() {
                     self.return_expression = None;
+
                     return;
                 }
             } else {

@@ -91,6 +91,7 @@ impl Case for TypeScriptTranspileCase {
         // if !self.settings.emit_declaration_only {
         // self.run_kind(TranspileKind::Module);
         // }
+
         if self.base.settings.declaration {
             self.base.result = self.compare(TranspileKind::Declaration);
         }
@@ -101,14 +102,18 @@ impl TypeScriptTranspileCase {
     fn compare(&self, kind: TranspileKind) -> TestResult {
         // get expected text by reading its .d.ts file
         let path = self.path().strip_prefix("typescript/tests/cases/transpile").unwrap();
+
         let filename = change_extension(path.to_str().unwrap());
+
         let path =
             workspace_root().join(TESTS_ROOT).join("baselines/reference/transpile").join(filename);
+
         let expected = BaselineFile::parse(&path);
 
         let baseline = self.run_kind(kind);
 
         let expected_text = expected.print();
+
         let baseline_text = baseline.print();
 
         if expected.files.len() != baseline.files.len() {
@@ -130,9 +135,11 @@ impl TypeScriptTranspileCase {
                         expected_diagnostic.contains(&base_diagnostic.to_string())
                     },
                 );
+
                 if !matched {
                     let snapshot =
                         format!("\n#### {:?} ####\n{}", self.path(), baseline.snapshot());
+
                     return TestResult::CorrectError(snapshot, false);
                 }
             }
@@ -150,12 +157,15 @@ impl TypeScriptTranspileCase {
                 original: unit.content.clone(),
                 ..Baseline::default()
             };
+
             baseline.print_oxc();
+
             files.push(baseline);
         }
 
         for unit in &self.base.units {
             let (source_text, errors) = transpile(self.path(), &unit.content);
+
             let baseline = Baseline {
                 name: change_extension(&unit.name),
                 original: unit.content.clone(),
@@ -163,6 +173,7 @@ impl TypeScriptTranspileCase {
                 oxc_printed: source_text,
                 oxc_diagnostics: errors,
             };
+
             files.push(baseline);
         }
 
@@ -176,11 +187,15 @@ fn change_extension(name: &str) -> String {
 
 fn transpile(path: &Path, source_text: &str) -> (String, Vec<OxcDiagnostic>) {
     let allocator = Allocator::default();
+
     let source_type = SourceType::from_path(path).unwrap();
+
     let ret = Parser::new(&allocator, source_text, source_type).parse();
+
     let ret =
         IsolatedDeclarations::new(&allocator, IsolatedDeclarationsOptions { strip_internal: true })
             .build(&ret.program);
+
     let printed = CodeGenerator::new().build(&ret.program).code;
     (printed, ret.errors)
 }

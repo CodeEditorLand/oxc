@@ -48,9 +48,11 @@ impl Rule for NoNewBuffer {
         let Expression::Identifier(ident) = &new_expr.callee.without_parentheses() else {
             return;
         };
+
         if ident.name != "Buffer" {
             return;
         }
+
         ctx.diagnostic(no_new_buffer_diagnostic(ident.span));
     }
 }

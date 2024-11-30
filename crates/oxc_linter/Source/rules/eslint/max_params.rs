@@ -56,6 +56,7 @@ declare_oxc_lint!(
 impl Rule for MaxParams {
     fn from_configuration(value: Value) -> Self {
         let config = value.get(0);
+
         if let Some(max) = config
             .and_then(Value::as_number)
             .and_then(serde_json::Number::as_u64)
@@ -83,13 +84,16 @@ impl Rule for MaxParams {
                 if function.params.items.len() > self.max {
                     if let Some(id) = &function.id {
                         let function_name = id.name.as_str();
+
                         let error_msg = format!(
                             "Function '{}' has too many parameters ({}). Maximum allowed is {}.",
                             function_name,
                             function.params.items.len(),
                             self.max
                         );
+
                         let span = function.params.span;
+
                         ctx.diagnostic(max_params_diagnostic(
                             &error_msg,
                             Span::new(span.start, span.end),
@@ -100,7 +104,9 @@ impl Rule for MaxParams {
                             function.params.items.len(),
                             self.max
                         );
+
                         let span = function.params.span;
+
                         ctx.diagnostic(max_params_diagnostic(
                             &error_msg,
                             Span::new(span.start, span.end),
@@ -108,6 +114,7 @@ impl Rule for MaxParams {
                     }
                 }
             }
+
             AstKind::ArrowFunctionExpression(function) => {
                 if function.params.items.len() > self.max {
                     let error_msg = format!(
@@ -115,13 +122,16 @@ impl Rule for MaxParams {
                         function.params.items.len(),
                         self.max
                     );
+
                     let span = function.params.span;
+
                     ctx.diagnostic(max_params_diagnostic(
                         &error_msg,
                         Span::new(span.start, span.end),
                     ));
                 }
             }
+
             _ => {}
         }
     }

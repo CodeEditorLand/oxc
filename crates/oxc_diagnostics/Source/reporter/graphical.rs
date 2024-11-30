@@ -48,7 +48,9 @@ impl DiagnosticReporter for GraphicalReporter {
 
     fn render_error(&mut self, error: Error) -> Option<String> {
         let mut output = String::new();
+
         self.handler.render_report(&mut output, error.as_ref()).unwrap();
+
         Some(output)
     }
 }

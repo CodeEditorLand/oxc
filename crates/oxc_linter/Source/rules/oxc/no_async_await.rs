@@ -39,11 +39,13 @@ impl Rule for NoAsyncAwait {
                     report(node.id(), func_decl.span, ctx);
                 }
             }
+
             AstKind::ArrowFunctionExpression(arrow_expr) => {
                 if arrow_expr.r#async {
                     report(node.id(), arrow_expr.span, ctx);
                 }
             }
+
             _ => {}
         }
     }
@@ -54,6 +56,7 @@ fn report(node_id: NodeId, func_span: Span, ctx: &LintContext<'_>) {
     const ASYNC_LEN: u32 = 5;
 
     let parent = ctx.nodes().parent_kind(node_id);
+
     if let Some(AstKind::ObjectProperty(obj_prop)) = parent {
         ctx.diagnostic(no_async_await_diagnostic(Span::sized(obj_prop.span.start, ASYNC_LEN)));
     } else {

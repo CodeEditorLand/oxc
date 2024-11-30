@@ -74,7 +74,9 @@ mod ast;
 #[proc_macro_attribute]
 pub fn ast(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as Item);
+
     let expanded = ast::ast(&input);
+
     TokenStream::from(expanded)
 }
 

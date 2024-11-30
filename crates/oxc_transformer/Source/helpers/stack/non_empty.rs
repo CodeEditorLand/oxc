@@ -134,6 +134,7 @@ impl<T> NonEmptyStack<T> {
 	#[inline]
 	pub fn with_capacity(capacity:usize, initial_value:T) -> Self {
 		assert!(capacity > 0, "`capacity` cannot be zero");
+
 		assert!(
 			capacity <= Self::MAX_CAPACITY,
 			"`capacity` must not exceed `Self::MAX_CAPACITY`"
@@ -157,6 +158,7 @@ impl<T> NonEmptyStack<T> {
 	#[inline]
 	pub unsafe fn with_capacity_unchecked(capacity:usize, initial_value:T) -> Self {
 		debug_assert!(capacity > 0);
+
 		debug_assert!(capacity <= Self::MAX_CAPACITY);
 		// Cannot overflow if `capacity <= MAX_CAPACITY`
 		let capacity_bytes = capacity * size_of::<T>();
@@ -221,6 +223,7 @@ impl<T> NonEmptyStack<T> {
 		// `self.end` is always a multiple of `size_of::<T>()`, so `==` check
 		// is sufficient to detect when full to capacity.
 		let new_cursor = unsafe { self.cursor.add(1) };
+
 		if new_cursor == self.end {
 			// Needs to grow
 			// SAFETY: Stack is full to capacity
@@ -233,6 +236,7 @@ impl<T> NonEmptyStack<T> {
 			// always a multiple of `T`'s alignment, so `self.cursor` must still
 			// be aligned for `T`.
 			unsafe { new_cursor.as_ptr().write(value) };
+
 			self.cursor = new_cursor;
 		}
 	}
@@ -283,6 +287,7 @@ impl<T> NonEmptyStack<T> {
 	#[inline]
 	pub unsafe fn pop_unchecked(&mut self) -> T {
 		debug_assert!(self.cursor > self.start);
+
 		debug_assert!(self.cursor < self.end);
 		// SAFETY: All methods ensure `self.cursor` is always in bounds, is
 		// aligned for `T`, and points to a valid initialized `T`
@@ -290,6 +295,7 @@ impl<T> NonEmptyStack<T> {
 		// SAFETY: Caller guarantees there's at least 2 entries on stack, so
 		// subtracting 1 cannot be out of bounds
 		self.cursor = self.cursor.sub(1);
+
 		value
 	}
 
@@ -353,7 +359,9 @@ mod tests {
 	macro_rules! assert_len_cap_last {
 		($stack:ident, $len:expr, $capacity:expr, $last:expr) => {
 			assert_eq!($stack.len(), $len);
+
 			assert_eq!($stack.capacity(), $capacity);
+
 			assert_eq!($stack.last(), $last);
 		};
 	}
@@ -361,26 +369,36 @@ mod tests {
 	#[test]
 	fn new() {
 		let stack = NonEmptyStack::new(true);
+
 		assert_len_cap_last!(stack, 1, 16, &true);
+
 		assert_eq!(stack.capacity_bytes(), 16);
 
 		let stack = NonEmptyStack::new(10u64);
+
 		assert_len_cap_last!(stack, 1, 4, &10);
+
 		assert_eq!(stack.capacity_bytes(), 32);
 
 		let stack = NonEmptyStack::new([10u8; 1024]);
+
 		assert_len_cap_last!(stack, 1, 4, &[10; 1024]);
+
 		assert_eq!(stack.capacity_bytes(), 4096);
 
 		let stack = NonEmptyStack::new([10u8; 1025]);
+
 		assert_len_cap_last!(stack, 1, 1, &[10; 1025]);
+
 		assert_eq!(stack.capacity_bytes(), 1025);
 	}
 
 	#[test]
 	fn with_capacity() {
 		let stack = NonEmptyStack::with_capacity(16, 10u64);
+
 		assert_len_cap_last!(stack, 1, 16, &10);
+
 		assert_eq!(stack.capacity_bytes(), 128);
 	}
 
@@ -391,87 +409,140 @@ mod tests {
 	#[test]
 	fn push_then_pop() {
 		let mut stack = NonEmptyStack::new(10u64);
+
 		assert_len_cap_last!(stack, 1, 4, &10);
+
 		assert_eq!(stack.capacity_bytes(), 32);
 
 		stack.push(20);
+
 		assert_len_cap_last!(stack, 2, 4, &20);
+
 		stack.push(30);
+
 		assert_len_cap_last!(stack, 3, 4, &30);
 
 		stack.push(40);
+
 		assert_len_cap_last!(stack, 4, 4, &40);
+
 		assert_eq!(stack.capacity_bytes(), 32);
+
 		stack.push(50);
+
 		assert_len_cap_last!(stack, 5, 8, &50);
+
 		assert_eq!(stack.capacity_bytes(), 64);
 
 		stack.push(60);
+
 		assert_len_cap_last!(stack, 6, 8, &60);
+
 		stack.push(70);
+
 		assert_len_cap_last!(stack, 7, 8, &70);
 
 		stack.push(80);
+
 		assert_len_cap_last!(stack, 8, 8, &80);
+
 		assert_eq!(stack.capacity_bytes(), 64);
 
 		stack.push(90);
+
 		assert_len_cap_last!(stack, 9, 16, &90);
+
 		assert_eq!(stack.capacity_bytes(), 128);
 
 		assert_eq!(stack.pop(), 90);
+
 		assert_len_cap_last!(stack, 8, 16, &80);
+
 		assert_eq!(stack.pop(), 80);
+
 		assert_len_cap_last!(stack, 7, 16, &70);
+
 		assert_eq!(stack.pop(), 70);
+
 		assert_len_cap_last!(stack, 6, 16, &60);
+
 		assert_eq!(stack.pop(), 60);
+
 		assert_len_cap_last!(stack, 5, 16, &50);
+
 		assert_eq!(stack.pop(), 50);
+
 		assert_len_cap_last!(stack, 4, 16, &40);
+
 		assert_eq!(stack.pop(), 40);
+
 		assert_len_cap_last!(stack, 3, 16, &30);
+
 		assert_eq!(stack.pop(), 30);
+
 		assert_len_cap_last!(stack, 2, 16, &20);
+
 		assert_eq!(stack.pop(), 20);
+
 		assert_len_cap_last!(stack, 1, 16, &10);
+
 		assert_eq!(stack.capacity_bytes(), 128);
 	}
 
 	#[test]
 	fn push_and_pop_mixed() {
 		let mut stack = NonEmptyStack::new(10u64);
+
 		assert_len_cap_last!(stack, 1, 4, &10);
+
 		assert_eq!(stack.capacity_bytes(), 32);
 
 		stack.push(20);
+
 		assert_len_cap_last!(stack, 2, 4, &20);
+
 		stack.push(30);
+
 		assert_len_cap_last!(stack, 3, 4, &30);
 
 		assert_eq!(stack.pop(), 30);
+
 		assert_len_cap_last!(stack, 2, 4, &20);
 
 		stack.push(31);
+
 		assert_len_cap_last!(stack, 3, 4, &31);
+
 		stack.push(40);
+
 		assert_len_cap_last!(stack, 4, 4, &40);
+
 		stack.push(50);
+
 		assert_len_cap_last!(stack, 5, 8, &50);
 
 		assert_eq!(stack.pop(), 50);
+
 		assert_len_cap_last!(stack, 4, 8, &40);
+
 		assert_eq!(stack.pop(), 40);
+
 		assert_len_cap_last!(stack, 3, 8, &31);
+
 		assert_eq!(stack.pop(), 31);
+
 		assert_len_cap_last!(stack, 2, 8, &20);
 
 		stack.push(32);
+
 		assert_len_cap_last!(stack, 3, 8, &32);
 
 		assert_eq!(stack.pop(), 32);
+
 		assert_len_cap_last!(stack, 2, 8, &20);
+
 		assert_eq!(stack.pop(), 20);
+
 		assert_len_cap_last!(stack, 1, 8, &10);
 	}
 
@@ -479,6 +550,7 @@ mod tests {
 	#[should_panic(expected = "Cannot pop all entries")]
 	fn pop_panic() {
 		let mut stack = NonEmptyStack::new(10u64);
+
 		stack.pop();
 	}
 
@@ -486,28 +558,39 @@ mod tests {
 	#[should_panic(expected = "Cannot pop all entries")]
 	fn pop_panic2() {
 		let mut stack = NonEmptyStack::new(10u64);
+
 		stack.push(20);
+
 		stack.push(30);
+
 		stack.pop();
+
 		stack.pop();
+
 		stack.pop();
 	}
 
 	#[test]
 	fn last_mut() {
 		let mut stack = NonEmptyStack::new(10u64);
+
 		assert_len_cap_last!(stack, 1, 4, &10);
 
 		*stack.last_mut() = 11;
+
 		assert_len_cap_last!(stack, 1, 4, &11);
 		*stack.last_mut() = 12;
+
 		assert_len_cap_last!(stack, 1, 4, &12);
 
 		stack.push(20);
+
 		assert_len_cap_last!(stack, 2, 4, &20);
 		*stack.last_mut() = 21;
+
 		assert_len_cap_last!(stack, 2, 4, &21);
 		*stack.last_mut() = 22;
+
 		assert_len_cap_last!(stack, 2, 4, &22);
 	}
 
@@ -517,6 +600,7 @@ mod tests {
 		use std::sync::{Mutex, OnceLock};
 
 		static DROPS:OnceLock<Mutex<Vec<u32>>> = OnceLock::new();
+
 		DROPS.get_or_init(|| Mutex::new(vec![]));
 
 		fn drops() -> Vec<u32> { std::mem::take(DROPS.get().unwrap().lock().unwrap().as_mut()) }
@@ -530,20 +614,31 @@ mod tests {
 
 		{
 			let mut stack = NonEmptyStack::new(Droppy(10));
+
 			stack.push(Droppy(20));
+
 			stack.push(Droppy(30));
+
 			assert_eq!(stack.len(), 3);
+
 			assert_eq!(stack.capacity(), 4);
 
 			stack.pop();
+
 			assert_eq!(drops(), &[30]);
+
 			assert!(drops().is_empty());
 
 			stack.push(Droppy(31));
+
 			stack.push(Droppy(40));
+
 			stack.push(Droppy(50));
+
 			assert_eq!(stack.len(), 5);
+
 			assert_eq!(stack.capacity(), 8);
+
 			assert!(drops().is_empty());
 		}
 

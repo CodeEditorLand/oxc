@@ -46,6 +46,7 @@ pub trait ToJsString {
 impl ToJsString for f64 {
     fn to_js_string(&self) -> String {
         let mut buffer = ryu_js::Buffer::new();
+
         buffer.format(*self).to_string()
     }
 }

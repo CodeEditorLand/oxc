@@ -123,7 +123,9 @@ impl Rule for RequireTopLevelDescribe {
 
     fn run_once(&self, ctx: &LintContext) {
         let mut describe_contexts: FxHashMap<ScopeId, usize> = FxHashMap::default();
+
         let mut possibles_jest_nodes = collect_possible_jest_call_node(ctx);
+
         possibles_jest_nodes.sort_by_key(|n| n.node.id());
 
         for possible_jest_node in &possibles_jest_nodes {
@@ -140,7 +142,9 @@ impl RequireTopLevelDescribe {
         ctx: &LintContext<'a>,
     ) {
         let node = possible_jest_node.node;
+
         let scopes = ctx.scopes();
+
         let is_top = scopes.get_flags(node.scope_id()).is_top();
 
         let AstKind::CallExpression(call_expr) = node.kind() else {
@@ -159,11 +163,13 @@ impl RequireTopLevelDescribe {
                     ctx.diagnostic(unexpected_test_case(call_expr.span));
                 }
             }
+
             JestFnKind::General(JestGeneralFnKind::Hook) => {
                 if is_top {
                     ctx.diagnostic(unexpected_hook(call_expr.span));
                 }
             }
+
             JestFnKind::General(JestGeneralFnKind::Describe) => {
                 if !is_top {
                     return;
@@ -171,6 +177,7 @@ impl RequireTopLevelDescribe {
 
                 let Some((_, count)) = describe_contexts.get_key_value(&node.scope_id()) else {
                     describe_contexts.insert(node.scope_id(), 1);
+
                     return;
                 };
 
@@ -184,6 +191,7 @@ impl RequireTopLevelDescribe {
                     describe_contexts.insert(node.scope_id(), count + 1);
                 }
             }
+
             _ => (),
         }
     }
@@ -201,7 +209,9 @@ fn test() {
             "
                 describe(\"test suite\", () => {
                     beforeEach(\"a\", () => {});
+
                     describe(\"b\", () => {});
+
                     test(\"c\", () => {})
                 });
             ",
@@ -215,6 +225,7 @@ fn test() {
                 describe(\"test suite\", () => {
                     it(\"my test\", () => {})
                     describe(\"another test suite\", () => {});
+
                     test(\"my other test\", () => {})
                 });
             ",
@@ -275,7 +286,9 @@ fn test() {
         (
             "
                 describe('one', () => {});
+
                 describe('two', () => {});
+
                 describe('three', () => {});
             ",
             None,
@@ -284,6 +297,7 @@ fn test() {
             "
                 describe('one', () => {
                     describe('two', () => {});
+
                     describe('three', () => {});
                 });
             ",
@@ -312,6 +326,7 @@ fn test() {
         (
             "
                 describe(\"test suite\", () => {});
+
                 afterAll(\"my test\", () => {})
             ",
             None,
@@ -321,6 +336,7 @@ fn test() {
                 import { describe, afterAll as onceEverythingIsDone } from '@jest/globals';
 
                 describe(\"test suite\", () => {});
+
                 onceEverythingIsDone(\"my test\", () => {})
             ",
             None,
@@ -333,7 +349,9 @@ fn test() {
         (
             "
                 describe(\"one\", () => {});
+
                 describe(\"two\", () => {});
+
                 describe(\"three\", () => {});
             ",
             Some(serde_json::json!([{ "maxNumberOfTopLevelDescribes": 2 }])),
@@ -342,16 +360,23 @@ fn test() {
             "
                 describe('one', () => {
                     describe('one (nested)', () => {});
+
                     describe('two (nested)', () => {});
                 });
+
                 describe('two', () => {
                     describe('one (nested)', () => {});
+
                     describe('two (nested)', () => {});
+
                     describe('three (nested)', () => {});
                 });
+
                 describe('three', () => {
                     describe('one (nested)', () => {});
+
                     describe('two (nested)', () => {});
+
                     describe('three (nested)', () => {});
                 });
             ",
@@ -367,16 +392,23 @@ fn test() {
 
                 describe1('one', () => {
                     describe('one (nested)', () => {});
+
                     describe('two (nested)', () => {});
                 });
+
                 describe2('two', () => {
                     describe('one (nested)', () => {});
+
                     describe('two (nested)', () => {});
+
                     describe('three (nested)', () => {});
                 });
+
                 describe3('three', () => {
                     describe('one (nested)', () => {});
+
                     describe('two (nested)', () => {});
+
                     describe('three (nested)', () => {});
                 });
             ",
@@ -385,7 +417,9 @@ fn test() {
         (
             "
                 describe('one', () => {});
+
                 describe('two', () => {});
+
                 describe('three', () => {});
             ",
             Some(serde_json::json!([{ "maxNumberOfTopLevelDescribes": 1 }])),

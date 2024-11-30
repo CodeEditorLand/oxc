@@ -34,7 +34,10 @@ export const Counter: React.FC = () => {
     } = Parser::new(&allocator, source_text, source_type).parse();
 
     assert!(!panicked);
+
     assert!(errors.is_empty());
+
     assert!(!program.body.is_empty());
+
     assert_eq!(program.comments.len(), 1);
 }

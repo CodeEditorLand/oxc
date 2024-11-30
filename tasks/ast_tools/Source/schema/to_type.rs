@@ -9,7 +9,9 @@ use super::{
 
 pub trait ToType {
     fn to_type(&self) -> Type;
+
     fn to_type_elide(&self) -> Type;
+
     fn to_type_with_explicit_generics(&self, generics: TokenStream) -> Type;
 }
 
@@ -24,6 +26,7 @@ impl ToType for TypeRef {
 
     fn to_type_with_explicit_generics(&self, generics: proc_macro2::TokenStream) -> Type {
         let ident = self.name().first_ident();
+
         parse_quote!(#ident #generics)
     }
 }
@@ -42,6 +45,7 @@ macro_rules! impl_to_type {
 
                 fn to_type_with_explicit_generics(&self, generics: TokenStream) -> Type {
                     let name = self.ident();
+
                     parse_quote!(#name #generics)
                 }
             }

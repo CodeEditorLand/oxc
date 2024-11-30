@@ -84,6 +84,7 @@ impl Rule for NoAutofocus {
                         return *val;
                     }
                 }
+
                 false
             }) {
                 no_focus.set_option(true);
@@ -97,9 +98,11 @@ impl Rule for NoAutofocus {
         let AstKind::JSXElement(jsx_el) = node.kind() else {
             return;
         };
+
         let Some(autofocus) = has_jsx_prop(&jsx_el.opening_element, "autoFocus") else {
             return;
         };
+
         let Some(element_type) = get_element_type(ctx, &jsx_el.opening_element) else {
             return;
         };
@@ -112,6 +115,7 @@ impl Rule for NoAutofocus {
                     });
                 }
             }
+
             return;
         }
 
@@ -126,6 +130,7 @@ impl Rule for NoAutofocus {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     fn config() -> serde_json::Value {
         serde_json::json!([2,{
             "ignoreNonDOM": true

@@ -65,12 +65,15 @@ impl Rule for NoStaticOnlyClass {
         if class.super_class.is_some() {
             return;
         }
+
         if class.decorators.len() > 0 {
             return;
         }
+
         if class.body.body.len() == 0 {
             return;
         }
+
         if class.body.body.iter().any(|node| {
             match node {
                 oxc_ast::ast::ClassElement::MethodDefinition(v) => {
@@ -78,11 +81,13 @@ impl Rule for NoStaticOnlyClass {
                         return true;
                     }
                 }
+
                 oxc_ast::ast::ClassElement::PropertyDefinition(v) => {
                     if v.accessibility.is_some() || v.readonly || v.declare {
                         return true;
                     }
                 }
+
                 oxc_ast::ast::ClassElement::AccessorProperty(_)
                 | oxc_ast::ast::ClassElement::StaticBlock(_)
                 | oxc_ast::ast::ClassElement::TSIndexSignature(_) => {}
@@ -92,8 +97,10 @@ impl Rule for NoStaticOnlyClass {
                 if let Some(k) = node.property_key() {
                     return k.is_private_identifier();
                 }
+
                 return false;
             }
+
             true
         }) {
             return;

@@ -176,22 +176,29 @@ mod test {
     use std::hash::{DefaultHasher, Hash, Hasher};
 
     use super::Box;
+
     use crate::Allocator;
 
     #[test]
     fn box_deref_mut() {
         let allocator = Allocator::default();
+
         let mut b = Box::new_in("x", &allocator);
+
         let b = &mut *b;
         *b = allocator.alloc("v");
+
         assert_eq!(*b, "v");
     }
 
     #[test]
     fn box_debug() {
         let allocator = Allocator::default();
+
         let b = Box::new_in("x", &allocator);
+
         let b = format!("{b:?}");
+
         assert_eq!(b, "\"x\"");
     }
 
@@ -199,12 +206,16 @@ mod test {
     fn box_hash() {
         fn hash(val: &impl Hash) -> u64 {
             let mut hasher = DefaultHasher::default();
+
             val.hash(&mut hasher);
+
             hasher.finish()
         }
 
         let allocator = Allocator::default();
+
         let a = Box::new_in("x", &allocator);
+
         let b = Box::new_in("x", &allocator);
 
         assert_eq!(hash(&a), hash(&b));
@@ -213,8 +224,11 @@ mod test {
     #[test]
     fn box_serialize() {
         let allocator = Allocator::default();
+
         let b = Box::new_in("x", &allocator);
+
         let b = serde_json::to_string(&b).unwrap();
+
         assert_eq!(b, "\"x\"");
     }
 

@@ -50,9 +50,11 @@ impl Rule for PreferAsConst {
                 let Some(type_annotation) = &variable_declarator.id.type_annotation else {
                     return;
                 };
+
                 let Some(initial_value_expression) = &variable_declarator.init else {
                     return;
                 };
+
                 check_and_report(
                     &type_annotation.type_annotation,
                     initial_value_expression,
@@ -60,13 +62,16 @@ impl Rule for PreferAsConst {
                     false,
                 );
             }
+
             AstKind::PropertyDefinition(property_definition) => {
                 let Some(type_annotation) = &property_definition.type_annotation else {
                     return;
                 };
+
                 let Some(initial_value_expression) = &property_definition.value else {
                     return;
                 };
+
                 check_and_report(
                     &type_annotation.type_annotation,
                     initial_value_expression,
@@ -74,6 +79,7 @@ impl Rule for PreferAsConst {
                     false,
                 );
             }
+
             AstKind::TSAsExpression(as_expression) => {
                 check_and_report(
                     &as_expression.type_annotation,
@@ -82,6 +88,7 @@ impl Rule for PreferAsConst {
                     true,
                 );
             }
+
             _ => {}
         }
     }
@@ -107,6 +114,7 @@ fn check_and_report(
                         None
                     }
                 }
+
                 _ => None,
             },
             TSLiteral::NullLiteral(null_literal) => match initial_value_expression {
@@ -121,10 +129,12 @@ fn check_and_report(
                         None
                     }
                 }
+
                 _ => None,
             },
             _ => None,
         };
+
         if let Some(span) = error_span {
             if can_fix {
                 ctx.diagnostic_with_fix(prefer_as_const_diagnostic(span), |fixer| {

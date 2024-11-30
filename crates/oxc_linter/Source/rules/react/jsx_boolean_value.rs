@@ -79,6 +79,7 @@ impl Rule for JsxBooleanValue {
             });
 
         let config = value.get(1);
+
         let assume_undefined_is_false = config
             .and_then(|c| c.get("assumeUndefinedIsFalse"))
             .and_then(serde_json::Value::as_bool)
@@ -109,6 +110,7 @@ impl Rule for JsxBooleanValue {
 
         for attr in &jsx_opening_elem.attributes {
             let JSXAttributeItem::Attribute(jsx_attr) = attr else { continue };
+
             let JSXAttributeName::Identifier(ident) = &jsx_attr.name else { continue };
 
             match get_prop_value(attr) {
@@ -120,11 +122,13 @@ impl Rule for JsxBooleanValue {
                         );
                     }
                 }
+
                 Some(JSXAttributeValue::ExpressionContainer(container)) => {
                     if let Some(expr) = container.expression.as_expression() {
                         if let Expression::BooleanLiteral(expr) = expr.without_parentheses() {
                             if expr.value && self.is_never(ident.name.as_str()) {
                                 let span = Span::new(ident.span.end, jsx_attr.span.end);
+
                                 ctx.diagnostic_with_fix(
                                     boolean_value_diagnostic(&ident.name, span),
                                     |fixer| fixer.delete_range(span),
@@ -146,6 +150,7 @@ impl Rule for JsxBooleanValue {
                         }
                     }
                 }
+
                 _ => {}
             }
         }
@@ -159,17 +164,21 @@ impl Rule for JsxBooleanValue {
 impl JsxBooleanValue {
     fn is_always(&self, prop_name: &str) -> bool {
         let is_exception = self.exceptions.contains(prop_name);
+
         if matches!(self.enforce_boolean_attribute, EnforceBooleanAttribute::Always) {
             return !is_exception;
         }
+
         is_exception
     }
 
     fn is_never(&self, prop_name: &str) -> bool {
         let is_exception = self.exceptions.contains(prop_name);
+
         if matches!(self.enforce_boolean_attribute, EnforceBooleanAttribute::Never) {
             return !is_exception;
         }
+
         is_exception
     }
 }

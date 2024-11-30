@@ -128,6 +128,7 @@ impl Rule for NoAccumulatingSpread {
         let AstKind::SpreadElement(spread) = node.kind() else {
             return;
         };
+
         let Expression::Identifier(ref ident) = spread.argument else {
             return;
         };
@@ -136,15 +137,19 @@ impl Rule for NoAccumulatingSpread {
 
         // get the AST node + symbol id of the declaration of the identifier
         let reference = symbols.get_reference(ident.reference_id());
+
         let Some(referenced_symbol_id) = reference.symbol_id() else {
             return;
         };
+
         let declaration_id = symbols.get_declaration(referenced_symbol_id);
+
         let Some(declaration) = ctx.semantic().nodes().parent_node(declaration_id) else {
             return;
         };
 
         check_reduce_usage(declaration, referenced_symbol_id, spread.span, ctx);
+
         check_loop_usage(
             declaration,
             ctx.semantic().nodes().get_node(declaration_id),
@@ -170,12 +175,14 @@ fn check_reduce_usage<'a>(
     // Skip non-parameter or non-first-parameter declarations.
     let first_param_symbol_id =
         params.items.first().and_then(|item| get_identifier_symbol_id(&item.pattern.kind));
+
     if !first_param_symbol_id.is_some_and(|id| id == referenced_symbol_id) {
         return;
     }
 
     // invalid number of parameters to reduce callback
     let params_count = params.parameters_count();
+
     if params_count != 2 {
         return;
     }
@@ -186,6 +193,7 @@ fn check_reduce_usage<'a>(
             if is_method_call(call_expr, None, Some(&["reduce", "reduceRight"]), Some(1), Some(2)) {
                 ctx.diagnostic(get_reduce_diagnostic(call_expr, spread_span));
             }
+
             return;
         }
     }
@@ -225,20 +233,26 @@ fn check_loop_usage<'a>(
     let AstKind::SimpleAssignmentTarget(_) = assignment_target.kind() else { return };
 
     let Some(assignment_expr) = ctx.nodes().parent_node(assignment_target.id()) else { return };
+
     if !matches!(assignment_expr.kind(), AstKind::AssignmentTarget(_)) {
         return;
     }
+
     let Some(assignment) = ctx.nodes().parent_node(assignment_expr.id()) else { return };
+
     let AstKind::AssignmentExpression(assignment_expression) = assignment.kind() else {
         return;
     };
 
     let assignment_expression_right_inner_expr = assignment_expression.right.get_inner_expression();
+
     match assignment_expression_right_inner_expr {
         Expression::ArrayExpression(array_expr)
             if array_expr.span.contains_inclusive(spread_span) => {}
+
         Expression::ObjectExpression(object_expr)
             if object_expr.span.contains_inclusive(spread_span) => {}
+
         _ => return,
     }
 
@@ -255,6 +269,7 @@ fn check_loop_usage<'a>(
                             loop_span,
                         ));
                     }
+
                     Expression::ObjectExpression(_) => {
                         ctx.diagnostic(loop_spread_likely_object_diagnostic(
                             declarator.id.span(),
@@ -290,6 +305,7 @@ fn get_reduce_diagnostic<'a>(
 
     if let Some(second_arg) = call_expr.arguments.get(1).and_then(Argument::as_expression) {
         let second_arg = second_arg.get_inner_expression();
+
         if matches!(second_arg, Expression::ObjectExpression(_)) {
             return reduce_likely_object_spread_diagnostic(spread_span, reduce_call_span);
         } else if matches!(second_arg, Expression::ArrayExpression(_)) {
@@ -326,6 +342,7 @@ fn test() {
         // bad practice, but not a spread on acc
         "arr.reduce((acc, x) => {
                 acc[x] = { ...x }
+
                 return acc
             }, {})",
         // Source: https://github.com/microsoft/vscode/blob/3481f35b91afff6c93d4888a528318d4f9f01a16/src/vs/workbench/contrib/extensions/browser/extensionEditor.ts#L1299-L1303 (MIT license)
@@ -333,7 +350,9 @@ fn test() {
         r"
         const views = Object.keys(contrib).reduce((result, location) => {
 			const viewsForLocation: IView[] = contrib[location];
+
 			result.push(...viewsForLocation.map(view => ({ ...view, location })));
+
 			return result;
 		}, [] as Array<{ id: string; name: string; location: string }>);
         ",
@@ -346,6 +365,7 @@ fn test() {
         {
             serialize(): IStringDictionary<{
                 definition: PolicyDefinition;
+
                 value: PolicyValue;
             }> {
                 return Iterable.reduce<
@@ -415,6 +435,7 @@ fn test() {
         "arr.reduce(function (acc, x) { return { ...acc, [x]: x } }, {})",
         "arr.reduce((acc, x) => {
             let temp = { ...acc, x }
+
             return temp
         }, {})",
         // source https://github.com/biomejs/biome/blob/cli/v1.9.4/crates/biome_js_analyze/tests/specs/performance/noAccumulatingSpread/invalid.jsonc#L2-L32

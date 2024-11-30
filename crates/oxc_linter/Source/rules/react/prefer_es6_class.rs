@@ -63,12 +63,14 @@ impl Rule for PreferEs6Class {
                 let AstKind::CallExpression(call_expr) = node.kind() else {
                     return;
                 };
+
                 ctx.diagnostic(expected_es6_class_diagnostic(call_expr.callee.span()));
             }
         } else if is_es6_component(node) {
             let AstKind::Class(class_expr) = node.kind() else {
                 return;
             };
+
             ctx.diagnostic(unexpected_es6_class_diagnostic(
                 class_expr.id.as_ref().map_or(class_expr.span, |id| id.span),
             ));
@@ -108,6 +110,7 @@ fn test() {
                 return <div>Hello {this.props.name}</div>;
               }
             }
+
             Hello.displayName = 'Hello'
             ",
             None,
@@ -119,6 +122,7 @@ fn test() {
                 return <div>Hello {this.props.name}</div>;
               }
             }
+
             Hello.displayName = 'Hello'
             ",
             None,
@@ -126,6 +130,7 @@ fn test() {
         (
             r"
             var Hello = 'foo';
+
             module.exports = {};
             ",
             None,

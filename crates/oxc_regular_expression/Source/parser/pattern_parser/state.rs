@@ -43,6 +43,7 @@ impl<'a> State<'a> {
             self.unicode_mode || self.unicode_sets_mode || !capturing_group_names.is_empty();
 
         self.num_of_capturing_groups = num_of_left_capturing_parens;
+
         self.capturing_group_names = capturing_group_names;
 
         Ok(())
@@ -78,10 +79,13 @@ fn parse_capturing_groups<'a>(
     // And as long as it works simply, this may be enough.
     let mut may_duplicates: FxHashMap<Atom<'a>, DuplicatedNamedCapturingGroupOffsets> =
         FxHashMap::default();
+
     let mut simplified: Vec<SimpleUnit<'a>> = vec![];
 
     let mut in_escape = false;
+
     let mut in_character_class = false;
+
     while let Some(cp) = reader.peek() {
         if in_escape {
             in_escape = false;
@@ -117,12 +121,15 @@ fn parse_capturing_groups<'a>(
             // Collect capturing group names
             if reader.eat2('?', '<') {
                 let span_start = reader.offset();
+
                 while let Some(ch) = reader.peek() {
                     if ch == '>' as u32 {
                         break;
                     }
+
                     reader.advance();
                 }
+
                 let span_end = reader.offset();
 
                 if reader.eat('>') {
@@ -132,7 +139,9 @@ fn parse_capturing_groups<'a>(
                     // Check duplicates later
                     if let Some(last_span) = group_names.get(&group_name) {
                         let entry = may_duplicates.entry(group_name).or_default();
+
                         entry.push(*last_span);
+
                         entry.push((span_start, span_end));
                     } else {
                         group_names.insert(group_name, (span_start, span_end));
@@ -156,7 +165,9 @@ fn parse_capturing_groups<'a>(
             let iter = simplified.iter().clone();
 
             let mut alternative_depth = FxHashSet::default();
+
             let mut depth = 0_u32;
+
             let mut is_first = true;
 
             'outer: for token in iter {
@@ -164,15 +175,18 @@ fn parse_capturing_groups<'a>(
                     SimpleUnit::Open => {
                         depth += 1;
                     }
+
                     SimpleUnit::Close => {
                         // May panic if the pattern has invalid, unbalanced parens
                         depth = depth.saturating_sub(1);
                     }
+
                     SimpleUnit::Pipe => {
                         if !is_first {
                             alternative_depth.insert(depth);
                         }
                     }
+
                     SimpleUnit::GroupName(name) => {
                         // Check target group name only
                         if *name != group_name {
@@ -181,6 +195,7 @@ fn parse_capturing_groups<'a>(
                         // Skip the first one, because it is not duplicated
                         if is_first {
                             is_first = false;
+
                             continue;
                         }
 
@@ -192,6 +207,7 @@ fn parse_capturing_groups<'a>(
                             if alternative_depth.contains(&i) {
                                 // Remove it, next duplicates requires another `|`
                                 alternative_depth.remove(&i);
+
                                 continue 'outer;
                             }
                         }
@@ -232,6 +248,7 @@ mod tests {
                 parse_capturing_groups(&mut reader).unwrap();
 
             let actual = (num_of_left_capturing_parens, capturing_group_names.len());
+
             assert_eq!(expected, actual, "{source_text}");
         }
     }

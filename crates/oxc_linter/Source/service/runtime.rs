@@ -41,6 +41,7 @@ impl Runtime {
         let resolver = options.cross_module.then(|| {
             Self::get_resolver(options.tsconfig.or_else(|| Some(options.cwd.join("tsconfig.json"))))
         });
+
         Self {
             cwd: options.cwd,
             paths: options.paths.iter().cloned().collect(),
@@ -52,6 +53,7 @@ impl Runtime {
 
     fn get_resolver(tsconfig: Option<PathBuf>) -> Resolver {
         use oxc_resolver::{ResolveOptions, TsconfigOptions, TsconfigReferences};
+
         let tsconfig = tsconfig.and_then(|path| {
             if path.is_file() {
                 Some(TsconfigOptions { config_file: path, references: TsconfigReferences::Auto })
@@ -73,17 +75,22 @@ impl Runtime {
         ext: &str,
     ) -> Option<Result<(SourceType, String), Error>> {
         let source_type = SourceType::from_path(path);
+
         let not_supported_yet =
             source_type.as_ref().is_err_and(|_| !LINT_PARTIAL_LOADER_EXT.contains(&ext));
+
         if not_supported_yet {
             return None;
         }
+
         let source_type = source_type.unwrap_or_default();
+
         let file_result = read_to_string(path).map_err(|e| {
             Error::new(OxcDiagnostic::error(format!(
                 "Failed to open file {path:?} with error \"{e}\""
             )))
         });
+
         Some(match file_result {
             Ok(source_text) => Ok((source_type, source_text)),
             Err(e) => Err(e),
@@ -100,11 +107,13 @@ impl Runtime {
 
         let Some(ext) = path.extension().and_then(OsStr::to_str) else {
             self.ignore_path(path);
+
             return;
         };
 
         let Some(source_type_and_text) = Self::get_source_type_and_text(path, ext) else {
             self.ignore_path(path);
+
             return;
         };
 
@@ -112,7 +121,9 @@ impl Runtime {
             Ok(source_text) => source_text,
             Err(e) => {
                 self.ignore_path(path);
+
                 tx_error.send(Some((path.to_path_buf(), vec![e]))).unwrap();
+
                 return;
             }
         };
@@ -122,6 +133,7 @@ impl Runtime {
 
         if sources.is_empty() {
             self.ignore_path(path);
+
             return;
         }
 
@@ -135,10 +147,12 @@ impl Runtime {
         let mut fix_offset: i32 = 0;
 
         let mut allocator = Allocator::default();
+
         for (i, source) in sources.into_iter().enumerate() {
             if i >= 1 {
                 allocator.reset();
             }
+
             let mut messages = self.process_source(
                 path,
                 &allocator,
@@ -150,25 +164,37 @@ impl Runtime {
 
             if self.linter.options().fix.is_some() {
                 let fix_result = Fixer::new(source.source_text, messages).fix();
+
                 if fix_result.fixed {
                     // write to file, replacing only the changed part
                     let start = source.start.saturating_add_signed(fix_offset) as usize;
+
                     let end = start + source.source_text.len();
+
                     new_source_text.to_mut().replace_range(start..end, &fix_result.fixed_code);
+
                     let old_code_len = source.source_text.len() as u32;
+
                     let new_code_len = fix_result.fixed_code.len() as u32;
+
                     fix_offset += new_code_len as i32;
+
                     fix_offset -= old_code_len as i32;
                 }
+
                 messages = fix_result.messages;
             }
 
             if !messages.is_empty() {
                 self.ignore_path(path);
+
                 let errors = messages.into_iter().map(Into::into).collect();
+
                 let path = path.strip_prefix(&self.cwd).unwrap_or(path);
+
                 let diagnostics =
                     DiagnosticService::wrap_diagnostics(path, source.source_text, errors);
+
                 tx_error.send(Some(diagnostics)).unwrap();
             }
         }
@@ -209,6 +235,7 @@ impl Runtime {
             .with_build_jsdoc(true)
             .with_check_syntax_error(check_syntax_errors)
             .build_module_record(path, &ret.program);
+
         let module_record = semantic_builder.module_record();
 
         if self.resolver.is_some() {
@@ -216,6 +243,7 @@ impl Runtime {
 
             // Retrieve all dependency modules from this module.
             let dir = path.parent().unwrap();
+
             module_record
                 .requested_modules
                 .keys()
@@ -226,10 +254,13 @@ impl Runtime {
                 .flatten()
                 .for_each_with(tx_error, |tx_error, (specifier, resolution)| {
                     let path = resolution.path();
+
                     self.process_path(path, tx_error);
+
                     let Some(target_module_record_ref) = self.modules.get(path) else {
                         return;
                     };
+
                     let ModuleState::Resolved(target_module_record) =
                         target_module_record_ref.value()
                     else {
@@ -252,6 +283,7 @@ impl Runtime {
                 else {
                     continue;
                 };
+
                 let remote_module_record = remote_module_record_ref.value();
 
                 // Append both remote `bindings` and `exported_bindings_from_star_export`
@@ -259,12 +291,14 @@ impl Runtime {
                     .exported_bindings_from_star_export
                     .iter()
                     .flat_map(|r| r.value().clone());
+
                 let remote_bindings = remote_module_record
                     .exported_bindings
                     .keys()
                     .cloned()
                     .chain(remote_exported_bindings_from_star_export)
                     .collect::<Vec<_>>();
+
                 module_record
                     .exported_bindings_from_star_export
                     .entry(remote_module_record.resolved_absolute_path.clone())
@@ -286,7 +320,9 @@ impl Runtime {
         };
 
         let mut semantic = semantic_ret.semantic;
+
         semantic.set_irregular_whitespaces(ret.irregular_whitespaces);
+
         self.linter.run(path, Rc::new(semantic))
     }
 

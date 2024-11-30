@@ -70,24 +70,31 @@ impl Rule for NoDupeKeys {
         let AstKind::ObjectExpression(obj_expr) = node.kind() else {
             return;
         };
+
         let len = obj_expr.properties.len();
+
         if len <= 1 {
             return;
         }
+
         let mut map = FxHashMap::with_capacity_and_hasher(len, FxBuildHasher);
+
         for prop in &obj_expr.properties {
             let ObjectPropertyKind::ObjectProperty(prop) = prop else {
                 continue;
             };
+
             let Some(name) = prop.key.static_name() else {
                 return;
             };
+
             if let Some((prev_kind, prev_span)) = map.insert(name, (prop.kind, prop.key.span())) {
                 if prev_kind == PropertyKind::Init
                     || prop.kind == PropertyKind::Init
                     || prev_kind == prop.kind
                 {
                     let name = prop_key_name(&prop.key, ctx);
+
                     ctx.diagnostic(no_dupe_keys_diagnostic(prev_span, prop.key.span(), name));
                 }
             }

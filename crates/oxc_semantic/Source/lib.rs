@@ -198,9 +198,11 @@ impl<'a> Semantic<'a> {
 
     pub fn is_unresolved_reference(&self, node_id: NodeId) -> bool {
         let reference_node = self.nodes.get_node(node_id);
+
         let AstKind::IdentifierReference(id) = reference_node.kind() else {
             return false;
         };
+
         self.scopes().root_unresolved_references().contains_key(id.name.as_str())
     }
 
@@ -224,6 +226,7 @@ impl<'a> Semantic<'a> {
 
     pub fn reference_name(&self, reference: &Reference) -> &str {
         let node = self.nodes.get_node(reference.node_id());
+
         match node.kind() {
             AstKind::IdentifierReference(id) => id.name.as_str(),
             _ => unreachable!(),
@@ -232,6 +235,7 @@ impl<'a> Semantic<'a> {
 
     pub fn reference_span(&self, reference: &Reference) -> Span {
         let node = self.nodes.get_node(reference.node_id());
+
         node.kind().span()
     }
 }
@@ -239,7 +243,9 @@ impl<'a> Semantic<'a> {
 #[cfg(test)]
 mod tests {
     use oxc_allocator::Allocator;
+
     use oxc_ast::{ast::VariableDeclarationKind, AstKind};
+
     use oxc_span::{Atom, SourceType};
 
     use super::*;
@@ -251,9 +257,13 @@ mod tests {
         source_type: SourceType,
     ) -> Semantic<'s> {
         let parse = oxc_parser::Parser::new(allocator, source, source_type).parse();
+
         assert!(parse.errors.is_empty());
+
         let semantic = SemanticBuilder::new().build(&parse.program);
+
         assert!(semantic.errors.is_empty(), "Parse error: {}", semantic.errors[0]);
+
         semantic.semantic
     }
 
@@ -261,32 +271,41 @@ mod tests {
     fn test_symbols() {
         let source = "
             let a;
+
             function foo(a) {
                 return a + 1;
             }
+
             let b = a + foo(1);";
+
         let allocator = Allocator::default();
+
         let semantic = get_semantic(&allocator, source, SourceType::default());
 
         let top_level_a =
             semantic.scopes().get_binding(semantic.scopes().root_scope_id(), "a").unwrap();
 
         let decl = semantic.symbol_declaration(top_level_a);
+
         match decl.kind() {
             AstKind::VariableDeclarator(decl) => {
                 assert_eq!(decl.kind, VariableDeclarationKind::Let);
             }
+
             kind => panic!("Expected VariableDeclarator for 'let', got {kind:?}"),
         }
 
         let references = semantic.symbol_references(top_level_a);
+
         assert_eq!(references.count(), 1);
     }
 
     #[test]
     fn test_top_level_symbols() {
         let source = "function Fn() {}";
+
         let allocator = Allocator::default();
+
         let semantic = get_semantic(&allocator, source, SourceType::default());
 
         let top_level_a = semantic
@@ -294,6 +313,7 @@ mod tests {
             .iter_bindings()
             .find(|(_scope_id, _symbol_id, name)| name.as_str() == "Fn")
             .unwrap();
+
         assert_eq!(semantic.symbols.get_scope_id(top_level_a.1), top_level_a.0);
     }
 
@@ -301,14 +321,18 @@ mod tests {
     fn test_is_global() {
         let source = "
             var a = 0;
+
             function foo() {
             a += 1;
             }
 
             var b = a + 2;
         ";
+
         let allocator = Allocator::default();
+
         let semantic = get_semantic(&allocator, source, SourceType::default());
+
         for node in semantic.nodes() {
             if let AstKind::IdentifierReference(id) = node.kind() {
                 assert!(!semantic.is_reference_to_global_variable(id));
@@ -319,17 +343,24 @@ mod tests {
     #[test]
     fn type_alias_gets_reference() {
         let source = "type A = 1; type B = A";
+
         let allocator = Allocator::default();
+
         let source_type: SourceType = SourceType::default().with_typescript(true);
+
         let semantic = get_semantic(&allocator, source, source_type);
+
         assert!(semantic.symbols().references.len() == 1);
     }
 
     #[test]
     fn test_reference_resolutions_simple_read_write() {
         let alloc = Allocator::default();
+
         let target_symbol_name = Atom::from("a");
+
         let typescript = SourceType::ts();
+
         let sources = [
             // simple cases
             (SourceType::default(), "let a = 1; a = 2", ReferenceFlags::write()),
@@ -435,18 +466,23 @@ mod tests {
 
         for (source_type, source, flags) in sources {
             let semantic = get_semantic(&alloc, source, source_type);
+
             let a_id =
                 semantic.scopes().get_root_binding(&target_symbol_name).unwrap_or_else(|| {
                     panic!("no references for '{target_symbol_name}' found");
                 });
+
             let a_refs: Vec<_> = semantic.symbol_references(a_id).collect();
+
             let num_refs = a_refs.len();
 
             assert!(
                 num_refs == 1,
                 "expected to find 1 reference to '{target_symbol_name}' but {num_refs} were found\n\nsource:\n{source}"
             );
+
             let ref_type = a_refs[0];
+
             if flags.is_write() {
                 assert!(
                     ref_type.is_write(),
@@ -458,6 +494,7 @@ mod tests {
                     "expected reference to '{target_symbol_name}' not to have been written to, but it is\n\nsource:\n{source}"
                 );
             }
+
             if flags.is_read() {
                 assert!(
                     ref_type.is_read(),

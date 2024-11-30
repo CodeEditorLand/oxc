@@ -95,6 +95,7 @@ impl Rule for NoExplicitAny {
         let AstKind::TSAnyKeyword(any) = node.kind() else {
             return;
         };
+
         if self.ignore_rest_args && Self::is_in_rest(node, ctx) {
             return;
         }
@@ -112,7 +113,9 @@ impl Rule for NoExplicitAny {
         let Some(cfg) = value.get(0) else {
             return Self::default();
         };
+
         let fix_to_unknown = cfg.get("fixToUnknown").and_then(Value::as_bool).unwrap_or(false);
+
         let ignore_rest_args = cfg.get("ignoreRestArgs").and_then(Value::as_bool).unwrap_or(false);
 
         Self { fix_to_unknown, ignore_rest_args }
@@ -126,6 +129,7 @@ impl Rule for NoExplicitAny {
 impl NoExplicitAny {
     fn is_in_rest<'a>(node: &AstNode<'a>, ctx: &LintContext<'a>) -> bool {
         debug_assert!(matches!(node.kind(), AstKind::TSAnyKeyword(_)));
+
         ctx.nodes()
             .ancestors(node.id())
             .any(|parent| matches!(parent.kind(), AstKind::BindingRestElement(_)))
@@ -137,16 +141,20 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
     use crate::tester::Tester;
 
     #[test]
     fn test_simple() {
         let pass = vec!["let x: number = 1"];
+
         let fail = vec!["let x: any = 1"];
+
         let fix = vec![
             ("let x: any = 1", "let x: unknown = 1", Some(json!([{ "fixToUnknown": true }]))),
             ("let x: any = 1", "let x: any = 1", None),
         ];
+
         Tester::new(NoExplicitAny::NAME, pass, fail).expect_fix(fix).test();
     }
 
@@ -626,6 +634,7 @@ mod tests {
         ];
 
         let fix_options = Some(json!([{ "fixToUnknown": true }]));
+
         let fixes = vec![
             ("let x: any = 1", "let x: unknown = 1", fix_options.clone()),
             ("function foo(): any", "function foo(): unknown", fix_options.clone()),
@@ -652,6 +661,7 @@ mod tests {
             // NOTE: no current way to check that fixes don't occur when `ignoreRestArgs` is
             // `true`, since no fix technically occurs and `expect_fix()` panics without a fix.
         ];
+
         Tester::new(NoExplicitAny::NAME, pass, fail).expect_fix(fixes).test_and_snapshot();
     }
 }

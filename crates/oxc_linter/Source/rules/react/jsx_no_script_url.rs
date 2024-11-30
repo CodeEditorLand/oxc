@@ -80,9 +80,11 @@ impl JsxNoScriptUrl {
         if !self.include_from_settings {
             return tag_name == "a";
         }
+
         if tag_name == "a" {
             return true;
         }
+
         ctx.settings().react.get_link_component_attrs(tag_name).is_some()
     }
 }
@@ -93,12 +95,14 @@ impl Rule for JsxNoScriptUrl {
             let Some(component_name) = element.name.get_identifier_name() else {
                 return;
             };
+
             if let Some(link_props) = self.components.get(component_name.as_str()) {
                 for jsx_attribute in &element.attributes {
                     if let JSXAttributeItem::Attribute(attr) = jsx_attribute {
                         let Some(prop_value) = &attr.value else {
                             return;
                         };
+
                         if prop_value.as_string_literal().is_some_and(|val| {
                             link_props.contains(&attr.name.get_identifier().name.to_string())
                                 && JS_SCRIPT_REGEX.captures(&val.value).is_some()
@@ -113,6 +117,7 @@ impl Rule for JsxNoScriptUrl {
                         let Some(prop_value) = &attr.value else {
                             return;
                         };
+
                         if prop_value.as_string_literal().is_some_and(|val| {
                             is_link_attribute(
                                 component_name.as_str(),
@@ -130,9 +135,11 @@ impl Rule for JsxNoScriptUrl {
 
     fn from_configuration(value: Value) -> Self {
         let mut components: FxHashMap<String, Vec<String>> = FxHashMap::default();
+
         if let Some(arr) = value.get(0).and_then(Value::as_array) {
             for component in arr {
                 let name = component.get("name").and_then(Value::as_str).unwrap_or("").to_string();
+
                 let props =
                     component.get("props").and_then(Value::as_array).map_or(vec![], |array| {
                         array
@@ -140,8 +147,10 @@ impl Rule for JsxNoScriptUrl {
                             .map(|prop| prop.as_str().map_or(String::new(), String::from))
                             .collect::<Vec<String>>()
                     });
+
                 components.insert(name, props);
             }
+
             Self(Box::new(JsxNoScriptUrlConfig {
                 include_from_settings: value.get(1).is_some_and(|conf| {
                     conf.get("includeFromSettings").and_then(Value::as_bool).is_some_and(|v| v)

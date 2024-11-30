@@ -46,6 +46,7 @@ fn derive_enum(def: &EnumDef) -> TokenStream {
         );
 
         let ident = variant.ident();
+
         quote!(Self::#ident(it) => GetAddress::address(it))
     });
 

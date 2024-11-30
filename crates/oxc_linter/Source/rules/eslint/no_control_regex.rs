@@ -14,6 +14,7 @@ use crate::{context::LintContext, rule::Rule, AstNode};
 
 fn no_control_regex_diagnostic(count: usize, regex: &str, span: Span) -> OxcDiagnostic {
     debug_assert!(count > 0);
+
     let (message, help) = if count == 1 {
         ("Unexpected control character", format!("'{regex}' is not a valid control character."))
     } else {
@@ -95,6 +96,7 @@ impl Rule for NoControlRegex {
                     (Some(Argument::StringLiteral(pattern)), _) => {
                         parse_and_check_regex(context, pattern.span, None);
                     }
+
                     _ => {}
                 }
             }
@@ -113,6 +115,7 @@ impl Rule for NoControlRegex {
                     (Some(Argument::StringLiteral(pattern)), _) => {
                         parse_and_check_regex(context, pattern.span, None);
                     }
+
                     _ => {}
                 }
             }
@@ -126,6 +129,7 @@ fn parse_and_check_regex(ctx: &LintContext, pattern_span: Span, flags_span: Opti
     let allocator = Allocator::default();
 
     let flags_text = flags_span.map(|span| span.source_text(ctx.source_text()));
+
     let parser = ConstructorParser::new(
         &allocator,
         pattern_span.source_text(ctx.source_text()),
@@ -135,19 +139,24 @@ fn parse_and_check_regex(ctx: &LintContext, pattern_span: Span, flags_span: Opti
             flags_span_offset: flags_span.map_or(0, |span| span.start),
         },
     );
+
     let Ok(pattern) = parser.parse() else {
         return;
     };
+
     check_pattern(ctx, &pattern, pattern_span);
 }
 
 fn check_pattern(context: &LintContext, pattern: &Pattern, span: Span) {
     let mut finder = ControlCharacterFinder::default();
+
     finder.visit_pattern(pattern);
 
     if !finder.control_chars.is_empty() {
         let num_control_chars = finder.control_chars.len();
+
         let violations = finder.control_chars.into_iter().map(|c| c.to_string()).join(", ");
+
         context.diagnostic(no_control_regex_diagnostic(num_control_chars, &violations, span));
     }
 }
@@ -174,10 +183,12 @@ impl<'a> Visit<'a> for ControlCharacterFinder {
         //    visit_character.
         if self.num_capture_groups > 0 && !self.control_chars.is_empty() {
             let control_chars = std::mem::take(&mut self.control_chars);
+
             let control_chars = control_chars
                 .into_iter()
                 .filter(|c| !(c.value > 0x01 && c.value <= self.num_capture_groups))
                 .collect::<Vec<_>>();
+
             self.control_chars = control_chars;
         }
     }
@@ -199,6 +210,7 @@ impl<'a> Visit<'a> for ControlCharacterFinder {
 
     fn visit_capturing_group(&mut self, group: &CapturingGroup<'a>) {
         self.num_capture_groups += 1;
+
         walk::walk_capturing_group(self, group);
     }
 }
@@ -206,6 +218,7 @@ impl<'a> Visit<'a> for ControlCharacterFinder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use crate::tester::Tester;
 
     #[test]
@@ -283,12 +296,14 @@ mod tests {
             r"const r = /([a-z])\1/;",
             r"const r = /\1([a-z])/;",
         ];
+
         let fail = vec![
             r"const r = /\0/;",
             r"const r = /[a-z]\1/;",
             r"const r = /([a-z])\2/;",
             r"const r = /([a-z])\0/;",
         ];
+
         Tester::new(NoControlRegex::NAME, pass, fail)
             .with_snapshot_suffix("capture-group-indexing")
             .test_and_snapshot();

@@ -67,10 +67,13 @@ impl Rule for NoTitleInDocumentHead {
             let AstKind::JSXElementName(_) = node.kind() else {
                 continue;
             };
+
             let parent_node = ctx.nodes().parent_node(node.id()).unwrap();
+
             let AstKind::JSXOpeningElement(jsx_opening_element) = parent_node.kind() else {
                 continue;
             };
+
             let Some(AstKind::JSXElement(jsx_element)) = ctx.nodes().parent_kind(parent_node.id())
             else {
                 continue;

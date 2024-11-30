@@ -101,6 +101,7 @@ impl<'a, 'ctx> Traverse<'a> for OptionalChaining<'a, 'ctx> {
             {
                 self.transform_update_expression(expr, ctx);
             }
+
             _ => {}
         };
     }
@@ -138,6 +139,7 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
     /// Get the call context from [`Self::call_context`]
     fn get_call_context(&mut self, ctx: &mut TraverseCtx<'a>) -> Argument<'a> {
         debug_assert!(!matches!(self.call_context, CallContext::None));
+
         Argument::from(if let CallContext::Binding(binding) = &self.call_context {
             binding.create_read_expression(ctx)
         } else {
@@ -178,6 +180,7 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         ctx: &TraverseCtx<'a>,
     ) -> Option<MaybeBoundIdentifier<'a>> {
         let binding = MaybeBoundIdentifier::from_identifier_reference(ident, ctx);
+
         if self.ctx.assumptions.pure_getters
             || binding.to_bound_identifier().is_some()
             || ident.name == "eval"
@@ -195,12 +198,14 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         } else {
             BinaryOperator::StrictEquality
         };
+
         ctx.ast.expression_binary(SPAN, left, operator, ctx.ast.expression_null_literal(SPAN))
     }
 
     /// Return `left === void 0`
     fn wrap_void0_check(left: Expression<'a>, ctx: &TraverseCtx<'a>) -> Expression<'a> {
         let operator = BinaryOperator::StrictEquality;
+
         ctx.ast.expression_binary(SPAN, left, operator, ctx.ast.void_0(SPAN))
     }
 
@@ -212,10 +217,12 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         ctx: &TraverseCtx<'a>,
     ) -> Expression<'a> {
         let null_check = self.wrap_null_check(left1, ctx);
+
         if self.ctx.assumptions.no_document_all {
             null_check
         } else {
             let void0_check = Self::wrap_void0_check(left2, ctx);
+
             Self::create_logical_expression(null_check, void0_check, ctx)
         }
     }
@@ -244,6 +251,7 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         } else {
             ctx.ast.void_0(SPAN)
         };
+
         ctx.ast.expression_conditional(SPAN, test, consequent, alternate)
     }
 
@@ -252,11 +260,16 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
     /// `expr` ->  `() => { return expr; }`
     fn wrap_arrow_function(expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) -> Expression<'a> {
         let kind = FormalParameterKind::ArrowFormalParameters;
+
         let params = ctx.ast.formal_parameters(SPAN, kind, ctx.ast.vec(), NONE);
+
         let statements =
             ctx.ast.vec1(ctx.ast.statement_return(SPAN, Some(ctx.ast.move_expression(expr))));
+
         let body = ctx.ast.function_body(SPAN, ctx.ast.vec(), statements);
+
         let scope_id = ctx.current_scope_id();
+
         let arrow = ctx.ast.alloc_arrow_function_expression_with_scope_id(
             SPAN, false, false, NONE, params, NONE, body, scope_id,
         );
@@ -287,10 +300,12 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         let Expression::ChainExpression(chain_expr) = ctx.ast.move_expression(expr) else {
             unreachable!()
         };
+
         match chain_expr.unbox().expression {
             element @ match_member_expression!(ChainElement) => {
                 Expression::from(element.into_member_expression())
             }
+
             ChainElement::CallExpression(call) => Expression::CallExpression(call),
             ChainElement::TSNonNullExpression(non_null) => non_null.unbox().expression,
         }
@@ -304,7 +319,9 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
     ) -> BoundIdentifier<'a> {
         let binding = ctx
             .generate_uid_in_current_scope_based_on_node(expr, SymbolFlags::FunctionScopedVariable);
+
         self.ctx.var_declarations.insert_var(&binding, None, ctx);
+
         binding
     }
 
@@ -342,6 +359,7 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
             // Unfortunately no way to get compiler to see that this branch is provably unreachable.
             // We don't want to inline this function, to keep `enter_expression` as small as possible.
             let Expression::UnaryExpression(unary_expr) = expr else { unreachable!() };
+
             self.transform_chain_expression_impl(true, &mut unary_expr.argument, ctx)
         }
     }
@@ -385,6 +403,7 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         };
         // Clear states
         self.temp_binding = None;
+
         self.call_context = CallContext::None;
 
         Self::create_conditional_expression(is_delete, left, chain_expr, ctx)
@@ -401,6 +420,7 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         // Find proper context
         let context = if let Some(member) = expr.as_member_expression_mut() {
             let object = member.object_mut().get_inner_expression_mut();
+
             let context = if self.ctx.assumptions.pure_getters {
                 // TODO: `clone_in` causes reference loss of reference id
                 object.clone_in(ctx.ast.allocator)
@@ -415,8 +435,10 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
                     ctx.ast.move_expression(object),
                     ctx,
                 );
+
                 binding.create_read_expression(ctx)
             };
+
             Argument::from(context)
         } else {
             self.get_call_context(ctx)
@@ -424,9 +446,13 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
 
         // `expr.bind(context)`
         let arguments = ctx.ast.vec1(context);
+
         let property = ctx.ast.identifier_name(SPAN, "bind");
+
         let callee = ctx.ast.member_expression_static(SPAN, expr, property, false);
+
         let callee = Expression::from(callee);
+
         ctx.ast.expression_call(SPAN, callee, NONE, arguments, false)
     }
 
@@ -475,18 +501,22 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
     ) -> Option<Expression<'a>> {
         // Skip parenthesized expression or other TS-syntax expressions
         let expr = expr.get_inner_expression_mut();
+
         match expr {
             // `(foo?.bar)?.baz`
             //  ^^^^^^^^^^ The nested chain expression is always under the ParenthesizedExpression
             Expression::ChainExpression(_) => {
                 *expr = Self::convert_chain_expression_to_expression(expr, ctx);
+
                 self.transform_chain_element_recursion(expr, ctx)
             }
             // `foo?.bar?.baz`
             Expression::StaticMemberExpression(member) => {
                 let left = self.transform_chain_element_recursion(&mut member.object, ctx);
+
                 if member.optional {
                     member.optional = false;
+
                     Some(self.transform_optional_expression(false, left, &mut member.object, ctx))
                 } else {
                     left
@@ -495,8 +525,10 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
             // `foo?.[bar]?.[baz]`
             Expression::ComputedMemberExpression(member) => {
                 let left = self.transform_chain_element_recursion(&mut member.object, ctx);
+
                 if member.optional {
                     member.optional = false;
+
                     Some(self.transform_optional_expression(false, left, &mut member.object, ctx))
                 } else {
                     left
@@ -505,8 +537,10 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
             // `this?.#foo?.bar`
             Expression::PrivateFieldExpression(member) => {
                 let left = self.transform_chain_element_recursion(&mut member.object, ctx);
+
                 if member.optional {
                     member.optional = false;
+
                     Some(self.transform_optional_expression(false, left, &mut member.object, ctx))
                 } else {
                     left
@@ -515,9 +549,12 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
             // `foo?.bar?.bar?.()`
             Expression::CallExpression(call) => {
                 let left = self.transform_chain_element_recursion(&mut call.callee, ctx);
+
                 if call.optional {
                     call.optional = false;
+
                     let callee = call.callee.get_inner_expression_mut();
+
                     let left = Some(self.transform_optional_expression(true, left, callee, ctx));
 
                     if !self.ctx.assumptions.pure_getters {
@@ -527,10 +564,14 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
                             if self.should_specify_context(ident, ctx) {
                                 // `foo$bar(...)` -> `foo$bar.call(context, ...)`
                                 let callee = ctx.ast.move_expression(callee);
+
                                 let property = ctx.ast.identifier_name(SPAN, "call");
+
                                 let member =
                                     ctx.ast.member_expression_static(SPAN, callee, property, false);
+
                                 call.callee = Expression::from(member);
+
                                 call.arguments.insert(0, self.get_call_context(ctx));
                             }
                         }
@@ -541,6 +582,7 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
                     left
                 }
             }
+
             _ => None,
         }
     }
@@ -570,21 +612,28 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         if let Expression::Identifier(ident) = expr {
             if let Some(binding) = self.get_existing_binding_for_identifier(ident, ctx) {
                 let left1 = binding.create_read_expression(ctx);
+
                 let left2 = binding.create_read_expression(ctx);
+
                 if ident.name == "eval" {
                     // `eval?.()` is an indirect eval call transformed to `(0,eval)()`
                     let zero = ctx.ast.number_0();
+
                     let original_callee = ctx.ast.move_expression(expr);
+
                     let expressions = ctx.ast.vec_from_array([zero, original_callee]);
                     *expr = ctx.ast.expression_sequence(SPAN, expressions);
                 }
+
                 self.set_binding_context(binding);
+
                 return self.wrap_optional_check(left1, left2, ctx);
             }
         }
 
         // We should generate a temp binding for the expression first to avoid the next step changing the expression.
         let temp_binding = self.generate_binding(expr, ctx);
+
         if is_call && !self.ctx.assumptions.pure_getters {
             if let Some(member) = expr.as_member_expression_mut() {
                 let object = member.object_mut();
@@ -600,8 +649,10 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
                                 ctx.ast.move_expression(object),
                                 ctx,
                             );
+
                             binding.to_maybe_bound_identifier()
                         });
+
                     self.set_binding_context(binding);
                 } else if matches!(object, Expression::Super(_)) {
                     self.set_this_context();
@@ -622,6 +673,7 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         );
 
         self.set_temp_binding(temp_binding);
+
         expr
     }
 
@@ -651,8 +703,10 @@ impl<'a, 'ctx> OptionalChaining<'a, 'ctx> {
         let temp_binding = {
             if self.temp_binding.is_none() {
                 let binding = self.generate_binding(expr, ctx);
+
                 self.set_temp_binding(binding);
             }
+
             self.temp_binding.as_ref().unwrap()
         };
 

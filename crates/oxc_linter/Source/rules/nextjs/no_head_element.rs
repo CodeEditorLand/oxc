@@ -34,15 +34,19 @@ impl Rule for NoHeadElement {
             let JSXElementName::Identifier(id) = &elem.name else {
                 return;
             };
+
             if id.name != "head" {
                 return;
             }
+
             let Some(full_file_path) = ctx.file_path().to_str() else {
                 return;
             };
+
             if is_in_app_dir(full_file_path) {
                 return;
             }
+
             ctx.diagnostic(no_head_element_diagnostic(elem.span));
         }
     }

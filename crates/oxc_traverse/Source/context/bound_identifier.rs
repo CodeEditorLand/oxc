@@ -69,7 +69,9 @@ impl<'a> BoundIdentifier<'a> {
     /// Create `BindingPattern` for this binding
     pub fn create_binding_pattern(&self, ctx: &TraverseCtx<'a>) -> BindingPattern<'a> {
         let ident = self.create_binding_identifier(ctx);
+
         let binding_pattern_kind = BindingPatternKind::BindingIdentifier(ctx.alloc(ident));
+
         ctx.ast.binding_pattern(binding_pattern_kind, NONE, false)
     }
 
@@ -292,6 +294,7 @@ impl<'a> BoundIdentifier<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let ident = self.create_spanned_reference(span, flags, ctx);
+
         Expression::Identifier(ctx.alloc(ident))
     }
 
@@ -304,6 +307,7 @@ impl<'a> BoundIdentifier<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> AssignmentTarget<'a> {
         let ident = self.create_spanned_reference(span, flags, ctx);
+
         AssignmentTarget::AssignmentTargetIdentifier(ctx.alloc(ident))
     }
 
@@ -316,6 +320,7 @@ impl<'a> BoundIdentifier<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> SimpleAssignmentTarget<'a> {
         let ident = self.create_spanned_reference(span, flags, ctx);
+
         SimpleAssignmentTarget::AssignmentTargetIdentifier(ctx.alloc(ident))
     }
 }

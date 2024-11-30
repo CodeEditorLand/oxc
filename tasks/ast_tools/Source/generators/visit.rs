@@ -48,8 +48,11 @@ fn generate_visit(is_mut: bool, schema: &Schema) -> TokenStream {
     let (visits, walks) = VisitBuilder::new(schema, is_mut).build();
 
     let walk_mod = if is_mut { quote!(walk_mut) } else { quote!(walk) };
+
     let trait_name = if is_mut { quote!(VisitMut) } else { quote!(Visit) };
+
     let ast_kind_type = if is_mut { quote!(AstType) } else { quote!(AstKind) };
+
     let ast_kind_life = if is_mut { TokenStream::default() } else { quote!(<'a>) };
 
     let may_alloc = if is_mut {
@@ -91,10 +94,12 @@ fn generate_visit(is_mut: bool, schema: &Schema) -> TokenStream {
 
         ///@@line_break
         use oxc_allocator::Vec;
+
         use oxc_syntax::scope::{ScopeFlags, ScopeId};
 
         ///@@line_break
         use crate::ast::*;
+
         use crate::ast_kind::#ast_kind_type;
 
         ///@@line_break
@@ -178,10 +183,12 @@ impl<'a> VisitBuilder<'a> {
 
     fn get_visitor(&mut self, def: &TypeDef, collection: bool) -> Cow<'a, Ident> {
         let cache_ix = usize::from(collection);
+
         let (ident, as_type) = {
             debug_assert!(def.is_visitable(), "{def:?}");
 
             let ident = def.ident();
+
             let as_type = def.to_type();
 
             (ident, if collection { parse_quote!(Vec<'a, #as_type>) } else { as_type })
@@ -196,6 +203,7 @@ impl<'a> VisitBuilder<'a> {
 
         let ident_snake = {
             let it = ident.to_string().to_case(Case::Snake);
+
             let it = if collection {
                 // edge case for `Vec<FormalParameter>` to avoid conflicts with `FormalParameters`
                 // which both would generate the same name: `visit_formal_parameters`.
@@ -203,7 +211,9 @@ impl<'a> VisitBuilder<'a> {
                 // `TSImportAttributes` which both would generate the same name: `visit_formal_parameters`.
                 if matches!(it.as_str(), "formal_parameter" | "ts_import_attribute") {
                     let mut it = it;
+
                     it.push_str("_list");
+
                     it
                 } else {
                     it.to_plural()
@@ -211,10 +221,12 @@ impl<'a> VisitBuilder<'a> {
             } else {
                 it
             };
+
             format_ident!("{it}")
         };
 
         let as_param_type = self.with_ref_pat(&as_type);
+
         let (extra_params, extra_args) = if ident == "Function" {
             (quote!(, flags: ScopeFlags,), quote!(, flags))
         } else {
@@ -223,11 +235,15 @@ impl<'a> VisitBuilder<'a> {
 
         let visit_name = {
             let visit_name = format_ident!("visit_{}", ident_snake);
+
             if !self.cache.contains_key(&ident) {
                 debug_assert!(self.cache.insert(ident.clone(), [None, None]).is_none());
             }
+
             let cached = self.cache.get_mut(&ident).unwrap();
+
             assert!(cached[cache_ix].replace(Cow::Owned(visit_name)).is_none());
+
             Cow::clone(cached[cache_ix].as_ref().unwrap())
         };
 
@@ -244,10 +260,12 @@ impl<'a> VisitBuilder<'a> {
         // We push an empty walk first, because we evaluate - and generate - each walk as we go,
         // This would let us to maintain the order of first visit.
         let this_walker = self.walks.len();
+
         self.walks.push(TokenStream::default());
 
         let (walk_body, may_inline) = if collection {
             let singular_visit = self.get_visitor(def, false);
+
             let iter = if self.is_mut { quote!(it.iter_mut()) } else { quote!(it) };
             (
                 quote! {
@@ -265,6 +283,7 @@ impl<'a> VisitBuilder<'a> {
         };
 
         let visit_trait = if self.is_mut { quote!(VisitMut) } else { quote!(Visit) };
+
         let may_inline = if may_inline { Some(quote!(#[inline])) } else { None };
 
         // replace the placeholder walker with the actual one!
@@ -281,7 +300,9 @@ impl<'a> VisitBuilder<'a> {
 
     fn generate_enum_walk(&mut self, enum_: &EnumDef) -> (TokenStream, /* inline */ bool) {
         let ident = enum_.ident();
+
         let mut non_exhaustive = false;
+
         let variants_matches = enum_
             .variants
             .iter()
@@ -289,6 +310,7 @@ impl<'a> VisitBuilder<'a> {
                 if var.markers.visit.ignore {
                     // We are ignoring some variants so the match is no longer exhaustive.
                     non_exhaustive = true;
+
                     false
                 } else {
                     true
@@ -302,12 +324,18 @@ impl<'a> VisitBuilder<'a> {
                     .map(|f| &f.typ)
                     .map_err(|_| "We only support visited enum nodes with exactly one field!")
                     .unwrap();
+
                 let variant_name = &var.ident();
+
                 let type_id = typ.transparent_type_id()?;
+
                 let def = self.schema.get(type_id)?;
+
                 let is_visitable = def.is_visitable();
+
                 if is_visitable {
                     let visit = self.get_visitor(def, false);
+
                     let (args_def, args) = var
                         .markers
                         .visit
@@ -316,7 +344,9 @@ impl<'a> VisitBuilder<'a> {
                         .unwrap_or_default()
                         .into_iter()
                         .fold((Vec::new(), Vec::new()), Self::visit_args_fold);
+
                     let body = quote!(visitor.#visit(it #(#args)*));
+
                     let body = if args_def.is_empty() {
                         body
                     } else {
@@ -326,6 +356,7 @@ impl<'a> VisitBuilder<'a> {
                             #body
                         }}
                     };
+
                     Some(quote!(#ident::#variant_name(it) => #body))
                 } else {
                     None
@@ -335,18 +366,26 @@ impl<'a> VisitBuilder<'a> {
 
         let inherit_matches = enum_.inherits.iter().filter_map(|it| {
             let super_ = &it.super_;
+
             let type_name = super_.name().as_name().unwrap().to_string();
+
             let def = super_.type_id().and_then(|id| self.schema.get(id))?;
+
             if def.is_visitable() {
                 let snake_name = type_name.to_case(Case::Snake);
+
                 let match_macro = format_ident!("match_{snake_name}");
+
                 let match_macro = quote!(#match_macro!(#ident));
+
                 let to_child = if self.is_mut {
                     format_ident!("to_{snake_name}_mut")
                 } else {
                     format_ident!("to_{snake_name}")
                 };
+
                 let visit = self.get_visitor(def, false);
+
                 Some(quote!(#match_macro => visitor.#visit(it.#to_child())))
             } else {
                 None
@@ -360,14 +399,17 @@ impl<'a> VisitBuilder<'a> {
                 tk
             } else {
                 let kind = self.kind_type(&ident);
+
                 quote! {
                     let kind = #kind;
+
                     visitor.enter_node(kind);
                     #tk
                     visitor.leave_node(kind);
                 }
             }
         };
+
         let non_exhaustive = if non_exhaustive { Some(quote!(,_ => {})) } else { None };
         (
             with_node_events(quote!(match it { #(#matches),* #non_exhaustive })),
@@ -378,26 +420,33 @@ impl<'a> VisitBuilder<'a> {
 
     fn generate_struct_walk(&mut self, struct_: &StructDef) -> (TokenStream, /* inline */ bool) {
         let ident = struct_.ident();
+
         let scope_events =
             struct_.markers.scope.as_ref().map_or_else(Default::default, |markers| {
                 let flags = markers
                     .flags
                     .as_ref()
                     .map_or_else(|| quote!(ScopeFlags::empty()), ToTokens::to_token_stream);
+
                 let flags = if let Some(strict_if) = &markers.strict_if {
                     let strict_if =
                         strict_if.to_token_stream().replace_ident("self", &format_ident!("it"));
+
                     quote! {{
                         let mut flags = #flags;
+
                         if #strict_if {
                             flags |= ScopeFlags::StrictMode;
                         }
+
                         flags
                     }}
                 } else {
                     flags
                 };
+
                 let enter = quote!(visitor.enter_scope(#flags, &it.scope_id););
+
                 let leave = quote!(visitor.leave_scope(););
                 (enter, leave)
             });
@@ -413,6 +462,7 @@ impl<'a> VisitBuilder<'a> {
             (
                 quote! {
                     let kind = #kind;
+
                     visitor.enter_node(kind);
                 },
                 quote!(visitor.leave_node(kind);),
@@ -420,29 +470,40 @@ impl<'a> VisitBuilder<'a> {
         };
 
         let mut enter_scope_at = 0;
+
         let mut exit_scope_at: Option<usize> = None;
+
         let mut enter_node_at = 0;
+
         let fields_visits: Vec<TokenStream> = struct_
             .fields
             .iter()
             .enumerate()
             .filter_map(|(ix, field)| {
                 let analysis = field.typ.analysis();
+
                 let def = field.typ.transparent_type_id().and_then(|id| self.schema.get(id))?;
+
                 if !def.is_visitable() {
                     return None;
                 }
+
                 let typ_wrapper = &analysis.wrapper;
+
                 let markers = &field.markers;
+
                 let visit_args = markers.visit.visit_args.clone();
 
                 let have_enter_scope = markers.scope.enter_before;
+
                 let have_exit_scope = markers.scope.exit_before;
+
                 let have_enter_node = markers.visit.enter_before;
 
                 let (args_def, args) = visit_args
                     .map(|it| it.into_iter().fold((Vec::new(), Vec::new()), Self::visit_args_fold))
                     .unwrap_or_default();
+
                 let visit = self.get_visitor(
                     def,
                     matches!(
@@ -450,8 +511,11 @@ impl<'a> VisitBuilder<'a> {
                         TypeWrapper::Vec | TypeWrapper::VecBox | TypeWrapper::OptVec
                     ),
                 );
+
                 let name = field.ident().expect("expected named fields!");
+
                 let borrowed_field = self.with_ref_pat(quote!(it.#name));
+
                 let mut result = match typ_wrapper {
                     TypeWrapper::Opt | TypeWrapper::OptBox | TypeWrapper::OptVec => quote! {
                         if let Some(#name) = #borrowed_field {
@@ -460,12 +524,14 @@ impl<'a> VisitBuilder<'a> {
                     },
                     TypeWrapper::VecOpt => {
                         let iter = if self.is_mut { quote!(iter_mut) } else { quote!(iter) };
+
                         quote! {
                             for #name in it.#name.#iter().flatten() {
                                 visitor.#visit(#name #(#args)*);
                             }
                         }
                     }
+
                     _ => quote! {
                         visitor.#visit(#borrowed_field #(#args)*);
                     },
@@ -474,23 +540,30 @@ impl<'a> VisitBuilder<'a> {
                 // This comes first because we would prefer the `enter_node` to be placed on top of `enter_scope`
                 if have_enter_scope {
                     assert_eq!(enter_scope_at, 0);
+
                     let scope_enter = &scope_events.0;
+
                     result = quote! {
                         #scope_enter
                         #result
                     };
+
                     enter_scope_at = ix;
                 }
+
                 if have_exit_scope {
                     assert!(
                         exit_scope_at.is_none(),
                         "Scopes cannot be exited more than once. Remove the extra `#[scope(exit_before)]` attribute(s)."
                     );
+
                     let scope_exit = &scope_events.1;
+
                     result = quote! {
                         #scope_exit
                         #result
                     };
+
                     exit_scope_at = Some(ix);
                 }
 
@@ -498,12 +571,16 @@ impl<'a> VisitBuilder<'a> {
                 if have_enter_node {
                     // NOTE: this is disabled intentionally <https://github.com/oxc-project/oxc/pull/4147#issuecomment-2220216905>
                     unreachable!("`#[visit(enter_before)]` attribute is disabled!");
+
                     assert_eq!(enter_node_at, 0);
+
                     let node_enter = &node_events.0;
+
                     result = quote! {
                         #node_enter
                         #result
                     };
+
                     enter_node_at = ix;
                 }
 
@@ -562,9 +639,13 @@ impl<'a> VisitBuilder<'a> {
         arg: VisitArg,
     ) -> (Vec<TokenStream>, Vec<TokenStream>) {
         let VisitArg { ident: id, value: val } = arg;
+
         let val = val.to_token_stream().replace_ident("self", &format_ident!("it"));
+
         accumulator.0.push(quote!(let #id = #val;));
+
         accumulator.1.push(quote!(, #id));
+
         accumulator
     }
 }

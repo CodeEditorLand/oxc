@@ -19,6 +19,7 @@ fn is_exports(node: &AssignmentTarget, ctx: &LintContext) -> bool {
     let AssignmentTarget::AssignmentTargetIdentifier(id) = node else {
         return false;
     };
+
     id.is_global_reference_name("exports", ctx.symbols())
 }
 

@@ -39,6 +39,7 @@ impl Rule for MissingThrow {
 		let AstKind::NewExpression(new_expr) = node.kind() else {
 			return;
 		};
+
 		if new_expr.callee.is_specific_id("Error") && Self::has_missing_throw(node, ctx) {
 			ctx.diagnostic(MissingThrowDiagnostic(new_expr.span));
 		}
@@ -64,6 +65,7 @@ impl MissingThrow {
 					_ => {},
 				}
 			}
+
 			return true;
 		}
 

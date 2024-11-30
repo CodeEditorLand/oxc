@@ -45,12 +45,15 @@ impl Rule for NoStyledJsxInDocument {
 
         // Check only pages/_document.* file
         let full_file_path = ctx.file_path();
+
         let Some(file_name) = full_file_path.file_name() else {
             return;
         };
+
         let Some(file_name) = file_name.to_str() else {
             return;
         };
+
         if !file_name.starts_with("_document.") {
             return;
         }

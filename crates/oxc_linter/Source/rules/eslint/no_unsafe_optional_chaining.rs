@@ -68,61 +68,77 @@ impl Rule for NoUnsafeOptionalChaining {
             AstKind::CallExpression(expr) if !expr.optional => {
                 Self::check_unsafe_usage(&expr.callee, ctx);
             }
+
             AstKind::MemberExpression(expr) if !expr.optional() => {
                 Self::check_unsafe_usage(expr.object(), ctx);
             }
+
             AstKind::TaggedTemplateExpression(expr) => {
                 Self::check_unsafe_usage(&expr.tag, ctx);
             }
+
             AstKind::NewExpression(expr) => {
                 Self::check_unsafe_usage(&expr.callee, ctx);
             }
+
             AstKind::AssignmentExpression(expr) => {
                 if matches!(expr.left, match_assignment_target_pattern!(AssignmentTarget)) {
                     Self::check_unsafe_usage(&expr.right, ctx);
                 }
+
                 if expr.operator.is_arithmetic() {
                     self.check_unsafe_arithmetic(&expr.right, ctx);
                 }
             }
+
             AstKind::BinaryExpression(expr) => match expr.operator {
                 op if op.is_relational() => Self::check_unsafe_usage(&expr.right, ctx),
                 op if op.is_arithmetic() => {
                     self.check_unsafe_arithmetic(&expr.left, ctx);
+
                     self.check_unsafe_arithmetic(&expr.right, ctx);
                 }
+
                 _ => {}
             },
             AstKind::UnaryExpression(expr) if expr.operator.is_arithmetic() => {
                 self.check_unsafe_arithmetic(&expr.argument, ctx);
             }
+
             AstKind::ForOfStatement(stmt) => {
                 Self::check_unsafe_usage(&stmt.right, ctx);
             }
+
             AstKind::WithStatement(stmt) => {
                 Self::check_unsafe_usage(&stmt.object, ctx);
             }
+
             AstKind::Class(class) => {
                 if let Some(expr) = &class.super_class {
                     Self::check_unsafe_usage(expr, ctx);
                 }
             }
+
             AstKind::AssignmentPattern(pat) if pat.left.kind.is_destructuring_pattern() => {
                 Self::check_unsafe_usage(&pat.right, ctx);
             }
+
             AstKind::Argument(Argument::SpreadElement(elem)) => {
                 Self::check_unsafe_usage(&elem.argument, ctx);
             }
+
             AstKind::VariableDeclarator(decl) if decl.id.kind.is_destructuring_pattern() => {
                 if let Some(expr) = &decl.init {
                     Self::check_unsafe_usage(expr, ctx);
                 }
             }
+
             AstKind::AssignmentTargetWithDefault(target) => {
                 if matches!(target.binding, match_assignment_target_pattern!(AssignmentTarget)) {
                     Self::check_unsafe_usage(&target.init, ctx);
                 }
             }
+
             _ => {}
         }
     }
@@ -155,33 +171,41 @@ impl NoUnsafeOptionalChaining {
                 LogicalOperator::Or | LogicalOperator::Coalesce => {
                     Self::check_undefined_short_circuit(&expr.right, error_type, ctx);
                 }
+
                 LogicalOperator::And => {
                     Self::check_undefined_short_circuit(&expr.left, error_type, ctx);
+
                     Self::check_undefined_short_circuit(&expr.right, error_type, ctx);
                 }
             },
             Expression::AwaitExpression(expr) => {
                 Self::check_undefined_short_circuit(&expr.argument, error_type, ctx);
             }
+
             Expression::ConditionalExpression(expr) => {
                 Self::check_undefined_short_circuit(&expr.consequent, error_type, ctx);
+
                 Self::check_undefined_short_circuit(&expr.alternate, error_type, ctx);
             }
+
             Expression::SequenceExpression(expr) => {
                 if let Some(expr) = expr.expressions.iter().last() {
                     Self::check_undefined_short_circuit(expr, error_type, ctx);
                 }
             }
+
             Expression::ChainExpression(expr) => {
                 match error_type {
                     ErrorType::Usage => {
                         ctx.diagnostic(no_unsafe_optional_chaining_diagnostic(expr.span));
                     }
+
                     ErrorType::Arithmetic => {
                         ctx.diagnostic(no_unsafe_arithmetic_diagnostic(expr.span));
                     }
                 };
             }
+
             _ => {}
         }
     }

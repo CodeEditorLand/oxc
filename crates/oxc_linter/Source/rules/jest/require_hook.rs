@@ -181,11 +181,13 @@ impl Rule for RequireHook {
                         self.check_block_body(node, &func_body.statements, ctx);
                     };
                 }
+
                 Argument::ArrowFunctionExpression(arrow_func_expr) => {
                     if !arrow_func_expr.expression {
                         self.check_block_body(node, &arrow_func_expr.body.statements, ctx);
                     }
                 }
+
                 _ => (),
             }
         }
@@ -279,6 +281,7 @@ fn tests() {
         (
             "
                 import { myFn } from '../functions';
+
                 test('myFn', () => {
                     expect(myFn()).toBe(1);
                 });
@@ -358,6 +361,7 @@ fn tests() {
 
                     it('prints a message', () => {
                         printMessage('hello world');
+
                         expect(consoleLogSpy).toHaveBeenCalledWith('hello world');
                     });
                 });
@@ -535,13 +539,16 @@ fn tests() {
         (
             "
                 import { database, isCity } from '../database';
+
                 import { loadCities } from '../api';
 
                 jest.mock('../api');
 
                 const initializeCityDatabase = () => {
                     database.addCity('Vienna');
+
                     database.addCity('San Juan');
+
                     database.addCity('Wellington');
                 };
 

@@ -82,6 +82,7 @@ fn is_invalid_type(ty: &TSType) -> bool {
         TSType::TSNumberKeyword(_) | TSType::TSStringKeyword(_) | TSType::TSBooleanKeyword(_) => {
             true
         }
+
         TSType::TSUnionType(union) => union.types.iter().any(is_invalid_type),
         TSType::TSIntersectionType(intersect) => intersect.types.iter().any(is_invalid_type),
         _ => false,
@@ -112,6 +113,7 @@ fn is_invalid_expression<'a>(expression: Option<&Expression<'a>>, ctx: &LintCont
 
             return is_invalid_expression(var_decl.init.as_ref(), ctx);
         }
+
         _ => false,
     }
 }
@@ -128,6 +130,7 @@ fn is_invalid_style_attribute<'a>(attribute: &JSXAttribute<'a>, ctx: &LintContex
                 JSXAttributeValue::ExpressionContainer(container) => {
                     return is_invalid_expression(container.expression.as_expression(), ctx);
                 }
+
                 _ => false,
             };
         }
@@ -180,6 +183,7 @@ impl Rule for StylePropObject {
                     }
                 });
             }
+
             AstKind::CallExpression(call_expr) => {
                 if !is_create_element_call(call_expr) {
                     return;
@@ -223,6 +227,7 @@ impl Rule for StylePropObject {
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -244,6 +249,7 @@ fn test() {
             r#"
               function redDiv() {
                 const styles = { color: "red" };
+
                 return <div style={styles} />;
               }
             "#,
@@ -253,6 +259,7 @@ fn test() {
             r#"
               function redDiv() {
                 const styles = { color: "red" };
+
                 return <Hello style={styles} />;
               }
             "#,

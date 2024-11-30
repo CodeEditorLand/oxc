@@ -31,10 +31,13 @@ impl<'a> Display for Alternative<'a> {
 
         write_join_with(f, "", &self.body, |iter| {
             let next = iter.next()?;
+
             let Some(next) = as_character(next) else { return Some(Cow::Owned(next.to_string())) };
 
             let peek = iter.peek().and_then(|it| as_character(it));
+
             let (result, eat) = character_to_string(next, peek);
+
             if eat {
                 iter.next();
             }
@@ -125,6 +128,7 @@ impl<'a> Display for Quantifier<'a> {
 impl Display for Character {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (string, _) = character_to_string(self, None);
+
         write!(f, "{string}")
     }
 }
@@ -163,11 +167,13 @@ impl<'a> Display for UnicodePropertyEscape<'a> {
         }
 
         write!(f, r"{{")?;
+
         match (&self.name, &self.value) {
             (name, Some(value)) if name == "General_Category" => write!(f, r"{value}")?,
             (name, Some(value)) => write!(f, r"{name}={value}")?,
             _ => write!(f, r"{}", self.name)?,
         }
+
         write!(f, r"}}")
     }
 }
@@ -183,6 +189,7 @@ impl<'a> Display for CharacterClass<'a> {
         }
 
         write!(f, "[")?;
+
         if self.negative {
             write!(f, "^")?;
         }
@@ -196,12 +203,15 @@ impl<'a> Display for CharacterClass<'a> {
 
             write_join_with(f, sep, &self.body, |iter| {
                 let next = iter.next()?;
+
                 let Some(next) = as_character(next) else {
                     return Some(Cow::Owned(next.to_string()));
                 };
 
                 let peek = iter.peek().and_then(|it| as_character(it));
+
                 let (result, eat) = character_to_string(next, peek);
+
                 if eat {
                     iter.next();
                 }
@@ -236,7 +246,9 @@ impl Display for CharacterClassRange {
 impl<'a> Display for ClassStringDisjunction<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, r"\q{{")?;
+
         write_join(f, "|", &self.body)?;
+
         write!(f, "}}")
     }
 }
@@ -254,6 +266,7 @@ impl<'a> Display for CapturingGroup<'a> {
         if let Some(name) = &self.name {
             write!(f, "?<{name}>")?;
         }
+
         write!(f, "{}", &self.body)?;
 
         write!(f, ")")
@@ -266,12 +279,15 @@ impl<'a> Display for IgnoreGroup<'a> {
             if flags.ignore_case {
                 write!(f, "i")?;
             }
+
             if flags.multiline {
                 write!(f, "m")?;
             }
+
             if flags.sticky {
                 write!(f, "s")?;
             }
+
             Ok(())
         }
 
@@ -281,8 +297,10 @@ impl<'a> Display for IgnoreGroup<'a> {
             if let Some(enabling) = &modifiers.enabling {
                 write_flags(f, enabling)?;
             }
+
             if let Some(disabling) = &modifiers.disabling {
                 write!(f, "-")?;
+
                 write_flags(f, disabling)?;
             }
         }
@@ -321,7 +339,9 @@ fn character_to_string(
             if let Some(peek) = peek.filter(|peek| is_trail_surrogate(peek.value)) {
                 // Lead+Trail
                 let cp = combine_surrogate_pair(cp, peek.value);
+
                 let ch = char::from_u32(cp).expect("Invalid surrogate pair `Character`!");
+
                 return (Cow::Owned(format!("{ch}")), true);
             }
 
@@ -331,6 +351,7 @@ fn character_to_string(
     }
 
     let ch = char::from_u32(cp).expect("Invalid `Character`!");
+
     let result = match this.kind {
         // Not a surrogate, like BMP, or all units in unicode mode
         CharacterKind::Symbol => Cow::Owned(ch.to_string()),
@@ -355,12 +376,14 @@ fn character_to_string(
         CharacterKind::Null => Cow::Borrowed(r"\0"),
         CharacterKind::UnicodeEscape => {
             let hex = &format!("{cp:04X}");
+
             if hex.len() <= 4 {
                 Cow::Owned(format!(r"\u{hex}"))
             } else {
                 Cow::Owned(format!(r"\u{{{hex}}}"))
             }
         }
+
         CharacterKind::HexadecimalEscape => Cow::Owned(format!(r"\x{cp:02X}")),
         CharacterKind::Octal1 => Cow::Owned(format!(r"\{cp:o}")),
         CharacterKind::Octal2 => Cow::Owned(format!(r"\{cp:02o}")),
@@ -395,6 +418,7 @@ where
     D: fmt::Display,
 {
     let sep = sep.as_ref();
+
     let iter = &mut items.into_iter().peekable();
 
     if let Some(first) = next(iter) {
@@ -411,6 +435,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::{LiteralParser, Options};
+
     use oxc_allocator::Allocator;
 
     type Case<'a> = (
@@ -554,6 +579,7 @@ mod test {
             let (left_slash, right_slash) = (input.find('/').unwrap(), input.rfind('/').unwrap());
 
             let pattern = &input[left_slash + 1..right_slash];
+
             let flags = &input[right_slash + 1..];
 
             let actual = LiteralParser::new(allocator, pattern, Some(flags), Options::default())
@@ -561,6 +587,7 @@ mod test {
                 .unwrap();
 
             let expect = output.unwrap_or(input);
+
             assert_eq!(expect, format!("/{actual}/{flags}")); // This uses `Display` impls
         }
     }

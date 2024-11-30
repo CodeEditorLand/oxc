@@ -45,6 +45,7 @@ impl Rule for NoProto {
         let AstKind::MemberExpression(member_expression) = node.kind() else {
             return;
         };
+
         if let Some(static_property_name) = member_expression.static_property_name() {
             if static_property_name == "__proto__" {
                 ctx.diagnostic(no_proto_diagnostic(Span::new(

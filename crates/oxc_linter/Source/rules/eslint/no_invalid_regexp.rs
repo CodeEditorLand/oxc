@@ -74,6 +74,7 @@ impl Rule for NoInvalidRegexp {
             AstKind::NewExpression(expr) if expr.callee.is_specific_id("RegExp") => {
                 parse_arguments_to_check(expr.arguments.first(), expr.arguments.get(1))
             }
+
             AstKind::CallExpression(expr) if expr.callee.is_specific_id("RegExp") => {
                 parse_arguments_to_check(expr.arguments.first(), expr.arguments.get(1))
             }
@@ -97,6 +98,7 @@ impl Rule for NoInvalidRegexp {
                 flags_span.source_text(ctx.source_text()).trim_matches('\'').trim_matches('"');
 
             let mut unique_flags = FxHashSet::default();
+
             for (idx, ch) in flags_text.char_indices() {
                 #[allow(clippy::cast_possible_truncation)]
                 let start = flags_span.start + 1 + idx as u32;
@@ -107,13 +109,16 @@ impl Rule for NoInvalidRegexp {
                         return ctx
                             .diagnostic(invalid_unicode_flags_diagnostic(Span::new(start, start)));
                     }
+
                     u_flag_found = true;
                 }
+
                 if ch == 'v' {
                     if u_flag_found {
                         return ctx
                             .diagnostic(invalid_unicode_flags_diagnostic(Span::new(start, start)));
                     }
+
                     v_flag_found = true;
                 }
 
@@ -135,6 +140,7 @@ impl Rule for NoInvalidRegexp {
         // Pattern check is skipped when 1st argument is NOT a `StringLiteral`
         // e.g. `new RegExp(var)`, `RegExp("str" + var)`
         let allocator = Allocator::default();
+
         if let Some(pattern_span) = pattern_arg {
             let pattern_text = pattern_span.source_text(ctx.source_text());
 
@@ -153,6 +159,7 @@ impl Rule for NoInvalidRegexp {
             .parse()
             {
                 Ok(_) => {}
+
                 Err(diagnostic) => ctx.diagnostic(diagnostic),
             }
         }

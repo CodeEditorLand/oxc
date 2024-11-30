@@ -17,6 +17,7 @@ pub trait VisitMut<'a>: Sized {
 
 	#[allow(unused_variables)]
 	fn enter_scope(&mut self, flags:ScopeFlags) {}
+
 	fn leave_scope(&mut self) {}
 
 	fn visit_program(&mut self, program:&mut Program<'a>) { walk_program_mut(self, program); }
@@ -786,20 +787,27 @@ pub mod walk_mut {
 
 	pub fn walk_program_mut<'a, V:VisitMut<'a>>(visitor:&mut V, program:&mut Program<'a>) {
 		let kind = AstType::Program;
+
 		visitor.enter_scope({
 			let mut flags = ScopeFlags::Top;
+
 			if program.is_strict() {
 				flags |= ScopeFlags::StrictMode;
 			}
+
 			flags
 		});
+
 		visitor.enter_node(kind);
+
 		for directive in program.directives.iter_mut() {
 			visitor.visit_directive(directive);
 		}
+
 		visitor.visit_statements(&mut program.body);
 
 		visitor.leave_node(kind);
+
 		visitor.leave_scope();
 	}
 
@@ -847,10 +855,15 @@ pub mod walk_mut {
 		stmt:&mut BlockStatement<'a>,
 	) {
 		let kind = AstType::BlockStatement;
+
 		visitor.enter_scope(ScopeFlags::empty());
+
 		visitor.enter_node(kind);
+
 		visitor.visit_statements(&mut stmt.body);
+
 		visitor.leave_node(kind);
+
 		visitor.leave_scope();
 	}
 
@@ -859,10 +872,13 @@ pub mod walk_mut {
 		stmt:&mut BreakStatement<'a>,
 	) {
 		let kind = AstType::BreakStatement;
+
 		visitor.enter_node(kind);
+
 		if let Some(break_target) = &mut stmt.label {
 			visitor.visit_label_identifier(break_target);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -871,10 +887,13 @@ pub mod walk_mut {
 		stmt:&mut ContinueStatement<'a>,
 	) {
 		let kind = AstType::ContinueStatement;
+
 		visitor.enter_node(kind);
+
 		if let Some(continue_target) = &mut stmt.label {
 			visitor.visit_label_identifier(continue_target);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -883,7 +902,9 @@ pub mod walk_mut {
 		_stmt:&mut DebuggerStatement,
 	) {
 		let kind = AstType::DebuggerStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -892,15 +913,21 @@ pub mod walk_mut {
 		stmt:&mut DoWhileStatement<'a>,
 	) {
 		let kind = AstType::DoWhileStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_statement(&mut stmt.body);
+
 		visitor.visit_expression(&mut stmt.test);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_empty_statement_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _stmt:&mut EmptyStatement) {
 		let kind = AstType::EmptyStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -909,30 +936,42 @@ pub mod walk_mut {
 		stmt:&mut ExpressionStatement<'a>,
 	) {
 		let kind = AstType::ExpressionStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut stmt.expression);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_for_statement_mut<'a, V:VisitMut<'a>>(visitor:&mut V, stmt:&mut ForStatement<'a>) {
 		let kind = AstType::ForStatement;
+
 		let is_lexical_declaration =
 			stmt.init.as_ref().is_some_and(ForStatementInit::is_lexical_declaration);
+
 		if is_lexical_declaration {
 			visitor.enter_scope(ScopeFlags::empty());
 		}
+
 		visitor.enter_node(kind);
+
 		if let Some(init) = &mut stmt.init {
 			visitor.visit_for_statement_init(init);
 		}
+
 		if let Some(test) = &mut stmt.test {
 			visitor.visit_expression(test);
 		}
+
 		if let Some(update) = &mut stmt.update {
 			visitor.visit_expression(update);
 		}
+
 		visitor.visit_statement(&mut stmt.body);
+
 		visitor.leave_node(kind);
+
 		if is_lexical_declaration {
 			visitor.leave_scope();
 		}
@@ -943,7 +982,9 @@ pub mod walk_mut {
 		init:&mut ForStatementInit<'a>,
 	) {
 		let kind = AstType::ForStatementInit;
+
 		visitor.enter_node(kind);
+
 		match init {
 			ForStatementInit::VariableDeclaration(decl) => {
 				visitor.visit_variable_declaration(decl);
@@ -955,6 +996,7 @@ pub mod walk_mut {
 				visitor.visit_using_declaration(decl);
 			},
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -963,15 +1005,23 @@ pub mod walk_mut {
 		stmt:&mut ForInStatement<'a>,
 	) {
 		let kind = AstType::ForInStatement;
+
 		let is_lexical_declaration = stmt.left.is_lexical_declaration();
+
 		if is_lexical_declaration {
 			visitor.enter_scope(ScopeFlags::empty());
 		}
+
 		visitor.enter_node(kind);
+
 		visitor.visit_for_statement_left(&mut stmt.left);
+
 		visitor.visit_expression(&mut stmt.right);
+
 		visitor.visit_statement(&mut stmt.body);
+
 		visitor.leave_node(kind);
+
 		if is_lexical_declaration {
 			visitor.leave_scope();
 		}
@@ -982,15 +1032,23 @@ pub mod walk_mut {
 		stmt:&mut ForOfStatement<'a>,
 	) {
 		let kind = AstType::ForOfStatement;
+
 		let is_lexical_declaration = stmt.left.is_lexical_declaration();
+
 		if is_lexical_declaration {
 			visitor.enter_scope(ScopeFlags::empty());
 		}
+
 		visitor.enter_node(kind);
+
 		visitor.visit_for_statement_left(&mut stmt.left);
+
 		visitor.visit_expression(&mut stmt.right);
+
 		visitor.visit_statement(&mut stmt.body);
+
 		visitor.leave_node(kind);
+
 		if is_lexical_declaration {
 			visitor.leave_scope();
 		}
@@ -1015,12 +1073,17 @@ pub mod walk_mut {
 
 	pub fn walk_if_statement_mut<'a, V:VisitMut<'a>>(visitor:&mut V, stmt:&mut IfStatement<'a>) {
 		let kind = AstType::IfStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut stmt.test);
+
 		visitor.visit_statement(&mut stmt.consequent);
+
 		if let Some(alternate) = &mut stmt.alternate {
 			visitor.visit_statement(alternate);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1029,9 +1092,13 @@ pub mod walk_mut {
 		stmt:&mut LabeledStatement<'a>,
 	) {
 		let kind = AstType::LabeledStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_label_identifier(&mut stmt.label);
+
 		visitor.visit_statement(&mut stmt.body);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1040,10 +1107,13 @@ pub mod walk_mut {
 		stmt:&mut ReturnStatement<'a>,
 	) {
 		let kind = AstType::ReturnStatement;
+
 		visitor.enter_node(kind);
+
 		if let Some(arg) = &mut stmt.argument {
 			visitor.visit_expression(arg);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1052,23 +1122,33 @@ pub mod walk_mut {
 		stmt:&mut SwitchStatement<'a>,
 	) {
 		let kind = AstType::SwitchStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut stmt.discriminant);
+
 		visitor.enter_scope(ScopeFlags::empty());
+
 		for case in stmt.cases.iter_mut() {
 			visitor.visit_switch_case(case);
 		}
+
 		visitor.leave_scope();
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_switch_case_mut<'a, V:VisitMut<'a>>(visitor:&mut V, case:&mut SwitchCase<'a>) {
 		let kind = AstType::SwitchCase;
+
 		visitor.enter_node(kind);
+
 		if let Some(expr) = &mut case.test {
 			visitor.visit_expression(expr);
 		}
+
 		visitor.visit_statements(&mut case.consequent);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1077,33 +1157,47 @@ pub mod walk_mut {
 		stmt:&mut ThrowStatement<'a>,
 	) {
 		let kind = AstType::ThrowStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut stmt.argument);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_try_statement_mut<'a, V:VisitMut<'a>>(visitor:&mut V, stmt:&mut TryStatement<'a>) {
 		let kind = AstType::TryStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_block_statement(&mut stmt.block);
+
 		if let Some(handler) = &mut stmt.handler {
 			visitor.visit_catch_clause(handler);
 		}
+
 		if let Some(finalizer) = &mut stmt.finalizer {
 			visitor.visit_finally_clause(finalizer);
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_catch_clause_mut<'a, V:VisitMut<'a>>(visitor:&mut V, clause:&mut CatchClause<'a>) {
 		let kind = AstType::CatchClause;
+
 		visitor.enter_scope(ScopeFlags::empty());
+
 		visitor.enter_node(kind);
+
 		if let Some(param) = &mut clause.param {
 			visitor.visit_catch_parameter(param);
 		}
+
 		visitor.visit_statements(&mut clause.body.body);
+
 		visitor.leave_node(kind);
+
 		visitor.leave_scope();
 	}
 
@@ -1112,8 +1206,11 @@ pub mod walk_mut {
 		param:&mut CatchParameter<'a>,
 	) {
 		let kind = AstType::CatchParameter;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_pattern(&mut param.pattern);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1122,10 +1219,15 @@ pub mod walk_mut {
 		clause:&mut BlockStatement<'a>,
 	) {
 		let kind = AstType::FinallyClause;
+
 		visitor.enter_scope(ScopeFlags::empty());
+
 		visitor.enter_node(kind);
+
 		visitor.visit_statements(&mut clause.body);
+
 		visitor.leave_node(kind);
+
 		visitor.leave_scope();
 	}
 
@@ -1134,9 +1236,13 @@ pub mod walk_mut {
 		stmt:&mut WhileStatement<'a>,
 	) {
 		let kind = AstType::WhileStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut stmt.test);
+
 		visitor.visit_statement(&mut stmt.body);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1145,16 +1251,23 @@ pub mod walk_mut {
 		stmt:&mut WithStatement<'a>,
 	) {
 		let kind = AstType::WithStatement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut stmt.object);
+
 		visitor.visit_statement(&mut stmt.body);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_directive_mut<'a, V:VisitMut<'a>>(visitor:&mut V, directive:&mut Directive<'a>) {
 		let kind = AstType::Directive;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_string_literal(&mut directive.expression);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1165,10 +1278,13 @@ pub mod walk_mut {
 		decl:&mut VariableDeclaration<'a>,
 	) {
 		let kind = AstType::VariableDeclaration;
+
 		visitor.enter_node(kind);
+
 		for declarator in decl.declarations.iter_mut() {
 			visitor.visit_variable_declarator(declarator);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1177,11 +1293,15 @@ pub mod walk_mut {
 		declarator:&mut VariableDeclarator<'a>,
 	) {
 		let kind = AstType::VariableDeclarator;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_pattern(&mut declarator.id);
+
 		if let Some(init) = &mut declarator.init {
 			visitor.visit_expression(init);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1190,10 +1310,13 @@ pub mod walk_mut {
 		declaration:&mut UsingDeclaration<'a>,
 	) {
 		let kind = AstType::UsingDeclaration;
+
 		visitor.enter_node(kind);
+
 		for decl in declaration.declarations.iter_mut() {
 			visitor.visit_variable_declarator(decl);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1205,38 +1328,53 @@ pub mod walk_mut {
 		flags:Option<ScopeFlags>,
 	) {
 		let kind = AstType::Function;
+
 		visitor.enter_scope({
 			let mut flags = flags.unwrap_or(ScopeFlags::empty()) | ScopeFlags::Function;
+
 			if func.is_strict() {
 				flags |= ScopeFlags::StrictMode;
 			}
+
 			flags
 		});
+
 		visitor.enter_node(kind);
+
 		if let Some(ident) = &mut func.id {
 			visitor.visit_binding_identifier(ident);
 		}
+
 		visitor.visit_formal_parameters(&mut func.params);
+
 		if let Some(body) = &mut func.body {
 			visitor.visit_function_body(body);
 		}
+
 		if let Some(parameters) = &mut func.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
+
 		if let Some(annotation) = &mut func.return_type {
 			visitor.visit_ts_type_annotation(annotation);
 		}
+
 		visitor.leave_node(kind);
+
 		visitor.leave_scope();
 	}
 
 	pub fn walk_function_body_mut<'a, V:VisitMut<'a>>(visitor:&mut V, body:&mut FunctionBody<'a>) {
 		let kind = AstType::FunctionBody;
+
 		visitor.enter_node(kind);
+
 		for directive in body.directives.iter_mut() {
 			visitor.visit_directive(directive);
 		}
+
 		visitor.visit_statements(&mut body.statements);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1245,13 +1383,17 @@ pub mod walk_mut {
 		params:&mut FormalParameters<'a>,
 	) {
 		let kind = AstType::FormalParameters;
+
 		visitor.enter_node(kind);
+
 		for param in params.items.iter_mut() {
 			visitor.visit_formal_parameter(param);
 		}
+
 		if let Some(rest) = &mut params.rest {
 			visitor.visit_rest_element(rest);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1260,11 +1402,15 @@ pub mod walk_mut {
 		param:&mut FormalParameter<'a>,
 	) {
 		let kind = AstType::FormalParameter;
+
 		visitor.enter_node(kind);
+
 		for decorator in param.decorators.iter_mut() {
 			visitor.visit_decorator(decorator);
 		}
+
 		visitor.visit_binding_pattern(&mut param.pattern);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1272,8 +1418,11 @@ pub mod walk_mut {
 
 	pub fn walk_decorator_mut<'a, V:VisitMut<'a>>(visitor:&mut V, decorator:&mut Decorator<'a>) {
 		let kind = AstType::Decorator;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut decorator.expression);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1286,6 +1435,7 @@ pub mod walk_mut {
 
 		// FIXME(don): Should we enter a scope when visiting class declarations?
 		let is_class_expr = class.r#type == ClassType::ClassExpression;
+
 		if is_class_expr {
 			// Class expressions create a temporary scope with the class name as
 			// its only variable E.g., `let c = class A { foo() {
@@ -1294,9 +1444,11 @@ pub mod walk_mut {
 		}
 
 		visitor.enter_node(kind);
+
 		if let Some(id) = &mut class.id {
 			visitor.visit_binding_identifier(id);
 		}
+
 		if let Some(parameters) = &mut class.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
@@ -1304,11 +1456,15 @@ pub mod walk_mut {
 		if let Some(super_class) = &mut class.super_class {
 			visitor.visit_class_heritage(super_class);
 		}
+
 		if let Some(super_parameters) = &mut class.super_type_parameters {
 			visitor.visit_ts_type_parameter_instantiation(super_parameters);
 		}
+
 		visitor.visit_class_body(&mut class.body);
+
 		visitor.leave_node(kind);
+
 		if is_class_expr {
 			visitor.leave_scope();
 		}
@@ -1316,8 +1472,11 @@ pub mod walk_mut {
 
 	pub fn walk_class_heritage_mut<'a, V:VisitMut<'a>>(visitor:&mut V, expr:&mut Expression<'a>) {
 		let kind = AstType::ClassHeritage;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(expr);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1339,10 +1498,15 @@ pub mod walk_mut {
 
 	pub fn walk_static_block_mut<'a, V:VisitMut<'a>>(visitor:&mut V, block:&mut StaticBlock<'a>) {
 		let kind = AstType::StaticBlock;
+
 		visitor.enter_scope(ScopeFlags::ClassStaticBlock);
+
 		visitor.enter_node(kind);
+
 		visitor.visit_statements(&mut block.body);
+
 		visitor.leave_node(kind);
+
 		visitor.leave_scope();
 	}
 
@@ -1351,7 +1515,9 @@ pub mod walk_mut {
 		def:&mut MethodDefinition<'a>,
 	) {
 		let kind = AstType::MethodDefinition;
+
 		visitor.enter_node(kind);
+
 		for decorator in def.decorators.iter_mut() {
 			visitor.visit_decorator(decorator);
 		}
@@ -1362,8 +1528,11 @@ pub mod walk_mut {
 			MethodDefinitionKind::Constructor => ScopeFlags::Constructor,
 			MethodDefinitionKind::Method => ScopeFlags::empty(),
 		};
+
 		visitor.visit_property_key(&mut def.key);
+
 		visitor.visit_function(&mut def.value, Some(flags));
+
 		visitor.leave_node(kind);
 	}
 
@@ -1372,17 +1541,23 @@ pub mod walk_mut {
 		def:&mut PropertyDefinition<'a>,
 	) {
 		let kind = AstType::PropertyDefinition;
+
 		visitor.enter_node(kind);
+
 		for decorator in def.decorators.iter_mut() {
 			visitor.visit_decorator(decorator);
 		}
+
 		visitor.visit_property_key(&mut def.key);
+
 		if let Some(value) = &mut def.value {
 			visitor.visit_expression(value);
 		}
+
 		if let Some(annotation) = &mut def.type_annotation {
 			visitor.visit_ts_type_annotation(annotation);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1446,7 +1621,9 @@ pub mod walk_mut {
 
 	pub fn walk_meta_property_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _meta:&mut MetaProperty<'a>) {
 		let kind = AstType::MetaProperty;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1455,10 +1632,13 @@ pub mod walk_mut {
 		expr:&mut ArrayExpression<'a>,
 	) {
 		let kind = AstType::ArrayExpression;
+
 		visitor.enter_node(kind);
+
 		for elem in expr.elements.iter_mut() {
 			visitor.visit_array_expression_element(elem);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1467,7 +1647,9 @@ pub mod walk_mut {
 		arg:&mut ArrayExpressionElement<'a>,
 	) {
 		let kind = AstType::ArrayExpressionElement;
+
 		visitor.enter_node(kind);
+
 		match arg {
 			ArrayExpressionElement::SpreadElement(spread) => visitor.visit_spread_element(spread),
 			match_expression!(ArrayExpressionElement) => {
@@ -1475,16 +1657,20 @@ pub mod walk_mut {
 			},
 			ArrayExpressionElement::Elision(elision) => visitor.visit_elision(elision),
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_argument_mut<'a, V:VisitMut<'a>>(visitor:&mut V, arg:&mut Argument<'a>) {
 		let kind = AstType::Argument;
+
 		visitor.enter_node(kind);
+
 		match arg {
 			Argument::SpreadElement(spread) => visitor.visit_spread_element(spread),
 			match_expression!(Argument) => visitor.visit_expression(arg.to_expression_mut()),
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1493,8 +1679,11 @@ pub mod walk_mut {
 		elem:&mut SpreadElement<'a>,
 	) {
 		let kind = AstType::SpreadElement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut elem.argument);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1503,14 +1692,19 @@ pub mod walk_mut {
 		expr:&mut Expression<'a>,
 	) {
 		let kind = AstType::ExpressionArrayElement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(expr);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_elision_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _elision:&mut Elision) {
 		let kind = AstType::Elision;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1519,9 +1713,13 @@ pub mod walk_mut {
 		expr:&mut AssignmentExpression<'a>,
 	) {
 		let kind = AstType::AssignmentExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_assignment_target(&mut expr.left);
+
 		visitor.visit_expression(&mut expr.right);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1530,14 +1728,21 @@ pub mod walk_mut {
 		expr:&mut ArrowFunctionExpression<'a>,
 	) {
 		let kind = AstType::ArrowFunctionExpression;
+
 		visitor.enter_scope(ScopeFlags::Function | ScopeFlags::Arrow);
+
 		visitor.enter_node(kind);
+
 		visitor.visit_formal_parameters(&mut expr.params);
+
 		visitor.visit_function_body(&mut expr.body);
+
 		if let Some(parameters) = &mut expr.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
+
 		visitor.leave_node(kind);
+
 		visitor.leave_scope();
 	}
 
@@ -1546,8 +1751,11 @@ pub mod walk_mut {
 		expr:&mut AwaitExpression<'a>,
 	) {
 		let kind = AstType::AwaitExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.argument);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1556,9 +1764,13 @@ pub mod walk_mut {
 		expr:&mut BinaryExpression<'a>,
 	) {
 		let kind = AstType::BinaryExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.left);
+
 		visitor.visit_expression(&mut expr.right);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1567,14 +1779,19 @@ pub mod walk_mut {
 		expr:&mut CallExpression<'a>,
 	) {
 		let kind = AstType::CallExpression;
+
 		visitor.enter_node(kind);
+
 		for arg in expr.arguments.iter_mut() {
 			visitor.visit_argument(arg);
 		}
+
 		visitor.visit_expression(&mut expr.callee);
+
 		if let Some(parameters) = &mut expr.type_parameters {
 			visitor.visit_ts_type_parameter_instantiation(parameters);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1583,8 +1800,11 @@ pub mod walk_mut {
 		expr:&mut ChainExpression<'a>,
 	) {
 		let kind = AstType::ChainExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_chain_element(&mut expr.expression);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1602,10 +1822,15 @@ pub mod walk_mut {
 		expr:&mut ConditionalExpression<'a>,
 	) {
 		let kind = AstType::ConditionalExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.test);
+
 		visitor.visit_expression(&mut expr.consequent);
+
 		visitor.visit_expression(&mut expr.alternate);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1614,6 +1839,7 @@ pub mod walk_mut {
 		expr:&mut ImportExpression<'a>,
 	) {
 		visitor.visit_expression(&mut expr.source);
+
 		for arg in expr.arguments.iter_mut() {
 			visitor.visit_expression(arg);
 		}
@@ -1624,9 +1850,13 @@ pub mod walk_mut {
 		expr:&mut LogicalExpression<'a>,
 	) {
 		let kind = AstType::LogicalExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.left);
+
 		visitor.visit_expression(&mut expr.right);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1635,7 +1865,9 @@ pub mod walk_mut {
 		expr:&mut MemberExpression<'a>,
 	) {
 		let kind = AstType::MemberExpression;
+
 		visitor.enter_node(kind);
+
 		match expr {
 			MemberExpression::ComputedMemberExpression(expr) => {
 				visitor.visit_computed_member_expression(expr);
@@ -1647,6 +1879,7 @@ pub mod walk_mut {
 				visitor.visit_private_field_expression(expr);
 			},
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1655,6 +1888,7 @@ pub mod walk_mut {
 		expr:&mut ComputedMemberExpression<'a>,
 	) {
 		visitor.visit_expression(&mut expr.object);
+
 		visitor.visit_expression(&mut expr.expression);
 	}
 
@@ -1663,6 +1897,7 @@ pub mod walk_mut {
 		expr:&mut StaticMemberExpression<'a>,
 	) {
 		visitor.visit_expression(&mut expr.object);
+
 		visitor.visit_identifier_name(&mut expr.property);
 	}
 
@@ -1671,6 +1906,7 @@ pub mod walk_mut {
 		expr:&mut PrivateFieldExpression<'a>,
 	) {
 		visitor.visit_expression(&mut expr.object);
+
 		visitor.visit_private_identifier(&mut expr.field);
 	}
 
@@ -1679,14 +1915,19 @@ pub mod walk_mut {
 		expr:&mut NewExpression<'a>,
 	) {
 		let kind = AstType::NewExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.callee);
+
 		if let Some(parameters) = &mut expr.type_parameters {
 			visitor.visit_ts_type_parameter_instantiation(parameters);
 		}
+
 		for arg in expr.arguments.iter_mut() {
 			visitor.visit_argument(arg);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1695,10 +1936,13 @@ pub mod walk_mut {
 		expr:&mut ObjectExpression<'a>,
 	) {
 		let kind = AstType::ObjectExpression;
+
 		visitor.enter_node(kind);
+
 		for prop in expr.properties.iter_mut() {
 			visitor.visit_object_property_kind(prop);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1717,23 +1961,31 @@ pub mod walk_mut {
 		prop:&mut ObjectProperty<'a>,
 	) {
 		let kind = AstType::ObjectProperty;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_property_key(&mut prop.key);
+
 		visitor.visit_expression(&mut prop.value);
+
 		if let Some(init) = &mut prop.init {
 			visitor.visit_expression(init);
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_property_key_mut<'a, V:VisitMut<'a>>(visitor:&mut V, key:&mut PropertyKey<'a>) {
 		let kind = AstType::PropertyKey;
+
 		visitor.enter_node(kind);
+
 		match key {
 			PropertyKey::StaticIdentifier(ident) => visitor.visit_identifier_name(ident),
 			PropertyKey::PrivateIdentifier(ident) => visitor.visit_private_identifier(ident),
 			match_expression!(PropertyKey) => visitor.visit_expression(key.to_expression_mut()),
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1742,8 +1994,11 @@ pub mod walk_mut {
 		expr:&mut ParenthesizedExpression<'a>,
 	) {
 		let kind = AstType::ParenthesizedExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.expression);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1752,6 +2007,7 @@ pub mod walk_mut {
 		expr:&mut PrivateInExpression<'a>,
 	) {
 		visitor.visit_private_identifier(&mut expr.left);
+
 		visitor.visit_expression(&mut expr.right);
 	}
 
@@ -1760,10 +2016,13 @@ pub mod walk_mut {
 		expr:&mut SequenceExpression<'a>,
 	) {
 		let kind = AstType::SequenceExpression;
+
 		visitor.enter_node(kind);
+
 		for expr in expr.expressions.iter_mut() {
 			visitor.visit_expression(expr);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1772,15 +2031,21 @@ pub mod walk_mut {
 		expr:&mut TaggedTemplateExpression<'a>,
 	) {
 		let kind = AstType::TaggedTemplateExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.tag);
+
 		visitor.visit_template_literal(&mut expr.quasi);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_this_expression_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _expr:&mut ThisExpression) {
 		let kind = AstType::ThisExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1789,8 +2054,11 @@ pub mod walk_mut {
 		expr:&mut UnaryExpression<'a>,
 	) {
 		let kind = AstType::UnaryExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.argument);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1799,8 +2067,11 @@ pub mod walk_mut {
 		expr:&mut UpdateExpression<'a>,
 	) {
 		let kind = AstType::UpdateExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_simple_assignment_target(&mut expr.argument);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1809,16 +2080,21 @@ pub mod walk_mut {
 		expr:&mut YieldExpression<'a>,
 	) {
 		let kind = AstType::YieldExpression;
+
 		visitor.enter_node(kind);
+
 		if let Some(argument) = &mut expr.argument {
 			visitor.visit_expression(argument);
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_super_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _expr:&mut Super) {
 		let kind = AstType::Super;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1827,7 +2103,9 @@ pub mod walk_mut {
 		target:&mut AssignmentTarget<'a>,
 	) {
 		let kind = AstType::AssignmentTarget;
+
 		visitor.enter_node(kind);
+
 		match target {
 			match_simple_assignment_target!(AssignmentTarget) => {
 				visitor.visit_simple_assignment_target(target.to_simple_assignment_target_mut());
@@ -1836,6 +2114,7 @@ pub mod walk_mut {
 				visitor.visit_assignment_target_pattern(target.to_assignment_target_pattern_mut());
 			},
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1844,7 +2123,9 @@ pub mod walk_mut {
 		target:&mut SimpleAssignmentTarget<'a>,
 	) {
 		let kind = AstType::SimpleAssignmentTarget;
+
 		visitor.enter_node(kind);
+
 		match target {
 			SimpleAssignmentTarget::AssignmentTargetIdentifier(ident) => {
 				visitor.visit_identifier_reference(ident);
@@ -1868,6 +2149,7 @@ pub mod walk_mut {
 				visitor.visit_expression(&mut expr.expression);
 			},
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1892,6 +2174,7 @@ pub mod walk_mut {
 		for element in target.elements.iter_mut().flatten() {
 			visitor.visit_assignment_target_maybe_default(element);
 		}
+
 		if let Some(target) = &mut target.rest {
 			visitor.visit_assignment_target_rest(target);
 		}
@@ -1916,9 +2199,13 @@ pub mod walk_mut {
 		target:&mut AssignmentTargetWithDefault<'a>,
 	) {
 		let kind = AstType::AssignmentTargetWithDefault;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_assignment_target(&mut target.binding);
+
 		visitor.visit_expression(&mut target.init);
+
 		visitor.leave_node(kind);
 	}
 
@@ -1929,6 +2216,7 @@ pub mod walk_mut {
 		for property in target.properties.iter_mut() {
 			visitor.visit_assignment_target_property(property);
 		}
+
 		if let Some(target) = &mut target.rest {
 			visitor.visit_assignment_target_rest(target);
 		}
@@ -1953,6 +2241,7 @@ pub mod walk_mut {
 		ident:&mut AssignmentTargetPropertyIdentifier<'a>,
 	) {
 		visitor.visit_identifier_reference(&mut ident.binding);
+
 		if let Some(expr) = &mut ident.init {
 			visitor.visit_expression(expr);
 		}
@@ -1963,6 +2252,7 @@ pub mod walk_mut {
 		property:&mut AssignmentTargetPropertyProperty<'a>,
 	) {
 		visitor.visit_property_key(&mut property.name);
+
 		visitor.visit_assignment_target_maybe_default(&mut property.binding);
 	}
 
@@ -1977,14 +2267,19 @@ pub mod walk_mut {
 
 	pub fn walk_jsx_element_mut<'a, V:VisitMut<'a>>(visitor:&mut V, elem:&mut JSXElement<'a>) {
 		let kind = AstType::JSXElement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_jsx_opening_element(&mut elem.opening_element);
+
 		for child in elem.children.iter_mut() {
 			visitor.visit_jsx_child(child);
 		}
+
 		if let Some(closing_elem) = &mut elem.closing_element {
 			visitor.visit_jsx_closing_element(closing_elem);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -1993,12 +2288,15 @@ pub mod walk_mut {
 		elem:&mut JSXOpeningElement<'a>,
 	) {
 		let kind = AstType::JSXOpeningElement;
+
 		visitor.enter_node(kind);
 
 		visitor.visit_jsx_element_name(&mut elem.name);
+
 		for attribute in elem.attributes.iter_mut() {
 			visitor.visit_jsx_attribute_item(attribute);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2007,8 +2305,11 @@ pub mod walk_mut {
 		elem:&mut JSXClosingElement<'a>,
 	) {
 		let kind = AstType::JSXClosingElement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_jsx_element_name(&mut elem.name);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2017,12 +2318,15 @@ pub mod walk_mut {
 		name:&mut JSXElementName<'a>,
 	) {
 		let kind = AstType::JSXElementName;
+
 		visitor.enter_node(kind);
+
 		match name {
 			JSXElementName::Identifier(ident) => visitor.visit_jsx_identifier(ident),
 			JSXElementName::MemberExpression(expr) => visitor.visit_jsx_member_expression(expr),
 			JSXElementName::NamespacedName(name) => visitor.visit_jsx_namespaced_name(name),
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2031,7 +2335,9 @@ pub mod walk_mut {
 		_ident:&mut JSXIdentifier<'a>,
 	) {
 		let kind = AstType::JSXIdentifier;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2040,9 +2346,13 @@ pub mod walk_mut {
 		expr:&mut JSXMemberExpression<'a>,
 	) {
 		let kind = AstType::JSXMemberExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_jsx_member_expression_object(&mut expr.object);
+
 		visitor.visit_jsx_identifier(&mut expr.property);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2051,13 +2361,16 @@ pub mod walk_mut {
 		expr:&mut JSXMemberExpressionObject<'a>,
 	) {
 		let kind = AstType::JSXMemberExpressionObject;
+
 		visitor.enter_node(kind);
+
 		match expr {
 			JSXMemberExpressionObject::Identifier(ident) => visitor.visit_jsx_identifier(ident),
 			JSXMemberExpressionObject::MemberExpression(expr) => {
 				visitor.visit_jsx_member_expression(expr);
 			},
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2066,9 +2379,13 @@ pub mod walk_mut {
 		name:&mut JSXNamespacedName<'a>,
 	) {
 		let kind = AstType::JSXNamespacedName;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_jsx_identifier(&mut name.namespace);
+
 		visitor.visit_jsx_identifier(&mut name.property);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2077,13 +2394,16 @@ pub mod walk_mut {
 		item:&mut JSXAttributeItem<'a>,
 	) {
 		let kind = AstType::JSXAttributeItem;
+
 		visitor.enter_node(kind);
+
 		match item {
 			JSXAttributeItem::Attribute(attribute) => visitor.visit_jsx_attribute(attribute),
 			JSXAttributeItem::SpreadAttribute(attribute) => {
 				visitor.visit_jsx_spread_attribute(attribute);
 			},
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2122,8 +2442,11 @@ pub mod walk_mut {
 		expr:&mut JSXExpressionContainer<'a>,
 	) {
 		let kind = AstType::JSXExpressionContainer;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_jsx_expression(&mut expr.expression);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2139,10 +2462,13 @@ pub mod walk_mut {
 
 	pub fn walk_jsx_fragment_mut<'a, V:VisitMut<'a>>(visitor:&mut V, elem:&mut JSXFragment<'a>) {
 		let kind = AstType::JSXFragment;
+
 		visitor.enter_node(kind);
+
 		for child in elem.children.iter_mut() {
 			visitor.visit_jsx_child(child);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2165,7 +2491,9 @@ pub mod walk_mut {
 
 	pub fn walk_jsx_text_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _child:&JSXText<'a>) {
 		let kind = AstType::JSXText;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2183,6 +2511,7 @@ pub mod walk_mut {
 			BindingPatternKind::ArrayPattern(pat) => visitor.visit_array_pattern(pat),
 			BindingPatternKind::AssignmentPattern(pat) => visitor.visit_assignment_pattern(pat),
 		}
+
 		if let Some(type_annotation) = &mut pat.type_annotation {
 			visitor.visit_ts_type_annotation(type_annotation);
 		}
@@ -2193,19 +2522,25 @@ pub mod walk_mut {
 		_ident:&mut BindingIdentifier<'a>,
 	) {
 		let kind = AstType::BindingIdentifier;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_object_pattern_mut<'a, V:VisitMut<'a>>(visitor:&mut V, pat:&mut ObjectPattern<'a>) {
 		let kind = AstType::ObjectPattern;
+
 		visitor.enter_node(kind);
+
 		for prop in pat.properties.iter_mut() {
 			visitor.visit_binding_property(prop);
 		}
+
 		if let Some(rest) = &mut pat.rest {
 			visitor.visit_rest_element(rest);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2214,18 +2549,23 @@ pub mod walk_mut {
 		prop:&mut BindingProperty<'a>,
 	) {
 		visitor.visit_property_key(&mut prop.key);
+
 		visitor.visit_binding_pattern(&mut prop.value);
 	}
 
 	pub fn walk_array_pattern_mut<'a, V:VisitMut<'a>>(visitor:&mut V, pat:&mut ArrayPattern<'a>) {
 		let kind = AstType::ArrayPattern;
+
 		visitor.enter_node(kind);
+
 		for pat in pat.elements.iter_mut().flatten() {
 			visitor.visit_binding_pattern(pat);
 		}
+
 		if let Some(rest) = &mut pat.rest {
 			visitor.visit_rest_element(rest);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2234,8 +2574,11 @@ pub mod walk_mut {
 		pat:&mut BindingRestElement<'a>,
 	) {
 		let kind = AstType::BindingRestElement;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_pattern(&mut pat.argument);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2244,9 +2587,13 @@ pub mod walk_mut {
 		pat:&mut AssignmentPattern<'a>,
 	) {
 		let kind = AstType::AssignmentPattern;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_pattern(&mut pat.left);
+
 		visitor.visit_expression(&mut pat.right);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2257,7 +2604,9 @@ pub mod walk_mut {
 		_ident:&mut IdentifierReference<'a>,
 	) {
 		let kind = AstType::IdentifierReference;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2266,7 +2615,9 @@ pub mod walk_mut {
 		_ident:&mut PrivateIdentifier<'a>,
 	) {
 		let kind = AstType::PrivateIdentifier;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2275,7 +2626,9 @@ pub mod walk_mut {
 		_ident:&mut LabelIdentifier<'a>,
 	) {
 		let kind = AstType::LabelIdentifier;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2284,7 +2637,9 @@ pub mod walk_mut {
 		_ident:&mut IdentifierName<'a>,
 	) {
 		let kind = AstType::IdentifierName;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2295,19 +2650,25 @@ pub mod walk_mut {
 		_lit:&mut NumericLiteral<'a>,
 	) {
 		let kind = AstType::NumericLiteral;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_boolean_literal_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _lit:&mut BooleanLiteral) {
 		let kind = AstType::BooleanLiteral;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_null_literal_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _lit:&mut NullLiteral) {
 		let kind = AstType::NullLiteral;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2316,7 +2677,9 @@ pub mod walk_mut {
 		_lit:&mut BigIntLiteral<'a>,
 	) {
 		let kind = AstType::BigIntLiteral;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2325,7 +2688,9 @@ pub mod walk_mut {
 		_lit:&mut StringLiteral<'a>,
 	) {
 		let kind = AstType::StringLiteral;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2334,13 +2699,17 @@ pub mod walk_mut {
 		lit:&mut TemplateLiteral<'a>,
 	) {
 		let kind = AstType::TemplateLiteral;
+
 		visitor.enter_node(kind);
+
 		for elem in lit.quasis.iter_mut() {
 			visitor.visit_template_element(elem);
 		}
+
 		for expr in lit.expressions.iter_mut() {
 			visitor.visit_expression(expr);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2349,7 +2718,9 @@ pub mod walk_mut {
 		_lit:&mut RegExpLiteral<'a>,
 	) {
 		let kind = AstType::RegExpLiteral;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2367,7 +2738,9 @@ pub mod walk_mut {
 		decl:&mut ModuleDeclaration<'a>,
 	) {
 		let kind = AstType::ModuleDeclaration;
+
 		visitor.enter_node(kind);
+
 		match decl {
 			ModuleDeclaration::ImportDeclaration(decl) => {
 				visitor.visit_import_declaration(decl);
@@ -2386,6 +2759,7 @@ pub mod walk_mut {
 			},
 			ModuleDeclaration::TSNamespaceExportDeclaration(_) => {},
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2394,16 +2768,21 @@ pub mod walk_mut {
 		decl:&mut ImportDeclaration<'a>,
 	) {
 		let kind = AstType::ImportDeclaration;
+
 		visitor.enter_node(kind);
+
 		if let Some(specifiers) = &mut decl.specifiers {
 			for specifier in specifiers.iter_mut() {
 				visitor.visit_import_declaration_specifier(specifier);
 			}
 		}
+
 		visitor.visit_string_literal(&mut decl.source);
+
 		if let Some(with_clause) = &mut decl.with_clause {
 			visitor.visit_with_clause(with_clause);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2421,6 +2800,7 @@ pub mod walk_mut {
 		attribute:&mut ImportAttribute<'a>,
 	) {
 		visitor.visit_import_attribute_key(&mut attribute.key);
+
 		visitor.visit_string_literal(&mut attribute.value);
 	}
 
@@ -2456,9 +2836,11 @@ pub mod walk_mut {
 		specifier:&mut ImportSpecifier<'a>,
 	) {
 		let kind = AstType::ImportSpecifier;
+
 		visitor.enter_node(kind);
 		// TODO: imported
 		visitor.visit_binding_identifier(&mut specifier.local);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2467,8 +2849,11 @@ pub mod walk_mut {
 		specifier:&mut ImportDefaultSpecifier<'a>,
 	) {
 		let kind = AstType::ImportDefaultSpecifier;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_identifier(&mut specifier.local);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2477,8 +2862,11 @@ pub mod walk_mut {
 		specifier:&mut ImportNamespaceSpecifier<'a>,
 	) {
 		let kind = AstType::ImportNamespaceSpecifier;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_identifier(&mut specifier.local);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2487,8 +2875,11 @@ pub mod walk_mut {
 		decl:&mut ExportAllDeclaration<'a>,
 	) {
 		let kind = AstType::ExportAllDeclaration;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_string_literal(&mut decl.source);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2497,7 +2888,9 @@ pub mod walk_mut {
 		decl:&mut ExportDefaultDeclaration<'a>,
 	) {
 		let kind = AstType::ExportDefaultDeclaration;
+
 		visitor.enter_node(kind);
+
 		match &mut decl.declaration {
 			declaration @ match_expression!(ExportDefaultDeclarationKind) => {
 				visitor.visit_expression(declaration.to_expression_mut());
@@ -2508,6 +2901,7 @@ pub mod walk_mut {
 			ExportDefaultDeclarationKind::ClassDeclaration(class) => visitor.visit_class(class),
 			_ => {},
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2516,34 +2910,47 @@ pub mod walk_mut {
 		decl:&mut ExportNamedDeclaration<'a>,
 	) {
 		let kind = AstType::ExportNamedDeclaration;
+
 		visitor.enter_node(kind);
+
 		if let Some(decl) = &mut decl.declaration {
 			visitor.visit_declaration(decl);
 		}
+
 		if let Some(source) = &mut decl.source {
 			visitor.visit_string_literal(source);
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_enum_member_mut<'a, V:VisitMut<'a>>(visitor:&mut V, member:&mut TSEnumMember<'a>) {
 		let kind = AstType::TSEnumMember;
+
 		visitor.enter_node(kind);
+
 		if let Some(initializer) = &mut member.initializer {
 			visitor.visit_expression(initializer);
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_enum_mut<'a, V:VisitMut<'a>>(visitor:&mut V, decl:&mut TSEnumDeclaration<'a>) {
 		let kind = AstType::TSEnumDeclaration;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_identifier(&mut decl.id);
+
 		visitor.enter_scope(ScopeFlags::empty());
+
 		for member in decl.members.iter_mut() {
 			visitor.visit_enum_member(member);
 		}
+
 		visitor.leave_scope();
+
 		visitor.leave_node(kind);
 	}
 
@@ -2576,9 +2983,13 @@ pub mod walk_mut {
 		decl:&mut TSImportEqualsDeclaration<'a>,
 	) {
 		let kind = AstType::TSImportEqualsDeclaration;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_identifier(&mut decl.id);
+
 		visitor.visit_ts_module_reference(&mut decl.module_reference);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2598,11 +3009,14 @@ pub mod walk_mut {
 
 	pub fn walk_ts_type_name_mut<'a, V:VisitMut<'a>>(visitor:&mut V, name:&mut TSTypeName<'a>) {
 		let kind = AstType::TSTypeName;
+
 		visitor.enter_node(kind);
+
 		match name {
 			TSTypeName::IdentifierReference(ident) => visitor.visit_identifier_reference(ident),
 			TSTypeName::QualifiedName(name) => visitor.visit_ts_qualified_name(name),
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2611,8 +3025,11 @@ pub mod walk_mut {
 		reference:&mut TSExternalModuleReference<'a>,
 	) {
 		let kind = AstType::TSExternalModuleReference;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_string_literal(&mut reference.expression);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2621,9 +3038,13 @@ pub mod walk_mut {
 		name:&mut TSQualifiedName<'a>,
 	) {
 		let kind = AstType::TSQualifiedName;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_ts_type_name(&mut name.left);
+
 		visitor.visit_identifier_name(&mut name.right);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2632,18 +3053,24 @@ pub mod walk_mut {
 		decl:&mut TSModuleDeclaration<'a>,
 	) {
 		let kind = AstType::TSModuleDeclaration;
+
 		visitor.enter_node(kind);
+
 		match &mut decl.id {
 			TSModuleDeclarationName::Identifier(ident) => visitor.visit_identifier_name(ident),
 			TSModuleDeclarationName::StringLiteral(lit) => visitor.visit_string_literal(lit),
 		}
+
 		visitor.enter_scope({
 			let mut flags = ScopeFlags::TsModuleBlock;
+
 			if decl.is_strict() {
 				flags |= ScopeFlags::StrictMode;
 			}
+
 			flags
 		});
+
 		match &mut decl.body {
 			Some(TSModuleDeclarationBody::TSModuleDeclaration(decl)) => {
 				visitor.visit_ts_module_declaration(decl);
@@ -2653,7 +3080,9 @@ pub mod walk_mut {
 			},
 			None => {},
 		}
+
 		visitor.leave_scope();
+
 		visitor.leave_node(kind);
 	}
 
@@ -2662,8 +3091,11 @@ pub mod walk_mut {
 		block:&mut TSModuleBlock<'a>,
 	) {
 		let kind = AstType::TSModuleBlock;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_statements(&mut block.body);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2672,12 +3104,17 @@ pub mod walk_mut {
 		decl:&mut TSTypeAliasDeclaration<'a>,
 	) {
 		let kind = AstType::TSTypeAliasDeclaration;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_identifier(&mut decl.id);
+
 		if let Some(parameters) = &mut decl.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
+
 		visitor.visit_ts_type(&mut decl.type_annotation);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2686,14 +3123,19 @@ pub mod walk_mut {
 		decl:&mut TSInterfaceDeclaration<'a>,
 	) {
 		let kind = AstType::TSInterfaceDeclaration;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_binding_identifier(&mut decl.id);
+
 		if let Some(parameters) = &mut decl.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
+
 		for signature in decl.body.body.iter_mut() {
 			visitor.visit_ts_signature(signature);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2702,9 +3144,13 @@ pub mod walk_mut {
 		expr:&mut TSAsExpression<'a>,
 	) {
 		let kind = AstType::TSAsExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.expression);
+
 		visitor.visit_ts_type(&mut expr.type_annotation);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2713,9 +3159,13 @@ pub mod walk_mut {
 		expr:&mut TSSatisfiesExpression<'a>,
 	) {
 		let kind = AstType::TSSatisfiesExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.expression);
+
 		visitor.visit_ts_type(&mut expr.type_annotation);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2724,8 +3174,11 @@ pub mod walk_mut {
 		expr:&mut TSNonNullExpression<'a>,
 	) {
 		let kind = AstType::TSNonNullExpression;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.expression);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2734,9 +3187,13 @@ pub mod walk_mut {
 		expr:&mut TSTypeAssertion<'a>,
 	) {
 		let kind = AstType::TSTypeAssertion;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_expression(&mut expr.expression);
+
 		visitor.visit_ts_type(&mut expr.type_annotation);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2745,6 +3202,7 @@ pub mod walk_mut {
 		expr:&mut TSInstantiationExpression<'a>,
 	) {
 		visitor.visit_expression(&mut expr.expression);
+
 		visitor.visit_ts_type_parameter_instantiation(&mut expr.type_parameters);
 	}
 
@@ -2753,8 +3211,11 @@ pub mod walk_mut {
 		annotation:&mut TSTypeAnnotation<'a>,
 	) {
 		let kind = AstType::TSTypeAnnotation;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_ts_type(&mut annotation.type_annotation);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2784,10 +3245,13 @@ pub mod walk_mut {
 
 	pub fn walk_ts_type_literal_mut<'a, V:VisitMut<'a>>(visitor:&mut V, ty:&mut TSTypeLiteral<'a>) {
 		let kind = AstType::TSTypeLiteral;
+
 		visitor.enter_node(kind);
+
 		for signature in ty.members.iter_mut() {
 			visitor.visit_ts_signature(signature);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2796,9 +3260,13 @@ pub mod walk_mut {
 		ty:&mut TSIndexedAccessType<'a>,
 	) {
 		let kind = AstType::TSIndexedAccessType;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_ts_type(&mut ty.object_type);
+
 		visitor.visit_ts_type(&mut ty.index_type);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2837,9 +3305,11 @@ pub mod walk_mut {
 
 	pub fn walk_ts_mapped_type_mut<'a, V:VisitMut<'a>>(visitor:&mut V, ty:&mut TSMappedType<'a>) {
 		visitor.visit_ts_type_parameter(&mut ty.type_parameter);
+
 		if let Some(name) = &mut ty.name_type {
 			visitor.visit_ts_type(name);
 		}
+
 		if let Some(type_annotation) = &mut ty.type_annotation {
 			visitor.visit_ts_type(type_annotation);
 		}
@@ -2850,9 +3320,11 @@ pub mod walk_mut {
 		ty:&mut TSFunctionType<'a>,
 	) {
 		visitor.visit_formal_parameters(&mut ty.params);
+
 		if let Some(parameters) = &mut ty.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
+
 		visitor.visit_ts_type_annotation(&mut ty.return_type);
 	}
 
@@ -2861,8 +3333,11 @@ pub mod walk_mut {
 		ty:&mut TSTypeParameter<'a>,
 	) {
 		let kind = AstType::TSTypeParameter;
+
 		visitor.enter_scope(ScopeFlags::empty());
+
 		visitor.enter_node(kind);
+
 		if let Some(constraint) = &mut ty.constraint {
 			visitor.visit_ts_type(constraint);
 		}
@@ -2870,7 +3345,9 @@ pub mod walk_mut {
 		if let Some(default) = &mut ty.default {
 			visitor.visit_ts_type(default);
 		}
+
 		visitor.leave_node(kind);
+
 		visitor.leave_scope();
 	}
 
@@ -2879,10 +3356,13 @@ pub mod walk_mut {
 		ty:&mut TSTypeParameterInstantiation<'a>,
 	) {
 		let kind = AstType::TSTypeParameterInstantiation;
+
 		visitor.enter_node(kind);
+
 		for ts_parameter in ty.params.iter_mut() {
 			visitor.visit_ts_type(ts_parameter);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2891,10 +3371,13 @@ pub mod walk_mut {
 		ty:&mut TSTypeParameterDeclaration<'a>,
 	) {
 		let kind = AstType::TSTypeParameterDeclaration;
+
 		visitor.enter_node(kind);
+
 		for ts_parameter in ty.params.iter_mut() {
 			visitor.visit_ts_type_parameter(ts_parameter);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2903,9 +3386,11 @@ pub mod walk_mut {
 		ty:&mut TSConstructorType<'a>,
 	) {
 		visitor.visit_formal_parameters(&mut ty.params);
+
 		if let Some(parameters) = &mut ty.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
+
 		visitor.visit_ts_type_annotation(&mut ty.return_type);
 	}
 
@@ -2914,8 +3399,11 @@ pub mod walk_mut {
 		ty:&mut TSConditionalType<'a>,
 	) {
 		visitor.visit_ts_type(&mut ty.check_type);
+
 		visitor.visit_ts_type(&mut ty.extends_type);
+
 		visitor.visit_ts_type(&mut ty.true_type);
+
 		visitor.visit_ts_type(&mut ty.false_type);
 	}
 
@@ -2925,19 +3413,25 @@ pub mod walk_mut {
 
 	pub fn walk_ts_null_keyword_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _ty:&mut TSNullKeyword) {
 		let kind = AstType::TSNullKeyword;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_ts_any_keyword_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _ty:&mut TSAnyKeyword) {
 		let kind = AstType::TSAnyKeyword;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_ts_void_keyword_mut<'a, V:VisitMut<'a>>(visitor:&mut V, _ty:&mut TSVoidKeyword) {
 		let kind = AstType::TSVoidKeyword;
+
 		visitor.enter_node(kind);
+
 		visitor.leave_node(kind);
 	}
 
@@ -2946,10 +3440,13 @@ pub mod walk_mut {
 		ty:&mut TSIntersectionType<'a>,
 	) {
 		let kind = AstType::TSIntersectionType;
+
 		visitor.enter_node(kind);
+
 		for ty in ty.types.iter_mut() {
 			visitor.visit_ts_type(ty);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -2958,26 +3455,35 @@ pub mod walk_mut {
 		ty:&mut TSTypeReference<'a>,
 	) {
 		let kind = AstType::TSTypeReference;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_ts_type_name(&mut ty.type_name);
+
 		if let Some(parameters) = &mut ty.type_parameters {
 			visitor.visit_ts_type_parameter_instantiation(parameters);
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_ts_union_type_mut<'a, V:VisitMut<'a>>(visitor:&mut V, ty:&mut TSUnionType<'a>) {
 		let kind = AstType::TSUnionType;
+
 		visitor.enter_node(kind);
+
 		for ty in ty.types.iter_mut() {
 			visitor.visit_ts_type(ty);
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_ts_literal_type_mut<'a, V:VisitMut<'a>>(visitor:&mut V, ty:&mut TSLiteralType<'a>) {
 		let kind = AstType::TSLiteralType;
+
 		visitor.enter_node(kind);
+
 		match &mut ty.literal {
 			TSLiteral::BigIntLiteral(lit) => visitor.visit_bigint_literal(lit),
 			TSLiteral::BooleanLiteral(lit) => visitor.visit_boolean_literal(lit),
@@ -2988,6 +3494,7 @@ pub mod walk_mut {
 			TSLiteral::TemplateLiteral(lit) => visitor.visit_template_literal(lit),
 			TSLiteral::UnaryExpression(expr) => visitor.visit_unary_expression(expr),
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -3013,9 +3520,11 @@ pub mod walk_mut {
 		signature:&mut TSConstructSignatureDeclaration<'a>,
 	) {
 		visitor.visit_formal_parameters(&mut signature.params);
+
 		if let Some(parameters) = &mut signature.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
+
 		if let Some(annotation) = &mut signature.return_type {
 			visitor.visit_ts_type_annotation(annotation);
 		}
@@ -3026,14 +3535,19 @@ pub mod walk_mut {
 		signature:&mut TSMethodSignature<'a>,
 	) {
 		let kind = AstType::TSMethodSignature;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_formal_parameters(&mut signature.params);
+
 		if let Some(parameters) = &mut signature.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
+
 		if let Some(annotation) = &mut signature.return_type {
 			visitor.visit_ts_type_annotation(annotation);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -3060,11 +3574,15 @@ pub mod walk_mut {
 		signature:&mut TSPropertySignature<'a>,
 	) {
 		let kind = AstType::TSPropertySignature;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_property_key(&mut signature.key);
+
 		if let Some(annotation) = &mut signature.type_annotation {
 			visitor.visit_ts_type_annotation(annotation);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -3073,6 +3591,7 @@ pub mod walk_mut {
 		signature:&mut TSCallSignatureDeclaration<'a>,
 	) {
 		visitor.visit_formal_parameters(&mut signature.params);
+
 		if let Some(parameters) = &mut signature.type_parameters {
 			visitor.visit_ts_type_parameter_declaration(parameters);
 		}
@@ -3084,32 +3603,42 @@ pub mod walk_mut {
 
 	pub fn walk_ts_type_query_mut<'a, V:VisitMut<'a>>(visitor:&mut V, ty:&mut TSTypeQuery<'a>) {
 		let kind = AstType::TSTypeQuery;
+
 		visitor.enter_node(kind);
+
 		match &mut ty.expr_name {
 			name @ match_ts_type_name!(TSTypeQueryExprName) => {
 				visitor.visit_ts_type_name(name.to_ts_type_name_mut());
 			},
 			TSTypeQueryExprName::TSImportType(import) => visitor.visit_ts_import_type(import),
 		}
+
 		if let Some(type_parameters) = &mut ty.type_parameters {
 			visitor.visit_ts_type_parameter_instantiation(type_parameters);
 		}
+
 		visitor.leave_node(kind);
 	}
 
 	pub fn walk_ts_import_type_mut<'a, V:VisitMut<'a>>(visitor:&mut V, ty:&mut TSImportType<'a>) {
 		let kind = AstType::TSImportType;
+
 		visitor.enter_node(kind);
+
 		visitor.visit_ts_type(&mut ty.parameter);
+
 		if let Some(name) = &mut ty.qualifier {
 			visitor.visit_ts_type_name(name);
 		}
+
 		if let Some(attrs) = &mut ty.attributes {
 			visitor.visit_ts_import_attributes(attrs);
 		}
+
 		if let Some(type_parameter) = &mut ty.type_parameters {
 			visitor.visit_ts_type_parameter_instantiation(type_parameter);
 		}
+
 		visitor.leave_node(kind);
 	}
 
@@ -3127,6 +3656,7 @@ pub mod walk_mut {
 		attribute:&mut TSImportAttribute<'a>,
 	) {
 		visitor.visit_ts_import_attribute_name(&mut attribute.name);
+
 		visitor.visit_expression(&mut attribute.value);
 	}
 

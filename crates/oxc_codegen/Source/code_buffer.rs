@@ -152,6 +152,7 @@ impl CodeBuffer {
     #[must_use = "Peeking is pointless if the peeked char isn't used"]
     pub fn peek_nth_byte_back(&self, n: usize) -> Option<u8> {
         let len = self.len();
+
         if n < len {
             Some(self.buf[len - 1 - n])
         } else {
@@ -257,6 +258,7 @@ impl CodeBuffer {
             // This function is not inlined, so we need this assertion to assist compiler to
             // understand this fact.
             unsafe { assert_unchecked!(buf.len() == buf.capacity()) }
+
             buf.push(byte);
         }
 
@@ -291,6 +293,7 @@ impl CodeBuffer {
     #[inline]
     pub fn print_char(&mut self, ch: char) {
         let mut b = [0; 4];
+
         self.buf.extend(ch.encode_utf8(&mut b).as_bytes());
     }
 
@@ -325,8 +328,11 @@ impl CodeBuffer {
         I: IntoIterator<Item = u8>,
     {
         let iter = bytes.into_iter();
+
         let hint = iter.size_hint();
+
         self.buf.reserve(hint.1.unwrap_or(hint.0));
+
         for byte in iter {
             self.print_ascii_byte(byte);
         }
@@ -423,27 +429,37 @@ mod test {
     #[test]
     fn empty() {
         let code = CodeBuffer::default();
+
         assert!(code.is_empty());
+
         assert_eq!(code.len(), 0);
+
         assert_eq!(String::from(code), "");
     }
 
     #[test]
     fn string_isomorphism() {
         let s = "Hello, world!";
+
         let mut code = CodeBuffer::with_capacity(s.len());
+
         code.print_str(s);
+
         assert_eq!(code.len(), s.len());
+
         assert_eq!(String::from(code), s.to_string());
     }
 
     #[test]
     fn into_string() {
         let s = "Hello, world!";
+
         let mut code = CodeBuffer::with_capacity(s.len());
+
         code.print_str(s);
 
         let source = code.into_string();
+
         assert_eq!(source, s);
     }
 
@@ -451,12 +467,17 @@ mod test {
     #[allow(clippy::byte_char_slices)]
     fn print_ascii_byte() {
         let mut code = CodeBuffer::new();
+
         code.print_ascii_byte(b'f');
+
         code.print_ascii_byte(b'o');
+
         code.print_ascii_byte(b'o');
 
         assert_eq!(code.len(), 3);
+
         assert_eq!(code.as_bytes(), &[b'f', b'o', b'o']);
+
         assert_eq!(String::from(code), "foo");
     }
 
@@ -467,12 +488,16 @@ mod test {
         // SAFETY: These bytes are all ASCII
         unsafe {
             code.print_byte_unchecked(b'f');
+
             code.print_byte_unchecked(b'o');
+
             code.print_byte_unchecked(b'o');
         }
 
         assert_eq!(code.len(), 3);
+
         assert_eq!(code.as_bytes(), &[b'f', b'o', b'o']);
+
         assert_eq!(String::from(code), "foo");
     }
 
@@ -480,48 +505,65 @@ mod test {
     #[allow(clippy::byte_char_slices)]
     fn print_ascii_bytes() {
         let mut code = CodeBuffer::new();
+
         code.print_ascii_bytes([b'f', b'o', b'o']);
 
         assert_eq!(code.len(), 3);
+
         assert_eq!(code.as_bytes(), &[b'f', b'o', b'o']);
+
         assert_eq!(String::from(code), "foo");
     }
 
     #[test]
     fn peek_nth_char_back() {
         let mut code = CodeBuffer::new();
+
         code.print_str("bar");
 
         assert_eq!(code.peek_nth_char_back(0), Some('r'));
+
         assert_eq!(code.peek_nth_char_back(1), Some('a'));
+
         assert_eq!(code.peek_nth_char_back(2), Some('b'));
+
         assert_eq!(code.peek_nth_char_back(3), None);
     }
 
     #[test]
     fn peek_nth_byte_back() {
         let mut code = CodeBuffer::new();
+
         code.print_str("bar");
 
         assert_eq!(code.peek_nth_byte_back(0), Some(b'r'));
+
         assert_eq!(code.peek_nth_byte_back(1), Some(b'a'));
+
         assert_eq!(code.peek_nth_byte_back(2), Some(b'b'));
+
         assert_eq!(code.peek_nth_byte_back(3), None);
     }
 
     #[test]
     fn last_byte() {
         let mut code = CodeBuffer::new();
+
         assert_eq!(code.last_byte(), None);
+
         code.print_str("bar");
+
         assert_eq!(code.last_byte(), Some(b'r'));
     }
 
     #[test]
     fn last_char() {
         let mut code = CodeBuffer::new();
+
         assert_eq!(code.last_char(), None);
+
         code.print_str("bar");
+
         assert_eq!(code.last_char(), Some('r'));
     }
 }

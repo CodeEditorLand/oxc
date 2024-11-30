@@ -68,10 +68,13 @@ impl Rule for NoSinglePromiseInPromiseMethods {
         if !is_promise_method_with_single_argument(call_expr) {
             return;
         }
+
         let Some(first_argument) = call_expr.arguments[0].as_expression() else {
             return;
         };
+
         let first_argument = first_argument.get_inner_expression();
+
         let Expression::ArrayExpression(first_argument_array_expr) = first_argument else {
             return;
         };
@@ -81,6 +84,7 @@ impl Rule for NoSinglePromiseInPromiseMethods {
         }
 
         let first = &first_argument_array_expr.elements[0];
+
         if !first.is_expression() {
             return;
         }
@@ -93,6 +97,7 @@ impl Rule for NoSinglePromiseInPromiseMethods {
             .expect("callee is a static property");
 
         let diagnostic = no_single_promise_in_promise_methods_diagnostic(info.0, info.1);
+
         if is_fixable(node.id(), ctx) {
             ctx.diagnostic_with_fix(diagnostic, |fixer| {
                 let elem_text = fixer.source_range(first.span());
@@ -137,6 +142,7 @@ fn is_fixable(call_node_id: NodeId, ctx: &LintContext<'_>) -> bool {
             _ => return true,
         }
     }
+
     true
 }
 

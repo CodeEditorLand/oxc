@@ -81,6 +81,7 @@ pub struct Transformer<'a> {
 impl<'a> Transformer<'a> {
     pub fn new(allocator: &'a Allocator, source_path: &Path, options: &TransformOptions) -> Self {
         let ctx = TransformCtx::new(source_path, options);
+
         Self {
             ctx,
             allocator,
@@ -97,10 +98,13 @@ impl<'a> Transformer<'a> {
         program: &mut Program<'a>,
     ) -> TransformerReturn {
         let allocator = self.allocator;
+
         let ast_builder = AstBuilder::new(allocator);
 
         self.ctx.source_type = program.source_type;
+
         self.ctx.source_text = program.source_text;
+
         jsx::update_options_with_comments(
             &program.comments,
             &mut self.typescript,
@@ -127,6 +131,7 @@ impl<'a> Transformer<'a> {
         };
 
         let (symbols, scopes) = traverse_mut(&mut transformer, allocator, program, symbols, scopes);
+
         TransformerReturn { errors: self.ctx.take_errors(), symbols, scopes }
     }
 }
@@ -153,15 +158,19 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_program(program, ctx);
         }
+
         self.x1_jsx.enter_program(program, ctx);
     }
 
     fn exit_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x1_jsx.exit_program(program, ctx);
+
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.exit_program(program, ctx);
         }
+
         self.x2_es2018.exit_program(program, ctx);
+
         self.common.exit_program(program, ctx);
     }
 
@@ -172,9 +181,11 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         self.common.enter_arrow_function_expression(arrow, ctx);
+
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_arrow_function_expression(arrow, ctx);
         }
+
         self.x2_es2018.enter_arrow_function_expression(arrow, ctx);
     }
 
@@ -226,6 +237,7 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_call_expression(expr, ctx);
         }
+
         self.x1_jsx.enter_call_expression(expr, ctx);
     }
 
@@ -249,6 +261,7 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_class_body(body, ctx);
         }
+
         self.x2_es2022.enter_class_body(body, ctx);
     }
 
@@ -275,19 +288,29 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_expression(expr, ctx);
         }
+
         self.x2_es2022.enter_expression(expr, ctx);
+
         self.x2_es2021.enter_expression(expr, ctx);
+
         self.x2_es2020.enter_expression(expr, ctx);
+
         self.x2_es2018.enter_expression(expr, ctx);
+
         self.x2_es2016.enter_expression(expr, ctx);
+
         self.x4_regexp.enter_expression(expr, ctx);
+
         self.common.enter_expression(expr, ctx);
     }
 
     fn exit_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x1_jsx.exit_expression(expr, ctx);
+
         self.x2_es2018.exit_expression(expr, ctx);
+
         self.x2_es2017.exit_expression(expr, ctx);
+
         self.common.exit_expression(expr, ctx);
     }
 
@@ -339,6 +362,7 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
 
     fn enter_function(&mut self, func: &mut Function<'a>, ctx: &mut TraverseCtx<'a>) {
         self.common.enter_function(func, ctx);
+
         self.x2_es2018.enter_function(func, ctx);
     }
 
@@ -346,9 +370,13 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.exit_function(func, ctx);
         }
+
         self.x1_jsx.exit_function(func, ctx);
+
         self.x2_es2018.exit_function(func, ctx);
+
         self.x2_es2017.exit_function(func, ctx);
+
         self.common.exit_function(func, ctx);
     }
 
@@ -392,6 +420,7 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_jsx_opening_element(elem, ctx);
         }
+
         self.x1_jsx.enter_jsx_opening_element(elem, ctx);
     }
 
@@ -447,6 +476,7 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         self.common.enter_statements(stmts, ctx);
+
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_statements(stmts, ctx);
         }
@@ -468,10 +498,12 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
                     "The last statement in an ArrowFunctionExpression should always be an ExpressionStatement."
                 )
             };
+
             arrow
                 .body
                 .statements
                 .push(ctx.ast.statement_return(SPAN, Some(statement.unbox().expression)));
+
             arrow.expression = false;
         }
     }
@@ -484,6 +516,7 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.exit_statements(stmts, ctx);
         }
+
         self.common.exit_statements(stmts, ctx);
     }
 
@@ -491,7 +524,9 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.exit_statement(stmt, ctx);
         }
+
         self.x2_es2018.exit_statement(stmt, ctx);
+
         self.x2_es2017.exit_statement(stmt, ctx);
     }
 
@@ -509,7 +544,9 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_statement(stmt, ctx);
         }
+
         self.x2_es2022.enter_statement(stmt, ctx);
+
         self.x2_es2018.enter_statement(stmt, ctx);
     }
 
@@ -551,6 +588,7 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_for_of_statement(stmt, ctx);
         }
+
         self.x2_es2018.enter_for_of_statement(stmt, ctx);
     }
 
@@ -558,11 +596,13 @@ impl<'a, 'ctx> Traverse<'a> for TransformerImpl<'a, 'ctx> {
         if let Some(typescript) = self.x0_typescript.as_mut() {
             typescript.enter_for_in_statement(stmt, ctx);
         }
+
         self.x2_es2018.enter_for_in_statement(stmt, ctx);
     }
 
     fn enter_catch_clause(&mut self, clause: &mut CatchClause<'a>, ctx: &mut TraverseCtx<'a>) {
         self.x2_es2019.enter_catch_clause(clause, ctx);
+
         self.x2_es2018.enter_catch_clause(clause, ctx);
     }
 

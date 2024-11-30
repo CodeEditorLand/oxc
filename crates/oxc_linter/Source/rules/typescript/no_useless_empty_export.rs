@@ -56,10 +56,13 @@ declare_oxc_lint!(
 impl Rule for NoUselessEmptyExport {
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         let AstKind::ExportNamedDeclaration(decl) = node.kind() else { return };
+
         if decl.declaration.is_some() || !decl.specifiers.is_empty() {
             return;
         }
+
         let module_record = ctx.module_record();
+
         if module_record.exported_bindings.is_empty()
             && module_record.local_export_entries.is_empty()
             && module_record.indirect_export_entries.is_empty()
@@ -68,6 +71,7 @@ impl Rule for NoUselessEmptyExport {
         {
             return;
         }
+
         ctx.diagnostic_with_fix(no_useless_empty_export_diagnostic(decl.span), |fixer| {
             fixer.delete(&decl.span)
         });
@@ -87,10 +91,12 @@ fn test() {
         "export const _ = {};",
         "
             const _ = {};
+
             export default _;
         ",
         "
             export * from '_';
+
             export = {};
         ",
         "export {};",
@@ -99,29 +105,38 @@ fn test() {
     let fail = vec![
         "
             export const _ = {};
+
             export {};
         ",
         "
             export * from '_';
+
             export {};
         ",
         "
             export {};
+
             export * from '_';
         ",
         "
             const _ = {};
+
             export default _;
+
             export {};
         ",
         "
             export {};
+
             const _ = {};
+
             export default _;
         ",
         "
             const _ = {};
+
             export { _ };
+
             export {};
         ",
         // "

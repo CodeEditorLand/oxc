@@ -43,6 +43,7 @@ impl Rule for NoPageCustomFont {
         let AstKind::JSXOpeningElement(element) = node.kind() else {
             return;
         };
+
         let JSXElementName::Identifier(ident) = &element.name else { return };
 
         if ident.name != "link" {
@@ -63,30 +64,38 @@ impl Rule for NoPageCustomFont {
         let in_document = ctx.file_path().file_name().map_or(false, |file_name| {
             file_name.to_str().map_or(false, |file_name| file_name.starts_with("_document."))
         });
+
         let span = ctx.nodes().parent_kind(node.id()).unwrap().span();
+
         let diagnostic = if in_document {
             if is_inside_export_default(node, ctx) {
                 return;
             }
+
             link_outside_of_head(span)
         } else {
             not_added_in_document(span)
         };
+
         ctx.diagnostic(diagnostic);
     }
 }
 
 fn is_inside_export_default(node: &AstNode<'_>, ctx: &LintContext<'_>) -> bool {
     let mut is_inside_export_default = false;
+
     for parent_node in ctx.nodes().ancestors(node.id()) {
         // export default function/class
         let kind = parent_node.kind();
+
         if matches!(kind, AstKind::ExportDefaultDeclaration(_)) {
             is_inside_export_default = true;
+
             break;
         }
 
         // function variable() {}; export default variable;
+
         let id = match kind {
             AstKind::ArrowFunctionExpression(_) => None,
             AstKind::Function(Function { id, .. }) | AstKind::Class(Class { id, .. }) => id.clone(),
@@ -100,13 +109,16 @@ fn is_inside_export_default(node: &AstNode<'_>, ctx: &LintContext<'_>) -> bool {
                 let AstKind::VariableDeclarator(declarator) = parent_parent_kind else {
                     return None;
                 };
+
                 declarator.id.get_identifier().map(|id| id.to_string())
             },
             |id| Some(id.name.to_string()),
         );
+
         let Some(name) = name else {
             continue;
         };
+
         if ctx.module_record().local_export_entries.iter().any(|e| {
             e.local_name.is_default()
                 && e.local_name.name().is_some_and(|n| n.as_str() == name.as_str())
@@ -114,6 +126,7 @@ fn is_inside_export_default(node: &AstNode<'_>, ctx: &LintContext<'_>) -> bool {
             is_inside_export_default = true;
         }
     }
+
     is_inside_export_default
 }
 
@@ -124,9 +137,11 @@ fn test() {
     use crate::tester::Tester;
 
     let filename = Some(PathBuf::from("pages/_document.jsx"));
+
     let pass = vec![
         (
             r#"import Document, { Html, Head } from "next/document";
+
 			class MyDocument extends Document {
 				render() {
 					return (
@@ -141,6 +156,7 @@ fn test() {
 					);
 				}
 			}
+
 			export default MyDocument;"#,
             None,
             None,
@@ -148,6 +164,7 @@ fn test() {
         ),
         (
             r#"import NextDocument, { Html, Head } from "next/document";
+
 			    class Document extends NextDocument {
 			      render() {
 			        return (
@@ -162,6 +179,7 @@ fn test() {
 			        );
 			      }
 			    }
+
 			    export default Document;
 			    "#,
             None,

@@ -73,7 +73,9 @@ declare_oxc_lint!(
 impl Rule for NoIdenticalTitle {
     fn run_once(&self, ctx: &LintContext) {
         let possible_jest_nodes = collect_possible_jest_call_node(ctx);
+
         let mut title_to_span_mapping = FxHashMap::default();
+
         let mut span_to_parent_mapping = FxHashMap::default();
 
         possible_jest_nodes
@@ -82,10 +84,12 @@ impl Rule for NoIdenticalTitle {
                 let AstKind::CallExpression(call_expr) = possible_jest_node.node.kind() else {
                     return None;
                 };
+
                 filter_and_process_jest_result(call_expr, possible_jest_node, ctx)
             })
             .for_each(|(span, title, kind, parent_id)| {
                 span_to_parent_mapping.insert(span, parent_id);
+
                 title_to_span_mapping
                     .entry(title)
                     .and_modify(|e: &mut Vec<(JestFnKind, Span)>| e.push((kind, span)))
@@ -97,6 +101,7 @@ impl Rule for NoIdenticalTitle {
                 .iter()
                 .filter_map(|(kind, span)| {
                     let parent = span_to_parent_mapping.get(span)?;
+
                     Some((*span, *kind, *parent))
                 })
                 .collect::<Vec<(Span, JestFnKind, NodeId)>>();
@@ -106,6 +111,7 @@ impl Rule for NoIdenticalTitle {
             // Skip the first element, for `describe('foo'); describe('foo');`, we only need to check the second one.
             for i in 1..kind_and_spans.len() {
                 let (span, kind, parent_id) = kind_and_spans[i];
+
                 let (_, prev_kind, prev_parent) = kind_and_spans[i - 1];
 
                 if kind == prev_kind && parent_id == prev_parent {
@@ -113,9 +119,11 @@ impl Rule for NoIdenticalTitle {
                         JestFnKind::General(JestGeneralFnKind::Describe) => {
                             ctx.diagnostic(describe_repeat(span));
                         }
+
                         JestFnKind::General(JestGeneralFnKind::Test) => {
                             ctx.diagnostic(test_repeat(span));
                         }
+
                         _ => {}
                     }
                 }
@@ -130,6 +138,7 @@ fn filter_and_process_jest_result<'a>(
     ctx: &LintContext<'a>,
 ) -> Option<(Span, &'a str, JestFnKind, NodeId)> {
     let result = parse_general_jest_fn_call(call_expr, possible_jest_node, ctx)?;
+
     let kind = result.kind;
     // we only need check `describe` or `test` block
     if !matches!(kind, JestFnKind::General(JestGeneralFnKind::Describe | JestGeneralFnKind::Test)) {
@@ -146,9 +155,11 @@ fn filter_and_process_jest_result<'a>(
         Some(Argument::StringLiteral(string_lit)) => {
             Some((string_lit.span, &string_lit.value, kind, parent_id))
         }
+
         Some(Argument::TemplateLiteral(template_lit)) => {
             template_lit.quasi().map(|quasi| (template_lit.span, quasi.as_str(), kind, parent_id))
         }
+
         _ => None,
     }
 }
@@ -158,8 +169,10 @@ fn get_closest_block(node: &AstNode, ctx: &LintContext) -> Option<NodeId> {
         AstKind::BlockStatement(_) | AstKind::FunctionBody(_) | AstKind::Program(_) => {
             Some(node.id())
         }
+
         _ => {
             let parent = ctx.nodes().parent_node(node.id())?;
+
             get_closest_block(parent, ctx)
         }
     }
@@ -213,6 +226,7 @@ fn test() {
             "
               describe('foo', () => {
                 test('this', () => {});
+
                 test('that', () => {});
               });
             ",
@@ -306,6 +320,7 @@ fn test() {
             "
               describe('my class', () => {
                 describe('#myMethod', () => {});
+
                 describe('a class named ' + myClass.name, () => {});
               });
             ",
@@ -376,6 +391,7 @@ fn test() {
             "
               describe('foo', () => {
                 it('works', () => {});
+
                 it('works', () => {});
               });
             ",
@@ -457,6 +473,7 @@ fn test() {
             "
               describe('foo', () => {
                 it(`catches backticks with the same title`, () => {});
+
                 it(`catches backticks with the same title`, () => {});
               });
             ",
@@ -492,6 +509,7 @@ fn test() {
                     expect(true).toBe(true);
                 });
             });
+
             fdescribe('another describe', () => {
                 test('a test', () => {
                     expect(true).toBe(true);
@@ -514,18 +532,21 @@ fn test() {
         "
             describe('foo', () => {
                 it('works', () => {});
+
                 it('works', () => {});
             });
         ",
         "
             xdescribe('foo', () => {
                 it('works', () => {});
+
                 it('works', () => {});
             });
         ",
     ];
 
     pass.extend(pass_vitest.into_iter().map(|x| (x, None)));
+
     fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
 
     Tester::new(NoIdenticalTitle::NAME, pass, fail)

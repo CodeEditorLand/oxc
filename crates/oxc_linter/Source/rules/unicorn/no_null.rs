@@ -91,6 +91,7 @@ impl NoNull {
                     });
                 }
             }
+
             _ => {
                 ctx.diagnostic_with_fix(no_null_diagnostic(null_literal.span), |fixer| {
                     fix_null(fixer, null_literal)
@@ -180,14 +181,17 @@ impl Rule for NoNull {
         };
 
         let mut parents = iter_outer_expressions(ctx, node.id());
+
         let Some(parent_kind) = parents.next() else {
             ctx.diagnostic_with_fix(no_null_diagnostic(null_literal.span), |fixer| {
                 fix_null(fixer, null_literal)
             });
+
             return;
         };
 
         let grandparent_kind = parents.next();
+
         match (parent_kind, grandparent_kind) {
             (AstKind::Argument(_), Some(AstKind::CallExpression(call_expr)))
                 if match_call_expression_pass_case(null_literal, call_expr) =>
@@ -206,12 +210,14 @@ impl Rule for NoNull {
                     // Find the last parent that is a TSAsExpression (`null as any`) or TSNonNullExpression (`null!`)
                     for parent in ctx.nodes().ancestors(node.id()).skip(1) {
                         let parent = parent.kind();
+
                         if matches!(
                             parent,
                             AstKind::TSAsExpression(_) | AstKind::TSNonNullExpression(_)
                         ) {
                             null_span = parent.span();
                         }
+
                         if matches!(parent, AstKind::ReturnStatement(_)) {
                             break;
                         }
@@ -225,6 +231,7 @@ impl Rule for NoNull {
                     try_fix_case(fixer, null_literal, switch)
                 });
             }
+
             _ => {
                 ctx.diagnostic_with_fix(no_null_diagnostic(null_literal.span), |fixer| {
                     fix_null(fixer, null_literal)
@@ -248,6 +255,7 @@ fn try_fix_case<'a>(
         .iter()
         .filter_map(|case| case.test.as_ref())
         .any(|test| test.get_inner_expression().is_undefined());
+
     if also_has_undefined {
         fixer.noop()
     } else {
@@ -357,25 +365,33 @@ fn test() {
         (
             "
             let isNullish;
+
             switch (foo) {
                 case null:
                 case undefined:
                     isNullish = true;
+
                     break;
+
                 default:
                     isNullish = false;
+
                     break;
             }
             ",
             "
             let isNullish;
+
             switch (foo) {
                 case null:
                 case undefined:
                     isNullish = true;
+
                     break;
+
                 default:
                     isNullish = false;
+
                     break;
             }
             ",
@@ -396,6 +412,7 @@ fn test() {
 		if (!parsed ) {
 			return null;
 		}
+
 		return { handle: parsed.handle};
 	}).filter(x => !!x) as INotebookDeltaDecoration[]
 	: [];",
@@ -405,11 +422,13 @@ fn test() {
 		if (!parsed ) {
 			return ;
 		}
+
 		return { handle: parsed.handle};
 	}).filter(x => !!x) as INotebookDeltaDecoration[]
 	: [];",
             None,
         ),
     ];
+
     Tester::new(NoNull::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
 }

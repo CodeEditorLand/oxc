@@ -22,8 +22,10 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptModule<'a, 'ctx> {
         // Once we have a commonjs plugin, we can consider moving this logic there.
         if self.ctx.module.is_commonjs() {
             let has_use_strict = program.directives.iter().any(Directive::is_use_strict);
+
             if !has_use_strict {
                 let use_strict = ctx.ast.string_literal(SPAN, "use strict", None);
+
                 program.directives.insert(0, ctx.ast.directive(SPAN, use_strict, "use strict"));
             }
         }
@@ -61,17 +63,24 @@ impl<'a, 'ctx> TypeScriptModule<'a, 'ctx> {
         let module_exports = {
             let reference_id = ctx
                 .create_reference_in_current_scope(CompactStr::new("module"), ReferenceFlags::Read);
+
             let reference =
                 ctx.ast.alloc_identifier_reference_with_reference_id(SPAN, "module", reference_id);
+
             let object = Expression::Identifier(reference);
+
             let property = ctx.ast.identifier_name(SPAN, "exports");
+
             ctx.ast.member_expression_static(SPAN, object, property, false)
         };
 
         let left = AssignmentTarget::from(SimpleAssignmentTarget::from(module_exports));
+
         let right = ctx.ast.move_expression(&mut export_assignment.expression);
+
         let assignment_expr =
             ctx.ast.expression_assignment(SPAN, AssignmentOperator::Assign, left, right);
+
         ctx.ast.statement_expression(SPAN, assignment_expr)
     }
 
@@ -92,7 +101,9 @@ impl<'a, 'ctx> TypeScriptModule<'a, 'ctx> {
     ) -> Declaration<'a> {
         let binding_pattern_kind =
             ctx.ast.binding_pattern_kind_binding_identifier(SPAN, &decl.id.name);
+
         let binding = ctx.ast.binding_pattern(binding_pattern_kind, NONE, false);
+
         let decl_span = decl.span;
 
         let (kind, init) = match &mut decl.module_reference {
@@ -106,6 +117,7 @@ impl<'a, 'ctx> TypeScriptModule<'a, 'ctx> {
                 }
 
                 let callee = ctx.ast.expression_identifier_reference(SPAN, "require");
+
                 let arguments =
                     ctx.ast.vec1(Argument::StringLiteral(ctx.alloc(reference.expression.clone())));
                 (
@@ -114,6 +126,7 @@ impl<'a, 'ctx> TypeScriptModule<'a, 'ctx> {
                 )
             }
         };
+
         let decls =
             ctx.ast.vec1(ctx.ast.variable_declarator(SPAN, kind, binding, Some(init), false));
 
@@ -129,10 +142,13 @@ impl<'a, 'ctx> TypeScriptModule<'a, 'ctx> {
         match type_name {
             TSTypeName::IdentifierReference(ident) => {
                 let ident = ident.clone();
+
                 let reference = ctx.symbols_mut().get_reference_mut(ident.reference_id());
                 *reference.flags_mut() = ReferenceFlags::Read;
+
                 Expression::Identifier(ctx.alloc(ident))
             }
+
             TSTypeName::QualifiedName(qualified_name) => ctx
                 .ast
                 .member_expression_static(

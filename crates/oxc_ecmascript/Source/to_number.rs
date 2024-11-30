@@ -18,6 +18,7 @@ impl<'a> ToNumber<'a> for Expression<'a> {
                     Some(0.0)
                 }
             }
+
             Expression::NullLiteral(_) => Some(0.0),
             Expression::Identifier(ident) => match ident.name.as_str() {
                 "Infinity" => Some(f64::INFINITY),
@@ -26,8 +27,10 @@ impl<'a> ToNumber<'a> for Expression<'a> {
             },
             Expression::StringLiteral(lit) => {
                 use crate::StringToNumber;
+
                 Some(lit.value.as_str().string_to_number())
             }
+
             _ => None,
         }
     }

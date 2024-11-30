@@ -188,6 +188,7 @@ impl<'a> Source<'a> {
                 // SAFETY: See above
                 && (pos.ptr == self.end || !is_utf8_cont_byte(unsafe { pos.read() }))
         );
+
         self.ptr = pos.ptr;
     }
 
@@ -205,12 +206,15 @@ impl<'a> Source<'a> {
     #[inline]
     pub(super) unsafe fn advance_if_ascii_eq(&mut self, ascii_byte: u8) -> bool {
         debug_assert!(ascii_byte.is_ascii());
+
         let matched = self.peek_byte() == Some(ascii_byte);
+
         if matched {
             // SAFETY: next byte exists and is a valid ASCII char (and thus UTF-8
             // char boundary).
             self.ptr = unsafe { self.ptr.add(1) };
         }
+
         matched
     }
 
@@ -272,10 +276,12 @@ impl<'a> Source<'a> {
         debug_assert!(start.ptr <= end.ptr);
         // Check `start` and `end` are within bounds of `Source`
         debug_assert!(start.ptr >= self.start);
+
         debug_assert!(end.ptr <= self.end);
         // Check `start` and `end` are on UTF-8 character boundaries.
         // SAFETY: Above assertions ensure `start` and `end` are valid to read from if not at EOF.
         debug_assert!(start.ptr == self.end || !is_utf8_cont_byte(start.read()));
+
         debug_assert!(end.ptr == self.end || !is_utf8_cont_byte(end.read()));
 
         // SAFETY: Caller guarantees `start` is not after `end`.
@@ -290,7 +296,9 @@ impl<'a> Source<'a> {
         // on UTF-8 character boundaries. So slicing source text between these 2 points will always
         // yield a valid UTF-8 string.
         let len = end.addr() - start.addr();
+
         let slice = slice::from_raw_parts(start.ptr, len);
+
         std::str::from_utf8_unchecked(slice)
     }
 
@@ -327,6 +335,7 @@ impl<'a> Source<'a> {
 
         // Ensure not attempting to go back to before start of source
         let offset = self.ptr as usize - self.start as usize;
+
         assert!(n <= offset, "Cannot go back {n} bytes - only {offset} bytes consumed");
 
         // SAFETY: We have checked that `n` is less than distance between `start` and `ptr`,
@@ -340,6 +349,7 @@ impl<'a> Source<'a> {
         // `Source::new` takes an immutable ref `&str`, guaranteeing that the memory `new_ptr`
         // addresses cannot be aliased by a `&mut` ref as long as `Source` exists.
         let byte = unsafe { new_pos.read() };
+
         assert!(!is_utf8_cont_byte(byte), "Offset is not on a UTF-8 character boundary");
 
         // Move current position. The checks above satisfy `Source`'s invariants.
@@ -351,11 +361,13 @@ impl<'a> Source<'a> {
     pub(super) fn next_char(&mut self) -> Option<char> {
         // Check not at EOF and handle ASCII bytes
         let byte = self.peek_byte()?;
+
         if byte.is_ascii() {
             // SAFETY: We already exited if at EOF, so `ptr < end`.
             // So incrementing `ptr` cannot result in `ptr > end`.
             // Current byte is ASCII, so incremented `ptr` must be on a UTF-8 character boundary.
             unsafe { self.ptr = self.ptr.add(1) };
+
             return Some(byte as char);
         }
 
@@ -370,7 +382,9 @@ impl<'a> Source<'a> {
         let mut chars = self.remaining().chars();
         // SAFETY: We know that there's a byte to be consumed, so `chars.next()` must return `Some(_)`
         let c = unsafe { chars.next().unwrap_unchecked() };
+
         self.ptr = chars.as_str().as_ptr();
+
         Some(c)
     }
 
@@ -379,11 +393,13 @@ impl<'a> Source<'a> {
     pub(super) fn next_2_chars(&mut self) -> Option<[char; 2]> {
         // Check not at EOF and handle if 2 x ASCII bytes
         let [byte1, byte2] = self.peek_2_bytes()?;
+
         if byte1.is_ascii() && byte2.is_ascii() {
             // SAFETY: We just checked that there are at least 2 bytes remaining,
             // and next 2 bytes are ASCII, so advancing by 2 bytes must put `ptr`
             // in bounds and on a UTF-8 character boundary
             unsafe { self.ptr = self.ptr.add(2) };
+
             return Some([byte1 as char, byte2 as char]);
         }
 
@@ -399,8 +415,11 @@ impl<'a> Source<'a> {
         // SAFETY: We know that there's 2 bytes to be consumed, so first call to
         // `chars.next()` must return `Some(_)`
         let c1 = unsafe { chars.next().unwrap_unchecked() };
+
         let c2 = chars.next()?;
+
         self.ptr = chars.as_str().as_ptr();
+
         Some([c1, c2])
     }
 
@@ -474,7 +493,9 @@ impl<'a> Source<'a> {
         // Therefore always valid to read a byte from `ptr`, and incrementing `ptr` cannot result
         // in `ptr > end`.
         let byte = self.peek_byte_unchecked();
+
         self.ptr = self.ptr.add(1);
+
         byte
     }
 
@@ -483,6 +504,7 @@ impl<'a> Source<'a> {
     pub(super) fn peek_char(&self) -> Option<char> {
         // Check not at EOF and handle ASCII bytes
         let byte = self.peek_byte()?;
+
         if byte.is_ascii() {
             return Some(byte as char);
         }
@@ -498,6 +520,7 @@ impl<'a> Source<'a> {
         // always returns `Some(_)` may help it optimize the caller. Compiler seems to have difficulty
         // "seeing into" `Chars` iterator and making deductions.
         let c = unsafe { chars.next().unwrap_unchecked() };
+
         Some(c)
     }
 
@@ -522,6 +545,7 @@ impl<'a> Source<'a> {
             // SAFETY: The check above ensures that there are at least 2 bytes to
             // read from `self.ptr` without reading past `self.end`
             let bytes = unsafe { self.position().read2() };
+
             Some(bytes)
         } else {
             None
@@ -540,6 +564,7 @@ impl<'a> Source<'a> {
         // `Source::new` takes an immutable ref `&str`, guaranteeing that the memory `self.ptr`
         // addresses cannot be aliased by a `&mut` ref as long as `Source` exists.
         debug_assert!(self.ptr >= self.start && self.ptr < self.end);
+
         self.position().read()
     }
 }

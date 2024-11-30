@@ -59,7 +59,9 @@ impl Rule for RequireReturnsType {
         };
 
         let settings = &ctx.settings().jsdoc;
+
         let resolved_returns_tag_name = settings.resolve_tag_name("returns");
+
         for jsdoc in jsdocs
             .iter()
             .filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))

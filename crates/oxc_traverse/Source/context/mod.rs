@@ -122,8 +122,11 @@ impl<'a> TraverseCtx<'a> {
     /// Create new traversal context.
     pub fn new(scopes: ScopeTree, symbols: SymbolTable, allocator: &'a Allocator) -> Self {
         let ancestry = TraverseAncestry::new();
+
         let scoping = TraverseScoping::new(scopes, symbols);
+
         let ast = AstBuilder::new(allocator);
+
         Self { ancestry, scoping, ast }
     }
 
@@ -363,8 +366,11 @@ impl<'a> TraverseCtx<'a> {
     ) -> BoundIdentifier<'a> {
         // Get name for UID
         let name = self.generate_uid_name(name);
+
         let name_atom = self.ast.atom(&name);
+
         let symbol_id = self.scoping.add_binding(name, scope_id, flags);
+
         BoundIdentifier::new(name_atom, symbol_id)
     }
 
@@ -408,6 +414,7 @@ impl<'a> TraverseCtx<'a> {
         flags: SymbolFlags,
     ) -> BoundIdentifier<'a> {
         let name = get_var_name_from_node(node);
+
         self.generate_uid(&name, scope_id, flags)
     }
 
@@ -454,6 +461,7 @@ impl<'a> TraverseCtx<'a> {
         flags: ReferenceFlags,
     ) -> IdentifierReference<'a> {
         let reference_id = self.create_bound_reference(symbol_id, flags);
+
         self.ast.identifier_reference_with_reference_id(span, name, reference_id)
     }
 
@@ -466,6 +474,7 @@ impl<'a> TraverseCtx<'a> {
         flags: ReferenceFlags,
     ) -> Expression<'a> {
         let ident = self.create_bound_ident_reference(span, name, symbol_id, flags);
+
         Expression::Identifier(self.ast.alloc(ident))
     }
 
@@ -489,6 +498,7 @@ impl<'a> TraverseCtx<'a> {
         flags: ReferenceFlags,
     ) -> IdentifierReference<'a> {
         let reference_id = self.create_unbound_reference(name.to_compact_str(), flags);
+
         self.ast.identifier_reference_with_reference_id(span, name, reference_id)
     }
 
@@ -500,6 +510,7 @@ impl<'a> TraverseCtx<'a> {
         flags: ReferenceFlags,
     ) -> Expression<'a> {
         let ident = self.create_unbound_ident_reference(span, name, flags);
+
         Expression::Identifier(self.ast.alloc(ident))
     }
 

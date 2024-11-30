@@ -9,6 +9,7 @@ use oxc_linter::table::RuleTable;
 /// [`category`]: oxc_linter::RuleCategory
 pub fn render_rules_table(table: &RuleTable, docs_prefix: &str) -> String {
     let total = table.total;
+
     let turned_on_by_default_count = table.turned_on_by_default_count;
 
     let body = table

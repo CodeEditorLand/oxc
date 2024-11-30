@@ -17,6 +17,7 @@ pub(super) fn print_binaryish_expression<'a>(
     right: &Expression<'a>,
 ) -> Doc<'a> {
     let parent_kind = p.parent_kind();
+
     let is_inside_parenthesis = matches!(
         parent_kind,
         AstKind::IfStatement(_)
@@ -34,6 +35,7 @@ pub(super) fn print_binaryish_expression<'a>(
     // Avoid indenting sub-expressions in some cases where the first sub-expression is already
     // indented accordingly. We should indent sub-expressions where the first case isn't indented.
     let should_not_indent = matches!(parent_kind, AstKind::ReturnStatement(_));
+
     if should_not_indent {
         return Doc::Group(Group::new(parts));
     }
@@ -48,7 +50,9 @@ pub(super) fn print_binaryish_expression<'a>(
     let first_group_index = first_group_index.map_or(1, |index| index + 1);
 
     let mut group = p.vec();
+
     let mut rest = p.vec();
+
     for (i, part) in parts.into_iter().enumerate() {
         if i < first_group_index {
             group.push(part);
@@ -56,7 +60,9 @@ pub(super) fn print_binaryish_expression<'a>(
             rest.push(part);
         }
     }
+
     group.push(Doc::Indent(rest));
+
     Doc::Group(Group::new(group))
 }
 
@@ -79,9 +85,11 @@ fn print_binaryish_expressions<'a>(
             Expression::BinaryExpression(e) => {
                 Doc::Array(print_binaryish_expressions(p, &e.left, e.operator.into(), &e.right))
             }
+
             Expression::LogicalExpression(e) => {
                 Doc::Array(print_binaryish_expressions(p, &e.left, e.operator.into(), &e.right))
             }
+
             _ => unreachable!(),
         });
     } else {
@@ -89,26 +97,37 @@ fn print_binaryish_expressions<'a>(
     }
 
     let should_inline = should_inline_logical_expression(right);
+
     let line_before_operator = false;
 
     let right = if should_inline {
         let mut parts = p.vec();
+
         parts.push(text!(operator.as_str()));
+
         parts.push(space!());
+
         parts.push(right.format(p));
+
         parts
     } else {
         let mut parts = p.vec();
+
         if line_before_operator {
             parts.push(line!());
         }
+
         parts.push(text!(operator.as_str()));
+
         parts.push(if line_before_operator { space!() } else { line!() });
+
         parts.push(right.format(p));
+
         parts
     };
 
     let should_break = p.has_comment(left.span(), CommentFlags::Trailing | CommentFlags::Line);
+
     let should_group = should_break;
 
     if !line_before_operator {

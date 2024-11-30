@@ -50,6 +50,7 @@ impl Rule for NoIsMounted {
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(member_expr) = call_expr.callee.as_member_expression() else {
             return;
         };
@@ -66,6 +67,7 @@ impl Rule for NoIsMounted {
                 AstKind::ObjectProperty(_) | AstKind::MethodDefinition(_)
             ) {
                 ctx.diagnostic(no_is_mounted_diagnostic(call_expr.span));
+
                 break;
             }
         }
@@ -93,6 +95,7 @@ fn test() {
             var Hello = createReactClass({
                 componentDidUpdate: function() {
                     someNonMemberFunction(arg);
+
                     this.someFunc = this.isMounted;
                 },
                 render: function() {
@@ -143,6 +146,7 @@ fn test() {
                     return;
                   }
                 }
+
                 render() {
                   return <div onClick={this.someMethod.bind(this)}>Hello</div>;
                 }

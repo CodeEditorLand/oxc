@@ -38,6 +38,7 @@ impl Rule for NoMocksImport {
 
         for import_entry in &module_records.import_entries {
             let module_specifier = import_entry.module_request.name().as_str();
+
             if contains_mocks_dir(module_specifier) {
                 ctx.diagnostic(no_mocks_import_diagnostic(import_entry.module_request.span()));
             }
@@ -50,9 +51,11 @@ impl Rule for NoMocksImport {
 
         for &reference_id in require_reference_ids {
             let reference = ctx.symbols().get_reference(reference_id);
+
             let Some(parent) = ctx.nodes().parent_node(reference.node_id()) else {
                 return;
             };
+
             let AstKind::CallExpression(call_expr) = parent.kind() else {
                 return;
             };

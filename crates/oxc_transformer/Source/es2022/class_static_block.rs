@@ -64,13 +64,17 @@ impl<'a> Traverse<'a> for ClassStaticBlock {
         // Don't collate private keys list conditionally only if a static block is found, as usually
         // there will be no matching private keys, so those checks are cheap and will not allocate.
         let mut has_static_block = false;
+
         let mut keys = Keys::default();
+
         for element in &body.body {
             let key = match element {
                 ClassElement::StaticBlock(_) => {
                     has_static_block = true;
+
                     continue;
                 }
+
                 ClassElement::MethodDefinition(def) => &def.key,
                 ClassElement::PropertyDefinition(def) => &def.key,
                 ClassElement::AccessorProperty(def) => &def.key,
@@ -107,6 +111,7 @@ impl ClassStaticBlock {
         let expr = Self::convert_block_to_expression(block, ctx);
 
         let key = keys.get_unique(ctx);
+
         let key = ctx.ast.property_key_private_identifier(SPAN, key);
 
         ctx.ast.class_element_property_definition(
@@ -143,6 +148,7 @@ impl ClassStaticBlock {
         // `static { foo }` -> `foo`
         // TODO(improve-on-babel): If block has no statements, could remove it entirely.
         let stmts = &mut block.body;
+
         if stmts.len() == 1 {
             if let Statement::ExpressionStatement(stmt) = stmts.first_mut().unwrap() {
                 return Self::convert_block_with_single_expression_to_expression(
@@ -162,18 +168,22 @@ impl ClassStaticBlock {
             ScopeFlags::Function | ScopeFlags::Arrow | ScopeFlags::StrictMode;
 
         let stmts = ctx.ast.move_vec(stmts);
+
         let params = ctx.ast.alloc_formal_parameters(
             SPAN,
             FormalParameterKind::ArrowFormalParameters,
             ctx.ast.vec(),
             NONE,
         );
+
         let body = ctx.ast.alloc_function_body(SPAN, ctx.ast.vec(), stmts);
+
         let arrow = Expression::ArrowFunctionExpression(
             ctx.ast.alloc_arrow_function_expression_with_scope_id(
                 SPAN, false, false, NONE, params, NONE, body, scope_id,
             ),
         );
+
         ctx.ast.expression_call(SPAN, arrow, NONE, ctx.ast.vec(), false)
     }
 
@@ -220,6 +230,7 @@ impl<'a> Keys<'a> {
     /// Key will only be added to set if it's `_`, or starts with `_[1-9]`.
     fn reserve(&mut self, key: &'a str) {
         let mut bytes = key.as_bytes().iter().copied();
+
         if bytes.next() != Some(b'_') {
             return;
         }
@@ -228,9 +239,11 @@ impl<'a> Keys<'a> {
             None => {
                 self.underscore = true;
             }
+
             Some(b'1'..=b'9') => {
                 self.numbered.push(&key[1..]);
             }
+
             _ => {}
         }
     }
@@ -243,6 +256,7 @@ impl<'a> Keys<'a> {
         #[expect(clippy::if_not_else)]
         if !self.underscore {
             self.underscore = true;
+
             Atom::from("_")
         } else {
             self.get_unique_slow(ctx)
@@ -256,19 +270,27 @@ impl<'a> Keys<'a> {
         // Source text length is limited to `u32::MAX` so impossible to have more than `u32::MAX`
         // private keys. So `u32` is sufficient here.
         let mut i = 2u32;
+
         let mut buffer = ItoaBuffer::new();
+
         let mut num_str;
+
         loop {
             num_str = buffer.format(i);
+
             if !self.numbered.contains(&num_str) {
                 break;
             }
+
             i += 1;
         }
 
         let mut key = ArenaString::with_capacity_in(num_str.len() + 1, ctx.ast.allocator);
+
         key.push('_');
+
         key.push_str(num_str);
+
         let key = Atom::from(key.into_bump_str());
 
         self.numbered.push(&key.as_str()[1..]);
@@ -280,7 +302,9 @@ impl<'a> Keys<'a> {
 #[cfg(test)]
 mod test {
     use oxc_allocator::Allocator;
+
     use oxc_semantic::{ScopeTree, SymbolTable};
+
     use oxc_traverse::TraverseCtx;
 
     use super::Keys;
@@ -288,8 +312,11 @@ mod test {
     macro_rules! setup {
         ($ctx:ident) => {
             let allocator = Allocator::default();
+
             let scopes = ScopeTree::default();
+
             let symbols = SymbolTable::default();
+
             let mut $ctx = TraverseCtx::new(scopes, symbols, &allocator);
         };
     }
@@ -301,16 +328,27 @@ mod test {
         let mut keys = Keys::default();
 
         assert_eq!(keys.get_unique(&mut ctx), "_");
+
         assert_eq!(keys.get_unique(&mut ctx), "_2");
+
         assert_eq!(keys.get_unique(&mut ctx), "_3");
+
         assert_eq!(keys.get_unique(&mut ctx), "_4");
+
         assert_eq!(keys.get_unique(&mut ctx), "_5");
+
         assert_eq!(keys.get_unique(&mut ctx), "_6");
+
         assert_eq!(keys.get_unique(&mut ctx), "_7");
+
         assert_eq!(keys.get_unique(&mut ctx), "_8");
+
         assert_eq!(keys.get_unique(&mut ctx), "_9");
+
         assert_eq!(keys.get_unique(&mut ctx), "_10");
+
         assert_eq!(keys.get_unique(&mut ctx), "_11");
+
         assert_eq!(keys.get_unique(&mut ctx), "_12");
     }
 
@@ -319,17 +357,27 @@ mod test {
         setup!(ctx);
 
         let mut keys = Keys::default();
+
         keys.reserve("a");
+
         keys.reserve("foo");
+
         keys.reserve("__");
+
         keys.reserve("_0");
+
         keys.reserve("_1");
+
         keys.reserve("_a");
+
         keys.reserve("_foo");
+
         keys.reserve("_2foo");
 
         assert_eq!(keys.get_unique(&mut ctx), "_");
+
         assert_eq!(keys.get_unique(&mut ctx), "_2");
+
         assert_eq!(keys.get_unique(&mut ctx), "_3");
     }
 
@@ -338,10 +386,13 @@ mod test {
         setup!(ctx);
 
         let mut keys = Keys::default();
+
         keys.reserve("_");
 
         assert_eq!(keys.get_unique(&mut ctx), "_2");
+
         assert_eq!(keys.get_unique(&mut ctx), "_3");
+
         assert_eq!(keys.get_unique(&mut ctx), "_4");
     }
 
@@ -350,18 +401,29 @@ mod test {
         setup!(ctx);
 
         let mut keys = Keys::default();
+
         keys.reserve("_2");
+
         keys.reserve("_4");
+
         keys.reserve("_11");
 
         assert_eq!(keys.get_unique(&mut ctx), "_");
+
         assert_eq!(keys.get_unique(&mut ctx), "_3");
+
         assert_eq!(keys.get_unique(&mut ctx), "_5");
+
         assert_eq!(keys.get_unique(&mut ctx), "_6");
+
         assert_eq!(keys.get_unique(&mut ctx), "_7");
+
         assert_eq!(keys.get_unique(&mut ctx), "_8");
+
         assert_eq!(keys.get_unique(&mut ctx), "_9");
+
         assert_eq!(keys.get_unique(&mut ctx), "_10");
+
         assert_eq!(keys.get_unique(&mut ctx), "_12");
     }
 
@@ -370,20 +432,33 @@ mod test {
         setup!(ctx);
 
         let mut keys = Keys::default();
+
         keys.reserve("_5");
+
         keys.reserve("_4");
+
         keys.reserve("_12");
+
         keys.reserve("_13");
 
         assert_eq!(keys.get_unique(&mut ctx), "_");
+
         assert_eq!(keys.get_unique(&mut ctx), "_2");
+
         assert_eq!(keys.get_unique(&mut ctx), "_3");
+
         assert_eq!(keys.get_unique(&mut ctx), "_6");
+
         assert_eq!(keys.get_unique(&mut ctx), "_7");
+
         assert_eq!(keys.get_unique(&mut ctx), "_8");
+
         assert_eq!(keys.get_unique(&mut ctx), "_9");
+
         assert_eq!(keys.get_unique(&mut ctx), "_10");
+
         assert_eq!(keys.get_unique(&mut ctx), "_11");
+
         assert_eq!(keys.get_unique(&mut ctx), "_14");
     }
 
@@ -392,12 +467,17 @@ mod test {
         setup!(ctx);
 
         let mut keys = Keys::default();
+
         keys.reserve("_2");
+
         keys.reserve("_4");
+
         keys.reserve("_");
 
         assert_eq!(keys.get_unique(&mut ctx), "_3");
+
         assert_eq!(keys.get_unique(&mut ctx), "_5");
+
         assert_eq!(keys.get_unique(&mut ctx), "_6");
     }
 
@@ -406,12 +486,17 @@ mod test {
         setup!(ctx);
 
         let mut keys = Keys::default();
+
         keys.reserve("_5");
+
         keys.reserve("_4");
+
         keys.reserve("_");
 
         assert_eq!(keys.get_unique(&mut ctx), "_2");
+
         assert_eq!(keys.get_unique(&mut ctx), "_3");
+
         assert_eq!(keys.get_unique(&mut ctx), "_6");
     }
 }

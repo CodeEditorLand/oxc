@@ -69,16 +69,20 @@ impl<'a, 'ctx> Traverse<'a> for TypeScript<'a, 'ctx> {
         if self.ctx.source_type.is_typescript_definition() {
             // Output empty file for TS definitions
             program.directives.clear();
+
             program.hashbang = None;
+
             program.body.clear();
         } else {
             program.source_type = program.source_type.with_javascript(true);
+
             self.namespace.enter_program(program, ctx);
         }
     }
 
     fn exit_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.annotations.exit_program(program, ctx);
+
         self.module.exit_program(program, ctx);
     }
 
@@ -220,6 +224,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScript<'a, 'ctx> {
 
     fn enter_statement(&mut self, stmt: &mut Statement<'a>, ctx: &mut TraverseCtx<'a>) {
         self.r#enum.enter_statement(stmt, ctx);
+
         self.module.enter_statement(stmt, ctx);
     }
 

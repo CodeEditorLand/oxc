@@ -14,6 +14,7 @@ pub enum BrowserslistQuery {
 
 fn cache() -> &'static DashMap<BrowserslistQuery, EngineTargets> {
     static CACHE: OnceLock<DashMap<BrowserslistQuery, EngineTargets>> = OnceLock::new();
+
     CACHE.get_or_init(DashMap::new)
 }
 
@@ -37,6 +38,7 @@ impl BrowserslistQuery {
                     browserslist::resolve(&[s], &options)
                 }
             }
+
             BrowserslistQuery::Multiple(ref s) => browserslist::resolve(s, &options),
         };
 
@@ -46,8 +48,10 @@ impl BrowserslistQuery {
                     .into_iter()
                     .map(|d| (d.name().to_string(), d.version().to_string()))
                     .collect::<Vec<_>>();
+
                 EngineTargets::parse_versions(versions)
             }
+
             Err(err) => return Err(format!("failed to resolve query: {err}")),
         };
 
@@ -64,6 +68,7 @@ mod tests {
     #[test]
     fn test_empty() {
         let res = BrowserslistQuery::Single(String::new()).exec().unwrap();
+
         assert!(!res.is_any_target(), "empty query should return non-empty result");
     }
 }

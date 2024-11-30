@@ -105,7 +105,9 @@ pub fn process_types(ty:&TypeRef) -> Vec<(Ident, Type)> {
 								it.fields.len() == 1,
 								"visit_as only supports single argument fields."
 							);
+
 							let field = it.fields.iter().next().unwrap();
+
 							let type_name = field.ty.get_ident().inner_ident();
 							(attr.parse_args().unwrap(), parse_quote!(#type_name<'a>))
 						})
@@ -137,6 +139,7 @@ pub fn process_types(ty:&TypeRef) -> Vec<(Ident, Type)> {
 		.map(|kind| {
 			if let kind @ (RType::Enum(_) | RType::Struct(_)) = &*kind.borrow() {
 				let ident = kind.ident().unwrap().clone();
+
 				let typ = kind.as_type().unwrap();
 				(ident, typ)
 			} else {
@@ -182,6 +185,7 @@ impl Generator for AstKindGenerator {
 			#header
 
 			use crate::ast::*;
+
 			use oxc_span::{GetSpan, Span};
 
 			endl!();

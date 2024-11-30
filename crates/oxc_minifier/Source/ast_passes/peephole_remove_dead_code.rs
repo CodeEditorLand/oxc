@@ -24,6 +24,7 @@ impl<'a> CompressorPass<'a> for PeepholeRemoveDeadCode {
 
     fn build(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.changed = false;
+
         oxc_traverse::walk_program(self, program, ctx);
     }
 }
@@ -31,16 +32,19 @@ impl<'a> CompressorPass<'a> for PeepholeRemoveDeadCode {
 impl<'a> Traverse<'a> for PeepholeRemoveDeadCode {
     fn enter_statement(&mut self, stmt: &mut Statement<'a>, ctx: &mut TraverseCtx<'a>) {
         let ctx = Ctx(ctx);
+
         if let Some(new_stmt) = match stmt {
             Statement::IfStatement(if_stmt) => self.try_fold_if(if_stmt, ctx),
             Statement::ForStatement(for_stmt) => self.try_fold_for(for_stmt, ctx),
             Statement::ExpressionStatement(expr_stmt) => {
                 Self::try_fold_expression_stmt(expr_stmt, ctx)
             }
+
             Statement::LabeledStatement(labeled) => Self::try_fold_labeled(labeled, ctx),
             _ => None,
         } {
             *stmt = new_stmt;
+
             self.changed = true;
         }
     }
@@ -53,16 +57,19 @@ impl<'a> Traverse<'a> for PeepholeRemoveDeadCode {
         if stmts.iter().any(|stmt| matches!(stmt, Statement::EmptyStatement(_))) {
             stmts.retain(|stmt| !matches!(stmt, Statement::EmptyStatement(_)));
         }
+
         self.dead_code_elimination(stmts, Ctx(ctx));
     }
 
     fn exit_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         let ctx = Ctx(ctx);
+
         if let Some(folded_expr) = match expr {
             Expression::ConditionalExpression(e) => Self::try_fold_conditional_expression(e, ctx),
             _ => None,
         } {
             *expr = folded_expr;
+
             self.changed = true;
         }
     }
@@ -80,6 +87,7 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
         'outer: for (i, stmt) in stmts.iter().enumerate() {
             if matches!(stmt, Statement::ReturnStatement(_) | Statement::ThrowStatement(_)) {
                 index.replace(i);
+
                 break;
             }
             // Double check block statements folded by if statements above
@@ -88,6 +96,7 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
                     if matches!(stmt, Statement::ReturnStatement(_) | Statement::ThrowStatement(_))
                     {
                         index.replace(i);
+
                         break 'outer;
                     }
                 }
@@ -95,6 +104,7 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
         }
 
         let Some(index) = index else { return };
+
         if index == stmts.len() - 1 {
             return;
         }
@@ -106,9 +116,12 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
         }
 
         let mut i = 0;
+
         let len = stmts.len();
+
         stmts.retain(|s| {
             i += 1;
+
             if i - 1 <= index {
                 return true;
             }
@@ -116,12 +129,15 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
             if matches!(s.as_declaration(), Some(Declaration::FunctionDeclaration(_))) {
                 return true;
             }
+
             false
         });
 
         let all_hoisted = keep_var.all_hoisted();
+
         if let Some(stmt) = keep_var.get_variable_declaration_statement() {
             stmts.push(stmt);
+
             if !all_hoisted {
                 self.changed = true;
             }
@@ -140,10 +156,14 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
             // semantics according to AnnexB, which lead to different semantics.
             if block.body.len() == 1 && !block.body[0].is_declaration() {
                 *stmt = block.body.remove(0);
+
                 self.compress_block(stmt, ctx);
+
                 self.changed = true;
+
                 return;
             }
+
             if block.body.len() == 0
                 && (ctx.parent().is_while_statement()
                     || ctx.parent().is_for_statement()
@@ -168,6 +188,7 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
             if let Some(new_stmt) = self.try_fold_if(alternate, ctx) {
                 if matches!(new_stmt, Statement::EmptyStatement(_)) {
                     if_stmt.alternate = None;
+
                     self.changed = true;
                 } else {
                     if_stmt.alternate = Some(new_stmt);
@@ -178,21 +199,26 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
         match ctx.get_boolean_value(&if_stmt.test) {
             Some(true) => {
                 // self.changed = true;
+
                 Some(ctx.ast.move_statement(&mut if_stmt.consequent))
             }
+
             Some(false) => {
                 Some(if let Some(alternate) = &mut if_stmt.alternate {
                     ctx.ast.move_statement(alternate)
                 } else {
                     // Keep hoisted `vars` from the consequent block.
                     let mut keep_var = KeepVar::new(ctx.ast);
+
                     keep_var.visit_statement(&if_stmt.consequent);
+
                     keep_var
                         .get_variable_declaration_statement()
                         .unwrap_or_else(|| ctx.ast.statement_empty(SPAN))
                 })
                 // self.changed = true;
             }
+
             None => None,
         }
     }
@@ -203,12 +229,16 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
         ctx: Ctx<'a, 'b>,
     ) -> Option<Statement<'a>> {
         let test_boolean = for_stmt.test.as_ref().and_then(|test| ctx.get_boolean_value(test));
+
         match test_boolean {
             Some(false) => match &mut for_stmt.init {
                 Some(ForStatementInit::VariableDeclaration(var_init)) => {
                     let mut keep_var = KeepVar::new(ctx.ast);
+
                     keep_var.visit_statement(&for_stmt.body);
+
                     let mut var_decl = keep_var.get_variable_declaration();
+
                     if var_init.kind.is_var() {
                         if let Some(var_decl) = &mut var_decl {
                             var_decl
@@ -219,27 +249,35 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
                                 Some(ctx.ast.alloc(ctx.ast.move_variable_declaration(var_init)));
                         }
                     }
+
                     Some(var_decl.map_or_else(
                         || ctx.ast.statement_empty(SPAN),
                         Statement::VariableDeclaration,
                     ))
                 }
+
                 None => {
                     let mut keep_var = KeepVar::new(ctx.ast);
+
                     keep_var.visit_statement(&for_stmt.body);
+
                     Some(keep_var.get_variable_declaration().map_or_else(
                         || ctx.ast.statement_empty(SPAN),
                         Statement::VariableDeclaration,
                     ))
                 }
+
                 _ => None,
             },
             Some(true) => {
                 // Remove the test expression.
                 for_stmt.test = None;
+
                 self.changed = true;
+
                 None
             }
+
             None => None,
         }
     }
@@ -259,12 +297,18 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
         match &mut labeled.body {
             Statement::BreakStatement(break_stmt)
                 if break_stmt.label.as_ref().is_some_and(|l| l.name.as_str() == id) => {}
+
             Statement::BlockStatement(block) if block.body.first().is_some_and(|first| matches!(first, Statement::BreakStatement(break_stmt) if break_stmt.label.as_ref().is_some_and(|l| l.name.as_str() == id))) => {}
+
             _ => return None,
         }
+
         let mut var = KeepVar::new(ctx.ast);
+
         var.visit_statement(&labeled.body);
+
         let var_decl = var.get_variable_declaration_statement();
+
         var_decl.unwrap_or(ctx.ast.statement_empty(SPAN)).into()
     }
 
@@ -290,6 +334,7 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
                 Expression::ObjectExpression(object_expr) => {
                     Self::try_fold_object_expression(object_expr, ctx)
                 }
+
                 Expression::TemplateLiteral(template_lit) => {
                     if !template_lit.expressions.is_empty() {
                         return None;
@@ -313,9 +358,11 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
                         ctx.ast.expression_sequence(template_lit.span, expressions),
                     ));
                 }
+
                 Expression::FunctionExpression(function_expr) if function_expr.id.is_none() => {
                     Some(ctx.ast.statement_empty(SPAN))
                 }
+
                 _ => None,
             })
     }
@@ -326,6 +373,7 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
         ctx: Ctx<'a, 'b>,
     ) -> Option<Statement<'a>> {
         let mut transformed_elements = ctx.ast.vec();
+
         let mut pending_spread_elements = ctx.ast.vec();
 
         if array_expr.elements.len() == 0
@@ -341,12 +389,17 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
             match el {
                 ArrayExpressionElement::SpreadElement(_) => {
                     let spread_element = ctx.ast.move_array_expression_element(el);
+
                     pending_spread_elements.push(spread_element);
                 }
+
                 ArrayExpressionElement::Elision(_) => {}
+
                 match_expression!(ArrayExpressionElement) => {
                     let el = el.to_expression_mut();
+
                     let el_expr = ctx.ast.move_expression(el);
+
                     if !el_expr.is_literal_value(false)
                         && !matches!(el_expr, Expression::Identifier(_))
                     {
@@ -357,8 +410,10 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
                                 pending_spread_elements,
                                 None,
                             ));
+
                             pending_spread_elements = ctx.ast.vec();
                         }
+
                         transformed_elements.push(el_expr);
                     }
                 }
@@ -404,13 +459,16 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
             Some(true) => {
                 // Bail `let o = { f() { assert.ok(this !== o); } }; (true ? o.f : false)(); (true ? o.f : false)``;`
                 let parent = ctx.ancestry.parent();
+
                 if parent.is_tagged_template_expression()
                     || matches!(parent, Ancestor::CallExpressionCallee(_))
                 {
                     return None;
                 }
+
                 Some(ctx.ast.move_expression(&mut expr.consequent))
             }
+
             Some(false) => Some(ctx.ast.move_expression(&mut expr.alternate)),
             None => None,
         }
@@ -426,7 +484,9 @@ mod test {
 
     fn test(source_text: &str, positive: &str) {
         let allocator = Allocator::default();
+
         let mut pass = super::PeepholeRemoveDeadCode::new();
+
         tester::test(&allocator, source_text, positive, &mut pass);
     }
 
@@ -445,34 +505,47 @@ mod test {
     #[test]
     fn test_fold_block() {
         fold("{{foo()}}", "foo()");
+
         fold("{foo();{}}", "foo()");
+
         fold("{{foo()}{}}", "foo()");
         // fold("{{foo()}{bar()}}", "foo();bar()");
+
         fold("{if(false)foo(); {bar()}}", "bar()");
+
         fold("{if(false)if(false)if(false)foo(); {bar()}}", "bar()");
 
         fold("{'hi'}", "");
+
         fold("{x==3}", "x == 3");
+
         fold("{`hello ${foo}`}", "`hello ${foo}`");
+
         fold("{ (function(){x++}) }", "");
+
         fold_same("function f(){return;}");
+
         fold("function f(){return 3;}", "function f(){return 3}");
         // fold_same("function f(){if(x)return; x=3; return; }");
         // fold("{x=3;;;y=2;;;}", "x=3;y=2");
 
         // Cases to test for empty block.
         // fold("while(x()){x}", "while(x());");
+
         fold("while(x()){x()}", "while(x())x()");
         // fold("for(x=0;x<100;x++){x}", "for(x=0;x<100;x++);");
         // fold("for(x in y){x}", "for(x in y);");
         // fold("for (x of y) {x}", "for(x of y);");
+
         fold("for (let x = 1; x <10; x++ ) {}", "for (let x = 1; x <10; x++ );");
+
         fold("for (var x = 1; x <10; x++ ) {}", "for (var x = 1; x <10; x++ );");
     }
 
     #[test]
     fn test_remove_no_op_labelled_statement() {
         fold("a: break a;", "");
+
         fold("a: { break a; }", "");
 
         fold(
@@ -480,6 +553,7 @@ mod test {
             "a: { break a; console.log('unreachable'); }", //
             "",
         );
+
         fold(
             //
             "a: { break a; var x = 1; } x = 2;", //
@@ -487,25 +561,35 @@ mod test {
         );
 
         fold_same("b: { var x = 1; } x = 2;");
+
         fold_same("a: b: { var x = 1; } x = 2;");
     }
 
     #[test]
     fn test_fold_useless_for() {
         fold("for(;false;) { foo() }", "");
+
         fold("for(;void 0;) { foo() }", "");
+
         fold("for(;undefined;) { foo() }", "");
+
         fold("for(;true;) foo() ", "for(;;) foo() ");
+
         fold_same("for(;;) foo()");
+
         fold("for(;false;) { var a = 0; }", "var a");
+
         fold("for(;false;) { const a = 0; }", "");
+
         fold("for(;false;) { let a = 0; }", "");
 
         // Make sure it plays nice with minimizing
         fold("for(;false;) { foo(); continue }", "");
 
         fold("for (var { c, x: [d] } = {}; 0;);", "var { c, x: [d] } = {};");
+
         fold("for (var se = [1, 2]; false;);", "var se = [1, 2];");
+
         fold("for (var se = [1, 2]; false;) { var a = 0; }", "var se = [1, 2], a;");
 
         fold("for (foo = bar; false;) {}", "for (foo = bar; false;);");
@@ -515,11 +599,17 @@ mod test {
     #[test]
     fn test_minimize_loop_with_constant_condition_vanilla_for() {
         fold("for(;true;) foo()", "for(;;) foo()");
+
         fold("for(;0;) foo()", "");
+
         fold("for(;0.0;) foo()", "");
+
         fold("for(;NaN;) foo()", "");
+
         fold("for(;null;) foo()", "");
+
         fold("for(;undefined;) foo()", "");
+
         fold("for(;'';) foo()", "");
     }
 
@@ -527,32 +617,45 @@ mod test {
     #[ignore]
     fn test_object_literal() {
         fold("({})", "");
+
         fold("({a:1})", "");
+
         fold("({a:foo()})", "foo()");
+
         fold("({'a':foo()})", "foo()");
         // Object-spread may trigger getters.
         fold_same("({...a})");
+
         fold_same("({...foo()})");
 
         fold("({ [bar()]: foo() })", "bar(), foo()");
+
         fold_same("({ ...baz, [bar()]: foo() })");
     }
 
     #[test]
     fn test_array_literal() {
         fold("([])", "");
+
         fold("([1])", "");
+
         fold("([a])", "");
+
         fold("([foo()])", "foo()");
+
         fold_same("baz.map((v) => [v])");
     }
 
     #[test]
     fn test_array_literal_containing_spread() {
         fold_same("([...c])");
+
         fold("([4, ...c, a])", "([...c])");
+
         fold("([foo(), ...c, bar()])", "(foo(), [...c], bar())");
+
         fold("([...a, b, ...c])", "([...a, ...c])");
+
         fold_same("([...b, ...c])"); // It would also be fine if the spreads were split apart.
     }
 }

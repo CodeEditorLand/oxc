@@ -65,7 +65,9 @@ impl Test262Case {
     /// # Panics
     pub fn read_metadata(code: &str) -> MetaData {
         let (start, end) = (code.find("/*---").unwrap(), code.find("---*/").unwrap());
+
         let s = &code[start + 5..end].replace('\r', "\n");
+
         MetaData::from_str(s)
     }
 
@@ -81,7 +83,9 @@ impl Test262Case {
 impl Case for Test262Case {
     fn new(path: PathBuf, code: String) -> Self {
         let meta = Self::read_metadata(&code);
+
         let should_fail = Self::compute_should_fail(&meta);
+
         Self { path, code, meta, should_fail, result: TestResult::ToBeRun }
     }
 
@@ -119,6 +123,7 @@ impl Case for Test262Case {
     // sequence of the file https://github.com/tc39/test262/blob/main/INTERPRETING.md#strict-mode
     fn run(&mut self) {
         let flags = &self.meta.flags;
+
         let source_type = SourceType::default().with_script(true);
 
         self.result = if flags.contains(&TestFlag::OnlyStrict) {
@@ -129,6 +134,7 @@ impl Case for Test262Case {
             self.execute(source_type)
         } else {
             let res = self.execute(source_type.with_always_strict(true));
+
             if matches!(res, TestResult::Passed) {
                 self.execute(source_type.with_always_strict(false))
             } else {
@@ -148,21 +154,26 @@ impl Case for Test262Case {
 
 fn are_all_identifiers_resolved(semantic: &oxc_semantic::Semantic<'_>) -> bool {
     use oxc_ast::AstKind;
+
     use oxc_semantic::AstNode;
 
     let ast_nodes = semantic.nodes();
+
     let has_non_resolved = ast_nodes.iter().any(|node| {
         match node.kind() {
             AstKind::BindingIdentifier(id) => {
                 let mut parents = ast_nodes.iter_parents(node.id()).map(AstNode::kind);
+
                 parents.next(); // Exclude BindingIdentifier itself
                 if let (Some(AstKind::Function(_)), Some(AstKind::IfStatement(_))) =
                     (parents.next(), parents.next())
                 {
                     return false;
                 }
+
                 id.symbol_id.get().is_none()
             }
+
             AstKind::IdentifierReference(ref_id) => ref_id.reference_id.get().is_none(),
             _ => false,
         }

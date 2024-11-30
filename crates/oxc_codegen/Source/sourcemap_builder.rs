@@ -76,9 +76,12 @@ pub struct SourcemapBuilder {
 impl SourcemapBuilder {
     pub fn new(path: &Path, source_text: &str) -> Self {
         let mut sourcemap_builder = oxc_sourcemap::SourceMapBuilder::default();
+
         let line_offset_tables = Self::generate_line_offset_tables(source_text);
+
         let source_id =
             sourcemap_builder.set_source_and_content(path.to_string_lossy().as_ref(), source_text);
+
         Self {
             source_id,
             original_source: Arc::from(source_text),
@@ -103,11 +106,13 @@ impl SourcemapBuilder {
             span.end,
             self.original_source.len()
         );
+
         let original_name = self.original_source.get(span.start as usize..span.end as usize);
         // The token name should be original name.
         // If it hasn't change, name should be `None` to reduce `SourceMap` size.
         let token_name =
             if original_name == Some(name) { None } else { original_name.map(Into::into) };
+
         self.add_source_mapping(output, span.start, token_name);
     }
 
@@ -115,9 +120,13 @@ impl SourcemapBuilder {
         if matches!(self.last_position, Some(last_position) if last_position == position) {
             return;
         }
+
         let (original_line, original_column) = self.search_original_line_and_column(position);
+
         self.update_generated_line_and_column(output);
+
         let name_id = name.map(|s| self.sourcemap_builder.add_name(&s));
+
         self.sourcemap_builder.add_token(
             self.generated_line,
             self.generated_column,
@@ -126,6 +135,7 @@ impl SourcemapBuilder {
             Some(self.source_id),
             name_id,
         );
+
         self.last_position = Some(position);
     }
 
@@ -135,11 +145,16 @@ impl SourcemapBuilder {
             .line_offset_tables
             .lines
             .partition_point(|table| table.byte_offset_to_start_of_line <= position);
+
         let original_line = if result > 0 { result - 1 } else { 0 };
+
         let line = &self.line_offset_tables.lines[original_line];
+
         let mut original_column = position - line.byte_offset_to_start_of_line;
+
         if let Some(column_offsets_id) = line.column_offsets_id {
             let column_offsets = &self.line_offset_tables.column_offsets[column_offsets_id];
+
             if original_column >= column_offsets.byte_offset_to_first {
                 original_column = column_offsets.columns
                     [(original_column - column_offsets.byte_offset_to_first) as usize];
@@ -154,33 +169,44 @@ impl SourcemapBuilder {
 
         // Find last line break
         let mut line_start_ptr = remaining.as_ptr();
+
         let mut last_line_is_ascii = true;
+
         let mut iter = remaining.iter();
+
         while let Some(&b) = iter.next() {
             match b {
                 b'\n' => {}
+
                 b'\r' => {
                     // Handle Windows-specific "\r\n" newlines
                     if iter.clone().next() == Some(&b'\n') {
                         iter.next();
                     }
                 }
+
                 _ if b.is_ascii() => {
                     continue;
                 }
+
                 LS_OR_PS_FIRST => {
                     let next_byte = *iter.next().unwrap();
+
                     let next_next_byte = *iter.next().unwrap();
+
                     if next_byte != LS_OR_PS_SECOND
                         || !matches!(next_next_byte, LS_THIRD | PS_THIRD)
                     {
                         last_line_is_ascii = false;
+
                         continue;
                     }
                 }
+
                 _ => {
                     // Unicode char
                     last_line_is_ascii = false;
+
                     continue;
                 }
             }
@@ -188,8 +214,11 @@ impl SourcemapBuilder {
             // Line break found.
             // `iter` is now positioned after line break.
             line_start_ptr = iter.as_slice().as_ptr();
+
             self.generated_line += 1;
+
             self.generated_column = 0;
+
             last_line_is_ascii = true;
         }
 
@@ -205,11 +234,13 @@ impl SourcemapBuilder {
             // Mozilla's "source-map" library counts columns using UTF-16 code units
             last_line.encode_utf16().count() as u32
         };
+
         self.last_generated_update = output.len();
     }
 
     fn generate_line_offset_tables(content: &str) -> LineOffsetTables {
         let mut lines = vec![];
+
         let mut column_offsets = IndexVec::new();
 
         // Process content line-by-line.
@@ -226,13 +257,16 @@ impl SourcemapBuilder {
             });
 
             let remaining = &content.as_bytes()[line_byte_offset as usize..];
+
             for (byte_offset_from_line_start, b) in remaining.iter().enumerate() {
                 #[allow(clippy::cast_possible_truncation)]
                 let mut byte_offset_from_line_start = byte_offset_from_line_start as u32;
+
                 match b {
                     b'\n' => {
                         byte_offset_from_line_start += 1;
                     }
+
                     b'\r' => {
                         byte_offset_from_line_start += 1;
                         // Handle Windows-specific "\r\n" newlines
@@ -240,13 +274,16 @@ impl SourcemapBuilder {
                             byte_offset_from_line_start += 1;
                         }
                     }
+
                     _ if b.is_ascii() => {
                         continue;
                     }
+
                     _ => {
                         // Unicode char found.
                         // Set `column_offsets_id` for line and create `columns` Vec.
                         let line = lines.iter_mut().last().unwrap();
+
                         line.column_offsets_id =
                             Some(ColumnOffsetsId::from_usize(column_offsets.len()));
 
@@ -256,11 +293,15 @@ impl SourcemapBuilder {
                         // `chunk_byte_offset` in this loop is byte offset from start of this 1st
                         // Unicode char.
                         let mut column = byte_offset_from_line_start;
+
                         line_byte_offset += byte_offset_from_line_start;
+
                         let remaining = &content[line_byte_offset as usize..];
+
                         for (chunk_byte_offset, ch) in remaining.char_indices() {
                             #[allow(clippy::cast_possible_truncation)]
                             let mut chunk_byte_offset = chunk_byte_offset as u32;
+
                             for _ in 0..ch.len_utf8() {
                                 columns.push(column);
                             }
@@ -269,16 +310,19 @@ impl SourcemapBuilder {
                                 '\r' => {
                                     // Handle Windows-specific "\r\n" newlines
                                     chunk_byte_offset += 1;
+
                                     if remaining.as_bytes().get(chunk_byte_offset as usize)
                                         == Some(&b'\n')
                                     {
                                         chunk_byte_offset += 1;
+
                                         columns.push(column + 1);
                                     }
                                 }
                                 '\n' => {
                                     chunk_byte_offset += 1;
                                 }
+
                                 LS | PS => {
                                     chunk_byte_offset += 3;
                                 }
@@ -286,6 +330,7 @@ impl SourcemapBuilder {
                                 _ => {
                                     // Mozilla's "source-map" library counts columns using UTF-16 code units
                                     column += ch.len_utf16() as u32;
+
                                     continue;
                                 }
                             }
@@ -321,6 +366,7 @@ impl SourcemapBuilder {
                 // Line break found.
                 // `byte_offset_from_line_start` is now the length of line *including* line break.
                 line_byte_offset += byte_offset_from_line_start;
+
                 continue 'lines;
             }
 
@@ -339,10 +385,15 @@ mod test {
     #[test]
     fn builder_ascii() {
         assert_mapping("", &[(0, 0, 0)]);
+
         assert_mapping("a", &[(0, 0, 0), (1, 0, 1)]);
+
         assert_mapping("\n", &[(0, 0, 0), (1, 1, 0)]);
+
         assert_mapping("a\n", &[(0, 0, 0), (1, 0, 1), (2, 1, 0)]);
+
         assert_mapping("\na", &[(0, 0, 0), (1, 1, 0), (2, 1, 1)]);
+
         assert_mapping(
             "ab\ncd\n\nef",
             &[
@@ -360,25 +411,38 @@ mod test {
         );
 
         assert_mapping("\r", &[(0, 0, 0), (1, 1, 0)]);
+
         assert_mapping("\r\r", &[(0, 0, 0), (1, 1, 0), (2, 2, 0)]);
+
         assert_mapping("a\ra", &[(0, 0, 0), (1, 0, 1), (2, 1, 0), (3, 1, 1)]);
 
         assert_mapping("\r\n", &[(0, 0, 0), (1, 0, 1), (2, 1, 0)]);
+
         assert_mapping("\r\n\r\n", &[(0, 0, 0), (1, 0, 1), (2, 1, 0), (3, 1, 1), (4, 2, 0)]);
+
         assert_mapping("a\r\na", &[(0, 0, 0), (1, 0, 1), (2, 0, 2), (3, 1, 0), (4, 1, 1)]);
     }
 
     #[test]
     fn builder_unicode() {
         assert_mapping("Ö", &[(0, 0, 0), (2, 0, 1)]);
+
         assert_mapping("ÖÖ", &[(0, 0, 0), (2, 0, 1), (4, 0, 2)]);
+
         assert_mapping("Ö\n", &[(0, 0, 0), (2, 0, 1), (3, 1, 0)]);
+
         assert_mapping("ÖÖ\n", &[(0, 0, 0), (2, 0, 1), (4, 0, 2), (5, 1, 0)]);
+
         assert_mapping("\nÖ", &[(0, 0, 0), (1, 1, 0), (3, 1, 1)]);
+
         assert_mapping("\nÖÖ", &[(0, 0, 0), (1, 1, 0), (3, 1, 1), (5, 1, 2)]);
+
         assert_mapping("Ö\nÖ", &[(0, 0, 0), (2, 0, 1), (3, 1, 0), (5, 1, 1)]);
+
         assert_mapping("\nÖÖ\n", &[(0, 0, 0), (1, 1, 0), (3, 1, 1), (5, 1, 2), (6, 2, 0)]);
+
         assert_mapping("Ö\ra", &[(0, 0, 0), (2, 0, 1), (3, 1, 0), (4, 1, 1)]);
+
         assert_mapping("Ö\r\na", &[(0, 0, 0), (2, 0, 1), (3, 0, 2), (4, 1, 0), (5, 1, 1)]);
     }
 
@@ -389,8 +453,10 @@ mod test {
 
     fn assert_mapping(source: &str, mappings: &[(u32, u32, u32)]) {
         let mut builder = SourcemapBuilder::new(Path::new("x.js"), source);
+
         for (position, expected_line, expected_col) in mappings.iter().copied() {
             let (line, col) = builder.search_original_line_and_column(position);
+
             assert_eq!(
                 builder.search_original_line_and_column(position),
                 (expected_line, expected_col),
@@ -403,10 +469,13 @@ mod test {
     fn add_source_mapping() {
         fn create_mappings(source: &str, line: u32, column: u32) {
             let mut builder = SourcemapBuilder::new(Path::new("x.js"), source);
+
             let output: Vec<u8> = source.as_bytes().into();
+
             for (i, _ch) in source.char_indices() {
                 #[allow(clippy::cast_possible_truncation)]
                 builder.add_source_mapping(&output, i as u32, None);
+
                 assert!(
                     builder.generated_line == line && builder.generated_column == column,
                     "Incorrect generated mapping for '{source}' ({:?}) starting at {i} - line {}, column {}",
@@ -414,33 +483,52 @@ mod test {
                     builder.generated_line,
                     builder.generated_column
                 );
+
                 assert_eq!(builder.last_generated_update, source.len());
             }
         }
 
         create_mappings("", 0, 0);
+
         create_mappings("abc", 0, 3);
+
         create_mappings("\n", 1, 0);
+
         create_mappings("\n\n\n", 3, 0);
+
         create_mappings("\r", 1, 0);
+
         create_mappings("\r\r\r", 3, 0);
+
         create_mappings("\r\n", 1, 0);
+
         create_mappings("\r\n\r\n\r\n", 3, 0);
+
         create_mappings("\nabc", 1, 3);
+
         create_mappings("abc\n", 1, 0);
+
         create_mappings("\rabc", 1, 3);
+
         create_mappings("abc\r", 1, 0);
+
         create_mappings("\r\nabc", 1, 3);
+
         create_mappings("abc\r\n", 1, 0);
+
         create_mappings("ÖÖ\nÖ\nÖÖÖ", 2, 3);
     }
 
     #[test]
     fn add_source_mapping_for_name() {
         let output = "ac".as_bytes();
+
         let mut builder = SourcemapBuilder::new(Path::new("x.js"), "ab");
+
         builder.add_source_mapping_for_name(output, Span::new(0, 1), "a");
+
         builder.add_source_mapping_for_name(output, Span::new(1, 2), "c");
+
         let sm = builder.into_sourcemap();
         // The name `a` not change.
         assert_eq!(
@@ -457,10 +545,15 @@ mod test {
     #[test]
     fn add_source_mapping_for_unordered_position() {
         let output = "".as_bytes();
+
         let mut builder = SourcemapBuilder::new(Path::new("x.js"), "ab");
+
         builder.add_source_mapping(output, 1, None);
+
         builder.add_source_mapping(output, 0, None);
+
         let sm = builder.into_sourcemap();
+
         assert_eq!(sm.get_tokens().count(), 2);
     }
 }

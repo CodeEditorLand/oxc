@@ -74,6 +74,7 @@ impl Rule for VoidDomElementsNoChildren {
         match node.kind() {
             AstKind::JSXElement(jsx_el) => {
                 let jsx_opening_el = &jsx_el.opening_element;
+
                 let JSXElementName::Identifier(identifier) = &jsx_opening_el.name else {
                     return;
                 };
@@ -88,8 +89,10 @@ impl Rule for VoidDomElementsNoChildren {
                             let JSXAttributeName::Identifier(iden) = &attr.name else {
                                 return false;
                             };
+
                             iden.name == "children" || iden.name == "dangerouslySetInnerHTML"
                         }
+
                         JSXAttributeItem::SpreadAttribute(_) => false,
                     });
 
@@ -100,6 +103,7 @@ impl Rule for VoidDomElementsNoChildren {
                     ));
                 }
             }
+
             AstKind::CallExpression(call_expr) => {
                 if !is_create_element_call(call_expr) {
                     return;
@@ -132,6 +136,7 @@ impl Rule for VoidDomElementsNoChildren {
                             PropertyKey::StaticIdentifier(iden) => {
                                 iden.name == "children" || iden.name == "dangerouslySetInnerHTML"
                             }
+
                             _ => false,
                         },
                         ObjectPropertyKind::SpreadProperty(_) => false,
@@ -144,6 +149,7 @@ impl Rule for VoidDomElementsNoChildren {
                     ));
                 }
             }
+
             _ => {}
         }
     }
@@ -169,6 +175,7 @@ fn test() {
         (
             r"
                 const props = {};
+
                 React.createElement('img', props);
             ",
             None,
@@ -176,6 +183,7 @@ fn test() {
         (
             r"
                 import React, {createElement} from 'react';
+
                 createElement('div');
             ",
             None,
@@ -183,6 +191,7 @@ fn test() {
         (
             r"
                 import React, {createElement} from 'react';
+
                 createElement('img');
             ",
             None,
@@ -190,10 +199,12 @@ fn test() {
         (
             r"
                 import React, {createElement, PureComponent} from 'react';
+
                 class Button extends PureComponent {
                     handleClick(ev) {
                         ev.preventDefault();
                     }
+
                     render() {
                         return <div onClick={this.handleClick}>Hello</div>;
                     }
@@ -214,6 +225,7 @@ fn test() {
         (
             r"
                 import React, {createElement} from 'react';
+
                 createElement('img', {}, 'Foo');
             ",
             None,
@@ -221,6 +233,7 @@ fn test() {
         (
             r"
                 import React, {createElement} from 'react';
+
                 createElement('img', { children: 'Foo' });
             ",
             None,
@@ -228,6 +241,7 @@ fn test() {
         (
             r"
                 import React, {createElement} from 'react';
+
                 createElement('img', { dangerouslySetInnerHTML: { __html: 'Foo' } });
             ",
             None,

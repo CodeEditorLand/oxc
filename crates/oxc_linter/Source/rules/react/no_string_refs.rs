@@ -80,6 +80,7 @@ fn contains_string_literal(
     no_template_literals: bool,
 ) -> bool {
     let expr = &expr_container.expression;
+
     matches!(expr, JSXExpression::StringLiteral(_))
         || (no_template_literals && matches!(expr, JSXExpression::TemplateLiteral(_)))
 }
@@ -88,12 +89,14 @@ fn is_literal_ref_attribute(attr: &JSXAttribute, no_template_literals: bool) -> 
     let JSXAttributeName::Identifier(attr_ident) = &attr.name else {
         return false;
     };
+
     if attr_ident.name == "ref" {
         if let Some(attr_value) = &attr.value {
             return match attr_value {
                 JSXAttributeValue::ExpressionContainer(expr_container) => {
                     contains_string_literal(expr_container, no_template_literals)
                 }
+
                 JSXAttributeValue::StringLiteral(_) => true,
                 _ => false,
             };
@@ -118,6 +121,7 @@ impl Rule for NoStringRefs {
                     ctx.diagnostic(string_in_ref_deprecated(attr.span));
                 }
             }
+
             AstKind::MemberExpression(member_expr) => {
                 if matches!(member_expr.object(), Expression::ThisExpression(_))
                     && member_expr.static_property_name() == Some("refs")
@@ -126,6 +130,7 @@ impl Rule for NoStringRefs {
                     ctx.diagnostic(this_refs_deprecated(member_expr.span()));
                 }
             }
+
             _ => {}
         }
     }
@@ -186,6 +191,7 @@ fn test() {
                     var Hello = function() {
                       return this.refs;
                     };
+
                     createReactClass({
                       render: function() {
                         let x;
@@ -199,6 +205,7 @@ fn test() {
                     var Hello = function() {
                       return this.refs;
                     };
+
                     class Other extends React.Component {
                       render() {
                         let x;
@@ -318,6 +325,7 @@ fn test() {
                 componentDidMount() {
                   var component = this.refs.hello;
                 }
+
                 render() {
                   return <div ref={`hello${index}`}>Hello {this.props.name}</div>;
                 }

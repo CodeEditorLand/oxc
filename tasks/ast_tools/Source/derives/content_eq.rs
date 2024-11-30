@@ -54,6 +54,7 @@ fn derive_enum(def: &EnumDef) -> (&str, TokenStream) {
     } else {
         let matches = def.all_variants().map(|var| {
             let ident = var.ident();
+
             if var.is_unit() {
                 quote!(Self :: #ident => matches!(other, Self :: #ident))
             } else {
@@ -68,6 +69,7 @@ fn derive_enum(def: &EnumDef) -> (&str, TokenStream) {
                 }
             }
         });
+
         quote! {
             match self {
                 #(#matches),*
@@ -93,9 +95,11 @@ fn derive_struct(def: &StructDef) -> (&str, TokenStream) {
             })
             .map(|field| {
                 let ident = field.ident();
+
                 quote!(ContentEq::content_eq(&self.#ident, &other.#ident))
             })
             .collect_vec();
+
         if fields.is_empty() {
             ("_", quote!(true))
         } else {
@@ -106,7 +110,9 @@ fn derive_struct(def: &StructDef) -> (&str, TokenStream) {
 
 fn impl_content_eq(def: &TypeDef, other_name: &str, body: &TokenStream) -> TokenStream {
     let ty = def.to_type();
+
     let generics = def.generics();
+
     let other = other_name.to_ident();
 
     quote! {

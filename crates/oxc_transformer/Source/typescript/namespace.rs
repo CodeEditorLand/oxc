@@ -65,18 +65,24 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptNamespace<'a, 'ctx> {
                             ctx,
                         ) {
                             let name = decl.id.name();
+
                             if names.insert(name.clone()) {
                                 new_stmts.push(Statement::from(Self::create_variable_declaration(
                                     name, ctx,
                                 )));
                             }
+
                             new_stmts.push(transformed_stmt);
+
                             continue;
                         }
                     }
+
                     new_stmts.push(Statement::TSModuleDeclaration(decl));
+
                     continue;
                 }
+
                 Statement::ExportNamedDeclaration(ref export_decl) => {
                     match &export_decl.declaration {
                         Some(Declaration::TSModuleDeclaration(decl)) => {
@@ -94,19 +100,25 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptNamespace<'a, 'ctx> {
                                     ctx,
                                 ) {
                                     let name = decl.id.name();
+
                                     if names.insert(name.clone()) {
                                         let declaration =
                                             Self::create_variable_declaration(name, ctx);
+
                                         let export_named_decl =
                                             ctx.ast.plain_export_named_declaration_declaration(
                                                 SPAN,
                                                 declaration,
                                             );
+
                                         let stmt =
                                             Statement::ExportNamedDeclaration(export_named_decl);
+
                                         new_stmts.push(stmt);
                                     }
+
                                     new_stmts.push(transformed_stmt);
+
                                     continue;
                                 }
                             }
@@ -115,12 +127,14 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptNamespace<'a, 'ctx> {
                                 names.insert(id.name.clone());
                             }
                         }
+
                         Some(decl) => match decl {
                             Declaration::FunctionDeclaration(_)
                             | Declaration::ClassDeclaration(_)
                             | Declaration::TSEnumDeclaration(_) => {
                                 names.insert(decl.id().as_ref().unwrap().name.clone());
                             }
+
                             _ => {}
                         },
                         _ => {}
@@ -132,6 +146,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptNamespace<'a, 'ctx> {
                 | Statement::TSEnumDeclaration(_) => {
                     names.insert(stmt.to_declaration().id().as_ref().unwrap().name.clone());
                 }
+
                 _ => {}
             }
 
@@ -162,28 +177,38 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
 
         // Reuse `TSModuleDeclaration`'s scope in transformed function
         let scope_id = decl.scope_id.get().unwrap();
+
         let binding = ctx.generate_uid(&real_name, scope_id, SymbolFlags::FunctionScopedVariable);
+
         let name = binding.name;
 
         let directives;
+
         let namespace_top_level;
 
         match body {
             TSModuleDeclarationBody::TSModuleBlock(block) => {
                 let block = block.unbox();
+
                 directives = block.directives;
+
                 namespace_top_level = block.body;
             }
             // We handle `namespace X.Y {}` as if it was
             //   namespace X {
             //     export namespace Y {}
             //   }
+
             TSModuleDeclarationBody::TSModuleDeclaration(declaration) => {
                 let declaration = Declaration::TSModuleDeclaration(declaration);
+
                 let export_named_decl =
                     ctx.ast.plain_export_named_declaration_declaration(SPAN, declaration);
+
                 let stmt = Statement::ExportNamedDeclaration(export_named_decl);
+
                 directives = ctx.ast.vec();
+
                 namespace_top_level = ctx.ast.vec1(stmt);
             }
         }
@@ -195,10 +220,12 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                 Statement::TSModuleDeclaration(decl) => {
                     if decl.id.is_string_literal() {
                         self.ctx.error(ambient_module_nested(decl.span));
+
                         continue;
                     }
 
                     let module_name = decl.id.name().clone();
+
                     if let Some(transformed) = self.handle_nested(decl.unbox(), None, ctx) {
                         if names.insert(module_name.clone()) {
                             new_stmts.push(Statement::from(Self::create_variable_declaration(
@@ -206,18 +233,23 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                                 ctx,
                             )));
                         }
+
                         new_stmts.push(transformed);
                     }
+
                     continue;
                 }
+
                 Statement::ExportNamedDeclaration(export_decl) => {
                     // NB: `ExportNamedDeclaration` with no declaration (e.g. `export {x}`) is not
                     // legal syntax in TS namespaces
                     let export_decl = export_decl.unbox();
+
                     if let Some(decl) = export_decl.declaration {
                         if decl.declare() {
                             continue;
                         }
+
                         match decl {
                             Declaration::TSEnumDeclaration(_)
                             | Declaration::FunctionDeclaration(_)
@@ -230,23 +262,29 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                                     ctx,
                                 );
                             }
+
                             Declaration::VariableDeclaration(var_decl) => {
                                 var_decl.declarations.iter().for_each(|decl| {
                                     if !decl.kind.is_const() {
                                         self.ctx.error(namespace_exporting_non_const(decl.span));
                                     }
                                 });
+
                                 let stmts =
                                     Self::handle_variable_declaration(var_decl, name.clone(), ctx);
+
                                 new_stmts.extend(stmts);
                             }
+
                             Declaration::TSModuleDeclaration(module_decl) => {
                                 if module_decl.id.is_string_literal() {
                                     self.ctx.error(ambient_module_nested(module_decl.span));
+
                                     continue;
                                 }
 
                                 let module_name = module_decl.id.name().clone();
+
                                 if let Some(transformed) = self.handle_nested(
                                     module_decl.unbox(),
                                     Some(ctx.ast.expression_identifier_reference(SPAN, &name)),
@@ -260,12 +298,15 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                                             ),
                                         ));
                                     }
+
                                     new_stmts.push(transformed);
                                 }
                             }
+
                             _ => {}
                         }
                     }
+
                     continue;
                 }
                 // Collect bindings from class, function and enum declarations
@@ -274,11 +315,13 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                 | Statement::TSEnumDeclaration(_) => {
                     names.insert(stmt.to_declaration().id().as_ref().unwrap().name.clone());
                 }
+
                 Statement::TSTypeAliasDeclaration(_)
                 | Statement::TSInterfaceDeclaration(_)
                 | Statement::TSImportEqualsDeclaration(_) => continue,
                 _ => {}
             }
+
             new_stmts.push(stmt);
         }
 
@@ -305,12 +348,17 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
     //                         ^^^^^^^
     fn create_variable_declaration(name: Atom<'a>, ctx: &TraverseCtx<'a>) -> Declaration<'a> {
         let kind = VariableDeclarationKind::Let;
+
         let declarations = {
             let pattern_kind = ctx.ast.binding_pattern_kind_binding_identifier(SPAN, name);
+
             let binding = ctx.ast.binding_pattern(pattern_kind, NONE, false);
+
             let decl = ctx.ast.variable_declarator(SPAN, kind, binding, None, false);
+
             ctx.ast.vec1(decl)
         };
+
         ctx.ast.declaration_variable(SPAN, kind, declarations, false)
     }
 
@@ -330,12 +378,17 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
         //  ^^^^^^^^^^^^^^^^^^^^^^^^^^
         let callee = {
             let body = ctx.ast.function_body(SPAN, directives, stmts);
+
             let params = {
                 let ident = ctx.ast.binding_pattern_kind_binding_identifier(SPAN, arg_name);
+
                 let pattern = ctx.ast.binding_pattern(ident, NONE, false);
+
                 let items = ctx.ast.vec1(ctx.ast.plain_formal_parameter(SPAN, pattern));
+
                 ctx.ast.formal_parameters(SPAN, FormalParameterKind::FormalParameter, items, NONE)
             };
+
             let function_expr =
                 Expression::FunctionExpression(ctx.ast.alloc_plain_function_with_scope_id(
                     FunctionType::FunctionExpression,
@@ -347,6 +400,7 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                 ));
             *ctx.scopes_mut().get_flags_mut(scope_id) =
                 ScopeFlags::Function | ScopeFlags::StrictMode;
+
             ctx.ast.expression_parenthesized(SPAN, function_expr)
         };
 
@@ -362,6 +416,7 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                 // _N.M
                 // SAFETY: `ast.copy` is unsound! We need to fix.
                 let parent_export = unsafe { ctx.ast.copy(&parent_export) };
+
                 let assign_left = if let Some(parent_export) = parent_export {
                     AssignmentTarget::from(ctx.ast.member_expression_static(
                         SPAN,
@@ -378,9 +433,12 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                 };
 
                 let assign_right = ctx.ast.expression_object(SPAN, ctx.ast.vec(), None);
+
                 let op = AssignmentOperator::Assign;
+
                 let assign_expr =
                     ctx.ast.expression_assignment(SPAN, op, assign_left, assign_right);
+
                 ctx.ast.expression_parenthesized(SPAN, assign_expr)
             };
 
@@ -388,30 +446,40 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
             if let Some(parent_export) = parent_export {
                 let assign_left =
                     ctx.ast.simple_assignment_target_identifier_reference(SPAN, &real_name);
+
                 let assign_right = {
                     let property = ctx.ast.identifier_name(SPAN, real_name.clone());
+
                     let logical_left =
                         ctx.ast.member_expression_static(SPAN, parent_export, property, false);
+
                     let op = LogicalOperator::Or;
+
                     ctx.ast.expression_logical(SPAN, logical_left.into(), op, logical_right)
                 };
+
                 let op = AssignmentOperator::Assign;
+
                 logical_right =
                     ctx.ast.expression_assignment(SPAN, op, assign_left.into(), assign_right);
+
                 logical_right = ctx.ast.expression_parenthesized(SPAN, logical_right);
             }
 
             let expr =
                 ctx.ast.expression_logical(SPAN, logical_left, LogicalOperator::Or, logical_right);
+
             ctx.ast.vec1(Argument::from(expr))
         };
 
         let expr = ctx.ast.expression_call(SPAN, callee, NONE, arguments, false);
+
         ctx.ast.statement_expression(SPAN, expr)
     }
 
     /// Add assignment statement for decl id
     /// function id() {} -> function id() {}; Name.id = id;
+
     fn add_declaration(
         decl: Declaration<'a>,
         name: Atom<'a>,
@@ -422,11 +490,17 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
         // This function is only called with a function, class, or enum declaration,
         // all of which are guaranteed to have an `id`
         let ident = decl.id().unwrap();
+
         let item_name = ident.name.clone();
+
         new_stmts.push(Statement::from(decl));
+
         let assignment_statement = Self::create_assignment_statement(name, item_name.clone(), ctx);
+
         let assignment_statement = ctx.ast.statement_expression(SPAN, assignment_statement);
+
         new_stmts.push(assignment_statement);
+
         names.insert(item_name);
     }
 
@@ -437,11 +511,17 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
         ctx: &TraverseCtx<'a>,
     ) -> Expression<'a> {
         let object = ctx.ast.expression_identifier_reference(SPAN, name);
+
         let property = ctx.ast.identifier_name(SPAN, &item_name);
+
         let left = ctx.ast.member_expression_static(SPAN, object, property, false);
+
         let left = AssignmentTarget::from(left);
+
         let right = ctx.ast.expression_identifier_reference(SPAN, item_name);
+
         let op = AssignmentOperator::Assign;
+
         ctx.ast.expression_assignment(SPAN, op, left, right)
     }
 
@@ -459,11 +539,13 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
 
         // `export const a = 1` transforms to `const a = N.a = 1`, the output
         // is smaller than `const a = 1; N.a = a`;
+
         if is_all_binding_identifier {
             var_decl.declarations.iter_mut().for_each(|declarator| {
                 let Some(property_name) = declarator.id.get_identifier() else {
                     return;
                 };
+
                 if let Some(init) = &mut declarator.init {
                     declarator.init = Some(
                         ctx.ast.expression_assignment(
@@ -481,12 +563,14 @@ impl<'a, 'ctx> TypeScriptNamespace<'a, 'ctx> {
                     );
                 }
             });
+
             return ctx.ast.vec1(Statement::VariableDeclaration(var_decl));
         }
 
         // Now we have pattern in declarators
         // `export const [a] = 1` transforms to `const [a] = 1; N.a = a`
         let mut assignments = ctx.ast.vec();
+
         var_decl.bound_names(&mut |id| {
             assignments.push(Self::create_assignment_statement(name.clone(), id.name.clone(), ctx));
         });
@@ -505,6 +589,7 @@ fn has_namespace(stmts: &[Statement]) -> bool {
         Statement::ExportNamedDeclaration(decl) => {
             matches!(decl.declaration, Some(Declaration::TSModuleDeclaration(_)))
         }
+
         _ => false,
     })
 }

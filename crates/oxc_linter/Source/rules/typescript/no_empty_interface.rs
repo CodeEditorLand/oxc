@@ -67,6 +67,7 @@ impl Rule for NoEmptyInterface {
                             ctx.diagnostic(no_empty_interface_extend_diagnostic(interface.span));
                         }
                     }
+
                     _ => {}
                 }
             }
@@ -186,6 +187,7 @@ fn test() {
 			interface Bar {
 			  bar: string;
 			}
+
 			interface Foo extends Array<Bar> {}
 			      ",
             None,
@@ -193,6 +195,7 @@ fn test() {
         (
             "
 			type R = Record<string, unknown>;
+
 			interface Foo extends R {}
 			      ",
             None,

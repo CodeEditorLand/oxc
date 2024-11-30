@@ -22,14 +22,18 @@ impl<'s, 'a> Symbol<'s, 'a> {
             // Happens when the symbol is in a destructuring pattern.
             return fixer.noop();
         };
+
         let mut delete_range = own.span();
+
         let mut has_left = false;
+
         let mut has_right = false;
 
         // `let x = 1, y = 2, z = 3;` -> `let x = 1, y = 2, z = 3;`
         //             ^^^^^                         ^^^^^^^
         if let Some(right_neighbor) = list.get(own_position + 1) {
             delete_range.end = right_neighbor.span().start;
+
             has_right = true;
         }
 
@@ -38,6 +42,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
         if own_position > 0 {
             if let Some(left_neighbor) = list.get(own_position - 1) {
                 delete_range.start = left_neighbor.span().end;
+
                 has_left = true;
             }
         }
@@ -55,7 +60,9 @@ impl<'s, 'a> Symbol<'s, 'a> {
 
     pub(super) fn rename(&self, new_name: &CompactStr) -> RuleFix<'a> {
         let mut fixes: Vec<Fix<'a>> = vec![];
+
         let decl_span = self.span();
+
         fixes.push(Fix::new(new_name.clone(), decl_span));
 
         for reference in self.references() {
@@ -63,6 +70,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                 AstKind::IdentifierReference(id) => {
                     fixes.push(Fix::new(new_name.clone(), id.span()));
                 }
+
                 AstKind::TSTypeReference(ty) => {
                     fixes.push(Fix::new(new_name.clone(), ty.type_name.span()));
                 }
@@ -87,9 +95,11 @@ impl<'s, 'a> Symbol<'s, 'a> {
 
                     BindingInfo::multi_or_single(arr.rest.as_ref().map(|r| (r.span, true)), true)
                 }
+
                 1 => {
                     let own_span =
                         arr.elements.iter().filter_map(|el| el.as_ref()).find(|el| self == *el);
+
                     if let Some(rest) = arr.rest.as_ref() {
                         if rest.span.contains_inclusive(self.span()) {
                             // spreads are after all elements, otherwise it
@@ -102,8 +112,10 @@ impl<'s, 'a> Symbol<'s, 'a> {
                         BindingInfo::single_or_missing(own_span.is_some())
                     }
                 }
+
                 _ => {
                     let last_position = arr.elements.len() - 1;
+
                     BindingInfo::multi_or_missing(
                         arr.elements
                             .iter()
@@ -123,10 +135,13 @@ impl<'s, 'a> Symbol<'s, 'a> {
             BindingPatternKind::ObjectPattern(obj) => match obj.properties.len() {
                 0 => {
                     debug_assert!(obj.rest.is_some());
+
                     BindingInfo::multi_or_single(obj.rest.as_ref().map(|r| (r.span, true)), true)
                 }
+
                 1 => {
                     let last_property = obj.properties.len() - 1;
+
                     let own_span = obj.properties.iter().enumerate().find_map(|(idx, el)| {
                         if self == &el.value {
                             Some((el.span, idx == last_property))
@@ -134,21 +149,26 @@ impl<'s, 'a> Symbol<'s, 'a> {
                             None
                         }
                     });
+
                     if let Some(rest) = obj.rest.as_ref() {
                         if rest.span.contains_inclusive(self.span()) {
                             // assume rest spreading in objects are at the end
                             return BindingInfo::MultiDestructure(rest.span, true, true);
                         }
+
                         BindingInfo::multi_or_missing(own_span, true)
                     } else {
                         BindingInfo::single_or_missing(own_span.is_some())
                     }
                 }
+
                 _ => {
                     let last_property = obj.properties.len() - 1;
+
                     let own_span = obj.properties.iter().enumerate().find_map(|(idx, el)| {
                         (self == &el.value).then_some((el.span, idx == last_property))
                     });
+
                     BindingInfo::multi_or_missing(own_span, true)
                 }
             },

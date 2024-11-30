@@ -79,6 +79,7 @@ impl ClassTable {
 
     pub fn get_element_ids(&self, class_id: ClassId, name: &str) -> Vec<ElementId> {
         let mut element_ids = vec![];
+
         for (element_id, element) in self.elements[class_id].iter_enumerated() {
             if element.name == name {
                 element_ids.push(element_id);
@@ -104,11 +105,15 @@ impl ClassTable {
 
     pub fn declare_class(&mut self, parent_id: Option<ClassId>, node_id: NodeId) -> ClassId {
         let class_id = self.declarations.push(node_id);
+
         if let Some(parent_id) = parent_id {
             self.parent_ids.insert(class_id, parent_id);
         };
+
         self.elements.push(IndexVec::default());
+
         self.private_identifiers.push(Vec::new());
+
         class_id
     }
 

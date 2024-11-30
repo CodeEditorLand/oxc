@@ -63,11 +63,14 @@ impl<'a> From<&Expression<'a>> for ValueType {
                 UnaryOperator::Void => Self::Undefined,
                 UnaryOperator::UnaryNegation => {
                     let argument_ty = Self::from(&unary_expr.argument);
+
                     if argument_ty == Self::BigInt {
                         return Self::BigInt;
                     }
+
                     Self::Number
                 }
+
                 UnaryOperator::UnaryPlus => Self::Number,
                 UnaryOperator::LogicalNot => Self::Boolean,
                 UnaryOperator::Typeof => Self::String,
@@ -76,7 +79,9 @@ impl<'a> From<&Expression<'a>> for ValueType {
             Expression::BinaryExpression(binary_expr) => match binary_expr.operator {
                 BinaryOperator::Addition => {
                     let left_ty = Self::from(&binary_expr.left);
+
                     let right_ty = Self::from(&binary_expr.right);
+
                     if left_ty == Self::String || right_ty == Self::String {
                         return Self::String;
                     }
@@ -86,13 +91,16 @@ impl<'a> From<&Expression<'a>> for ValueType {
                     if left_ty == Self::Object || right_ty == Self::Object {
                         return Self::Undetermined;
                     }
+
                     Self::Undetermined
                 }
+
                 _ => Self::Undetermined,
             },
             Expression::SequenceExpression(e) => {
                 e.expressions.last().map_or(ValueType::Undetermined, Self::from)
             }
+
             _ => Self::Undetermined,
         }
     }

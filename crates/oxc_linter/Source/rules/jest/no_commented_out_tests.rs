@@ -59,15 +59,19 @@ impl Rule for NoCommentedOutTests {
             static ref RE: Regex =
             Regex::new(r#"(?mu)^\s*[xf]?(test|it|describe)(\.\w+|\[['"]\w+['"]\])?\s*\("#).unwrap();
         }
+
         let comments = ctx.semantic().comments();
+
         let commented_tests = comments.iter().filter_map(|comment| {
             let text = ctx.source_range(comment.content_span());
+
             if RE.is_match(text) {
                 Some(comment.content_span())
             } else {
                 None
             }
         });
+
         for span in commented_tests {
             ctx.diagnostic(no_commented_out_tests_diagnostic(span));
         }
@@ -215,6 +219,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest.into_iter().map(|x| (x, None)));
+
     fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
 
     Tester::new(NoCommentedOutTests::NAME, pass, fail)

@@ -50,6 +50,7 @@ lazy_static! {
             (String::from("SharedArrayBuffer"), false),
         ]);
     };
+
     static ref NEW_GLOBALS_2020: FxHashMap<String, bool> = {
         return FxHashMap::from_iter([
             (String::from("BigInt"), false),
@@ -58,6 +59,7 @@ lazy_static! {
             (String::from("globalThis"), false),
         ]);
     };
+
     static ref NEW_GLOBALS_2021: FxHashMap<String, bool> = {
         return FxHashMap::from_iter([
             (String::from("AggregateError"), false),
@@ -73,6 +75,7 @@ fn main() {
     // A value of false indicates that the variable should be considered read-only.
     // open globals.json file relative to current file
     // let globals: FxHashMap<String, FxHashMap<String, bool>>;
+
     let globals: FxHashMap<String, FxHashMap<String, bool>> = match agent()
         .get("https://raw.githubusercontent.com/sindresorhus/globals/main/globals.json")
         .call()
@@ -88,20 +91,27 @@ fn main() {
 
     let new_globals_2015_2017 = {
         let mut map = FxHashMap::default();
+
         map.extend(new_globals_2015.clone());
+
         map.extend(NEW_GLOBALS_2017.clone());
+
         map
     };
 
     let new_globals_2015_2017_2020 = {
         let mut map = new_globals_2015_2017.clone();
+
         map.extend(NEW_GLOBALS_2020.clone());
+
         map
     };
 
     let new_globals_2015_2017_2020_2021 = {
         let mut map = new_globals_2015_2017_2020.clone();
+
         map.extend(NEW_GLOBALS_2021.clone());
+
         map
     };
 
@@ -151,7 +161,9 @@ fn main() {
     .collect();
 
     let context = Context::new(envs_preset);
+
     let template = template::Template::with_context(&context);
+
     if let Err(err) = template.render() {
         eprintln!("failed to render environments template: {err}");
     }
@@ -159,10 +171,12 @@ fn main() {
 
 fn to_env_vars(env_var_map: &FxHashMap<String, bool>) -> Vec<EnvVar> {
     let mut result: Vec<EnvVar> = vec![];
+
     for (key, value) in env_var_map {
         result.push(EnvVar { name: key, writeable: *value });
     }
 
     result.sort_by(|a, b| a.name.cmp(b.name));
+
     result
 }

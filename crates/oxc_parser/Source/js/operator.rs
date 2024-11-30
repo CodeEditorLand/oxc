@@ -19,6 +19,7 @@ pub fn kind_to_precedence(kind: Kind, is_typescript: bool) -> Option<Precedence>
         Kind::LAngle | Kind::RAngle | Kind::LtEq | Kind::GtEq | Kind::Instanceof | Kind::In => {
             Some(Precedence::Compare)
         }
+
         Kind::ShiftLeft | Kind::ShiftRight | Kind::ShiftRight3 => Some(Precedence::Shift),
         Kind::Plus | Kind::Minus => Some(Precedence::Add),
         Kind::Star | Kind::Slash | Kind::Percent => Some(Precedence::Multiply),

@@ -79,6 +79,7 @@ impl Linter {
     #[must_use]
     pub fn with_rules(mut self, rules: Vec<RuleWithSeverity>) -> Self {
         self.config.set_rules(rules);
+
         self
     }
 
@@ -95,6 +96,7 @@ impl Linter {
     #[must_use]
     pub fn with_fix(mut self, kind: FixKind) -> Self {
         self.options.fix = kind;
+
         self
     }
 
@@ -113,6 +115,7 @@ impl Linter {
     pub fn run<'a>(&self, path: &Path, semantic: Rc<Semantic<'a>>) -> Vec<Message<'a>> {
         // Get config + rules for this file. Takes base rules and applies glob-based overrides.
         let ResolvedLinterState { rules, config } = self.config.resolve(path);
+
         let ctx_host = Rc::new(ContextHost::new(path, semantic, self.options, config));
 
         let rules = rules
@@ -196,10 +199,13 @@ impl Linter {
     /// # Panics
     pub fn print_rules<W: Write>(writer: &mut W) {
         let table = RuleTable::new();
+
         for section in table.sections {
             writeln!(writer, "{}", section.render_markdown_table(None)).unwrap();
         }
+
         writeln!(writer, "Default: {}", table.turned_on_by_default_count).unwrap();
+
         writeln!(writer, "Total: {}", table.total).unwrap();
     }
 }
@@ -211,7 +217,9 @@ mod test {
     #[test]
     fn print_rules() {
         let mut writer = Vec::new();
+
         Linter::print_rules(&mut writer);
+
         assert!(!writer.is_empty());
     }
 
@@ -220,13 +228,19 @@ mod test {
         use std::fs;
 
         use project_root::get_project_root;
+
         let path = get_project_root().unwrap().join("npm/oxlint/configuration_schema.json");
+
         let schema = schemars::schema_for!(Oxlintrc);
+
         let json = serde_json::to_string_pretty(&schema).unwrap();
+
         let existing_json = fs::read_to_string(&path).unwrap_or_default();
+
         if existing_json.trim() != json.trim() {
             std::fs::write(&path, &json).unwrap();
         }
+
         insta::with_settings!({ prepend_module_to_snapshot => false }, {
             insta::assert_snapshot!(json);
         });

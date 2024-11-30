@@ -15,11 +15,13 @@ use crate::{
 
 fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
     let normal_result = get_normal_result(source_text, source_type);
+
     if !normal_result {
         return TestResult::CodegenError("Normal");
     };
 
     let minify_result = get_minify_result(source_text, source_type);
+
     if !minify_result {
         return TestResult::CodegenError("Minify");
     }
@@ -30,24 +32,34 @@ fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
 /// Idempotency test
 fn get_normal_result(source_text: &str, source_type: SourceType) -> bool {
     let allocator = Allocator::default();
+
     let source_text1 = {
         let ret = Parser::new(&allocator, source_text, source_type).parse();
+
         CodeGenerator::new().build(&ret.program).source_text
     };
+
     let source_text2 = {
         let ret = Parser::new(&allocator, &source_text1, source_type).parse();
+
         CodeGenerator::new().build(&ret.program).source_text
     };
+
     source_text1 == source_text2
 }
 
 /// Minify idempotency test
 fn get_minify_result(source_text: &str, source_type: SourceType) -> bool {
     let allocator = Allocator::default();
+
     let parse_result1 = Parser::new(&allocator, source_text, source_type).parse();
+
     let source_text1 = WhitespaceRemover::new().build(&parse_result1.program).source_text;
+
     let parse_result2 = Parser::new(&allocator, source_text1.as_str(), source_type).parse();
+
     let source_text2 = WhitespaceRemover::new().build(&parse_result2.program).source_text;
+
     source_text1 == source_text2
 }
 
@@ -78,9 +90,13 @@ impl Case for CodegenTest262Case {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let source_type = SourceType::default().with_module(is_module);
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
@@ -112,8 +128,11 @@ impl Case for CodegenBabelCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
@@ -145,13 +164,17 @@ impl Case for CodegenTypeScriptCase {
 
     fn run(&mut self) {
         let units = self.base.units.clone();
+
         for unit in units {
             let result = get_result(&unit.content, unit.source_type);
+
             if result != TestResult::Passed {
                 self.base.result = result;
+
                 return;
             }
         }
+
         self.base.result = TestResult::Passed;
     }
 }
@@ -183,8 +206,11 @@ impl Case for CodegenMiscCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }

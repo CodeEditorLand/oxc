@@ -35,20 +35,26 @@ Arguments:
 /// <https://oxc.rs/docs/guide/usage/linter/rules.html>
 pub fn print_rules(mut args: Arguments) {
     let pwd = PathBuf::from(env::var("PWD").unwrap());
+
     if args.contains(["-h", "--help"]) {
         println!("{HELP}");
+
         return;
     }
 
     let git_ref = args.opt_value_from_str("--git-ref").unwrap();
+
     let table_path = args.opt_value_from_str::<_, PathBuf>(["-t", "--table"]).unwrap();
+
     let rules_dir = args.opt_value_from_str::<_, PathBuf>(["-r", "--rule-docs"]).unwrap();
 
     let prefix =
         rules_dir.as_ref().and_then(|p| p.as_os_str().to_str()).map_or(Cow::Borrowed(""), |p| {
             if p.contains("src/docs") {
                 let split = p.split("src/docs").collect::<Vec<_>>();
+
                 assert!(split.len() > 1);
+
                 Cow::Owned("/docs".to_string() + split.last().unwrap())
             } else {
                 Cow::Borrowed(p)
@@ -61,21 +67,28 @@ pub fn print_rules(mut args: Arguments) {
         let table_path = pwd.join(table_path).canonicalize().unwrap();
 
         println!("Rendering rules table...");
+
         let rules_table = render_rules_table(&table, prefix.as_ref());
+
         fs::write(table_path, rules_table).unwrap();
     }
 
     if let Some(rules_dir) = rules_dir {
         println!("Rendering rule doc pages...");
+
         let rules_dir = pwd.join(rules_dir);
+
         if !rules_dir.exists() {
             fs::create_dir_all(&rules_dir).unwrap();
         }
+
         let rules_dir = rules_dir.canonicalize().unwrap();
+
         assert!(
             !rules_dir.is_file(),
             "Cannot write rule docs to a file. Please specify a directory."
         );
+
         write_rule_doc_pages(&table, &rules_dir, git_ref.unwrap_or("main".to_string()).as_str());
     }
 
@@ -85,13 +98,19 @@ pub fn print_rules(mut args: Arguments) {
 fn write_rule_doc_pages(table: &RuleTable, outdir: &Path, git_ref: &str) {
     for rule in table.sections.iter().flat_map(|section| &section.rows) {
         let plugin_path = outdir.join(&rule.plugin);
+
         fs::create_dir_all(&plugin_path).unwrap();
+
         let page_path = plugin_path.join(format!("{}.md", rule.name));
+
         if page_path.exists() {
             fs::remove_file(&page_path).unwrap();
         }
+
         println!("{}", page_path.display());
+
         let docs = render_rule_docs_page(rule, git_ref).unwrap();
+
         fs::write(&page_path, docs).unwrap();
     }
 }

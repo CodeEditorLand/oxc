@@ -89,6 +89,7 @@ mod declare_oxc_secret;
 #[proc_macro]
 pub fn declare_oxc_lint(input: TokenStream) -> TokenStream {
     let metadata = parse_macro_input!(input as declare_oxc_lint::LintRuleMeta);
+
     declare_oxc_lint::declare_oxc_lint(metadata)
 }
 
@@ -97,7 +98,9 @@ pub fn declare_oxc_lint(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn declare_oxc_lint_test(input: TokenStream) -> TokenStream {
     let mut metadata = parse_macro_input!(input as declare_oxc_lint::LintRuleMeta);
+
     metadata.used_in_test = true;
+
     declare_oxc_lint::declare_oxc_lint(metadata)
 }
 
@@ -108,6 +111,7 @@ pub fn declare_oxc_lint_test(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn declare_all_lint_rules(input: TokenStream) -> TokenStream {
     let metadata = parse_macro_input!(input as declare_all_lint_rules::AllLintRulesMeta);
+
     declare_all_lint_rules::declare_all_lint_rules(metadata)
 }
 
@@ -170,5 +174,6 @@ pub fn declare_all_lint_rules(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn declare_oxc_secret(input: TokenStream) -> TokenStream {
     let metadata = parse_macro_input!(input as declare_oxc_secret::SecretRuleMeta);
+
     declare_oxc_secret::declare_oxc_secret(metadata)
 }

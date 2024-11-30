@@ -114,24 +114,30 @@ impl BabelOptions {
     /// # Panics
     pub fn from_test_path(path: &Path) -> Self {
         let mut babel_options: Option<Self> = None;
+
         let mut plugins_json = None;
+
         let mut presets_json = None;
 
         for path in path.ancestors().take(3) {
             let file = path.join("options.json");
+
             if !file.exists() {
                 continue;
             }
 
             let content = std::fs::read_to_string(&file).unwrap();
+
             let mut new_value = serde_json::from_str::<serde_json::Value>(&content).unwrap();
 
             let new_plugins = new_value.as_object_mut().unwrap().remove("plugins");
+
             if plugins_json.is_none() {
                 plugins_json = new_plugins;
             }
 
             let new_presets = new_value.as_object_mut().unwrap().remove("presets");
+
             if presets_json.is_none() {
                 presets_json = new_presets;
             }
@@ -145,6 +151,7 @@ impl BabelOptions {
                         existing_options.source_type = Some(source_type);
                     }
                 }
+
                 if existing_options.throws.is_none() {
                     if let Some(throws) = new_options.throws {
                         existing_options.throws = Some(throws);
@@ -156,14 +163,17 @@ impl BabelOptions {
         }
 
         let mut options = babel_options.unwrap_or_default();
+
         if let Some(plugins_json) = plugins_json {
             options.plugins = serde_json::from_value::<BabelPlugins>(plugins_json)
                 .unwrap_or_else(|err| panic!("{err:?}\n{path:?}"));
         }
+
         if let Some(presets_json) = presets_json {
             options.presets = serde_json::from_value::<BabelPresets>(presets_json)
                 .unwrap_or_else(|err| panic!("{err:?}\n{path:?}"));
         }
+
         options
     }
 

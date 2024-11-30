@@ -68,10 +68,12 @@ declare_oxc_lint!(
 impl Rule for NoRestSpreadProperties {
     fn from_configuration(value: serde_json::Value) -> Self {
         let config = value.get(0);
+
         let object_spread_message = config
             .and_then(|v| v.get("objectSpreadMessage"))
             .and_then(serde_json::Value::as_str)
             .unwrap_or_default();
+
         let object_rest_message = config
             .and_then(|v| v.get("objectRestMessage"))
             .and_then(serde_json::Value::as_str)
@@ -98,6 +100,7 @@ impl Rule for NoRestSpreadProperties {
                     ));
                 }
             }
+
             AstKind::BindingRestElement(rest_element) => {
                 if ctx
                     .nodes()
@@ -111,10 +114,12 @@ impl Rule for NoRestSpreadProperties {
                     ));
                 }
             }
+
             AstKind::AssignmentTarget(assign_target) => {
                 let AssignmentTarget::ObjectAssignmentTarget(object_assign) = assign_target else {
                     return;
                 };
+
                 let Some(rest) = &object_assign.rest else {
                     return;
                 };
@@ -125,6 +130,7 @@ impl Rule for NoRestSpreadProperties {
                     self.object_rest_message.as_str(),
                 ));
             }
+
             _ => {}
         }
     }

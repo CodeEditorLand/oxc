@@ -76,9 +76,11 @@ impl Rule for RequireAwait {
         let AstKind::FunctionBody(body) = node.kind() else {
             return;
         };
+
         if body.is_empty() {
             return;
         }
+
         let Some(parent) = ctx.nodes().parent_node(node.id()) else {
             return;
         };
@@ -87,7 +89,9 @@ impl Rule for RequireAwait {
             AstKind::Function(func) => {
                 if func.r#async && !func.generator {
                     let mut finder = AwaitFinder { found: false };
+
                     finder.visit_function_body(body);
+
                     if !finder.found {
                         if let Some(AstKind::ObjectProperty(p)) =
                             ctx.nodes().parent_kind(parent.id())
@@ -105,15 +109,19 @@ impl Rule for RequireAwait {
                     }
                 }
             }
+
             AstKind::ArrowFunctionExpression(func) => {
                 if func.r#async {
                     let mut finder = AwaitFinder { found: false };
+
                     finder.visit_function_body(body);
+
                     if !finder.found {
                         ctx.diagnostic(require_await_diagnostic(func.span));
                     }
                 }
             }
+
             _ => {}
         }
     }
@@ -128,6 +136,7 @@ impl<'a> Visit<'a> for AwaitFinder {
         if self.found {
             return;
         }
+
         self.found = true;
     }
 
@@ -170,7 +179,9 @@ fn test() {
         "async function* run() { yield * anotherAsyncGenerator() }",
         "async function* run() {
         	                await new Promise(resolve => setTimeout(resolve, 100));
+
         	                yield 'Hello';
+
         	                console.log('World');
         	            }
         	            ",

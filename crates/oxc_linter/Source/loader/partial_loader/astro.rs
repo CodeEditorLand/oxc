@@ -17,10 +17,15 @@ impl<'a> AstroPartialLoader<'a> {
 
     pub fn parse(self) -> Vec<JavaScriptSource<'a>> {
         let mut results = vec![];
+
         let frontmatter = self.parse_frontmatter();
+
         let start = frontmatter.as_ref().map_or(0, |r| r.source_text.len() + ASTRO_SPLIT.len() * 2);
+
         results.extend(frontmatter);
+
         results.extend(self.parse_scripts(start));
+
         results
     }
 
@@ -28,23 +33,30 @@ impl<'a> AstroPartialLoader<'a> {
     #[allow(clippy::cast_possible_truncation)]
     fn parse_frontmatter(&self) -> Option<JavaScriptSource<'a>> {
         let split_finder = Finder::new(ASTRO_SPLIT);
+
         let offsets = split_finder.find_iter(self.source_text.as_bytes()).collect::<Vec<_>>();
+
         if offsets.len() <= 1 {
             return None;
         }
 
         let start = offsets.first()?;
+
         let end = offsets.last()?;
+
         let Ok(start) = u32::try_from(*start) else {
             return None;
         };
+
         let Ok(end) = u32::try_from(*end) else {
             return None;
         };
 
         // move start to the end of the ASTRO_SPLIT
         let start = start + ASTRO_SPLIT.len() as u32;
+
         let js_code = Span::new(start, end).source_text(self.source_text);
+
         Some(JavaScriptSource::partial(js_code, SourceType::ts(), start))
     }
 
@@ -52,13 +64,16 @@ impl<'a> AstroPartialLoader<'a> {
     /// <https://docs.astro.build/en/guides/client-side-scripts/#using-script-in-astro>
     fn parse_scripts(&self, start: usize) -> Vec<JavaScriptSource<'a>> {
         let script_start_finder = Finder::new(SCRIPT_START);
+
         let script_end_finder = Finder::new(SCRIPT_END);
 
         let mut results = vec![];
+
         let mut pointer = start;
 
         loop {
             let js_start;
+
             let js_end;
             // find opening "<script"
             if let Some(offset) = script_start_finder.find(self.source_text[pointer..].as_bytes()) {
@@ -69,6 +84,7 @@ impl<'a> AstroPartialLoader<'a> {
             // find closing ">"
             if let Some(offset) = self.source_text[pointer..].find('>') {
                 pointer += offset + 1;
+
                 js_start = pointer;
             } else {
                 break;
@@ -81,6 +97,7 @@ impl<'a> AstroPartialLoader<'a> {
                 script_end_finder.find(self.source_text[pointer..].as_bytes())
             {
                 js_end = pointer + offset;
+
                 pointer += offset + SCRIPT_END.len();
             } else {
                 break;
@@ -94,6 +111,7 @@ impl<'a> AstroPartialLoader<'a> {
                 js_start as u32,
             ));
         }
+
         results
     }
 }
@@ -117,8 +135,11 @@ mod test {
         "#;
 
         let sources = parse_astro(source_text);
+
         assert_eq!(sources.len(), 1);
+
         assert_eq!(sources[0].source_text.trim(), r#"console.log("Hi");"#);
+
         assert_eq!(sources[0].start, 51);
     }
 
@@ -137,13 +158,18 @@ mod test {
         "#;
 
         let sources = parse_astro(source_text);
+
         assert_eq!(sources.len(), 2);
+
         assert_eq!(
             sources[0].source_text.trim(),
             "const { message = 'Welcome, world!' } = Astro.props;"
         );
+
         assert_eq!(sources[0].start, 12);
+
         assert_eq!(sources[1].source_text.trim(), r#"console.log("Hi");"#);
+
         assert_eq!(sources[1].start, 141);
     }
 
@@ -160,10 +186,15 @@ mod test {
         "#;
 
         let sources = parse_astro(source_text);
+
         assert_eq!(sources.len(), 2);
+
         assert!(sources[0].source_text.is_empty());
+
         assert_eq!(sources[0].start, 102);
+
         assert_eq!(sources[1].source_text.trim(), r#"console.log("Hi");"#);
+
         assert_eq!(sources[1].start, 129);
     }
 
@@ -180,10 +211,15 @@ mod test {
         "#;
 
         let sources = parse_astro(source_text);
+
         assert_eq!(sources.len(), 2);
+
         assert!(sources[0].source_text.is_empty());
+
         assert_eq!(sources[0].start, 104);
+
         assert_eq!(sources[1].source_text.trim(), r#"console.log("Hi");"#);
+
         assert_eq!(sources[1].start, 122);
     }
 }

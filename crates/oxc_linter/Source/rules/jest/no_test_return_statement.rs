@@ -48,12 +48,15 @@ impl Rule for NoTestReturnStatement {
             AstKind::CallExpression(call_expr) => {
                 check_call_expression(call_expr, node, ctx);
             }
+
             AstKind::Function(fn_decl) => {
                 let Some(func_body) = &fn_decl.body else {
                     return;
                 };
+
                 check_test_return_statement(func_body, ctx);
             }
+
             _ => (),
         }
     }
@@ -77,16 +80,20 @@ fn check_call_expression<'a>(
         let Some(arg_expr) = argument.as_expression() else {
             continue;
         };
+
         match arg_expr {
             Expression::ArrowFunctionExpression(arrow_expr) => {
                 check_test_return_statement(&arrow_expr.body, ctx);
             }
+
             Expression::FunctionExpression(func_expr) => {
                 let Some(func_body) = &func_expr.body else {
                     continue;
                 };
+
                 check_test_return_statement(func_body, ctx);
             }
+
             _ => continue,
         }
     }
@@ -102,15 +109,19 @@ fn check_test_return_statement<'a>(func_body: &OBox<'_, FunctionBody<'a>>, ctx: 
     let Statement::ReturnStatement(stmt) = return_stmt else {
         return;
     };
+
     let Some(Expression::CallExpression(call_expr)) = &stmt.argument else {
         return;
     };
+
     let Some(mem_expr) = call_expr.callee.as_member_expression() else {
         return;
     };
+
     let Expression::CallExpression(mem_call_expr) = mem_expr.object() else {
         return;
     };
+
     let Expression::Identifier(ident) = &mem_call_expr.callee else {
         return;
     };
@@ -152,6 +163,7 @@ fn test() {
         (
             "
                 it('one', myTest);
+
                 function myTest() {
                     expect(1).toBe(1);
                 }
@@ -161,6 +173,7 @@ fn test() {
         (
             "
                 it('one', () => expect(1).toBe(1));
+
                 function myHelper() {}
             ",
             None,
@@ -227,6 +240,7 @@ fn test() {
         (
             "
                 it('one', myTest);
+
                 function myTest () {
                     return expect(1).toBe(1);
                 }

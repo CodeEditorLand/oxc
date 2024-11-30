@@ -21,9 +21,11 @@ fn non_zero(span: Span, prop_name: &str, op_and_rhs: &str, help: Option<String>)
         "Use `.{prop_name} {op_and_rhs}` when checking {prop_name} is not zero."
     ))
     .with_label(span);
+
     if let Some(x) = help {
         d = d.with_help(x);
     }
+
     d
 }
 
@@ -31,9 +33,11 @@ fn zero(span: Span, prop_name: &str, op_and_rhs: &str, help: Option<String>) -> 
     let mut d = OxcDiagnostic::warn(format!(
         "Use `.{prop_name} {op_and_rhs}` when checking {prop_name} is zero."
     ));
+
     if let Some(x) = help {
         d = d.with_help(x);
     }
+
     d.with_label(span)
 }
 
@@ -120,6 +124,7 @@ fn get_length_check_node<'a, 'b>(
     // (is_zero_length_check, length_check_node)
 ) -> Option<(bool, &'b AstNode<'a>)> {
     let parent = ctx.nodes().parent_node(node.id());
+
     parent.and_then(|parent| {
         if let AstKind::BinaryExpression(binary_expr) = parent.kind() {
             // Zero length check
@@ -158,8 +163,10 @@ fn get_length_check_node<'a, 'b>(
             {
                 return Some((false, parent));
             }
+
             return None;
         }
+
         None
     })
 }
@@ -174,6 +181,7 @@ impl ExplicitLengthCheck {
         auto_fix: bool,
     ) {
         let kind = node.kind();
+
         let check_code = if is_zero_length_check {
             if matches!(kind, AstKind::BinaryExpression(BinaryExpression{operator:BinaryOperator::StrictEquality,right,..}) if right.is_number_0())
             {
@@ -189,6 +197,7 @@ impl ExplicitLengthCheck {
                     }
                     "> 0"
                 }
+
                 NonZero::NotEqual => {
                     if matches!(kind, AstKind::BinaryExpression(BinaryExpression{operator:BinaryOperator::StrictInequality,right,..}) if right.is_number_0())
                     {
@@ -200,17 +209,25 @@ impl ExplicitLengthCheck {
         };
 
         let span = kind.span();
+
         let mut need_pad_start = false;
+
         let mut need_pad_end = false;
+
         let parent = ctx.nodes().parent_kind(node.id());
+
         let need_paren = matches!(kind, AstKind::UnaryExpression(_))
             && matches!(parent, Some(AstKind::UnaryExpression(_) | AstKind::AwaitExpression(_)));
+
         if span.start > 1 {
             let start = ctx.source_text().as_bytes()[span.start as usize - 1];
+
             need_pad_start = start.is_ascii_alphabetic() || !start.is_ascii();
         }
+
         if (span.end as usize) < ctx.source_text().len() {
             let end = ctx.source_text().as_bytes()[span.end as usize];
+
             need_pad_end = end.is_ascii_alphabetic() || !end.is_ascii();
         }
 
@@ -223,17 +240,21 @@ impl ExplicitLengthCheck {
             if need_paren { ")" } else { "" },
             if need_pad_end { " " } else { "" },
         );
+
         let property = static_member_expr.property.name.clone();
+
         let help = if auto_fix {
             None
         } else {
             Some(format!("Replace `.{property}` with `.{property} {check_code}`."))
         };
+
         let diagnostic = if is_zero_length_check {
             zero(span, property.as_str(), check_code, help)
         } else {
             non_zero(span, property.as_str(), check_code, help)
         };
+
         if auto_fix {
             ctx.diagnostic_with_fix(diagnostic, |fixer| fixer.replace(span, fixed));
         } else {
@@ -248,9 +269,11 @@ impl Rule for ExplicitLengthCheck {
         )) = node.kind()
         {
             let StaticMemberExpression { object, property, .. } = &**static_member_expr;
+
             if property.name != "length" && property.name != "size" {
                 return;
             }
+
             if let Expression::ThisExpression(_) = object {
                 return;
             }
@@ -259,16 +282,21 @@ impl Rule for ExplicitLengthCheck {
                 get_length_check_node(node, ctx)
             {
                 let (ancestor, is_negative) = get_boolean_ancestor(length_check_node, ctx);
+
                 if is_negative {
                     is_zero_length_check = !is_zero_length_check;
                 }
+
                 self.report(ctx, ancestor, is_zero_length_check, static_member_expr, true);
             } else {
                 let (ancestor, is_negative) = get_boolean_ancestor(node, ctx);
+
                 if is_boolean_node(ancestor, ctx) {
                     self.report(ctx, ancestor, is_negative, static_member_expr, true);
+
                     return;
                 }
+
                 match ctx.nodes().parent_kind(node.id()) {
                     Some(AstKind::LogicalExpression(LogicalExpression {
                         operator, right, ..
@@ -278,6 +306,7 @@ impl Rule for ExplicitLengthCheck {
                     {
                         self.report(ctx, ancestor, is_negative, static_member_expr, false);
                     }
+
                     _ => {}
                 }
             };
@@ -414,5 +443,6 @@ fn test() {
         ("for(const a of!foo.length);", "for(const a of foo.length === 0);", None),
         ("for(const a in!foo.length);", "for(const a in foo.length === 0);", None),
     ];
+
     Tester::new(ExplicitLengthCheck::NAME, pass, fail).expect_fix(fixes).test_and_snapshot();
 }

@@ -81,6 +81,7 @@ impl Rule for NoThrowLiteral {
         match expr.get_inner_expression() {
             Expression::StringLiteral(_) | Expression::TemplateLiteral(_) => {
                 let span = expr.span();
+
                 ctx.diagnostic_with_suggestion(no_throw_literal_diagnostic(span, false), |fixer| {
                     fixer.replace(
                         span,
@@ -88,12 +89,15 @@ impl Rule for NoThrowLiteral {
                     )
                 });
             }
+
             Expression::Identifier(id) if SPECIAL_IDENTIFIERS.contains(&id.name.as_str()) => {
                 ctx.diagnostic(no_throw_literal_diagnostic(expr.span(), true));
             }
+
             expr if !Self::could_be_error(ctx, expr) => {
                 ctx.diagnostic(no_throw_literal_diagnostic(expr.span(), false));
             }
+
             _ => {}
         }
     }
@@ -132,9 +136,11 @@ impl NoThrowLiteral {
 
                 false
             }
+
             Expression::SequenceExpression(expr) => {
                 expr.expressions.last().is_some_and(|expr| Self::could_be_error(ctx, expr))
             }
+
             Expression::LogicalExpression(expr) => {
                 if matches!(expr.operator, LogicalOperator::And) {
                     return Self::could_be_error(ctx, &expr.right);
@@ -142,16 +148,21 @@ impl NoThrowLiteral {
 
                 Self::could_be_error(ctx, &expr.left) || Self::could_be_error(ctx, &expr.right)
             }
+
             Expression::ConditionalExpression(expr) => {
                 Self::could_be_error(ctx, &expr.consequent)
                     || Self::could_be_error(ctx, &expr.alternate)
             }
+
             Expression::Identifier(ident) => {
                 let reference = ctx.symbols().get_reference(ident.reference_id());
+
                 let Some(symbol_id) = reference.symbol_id() else {
                     return true;
                 };
+
                 let decl = ctx.nodes().get_node(ctx.symbols().get_declaration(symbol_id));
+
                 match decl.kind() {
                     AstKind::VariableDeclarator(decl) => {
                         if let Some(init) = &decl.init {
@@ -161,6 +172,7 @@ impl NoThrowLiteral {
                             false
                         }
                     }
+
                     AstKind::Function(_)
                     | AstKind::Class(_)
                     | AstKind::TSModuleDeclaration(_)
@@ -170,9 +182,11 @@ impl NoThrowLiteral {
                             is_definitely_non_error_type(&annot.type_annotation)
                         })
                     }
+
                     _ => true,
                 }
             }
+
             _ => false,
         }
     }
@@ -189,6 +203,7 @@ fn is_definitely_non_error_type(ty: &TSType) -> bool {
         TSType::TSIntersectionType(intersect) => {
             intersect.types.iter().all(is_definitely_non_error_type)
         }
+
         _ => false,
     }
 }

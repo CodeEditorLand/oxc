@@ -204,7 +204,9 @@ impl Rule for CheckTagNames {
 
     fn run_once(&self, ctx: &LintContext) {
         let settings = &ctx.settings().jsdoc;
+
         let config = &self.0;
+
         let user_defined_tags = settings.list_user_defined_tag_names();
 
         let is_dts = ctx.file_path().to_str().map_or(false, |p| p.ends_with(".d.ts"));
@@ -215,6 +217,7 @@ impl Rule for CheckTagNames {
         // - I've never seen this usage before
         // So, I leave this part out for now.
         let is_declare = false;
+
         let is_ambient = is_dts || is_declare;
 
         for jsdoc in ctx
@@ -237,12 +240,14 @@ impl Rule for CheckTagNames {
                 // If user explicitly blocked, report
                 if let Some(reason) = settings.check_blocked_tag_name(tag_name) {
                     ctx.diagnostic(check_tag_names_diagnostic(tag.kind.span, &reason));
+
                     continue;
                 }
 
                 // If preferred or default aliased, report to use it
                 if let Some(reason) = settings.check_preferred_tag_name(tag_name) {
                     ctx.diagnostic(check_tag_names_diagnostic(tag.kind.span, &reason));
+
                     continue;
                 }
 
@@ -253,16 +258,19 @@ impl Rule for CheckTagNames {
                             tag.kind.span,
                             &format!("`@{tag_name}` is redundant when using a type system."),
                         ));
+
                         continue;
                     }
 
                     if tag.kind.parsed() == "template" && tag.comment().parsed().is_empty() {
                         ctx.diagnostic(check_tag_names_diagnostic(tag.kind.span, &format!("`@{tag_name}` without a name is redundant when using a type system.")));
+
                         continue;
                     }
 
                     if !is_ambient && OUTSIDE_AMBIENT_INVALID_TAGS_IF_TYPED.contains(tag_name) {
                         ctx.diagnostic(check_tag_names_diagnostic(tag.kind.span, &format!("`@{tag_name}` is redundant outside of ambient(`declare` or `.d.ts`) contexts when using a type system.")));
+
                         continue;
                     }
                 }
@@ -270,11 +278,13 @@ impl Rule for CheckTagNames {
                 // If invalid or unknown, report
                 let is_valid = (config.jsx_tags && JSX_TAGS.contains(tag_name))
                     || VALID_BLOCK_TAGS.contains(tag_name);
+
                 if !is_valid {
                     ctx.diagnostic(check_tag_names_diagnostic(
                         tag.kind.span,
                         &format!("`@{tag_name}` is invalid tag name."),
                     ));
+
                     continue;
                 }
             }
@@ -1109,6 +1119,7 @@ fn test() {
             None,
         ),
     ];
+
     let dts_fail = vec![(
         "
         			        /** @typoo {string} (fail: invalid name) */

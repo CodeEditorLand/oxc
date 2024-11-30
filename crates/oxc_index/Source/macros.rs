@@ -273,6 +273,7 @@ macro_rules! __define_index_type_inner {
             @max [$max]
             @no_check_max [$no_check_max]
         }
+
         impl Default for $type {
             #[inline]
             fn default() -> Self {
@@ -439,6 +440,7 @@ macro_rules! __define_index_type_inner {
             #[inline]
             $v fn from_usize(value: usize) -> Self {
                 Self::check_index(value as usize);
+
                 Self { _raw: value as $raw }
             }
 

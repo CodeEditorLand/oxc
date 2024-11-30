@@ -93,7 +93,9 @@ declare_oxc_lint!(
 impl Rule for NoCycle {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         let default = NoCycle::default();
+
         Self {
             max_depth: obj
                 .and_then(|v| v.get("maxDepth"))
@@ -119,10 +121,13 @@ impl Rule for NoCycle {
         let module_record = ctx.module_record();
 
         let needle = &module_record.resolved_absolute_path;
+
         let cwd = std::env::current_dir().unwrap();
 
         let mut stack = Vec::new();
+
         let ignore_types = self.ignore_types;
+
         let visitor_result = ModuleGraphVisitorBuilder::default()
             .max_depth(self.max_depth)
             .filter(move |(key, val): (&CompactStr, &Arc<ModuleRecord>), parent: &ModuleRecord| {
@@ -142,6 +147,7 @@ impl Rule for NoCycle {
                         .iter()
                         .filter(|entry| entry.module_request.name() == key)
                         .collect::<Vec<_>>();
+
                     if !import_entries.is_empty()
                         && import_entries.iter().all(|entry| entry.is_type)
                     {
@@ -155,12 +161,14 @@ impl Rule for NoCycle {
                 ModuleGraphVisitorEvent::Enter => {
                     stack.push((key.clone(), val.resolved_absolute_path.clone()));
                 }
+
                 ModuleGraphVisitorEvent::Leave => {
                     stack.pop();
                 }
             })
             .visit_fold(false, module_record, |_, (_, val), _| {
                 let path = &val.resolved_absolute_path;
+
                 if path == needle {
                     VisitFoldWhile::Stop(true)
                 } else {
@@ -170,6 +178,7 @@ impl Rule for NoCycle {
 
         if visitor_result.result {
             let span = module_record.requested_modules[&stack[0].0][0].span();
+
             let help = stack
                 .iter()
                 .map(|(specifier, path)| {
@@ -183,6 +192,7 @@ impl Rule for NoCycle {
                 })
                 .collect::<Vec<_>>()
                 .join("\n");
+
             ctx.diagnostic(no_cycle_diagnostic(span, &help));
         }
     }

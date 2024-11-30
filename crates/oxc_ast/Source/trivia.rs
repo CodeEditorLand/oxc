@@ -39,16 +39,20 @@ impl<'c> CommentsRange<'c> {
                 Bound::Included(x) => x,
                 Bound::Excluded(x) => x.saturating_add(1),
             };
+
             comments.partition_point(|comment| comment.span.start < range_start)
         };
+
         let partition_end = {
             let range_end = match end {
                 Bound::Unbounded => u32::MAX,
                 Bound::Included(x) => x,
                 Bound::Excluded(x) => x.saturating_sub(1),
             };
+
             comments.partition_point(|comment| comment.span.start <= range_end)
         };
+
         Self {
             comments,
             range: (start, end),
@@ -65,11 +69,13 @@ impl<'c> Iterator for CommentsRange<'c> {
         if self.current_start < self.current_end {
             for comment in &self.comments[self.current_start..self.current_end] {
                 self.current_start = self.current_start.saturating_add(1);
+
                 if self.range.contains(&comment.span.start) {
                     return Some(comment);
                 }
             }
         }
+
         None
     }
 
@@ -84,11 +90,13 @@ impl<'c> DoubleEndedIterator for CommentsRange<'c> {
         if self.current_start < self.current_end {
             for comment in self.comments[self.current_start..self.current_end].iter().rev() {
                 self.current_end = self.current_end.saturating_sub(1);
+
                 if self.range.contains(&comment.span.start) {
                     return Some(comment);
                 }
             }
         }
+
         None
     }
 }
@@ -109,10 +117,15 @@ mod test {
             Comment::new(18, 23, CommentKind::Line),
         ]
         .into_boxed_slice();
+
         let full_len = comments.len();
+
         assert_eq!(comments_range(&comments, ..).count(), full_len);
+
         assert_eq!(comments_range(&comments, 1..).count(), full_len.saturating_sub(1));
+
         assert_eq!(comments_range(&comments, ..18).count(), full_len.saturating_sub(1));
+
         assert_eq!(comments_range(&comments, ..=18).count(), full_len);
     }
 }

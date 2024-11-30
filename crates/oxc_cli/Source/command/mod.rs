@@ -105,18 +105,21 @@ mod misc_options {
 
 	fn get_misc_options(arg:&str) -> MiscOptions {
 		let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
+
 		lint_command().run_inner(args.as_slice()).unwrap().lint_options.misc_options
 	}
 
 	#[test]
 	fn default() {
 		let options = get_misc_options(".");
+
 		assert!(options.threads.is_none());
 	}
 
 	#[test]
 	fn threads() {
 		let options = get_misc_options("--threads 4 .");
+
 		assert_eq!(options.threads, Some(4));
 	}
 }

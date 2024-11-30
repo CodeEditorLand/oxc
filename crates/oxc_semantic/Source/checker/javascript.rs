@@ -15,9 +15,12 @@ use crate::{builder::SemanticBuilder, diagnostics::redeclaration, scope::ScopeFl
 
 pub fn check_duplicate_class_elements(ctx: &SemanticBuilder<'_>) {
     let classes = &ctx.class_table_builder.classes;
+
     classes.iter_enumerated().for_each(|(class_id, _)| {
         let mut defined_elements = FxHashMap::default();
+
         let elements = &classes.elements[class_id];
+
         for (element_id, element) in elements.iter_enumerated() {
             if let Some(prev_element_id) = defined_elements.insert(&element.name, element_id) {
                 let prev_element = &elements[prev_element_id];
@@ -87,11 +90,13 @@ pub fn check_module_record(ctx: &SemanticBuilder<'_>) {
     // It is a Syntax Error if the ExportedNames of ModuleItemList contains any duplicate entries.
     for name_span in &module_record.exported_bindings_duplicated {
         let old_span = module_record.exported_bindings[name_span.name()];
+
         ctx.error(duplicate_export(name_span.name(), name_span.span(), old_span));
     }
 
     for span in &module_record.export_default_duplicated {
         let old_span = module_record.export_default.unwrap();
+
         ctx.error(duplicate_export("default", *span, old_span));
     }
 
@@ -129,6 +134,7 @@ pub fn check_identifier<'a>(name: &str, span: Span, node: &AstNode<'a>, ctx: &Se
     if ctx.current_scope_flags().is_ts_module_block() {
         return;
     }
+
     if name == "await" {
         // It is a Syntax Error if the goal symbol of the syntactic grammar is Module and the StringValue of IdentifierName is "await".
         if ctx.source_type.is_module() {
@@ -176,9 +182,11 @@ pub fn check_binding_identifier<'a>(
                 AstKind::VariableDeclaration(decl) if decl.kind.is_lexical() => {
                     return ctx.error(invalid_let_declaration(decl.kind.as_str(), ident.span));
                 }
+
                 AstKind::VariableDeclaration(_) | AstKind::Function(_) | AstKind::Program(_) => {
                     break;
                 }
+
                 _ => {}
             }
         }
@@ -202,6 +210,7 @@ pub fn check_identifier_reference<'a>(
                 AstKind::AssignmentTarget(_) | AstKind::SimpleAssignmentTarget(_) => {
                     return ctx.error(unexpected_identifier_assign(&ident.name, ident.span));
                 }
+
                 AstKind::MemberExpression(_) => break,
                 _ => {}
             }
@@ -220,10 +229,12 @@ pub fn check_identifier_reference<'a>(
                 AstKind::PropertyDefinition(_) => {
                     return ctx.error(unexpected_arguments("class field initializer", ident.span));
                 }
+
                 AstKind::StaticBlock(_) => {
                     return ctx
                         .error(unexpected_arguments("static initialization block", ident.span));
                 }
+
                 _ => {}
             }
         }
@@ -283,11 +294,13 @@ pub fn check_number_literal(lit: &NumericLiteral, ctx: &SemanticBuilder<'_>) {
     // * It is a Syntax Error if the source text matched by this production is strict mode code.
     fn leading_zero(s: &str) -> bool {
         let mut chars = s.bytes();
+
         if let Some(first) = chars.next() {
             if let Some(second) = chars.next() {
                 return first == b'0' && second.is_ascii_digit();
             }
         }
+
         false
     }
 
@@ -296,9 +309,11 @@ pub fn check_number_literal(lit: &NumericLiteral, ctx: &SemanticBuilder<'_>) {
             NumberBase::Octal if leading_zero(lit.raw) => {
                 ctx.error(legacy_octal(lit.span));
             }
+
             NumberBase::Decimal | NumberBase::Float if leading_zero(lit.raw) => {
                 ctx.error(leading_zero_decimal(lit.span));
             }
+
             _ => {}
         }
     }
@@ -317,8 +332,10 @@ pub fn check_string_literal(lit: &StringLiteral, ctx: &SemanticBuilder<'_>) {
     //   non_octal_decimal_escape_sequence
     // It is a Syntax Error if the source text matched by this production is strict mode code.
     let raw = lit.span.source_text(ctx.source_text);
+
     if ctx.strict_mode() && raw.len() != lit.value.len() {
         let mut chars = raw.chars().peekable();
+
         while let Some(c) = chars.next() {
             if c == '\\' {
                 match chars.next() {
@@ -327,12 +344,15 @@ pub fn check_string_literal(lit: &StringLiteral, ctx: &SemanticBuilder<'_>) {
                             return ctx.error(legacy_octal(lit.span));
                         }
                     }
+
                     Some('1'..='7') => {
                         return ctx.error(legacy_octal(lit.span));
                     }
+
                     Some('8'..='9') => {
                         return ctx.error(non_octal_decimal_escape_sequence(lit.span));
                     }
+
                     _ => {}
                 }
             }
@@ -398,20 +418,26 @@ pub fn check_module_declaration<'a>(
         | ModuleDeclaration::TSExportAssignment(_)
         | ModuleDeclaration::TSNamespaceExportDeclaration(_) => "export statement",
     };
+
     let start = decl.span().start;
+
     let span = Span::new(start, start + 6);
+
     match ctx.source_type.module_kind() {
         ModuleKind::Unambiguous => {
             #[cfg(debug_assertions)]
             panic!("Technically unreachable, omit to avoid panic.");
         }
+
         ModuleKind::Script => {
             ctx.error(module_code(text, span));
         }
+
         ModuleKind::Module => {
             if matches!(ctx.nodes.parent_kind(node.id()), Some(AstKind::Program(_))) {
                 return;
             }
+
             ctx.error(top_level(text, span));
         }
     }
@@ -444,31 +470,40 @@ pub fn check_meta_property<'a>(prop: &MetaProperty, node: &AstNode<'a>, ctx: &Se
                 if ctx.source_type.is_script() {
                     return ctx.error(import_meta(prop.span));
                 }
+
                 return;
             }
+
             ctx.error(import_meta_property(prop.span));
         }
         "new" => {
             if prop.property.name == "target" {
                 let mut in_function_scope = false;
+
                 for scope_id in ctx.scope.ancestors(node.scope_id()) {
                     let flags = ctx.scope.get_flags(scope_id);
                     // In arrow functions, new.target is inherited from the surrounding scope.
                     if flags.contains(ScopeFlags::Arrow) {
                         continue;
                     }
+
                     if flags.intersects(ScopeFlags::Function | ScopeFlags::ClassStaticBlock) {
                         in_function_scope = true;
+
                         break;
                     }
                 }
+
                 if !in_function_scope {
                     return ctx.error(new_target(prop.span));
                 }
+
                 return;
             }
+
             ctx.error(new_target_property(prop.span));
         }
+
         _ => {}
     }
 }
@@ -511,6 +546,7 @@ fn reg_exp_flag_u_and_v(span: Span) -> OxcDiagnostic {
 
 pub fn check_regexp_literal(lit: &RegExpLiteral, ctx: &SemanticBuilder<'_>) {
     let flags = lit.regex.flags;
+
     if flags.contains(RegExpFlags::U | RegExpFlags::V) {
         ctx.error(reg_exp_flag_u_and_v(lit.span));
     }
@@ -528,12 +564,15 @@ pub fn check_with_statement(stmt: &WithStatement, ctx: &SemanticBuilder<'_>) {
 
 pub fn check_switch_statement<'a>(stmt: &SwitchStatement<'a>, ctx: &SemanticBuilder<'a>) {
     let mut previous_default: Option<Span> = None;
+
     for case in &stmt.cases {
         if case.test.is_none() {
             if let Some(previous_span) = previous_default {
                 ctx.error(redeclaration("default", previous_span, case.span));
+
                 break;
             }
+
             previous_default.replace(case.span);
         }
     }
@@ -575,12 +614,14 @@ pub fn check_break_statement<'a>(
                     |label| ctx.error(invalid_label_target(label.span)),
                 );
             }
+
             AstKind::Function(_) | AstKind::StaticBlock(_) => {
                 return stmt.label.as_ref().map_or_else(
                     || ctx.error(invalid_break(stmt.span)),
                     |label| ctx.error(invalid_label_jump_target(label.span)),
                 );
             }
+
             AstKind::LabeledStatement(labeled_statement) => {
                 if stmt
                     .label
@@ -590,12 +631,14 @@ pub fn check_break_statement<'a>(
                     break;
                 }
             }
+
             kind if (kind.is_iteration_statement()
                 || matches!(kind, AstKind::SwitchStatement(_)))
                 && stmt.label.is_none() =>
             {
                 break;
             }
+
             _ => {}
         }
     }
@@ -621,12 +664,14 @@ pub fn check_continue_statement<'a>(
                     |label| ctx.error(invalid_label_target(label.span)),
                 );
             }
+
             AstKind::Function(_) | AstKind::StaticBlock(_) => {
                 return stmt.label.as_ref().map_or_else(
                     || ctx.error(invalid_continue(stmt.span)),
                     |label| ctx.error(invalid_label_jump_target(label.span)),
                 );
             }
+
             AstKind::LabeledStatement(labeled_statement) => match &stmt.label {
                 Some(label) if label.name == labeled_statement.label.name => {
                     if matches!(
@@ -640,12 +685,14 @@ pub fn check_continue_statement<'a>(
                     ) {
                         break;
                     }
+
                     return ctx.error(invalid_label_non_iteration(
                         "continue",
                         labeled_statement.label.span,
                         label.span,
                     ));
                 }
+
                 _ => {}
             },
             kind if kind.is_iteration_statement() && stmt.label.is_none() => break,
@@ -678,6 +725,7 @@ pub fn check_labeled_statement<'a>(
                     stmt.label.span,
                 ));
             }
+
             _ => {}
         }
     }
@@ -712,6 +760,7 @@ pub fn check_for_statement_left<'a>(
     }
 
     let strict_mode = ctx.strict_mode();
+
     for declarator in &decl.declarations {
         if declarator.init.is_some()
             && (strict_mode
@@ -746,26 +795,32 @@ pub fn check_class(class: &Class, node: &AstNode<'_>, ctx: &SemanticBuilder<'_>)
         && !matches!(ctx.nodes.parent_kind(node.id()), Some(AstKind::ExportDefaultDeclaration(_)))
     {
         let start = class.span.start;
+
         ctx.error(require_class_name(Span::new(start, start + 5)));
     }
 
     // ClassBody : ClassElementList
     // It is a Syntax Error if PrototypePropertyNameList of ClassElementList contains more than one occurrence of "constructor".
     let mut prev_constructor: Option<Span> = None;
+
     let constructors = class.body.body.iter().filter_map(|e| {
         if let ClassElement::MethodDefinition(def) = e {
             // is declaration
             def.value.body.as_ref()?;
+
             if def.kind == MethodDefinitionKind::Constructor {
                 return def.key.prop_name().map_or(Some(def.span), |(_, node)| Some(node));
             }
         }
+
         None
     });
+
     for new_span in constructors {
         if let Some(prev_span) = prev_constructor {
             return ctx.error(duplicate_constructor(prev_span, new_span));
         }
+
         prev_constructor = Some(new_span);
     }
 }
@@ -838,6 +893,7 @@ pub fn check_super<'a>(sup: &Super, node: &AstNode<'a>, ctx: &SemanticBuilder<'a
     let Some(class_id) = ctx.class_table_builder.current_class_id else {
         for scope_id in ctx.scope.ancestors(ctx.current_scope_id) {
             let flags = ctx.scope.get_flags(scope_id);
+
             if flags.is_function()
                 && matches!(
                     ctx.nodes.parent_kind(ctx.scope.get_node_id(scope_id)),
@@ -847,6 +903,7 @@ pub fn check_super<'a>(sup: &Super, node: &AstNode<'a>, ctx: &SemanticBuilder<'a
                 if let Some(super_call_span) = super_call_span {
                     ctx.error(unexpected_super_call(super_call_span));
                 }
+
                 return;
             };
         }
@@ -888,8 +945,10 @@ pub fn check_super<'a>(sup: &Super, node: &AstNode<'a>, ctx: &SemanticBuilder<'a
                                 return ctx.error(super_without_derived_class(sup.span, class.span));
                             }
                         }
+
                         break;
                     }
+
                     return ctx.error(unexpected_super_call(super_call_span));
                 }
                 // super references are allowed in method
@@ -906,8 +965,10 @@ pub fn check_super<'a>(sup: &Super, node: &AstNode<'a>, ctx: &SemanticBuilder<'a
                 if let Some(super_call_span) = super_call_span {
                     return ctx.error(unexpected_super_call(super_call_span));
                 }
+
                 break;
             }
+
             _ => {}
         }
     }
@@ -972,6 +1033,7 @@ pub fn check_object_expression(obj_expr: &ObjectExpression, ctx: &SemanticBuilde
     // It is a Syntax Error if PropertyNameList of PropertyDefinitionList contains any duplicate entries for "__proto__"
     // and at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression
     let mut prev_proto: Option<Span> = None;
+
     for prop in &obj_expr.properties {
         if let ObjectPropertyKind::ObjectProperty(obj_prop) = prop {
             // Skip if not a property definition production:
@@ -979,11 +1041,13 @@ pub fn check_object_expression(obj_expr: &ObjectExpression, ctx: &SemanticBuilde
             if obj_prop.kind != PropertyKind::Init || obj_prop.method {
                 continue;
             }
+
             if let Some((prop_name, span)) = prop.prop_name() {
                 if prop_name == "__proto__" {
                     if let Some(prev_span) = prev_proto {
                         ctx.error(redeclaration("__proto__", prev_span, span));
                     }
+
                     prev_proto = Some(span);
                 }
             }
@@ -1009,6 +1073,7 @@ pub fn check_binary_expression(binary_expr: &BinaryExpression, ctx: &SemanticBui
             Expression::UnaryExpression(_) => {
                 ctx.error(unexpected_exponential("unary", binary_expr.span));
             }
+
             _ => {}
         }
     }
@@ -1028,11 +1093,13 @@ pub fn check_logical_expression(logical_expr: &LogicalExpression, ctx: &Semantic
     // a && b ?? c - (a && b) ?? c
     if logical_expr.operator == LogicalOperator::Coalesce {
         let mut maybe_mixed_coalesce_expr = None;
+
         if let Expression::LogicalExpression(rhs) = &logical_expr.right {
             maybe_mixed_coalesce_expr = Some(rhs);
         } else if let Expression::LogicalExpression(lhs) = &logical_expr.left {
             maybe_mixed_coalesce_expr = Some(lhs);
         }
+
         if let Some(expr) = maybe_mixed_coalesce_expr {
             if matches!(expr.operator, LogicalOperator::And | LogicalOperator::Or) {
                 ctx.error(mixed_coalesce(logical_expr.span));
@@ -1073,9 +1140,11 @@ pub fn check_unary_expression<'a>(
             Expression::Identifier(ident) if ctx.strict_mode() => {
                 ctx.error(delete_of_unqualified(ident.span));
             }
+
             Expression::PrivateFieldExpression(expr) => {
                 ctx.error(delete_private_field(expr.span));
             }
+
             _ => {}
         }
     }
@@ -1088,9 +1157,11 @@ fn is_in_formal_parameters<'a>(node: &AstNode<'a>, ctx: &SemanticBuilder<'a>) ->
             AstKind::Program(_) | AstKind::Function(_) | AstKind::ArrowFunctionExpression(_) => {
                 break;
             }
+
             _ => {}
         }
     }
+
     false
 }
 
@@ -1110,6 +1181,7 @@ pub fn check_await_expression<'a>(
     // It is a Syntax Error if ClassStaticBlockStatementList Contains await is true.
     if ctx.scope.get_flags(node.scope_id()).is_class_static_block() {
         let start = expr.span.start;
+
         ctx.error(class_static_block_await(Span::new(start, start + 5)));
     }
 }

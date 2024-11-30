@@ -106,6 +106,7 @@ impl<'a> JSDocTag<'a> {
                     ),
                 )
             }
+
             None => (None, JSDocCommentPart::new(self.body_raw, self.body_span)),
         };
 
@@ -146,6 +147,7 @@ impl<'a> JSDocTag<'a> {
                         self.body_span.start + u32::try_from(c_start).unwrap_or_default(),
                     )
                 }
+
                 None => (None, self.body_raw, self.body_span.start),
             };
 
@@ -170,6 +172,7 @@ impl<'a> JSDocTag<'a> {
                     ),
                 )
             }
+
             None => (
                 None,
                 JSDocCommentPart::new(
@@ -186,14 +189,18 @@ impl<'a> JSDocTag<'a> {
 #[cfg(test)]
 mod test {
     use oxc_allocator::Allocator;
+
     use oxc_parser::Parser;
+
     use oxc_span::SourceType;
 
     use crate::{Semantic, SemanticBuilder};
 
     fn build_semantic<'a>(allocator: &'a Allocator, source_text: &'a str) -> Semantic<'a> {
         let source_type = SourceType::default();
+
         let ret = Parser::new(allocator, source_text, source_type).parse();
+
         SemanticBuilder::new().with_build_jsdoc(true).build(&ret.program).semantic
     }
 
@@ -231,10 +238,13 @@ mod test {
             ("/** single line @k4 c4 */", "@k4 c4 "),
         ] {
             let allocator = Allocator::default();
+
             let semantic = build_semantic(&allocator, source_text);
+
             let mut jsdocs = semantic.jsdoc().iter_all();
 
             let tag = jsdocs.next().unwrap().tags().first().unwrap();
+
             assert_eq!(tag.span.source_text(source_text), tag_span_text);
         }
     }
@@ -267,11 +277,15 @@ mod test {
             (" /** @あいう え */ ", "あいう", "@あいう"),
         ] {
             let allocator = Allocator::default();
+
             let semantic = build_semantic(&allocator, source_text);
+
             let mut jsdocs = semantic.jsdoc().iter_all();
 
             let tag = jsdocs.next().unwrap().tags().first().unwrap();
+
             assert_eq!(tag.kind.parsed(), tag_kind);
+
             assert_eq!(tag.kind.span.source_text(source_text), tag_kind_span_text);
         }
     }
@@ -304,10 +318,13 @@ mod test {
             (" /** @あいう え */ ", ("え", " え ")),
         ] {
             let allocator = Allocator::default();
+
             let semantic = build_semantic(&allocator, source_text);
+
             let mut jsdocs = semantic.jsdoc().iter_all();
 
             let comment = jsdocs.next().unwrap().tags().first().unwrap().comment();
+
             assert_eq!(
                 (comment.parsed().as_str(), comment.span.source_text(source_text)),
                 parsed_comment_part
@@ -336,10 +353,13 @@ mod test {
             ("/** @k10 {{t10} */", None),
         ] {
             let allocator = Allocator::default();
+
             let semantic = build_semantic(&allocator, source_text);
+
             let mut jsdocs = semantic.jsdoc().iter_all();
 
             let type_part = jsdocs.next().unwrap().tags().first().unwrap().r#type();
+
             assert_eq!(
                 type_part.map(|t| (t.parsed(), t.span.source_text(source_text))),
                 parsed_type_part
@@ -370,15 +390,19 @@ c5 */",
             ("/** @k6 {t6} - c6 */", Some(("t6", "{t6}")), ("- c6", " - c6 ")),
         ] {
             let allocator = Allocator::default();
+
             let semantic = build_semantic(&allocator, source_text);
+
             let mut jsdocs = semantic.jsdoc().iter_all();
 
             let (type_part, comment_part) =
                 jsdocs.next().unwrap().tags().first().unwrap().type_comment();
+
             assert_eq!(
                 type_part.map(|t| (t.parsed(), t.span.source_text(source_text))),
                 parsed_type_part
             );
+
             assert_eq!(
                 (comment_part.parsed().as_str(), comment_part.span.source_text(source_text)),
                 parsed_comment_part
@@ -454,21 +478,26 @@ c7 */",
             ("/** @type{t16}n16*/", Some(("t16", "{t16}")), Some(("n16", "n16")), ("", "")),
         ] {
             let allocator = Allocator::default();
+
             let semantic = build_semantic(&allocator, source_text);
+
             let mut jsdocs = semantic.jsdoc().iter_all();
 
             let (type_part, type_name_part, comment_part) =
                 jsdocs.next().unwrap().tags().first().unwrap().type_name_comment();
+
             assert_eq!(
                 type_part.map(|t| (t.parsed(), t.span.source_text(source_text))),
                 parsed_type_part,
                 "type_part failed to assert in {source_text}"
             );
+
             assert_eq!(
                 type_name_part.map(|n| (n.parsed(), n.span.source_text(source_text))),
                 parsed_type_name_part,
                 "type_name_part failed to assert in {source_text}"
             );
+
             assert_eq!(
                 (comment_part.parsed().as_str(), comment_part.span.source_text(source_text)),
                 parsed_comment_part,

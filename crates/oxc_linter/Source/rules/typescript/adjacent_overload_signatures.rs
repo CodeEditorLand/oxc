@@ -21,9 +21,11 @@ fn adjacent_overload_signatures_diagnostic(
     second: Span,
 ) -> OxcDiagnostic {
     let mut d = OxcDiagnostic::warn(format!("All {fn_name:?} signatures should be adjacent."));
+
     if let Some(span) = first {
         d = d.and_label(span);
     }
+
     d.and_label(second)
 }
 
@@ -194,9 +196,11 @@ impl GetMethod for ModuleDeclaration<'_> {
                             None
                         }
                     }
+
                     _ => None,
                 }
             }
+
             ModuleDeclaration::ExportNamedDeclaration(named_decl) => {
                 if let Some(Declaration::FunctionDeclaration(func_decl)) = &named_decl.declaration {
                     return func_decl.id.as_ref().map(|id| Method {
@@ -207,8 +211,10 @@ impl GetMethod for ModuleDeclaration<'_> {
                         span: id.span,
                     });
                 }
+
                 None
             }
+
             _ => None,
         }
     }
@@ -233,6 +239,7 @@ impl GetMethod for Declaration<'_> {
                     None
                 }
             }
+
             _ => None,
         }
     }
@@ -252,6 +259,7 @@ impl GetMethod for Statement<'_> {
 
 fn check_and_report(methods: &Vec<Option<Method>>, ctx: &LintContext<'_>) {
     let mut last_method: Option<&Method> = None;
+
     let mut seen_methods: Vec<&Method> = Vec::new();
 
     for method in methods {
@@ -276,6 +284,7 @@ fn check_and_report(methods: &Vec<Option<Method>>, ctx: &LintContext<'_>) {
             } else {
                 seen_methods.push(method);
             }
+
             last_method = Some(method);
         } else {
             last_method = None;
@@ -288,38 +297,48 @@ impl Rule for AdjacentOverloadSignatures {
         match node.kind() {
             AstKind::Class(class) => {
                 let members = &class.body.body;
+
                 let methods = members.iter().map(GetMethod::get_method).collect();
+
                 check_and_report(&methods, ctx);
             }
+
             AstKind::TSTypeLiteral(literal) => {
                 let methods = literal.members.iter().map(GetMethod::get_method).collect();
+
                 check_and_report(&methods, ctx);
             }
+
             AstKind::Program(program) => {
                 let methods = program.body.iter().map(GetMethod::get_method).collect();
 
                 check_and_report(&methods, ctx);
             }
+
             AstKind::TSModuleBlock(block) => {
                 let methods = block.body.iter().map(GetMethod::get_method).collect();
 
                 check_and_report(&methods, ctx);
             }
+
             AstKind::TSInterfaceDeclaration(decl) => {
                 let methods = decl.body.body.iter().map(GetMethod::get_method).collect();
 
                 check_and_report(&methods, ctx);
             }
+
             AstKind::BlockStatement(stmt) => {
                 let methods = stmt.body.iter().map(GetMethod::get_method).collect();
 
                 check_and_report(&methods, ctx);
             }
+
             AstKind::FunctionBody(body) => {
                 let methods = body.statements.iter().map(GetMethod::get_method).collect();
 
                 check_and_report(&methods, ctx);
             }
+
             _ => {}
         }
     }
@@ -385,65 +404,95 @@ fn test() {
       declare function baz(): void;",
         r"declare module 'Foo' {
         export function foo(s: string): void;
+
         export function foo(n: number): void;
+
         export function foo(sn: string | number): void;
+
         export function bar(): void;
+
         export function baz(): void;
       }",
         r"declare namespace Foo {
         export function foo(s: string): void;
+
         export function foo(n: number): void;
+
         export function foo(sn: string | number): void;
+
         export function bar(): void;
+
         export function baz(): void;
       }",
         r"type Foo = {
         foo(s: string): void;
+
         foo(n: number): void;
+
         foo(sn: string | number): void;
+
         bar(): void;
+
         baz(): void;
       };",
         r"type Foo = {
         foo(s: string): void;
         ['foo'](n: number): void;
+
         foo(sn: string | number): void;
+
         bar(): void;
+
         baz(): void;
       };",
         r"interface Foo {
         (s: string): void;
         (n: number): void;
         (sn: string | number): void;
+
         foo(n: number): void;
+
         bar(): void;
+
         baz(): void;
       }",
         r"interface Foo {
         (s: string): void;
         (n: number): void;
         (sn: string | number): void;
+
         foo(n: number): void;
+
         bar(): void;
+
         baz(): void;
+
         call(): void;
       }",
         r"interface Foo {
         foo(s: string): void;
+
         foo(n: number): void;
+
         foo(sn: string | number): void;
+
         bar(): void;
+
         baz(): void;
       }",
         r"interface Foo {
         foo(s: string): void;
         ['foo'](n: number): void;
+
         foo(sn: string | number): void;
+
         bar(): void;
+
         baz(): void;
       }",
         r"interface Foo {
         foo(): void;
+
         bar: {
           baz(s: string): void;
           baz(n: number): void;
@@ -452,50 +501,76 @@ fn test() {
       }",
         r"interface Foo {
         new (s: string);
+
         new (n: number);
+
         new (sn: string | number);
+
         foo(): void;
       }",
         r"class Foo {
         constructor(s: string);
+
         constructor(n: number);
+
         constructor(sn: string | number) {}
+
         bar(): void {}
+
         baz(): void {}
       }",
         r"class Foo {
         foo(s: string): void;
+
         foo(n: number): void;
+
         foo(sn: string | number): void {}
+
         bar(): void {}
+
         baz(): void {}
       }",
         r"class Foo {
         foo(s: string): void;
         ['foo'](n: number): void;
+
         foo(sn: string | number): void {}
+
         bar(): void {}
+
         baz(): void {}
       }",
         r"class Foo {
         name: string;
+
         foo(s: string): void;
+
         foo(n: number): void;
+
         foo(sn: string | number): void {}
+
         bar(): void {}
+
         baz(): void {}
       }",
         r"class Foo {
         name: string;
+
         static foo(s: string): void;
+
         static foo(n: number): void;
+
         static foo(sn: string | number): void {}
+
         bar(): void {}
+
         baz(): void {}
       }",
         r"class Test {
         static test() {}
+
         untest() {}
+
         test() {}
       }",
         "export default function <T>(foo: T) {}",
@@ -515,12 +590,16 @@ fn test() {
       }",
         r"function wrap() {
         function foo(s: string);
+
         function foo(n: number);
+
         function foo(sn: string | number) {}
       }",
         r"if (true) {
         function foo(s: string);
+
         function foo(n: number);
+
         function foo(sn: string | number) {}
       }",
     ];
@@ -528,15 +607,22 @@ fn test() {
     let fail = vec![
         r"function wrap() {
         function foo(s: string);
+
         function foo(n: number);
+
         type bar = number;
+
         function foo(sn: string | number) {}
       }",
         r"if (true) {
         function foo(s: string);
+
         function foo(n: number);
+
         let a = 1;
+
         function foo(sn: string | number) {}
+
         foo(a);
       }",
         r"export function foo(s: string);
@@ -591,98 +677,150 @@ fn test() {
       declare function foo(sn: string | number);",
         r"declare module 'Foo' {
         export function foo(s: string): void;
+
         export function foo(n: number): void;
+
         export function bar(): void;
+
         export function baz(): void;
+
         export function foo(sn: string | number): void;
       }",
         r"declare module 'Foo' {
         export function foo(s: string): void;
+
         export function foo(n: number): void;
+
         export function foo(sn: string | number): void;
+
         function baz(s: string): void;
+
         export function bar(): void;
+
         function baz(n: number): void;
+
         function baz(sn: string | number): void;
       }",
         r"declare namespace Foo {
         export function foo(s: string): void;
+
         export function foo(n: number): void;
+
         export function bar(): void;
+
         export function baz(): void;
+
         export function foo(sn: string | number): void;
       }",
         r"declare namespace Foo {
         export function foo(s: string): void;
+
         export function foo(n: number): void;
+
         export function foo(sn: string | number): void;
+
         function baz(s: string): void;
+
         export function bar(): void;
+
         function baz(n: number): void;
+
         function baz(sn: string | number): void;
       }",
         r"type Foo = {
         foo(s: string): void;
+
         foo(n: number): void;
+
         bar(): void;
+
         baz(): void;
+
         foo(sn: string | number): void;
       };",
         r"type Foo = {
         foo(s: string): void;
         ['foo'](n: number): void;
+
         bar(): void;
+
         baz(): void;
+
         foo(sn: string | number): void;
       };",
         r"type Foo = {
         foo(s: string): void;
+
         name: string;
+
         foo(n: number): void;
+
         foo(sn: string | number): void;
+
         bar(): void;
+
         baz(): void;
       };",
         r"interface Foo {
         (s: string): void;
+
         foo(n: number): void;
         (n: number): void;
         (sn: string | number): void;
+
         bar(): void;
+
         baz(): void;
+
         call(): void;
       }",
         r"interface Foo {
         foo(s: string): void;
+
         foo(n: number): void;
+
         bar(): void;
+
         baz(): void;
+
         foo(sn: string | number): void;
       }",
         r"interface Foo {
         foo(s: string): void;
         ['foo'](n: number): void;
+
         bar(): void;
+
         baz(): void;
+
         foo(sn: string | number): void;
       }",
         r"interface Foo {
         foo(s: string): void;
         'foo'(n: number): void;
+
         bar(): void;
+
         baz(): void;
+
         foo(sn: string | number): void;
       }",
         r"interface Foo {
         foo(s: string): void;
+
         name: string;
+
         foo(n: number): void;
+
         foo(sn: string | number): void;
+
         bar(): void;
+
         baz(): void;
       }",
         r"interface Foo {
         foo(): void;
+
         bar: {
           baz(s: string): void;
           baz(n: number): void;
@@ -692,69 +830,107 @@ fn test() {
       }",
         r"interface Foo {
         new (s: string);
+
         new (n: number);
+
         foo(): void;
+
         bar(): void;
+
         new (sn: string | number);
       }",
         r"interface Foo {
         new (s: string);
+
         foo(): void;
+
         new (n: number);
+
         bar(): void;
+
         new (sn: string | number);
       }",
         r"class Foo {
         constructor(s: string);
+
         constructor(n: number);
+
         bar(): void {}
+
         baz(): void {}
+
         constructor(sn: string | number) {}
       }",
         r"class Foo {
         foo(s: string): void;
+
         foo(n: number): void;
+
         bar(): void {}
+
         baz(): void {}
+
         foo(sn: string | number): void {}
       }",
         r"class Foo {
         foo(s: string): void;
         ['foo'](n: number): void;
+
         bar(): void {}
+
         baz(): void {}
+
         foo(sn: string | number): void {}
       }",
         r#"class Foo {
         // prettier-ignore
         "foo"(s: string): void;
+
         foo(n: number): void;
+
         bar(): void {}
+
         baz(): void {}
+
         foo(sn: string | number): void {}
       }"#,
         r"class Foo {
         constructor(s: string);
+
         name: string;
+
         constructor(n: number);
+
         constructor(sn: string | number) {}
+
         bar(): void {}
+
         baz(): void {}
       }",
         r"class Foo {
         foo(s: string): void;
+
         name: string;
+
         foo(n: number): void;
+
         foo(sn: string | number): void {}
+
         bar(): void {}
+
         baz(): void {}
       }",
         r"class Foo {
         static foo(s: string): void;
+
         name: string;
+
         static foo(n: number): void;
+
         static foo(sn: string | number): void {}
+
         bar(): void {}
+
         baz(): void {}
       }",
         r"class Test {

@@ -43,11 +43,13 @@ impl<'a> MinimizeConditions {
 				// Bail `let o = { f() { assert.ok(this !== o); } }; (true ? o.f
 				// : false)(); (true ? o.f : false)``;`
 				let parent = ctx.ancestry.parent();
+
 				if parent.is_tagged_template_expression()
 					|| matches!(parent, Ancestor::CallExpressionCallee(_))
 				{
 					return None;
 				}
+
 				Some(ctx.ast.move_expression(&mut expr.consequent))
 			},
 			Tri::False => Some(ctx.ast.move_expression(&mut expr.alternate)),
@@ -62,12 +64,15 @@ impl<'a> MinimizeConditions {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Option<Expression<'a>> {
 		debug_assert!(expr.operator.is_not());
+
 		if let Expression::BinaryExpression(binary_expr) = &mut expr.argument {
 			if let Some(new_op) = binary_expr.operator.equality_inverse_operator() {
 				binary_expr.operator = new_op;
+
 				return Some(ctx.ast.move_expression(&mut expr.argument));
 			}
 		}
+
 		None
 	}
 }

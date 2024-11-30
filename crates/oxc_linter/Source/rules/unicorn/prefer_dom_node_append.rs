@@ -57,8 +57,10 @@ impl Rule for PreferDomNodeAppend {
                 if !matches!(v.property.name.as_str(), "appendChild") {
                     return;
                 }
+
                 v.property.span
             }
+
             _ => return,
         };
 

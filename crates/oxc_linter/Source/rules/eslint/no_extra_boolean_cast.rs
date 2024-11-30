@@ -69,15 +69,18 @@ impl Rule for NoExtraBooleanCast {
             {
                 ctx.diagnostic(no_extra_boolean_cast_diagnostic(expr.span));
             }
+
             AstKind::UnaryExpression(unary) if unary.operator == UnaryOperator::LogicalNot => {
                 let Some(parent) = get_real_parent(node, ctx) else {
                     return;
                 };
+
                 if matches!(parent.kind(), AstKind::UnaryExpression(p) if p.operator == UnaryOperator::LogicalNot && is_flagged_ctx(parent, ctx, self.enforce_for_logical_operands))
                 {
                     ctx.diagnostic(no_extra_double_negation_cast_diagnostic(parent.kind().span()));
                 }
             }
+
             _ => {}
         }
     }
@@ -87,6 +90,7 @@ impl Rule for NoExtraBooleanCast {
 // Acts recursively if it is in a logical context
 fn is_flagged_ctx(node: &AstNode, ctx: &LintContext, enforce_for_logical_operands: bool) -> bool {
     let parent = get_real_parent(node, ctx);
+
     if is_bool_context(node, parent, ctx) {
         return true;
     }
@@ -113,6 +117,7 @@ fn is_logical_ctx(node: &AstNode, enforce_for_logical_operands: bool) -> bool {
             (expr.operator == LogicalOperator::And || expr.operator == LogicalOperator::Or)
                 && enforce_for_logical_operands
         }
+
         _ => false,
     }
 }
@@ -157,22 +162,31 @@ fn is_inside_test_condition(node: &AstNode, ctx: &LintContext) -> bool {
     get_real_parent(node, ctx).map_or(false, |parent| match parent.kind() {
         AstKind::IfStatement(stmt) => {
             let expr_span = stmt.test.get_inner_expression().without_parentheses().span();
+
             expr_span == node.kind().span()
         }
+
         AstKind::DoWhileStatement(stmt) => {
             let expr_span = stmt.test.get_inner_expression().without_parentheses().span();
+
             expr_span == node.kind().span()
         }
+
         AstKind::WhileStatement(stmt) => {
             let expr_span = stmt.test.get_inner_expression().without_parentheses().span();
+
             expr_span == node.kind().span()
         }
+
         AstKind::ConditionalExpression(stmt) => {
             let expr_span = stmt.test.get_inner_expression().without_parentheses().span();
+
             expr_span == node.kind().span()
         }
+
         AstKind::ForStatement(stmt) => stmt.test.as_ref().map_or(false, |expr| {
             let expr_span = expr.get_inner_expression().without_parentheses().span();
+
             expr_span == node.kind().span()
         }),
         _ => false,
@@ -199,6 +213,7 @@ fn get_real_parent<'a, 'b>(node: &AstNode, ctx: &'a LintContext<'b>) -> Option<&
 
         return Some(parent);
     }
+
     None
 }
 

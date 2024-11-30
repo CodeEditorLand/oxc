@@ -59,6 +59,7 @@ impl Rule for PreferTodo {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
     let node = possible_jest_node.node;
+
     if let AstKind::CallExpression(call_expr) = node.kind() {
         let counts = call_expr.arguments.len();
 
@@ -80,15 +81,18 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
                 .callee
                 .as_member_expression()
                 .map_or(call_expr.callee.span(), GetSpan::span);
+
             ctx.diagnostic_with_fix(un_implemented_test_diagnostic(span), |fixer| {
                 if let Expression::Identifier(ident) = &call_expr.callee {
                     return fixer.replace(Span::empty(ident.span.end), ".todo");
                 }
+
                 if let Some(mem_expr) = call_expr.callee.as_member_expression() {
                     if let Some((span, _)) = mem_expr.static_property_info() {
                         return fixer.replace(span, "todo");
                     }
                 }
+
                 fixer.delete_range(call_expr.span)
             });
         }
@@ -107,6 +111,7 @@ fn filter_todo_case(expr: &CallExpression) -> bool {
             return name == "todo";
         }
     }
+
     false
 }
 
@@ -115,6 +120,7 @@ fn should_filter_case(expr: &CallExpression) -> bool {
         Expression::Identifier(ident) => ident.name.starts_with('x') || ident.name.starts_with('f'),
         _ => false,
     };
+
     result || filter_todo_case(expr)
 }
 
@@ -129,8 +135,10 @@ fn is_empty_function(expr: &CallExpression) -> bool {
             let Some(func_body) = &func.body else {
                 return false;
             };
+
             func_body.is_empty()
         }
+
         _ => false,
     }
 }
@@ -141,37 +149,51 @@ fn build_code<'a>(fixer: RuleFixer<'_, 'a>, expr: &CallExpression<'a>) -> RuleFi
     match &expr.callee {
         Expression::Identifier(ident) => {
             formatter.print_str(ident.name.as_str());
+
             formatter.print_str(".todo(");
         }
+
         Expression::ComputedMemberExpression(expr) => {
             if let Expression::Identifier(ident) = &expr.object {
                 formatter.print_str(ident.name.as_str());
+
                 formatter.print_str("[");
+
                 formatter.print_str("'todo'");
+
                 formatter.print_str("](");
             }
         }
+
         Expression::StaticMemberExpression(expr) => {
             if let Expression::Identifier(ident) = &expr.object {
                 formatter.print_str(ident.name.as_str());
+
                 formatter.print_str(".todo(");
             }
         }
+
         _ => {}
     }
 
     if let Argument::StringLiteral(ident) = &expr.arguments[0] {
         // Todo: this punctuation should read from the config
         formatter.print_ascii_byte(b'\'');
+
         formatter.print_str(ident.value.as_str());
+
         formatter.print_ascii_byte(b'\'');
+
         formatter.print_ascii_byte(b')');
     } else if let Argument::TemplateLiteral(temp) = &expr.arguments[0] {
         formatter.print_ascii_byte(b'`');
+
         for q in &temp.quasis {
             formatter.print_str(q.value.raw.as_str());
         }
+
         formatter.print_ascii_byte(b'`');
+
         formatter.print_ascii_byte(b')');
     }
 

@@ -60,6 +60,7 @@ declare_oxc_lint!(
 
 fn is_function_inside_of_class<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> bool {
     let mut current_node = node;
+
     while let Some(parent_node) = ctx.nodes().parent_node(current_node.id()) {
         match parent_node.kind() {
             AstKind::MethodDefinition(_) | AstKind::PropertyDefinition(_) => return true,
@@ -67,6 +68,7 @@ fn is_function_inside_of_class<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintConte
             AstKind::ParenthesizedExpression(_) => {
                 current_node = parent_node;
             }
+
             _ => return false,
         }
     }
@@ -93,11 +95,15 @@ impl Rule for ImplementsOnClasses {
         };
 
         let settings = &ctx.settings().jsdoc;
+
         let resolved_implements_tag_name = settings.resolve_tag_name("implements");
+
         let resolved_class_tag_name = settings.resolve_tag_name("class");
+
         let resolved_constructor_tag_name = settings.resolve_tag_name("constructor");
 
         let (mut implements_found, mut class_or_ctor_found) = (None, false);
+
         for jsdoc in jsdocs
             .iter()
             .filter(|jsdoc| !should_ignore_as_internal(jsdoc, settings))
@@ -109,6 +115,7 @@ impl Rule for ImplementsOnClasses {
                 if tag_name == resolved_implements_tag_name {
                     implements_found = Some(tag.kind.span);
                 }
+
                 if tag_name == resolved_class_tag_name || tag_name == resolved_constructor_tag_name
                 {
                     class_or_ctor_found = true;

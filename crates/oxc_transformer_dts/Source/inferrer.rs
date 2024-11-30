@@ -19,9 +19,11 @@ impl<'a> TransformerDts<'a> {
             Expression::NumericLiteral(_) | Expression::BigintLiteral(_) => {
                 Some(self.ctx.ast.ts_number_keyword(SPAN))
             }
+
             Expression::StringLiteral(_) | Expression::TemplateLiteral(_) => {
                 Some(self.ctx.ast.ts_string_keyword(SPAN))
             }
+
             Expression::Identifier(ident) => match ident.name.as_str() {
                 "undefined" => Some(self.ctx.ast.ts_undefined_keyword(SPAN)),
                 _ => None,
@@ -29,12 +31,15 @@ impl<'a> TransformerDts<'a> {
             Expression::FunctionExpression(func) => {
                 self.transform_function_to_ts_type(func).map(|x| self.ctx.ast.copy(&x))
             }
+
             Expression::ArrowFunctionExpression(func) => {
                 self.transform_arrow_function_to_ts_type(func).map(|x| self.ctx.ast.copy(&x))
             }
+
             Expression::ObjectExpression(expr) => {
                 Some(self.transform_object_expression_to_ts_type(expr, false))
             }
+
             Expression::TSAsExpression(expr) => {
                 if expr.type_annotation.is_const_type_reference() {
                     Some(self.transform_expression_to_ts_type(&expr.expression))
@@ -42,6 +47,7 @@ impl<'a> TransformerDts<'a> {
                     Some(self.ctx.ast.copy(&expr.type_annotation))
                 }
             }
+
             Expression::ClassExpression(expr) => {
                 self.ctx.error(
                     OxcDiagnostic::error(
@@ -52,18 +58,23 @@ impl<'a> TransformerDts<'a> {
                     )
                     .with_label(expr.span),
                 );
+
                 Some(self.ctx.ast.ts_unknown_keyword(SPAN))
             }
+
             Expression::TSNonNullExpression(expr) => {
                 self.infer_type_from_expression(&expr.expression)
             }
+
             Expression::TSSatisfiesExpression(expr) => {
                 self.infer_type_from_expression(&expr.expression)
             }
+
             Expression::TSInstantiationExpression(_expr) => {
                 unreachable!();
                 // infer_type_from_expression(ctx, &expr.expression)
             }
+
             Expression::TSTypeAssertion(expr) => Some(self.ctx.ast.copy(&expr.type_annotation)),
             _ => None,
         }
@@ -76,6 +87,7 @@ impl<'a> TransformerDts<'a> {
         if param.pattern.type_annotation.is_some() {
             param.pattern.type_annotation.as_ref().map(|x| self.ctx.ast.copy(&x.type_annotation));
         }
+
         if let BindingPatternKind::AssignmentPattern(pattern) = &param.pattern.kind {
             if let Some(annotation) = pattern.left.type_annotation.as_ref() {
                 Some(self.ctx.ast.copy(&annotation.type_annotation))
@@ -144,6 +156,7 @@ impl<'a> TransformerDts<'a> {
                     .map(|type_annotation| self.ctx.ast.ts_type_annotation(SPAN, type_annotation));
             }
         }
+
         FunctionReturnType::infer(self, &function.body)
             .map(|type_annotation| self.ctx.ast.ts_type_annotation(SPAN, type_annotation))
     }

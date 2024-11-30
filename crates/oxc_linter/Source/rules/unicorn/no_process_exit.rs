@@ -63,7 +63,9 @@ fn has_hashbang(ctx: &LintContext) -> bool {
     let Some(root) = ctx.nodes().root_node() else {
         return false;
     };
+
     let AstKind::Program(program) = root.kind() else { unreachable!() };
+
     program.hashbang.is_some()
 }
 
@@ -148,20 +150,24 @@ fn test() {
         (r#"process.once("SIGINT", function() {}); process.exit(0)"#),
         (r"
             const mod = require('not_worker_threads');
+
             process.exit(1);
         "),
         (r"
             import mod from 'not_worker_threads';
+
             process.exit(1);
         "),
         // Not `CallExpression`
         (r"
             const mod = new require('worker_threads');
+
             process.exit(1);
         "),
         // Not `Literal` worker_threads
         (r"
             const mod = require(worker_threads);
+
             process.exit(1);
         "),
         // Not `CallExpression`

@@ -32,7 +32,9 @@ const SPAN:Span = Span::new(0, 0);
 impl<'a> Compressor<'a> {
 	pub fn new(allocator:&'a Allocator, options:CompressOptions) -> Self {
 		let ast = AstBuilder::new(allocator);
+
 		let folder = Folder::new(ast).with_evaluate(options.evaluate);
+
 		Self {
 			ast,
 			options, // prepass: RemoveParens::new(allocator)
@@ -42,6 +44,7 @@ impl<'a> Compressor<'a> {
 
 	pub fn build(mut self, program:&mut Program<'a>) {
 		// self.prepass.build(program);
+
 		self.visit_program(program);
 	}
 
@@ -51,9 +54,13 @@ impl<'a> Compressor<'a> {
 	#[allow(unused)]
 	fn create_one_div_zero(&mut self) -> Expression<'a> {
 		let left = self.ast.number_literal(SPAN, 1.0, "1", NumberBase::Decimal);
+
 		let left = self.ast.literal_number_expression(left);
+
 		let right = self.ast.number_literal(SPAN, 0.0, "0", NumberBase::Decimal);
+
 		let right = self.ast.literal_number_expression(right);
+
 		self.ast.binary_expression(SPAN, left, BinaryOperator::Division, right)
 	}
 
@@ -69,6 +76,7 @@ impl<'a> Compressor<'a> {
 			// different semantics.
 			if block.body.len() == 1 && !block.body[0].is_declaration() {
 				*stmt = block.body.remove(0);
+
 				self.compress_block(stmt);
 			}
 		}
@@ -90,6 +98,7 @@ impl<'a> Compressor<'a> {
 	fn compress_console(&mut self, expr:&mut Expression<'a>) -> bool {
 		if self.options.drop_console && util::is_console(expr) {
 			*expr = self.ast.void_0();
+
 			true
 		} else {
 			false
@@ -101,11 +110,16 @@ impl<'a> Compressor<'a> {
 		// Collect all the consecutive ranges that contain joinable vars.
 		// This is required because Rust prevents in-place vec mutation.
 		let mut ranges = vec![];
+
 		let mut range = 0..0;
+
 		let mut i = 1usize;
+
 		let mut capacity = 0usize;
+
 		for window in stmts.windows(2) {
 			let [prev, cur] = window else { unreachable!() };
+
 			if let (
 				Statement::VariableDeclaration(cur_decl),
 				Statement::VariableDeclaration(prev_decl),
@@ -115,14 +129,19 @@ impl<'a> Compressor<'a> {
 					if i - 1 != range.end {
 						range.start = i - 1;
 					}
+
 					range.end = i + 1;
 				}
 			}
+
 			if (range.end != i || i == stmts.len() - 1) && range.start < range.end {
 				capacity += range.end - range.start - 1;
+
 				ranges.push(range.clone());
+
 				range = 0..0;
 			}
+
 			i += 1;
 		}
 
@@ -132,6 +151,7 @@ impl<'a> Compressor<'a> {
 
 		// Reconstruct the stmts array by joining consecutive ranges
 		let mut new_stmts = self.ast.new_vec_with_capacity(stmts.len() - capacity);
+
 		for (i, stmt) in stmts.drain(..).enumerate() {
 			if i > 0 && ranges.iter().any(|range| range.contains(&(i - 1)) && range.contains(&i)) {
 				if let Statement::VariableDeclaration(prev_decl) = new_stmts.last_mut().unwrap() {
@@ -151,9 +171,12 @@ impl<'a> Compressor<'a> {
 		let Statement::WhileStatement(while_stmt) = stmt else {
 			return;
 		};
+
 		if self.options.loops {
 			let dummy_test = self.ast.this_expression(SPAN);
+
 			let test = std::mem::replace(&mut while_stmt.test, dummy_test);
+
 			let body = self.ast.move_statement(&mut while_stmt.body);
 			*stmt = self.ast.for_statement(SPAN, None, Some(test), None, body);
 		}
@@ -166,13 +189,16 @@ impl<'a> Compressor<'a> {
 		let Expression::Identifier(ident) = expr else {
 			return false;
 		};
+
 		if ident.name == "undefined" {
 			// if let Some(reference_id) = ident.reference_id.get() {
 			// && self.semantic.symbols().is_global_reference(reference_id)
 			*expr = self.ast.void_0();
+
 			return true;
 			// }
 		}
+
 		false
 	}
 
@@ -182,13 +208,16 @@ impl<'a> Compressor<'a> {
 		let Expression::Identifier(ident) = expr else {
 			return false;
 		};
+
 		if ident.name == "Infinity" {
 			// if let Some(reference_id) = ident.reference_id.get() {
 			//&& self.semantic.symbols().is_global_reference(reference_id)
 			*expr = self.create_one_div_zero();
+
 			return true;
 			// }
 		}
+
 		false
 	}
 
@@ -198,6 +227,7 @@ impl<'a> Compressor<'a> {
 		let Expression::BooleanLiteral(lit) = expr else {
 			return false;
 		};
+
 		if self.options.booleans {
 			let num = self.ast.number_literal(
 				SPAN,
@@ -205,10 +235,13 @@ impl<'a> Compressor<'a> {
 				if lit.value { "0" } else { "1" },
 				NumberBase::Decimal,
 			);
+
 			let num = self.ast.literal_number_expression(num);
 			*expr = self.ast.unary_expression(SPAN, UnaryOperator::LogicalNot, num);
+
 			return true;
 		}
+
 		false
 	}
 
@@ -218,6 +251,7 @@ impl<'a> Compressor<'a> {
 		if !self.options.typeofs {
 			return;
 		}
+
 		match expr.operator {
 			BinaryOperator::Equality | BinaryOperator::StrictEquality => {
 				let pair = self.commutative_pair(
@@ -226,6 +260,7 @@ impl<'a> Compressor<'a> {
 						if a.is_specific_string_literal("undefined") {
 							return Some(());
 						}
+
 						None
 					},
 					|b| {
@@ -236,14 +271,20 @@ impl<'a> Compressor<'a> {
 								}
 							}
 						}
+
 						None
 					},
 				);
+
 				if let Some((_void_exp, id_ref)) = pair {
 					let span = expr.span;
+
 					let left = self.ast.void_0();
+
 					let operator = BinaryOperator::StrictEquality;
+
 					let right = self.ast.identifier_reference_expression(id_ref);
+
 					let cmp = BinaryExpression { span, left, operator, right };
 					*expr = cmp;
 				}
@@ -270,6 +311,7 @@ impl<'a> Compressor<'a> {
 				return Some((a, b));
 			}
 		}
+
 		None
 	}
 
@@ -291,6 +333,7 @@ impl<'a> Compressor<'a> {
 		if decl.kind.is_const() {
 			return;
 		}
+
 		if decl.init.as_ref().is_some_and(|init| init.is_undefined() || init.is_void_0()) {
 			decl.init = None;
 		}
@@ -305,6 +348,7 @@ impl<'a> Compressor<'a> {
 	#[allow(unused)]
 	fn reorder_constant_expression(&self, expr:&mut BinaryExpression<'a>) {
 		let operator = expr.operator;
+
 		if operator.is_equality()
 			|| operator.is_compare()
 			|| operator == BinaryOperator::Multiplication
@@ -312,10 +356,12 @@ impl<'a> Compressor<'a> {
 			if expr.precedence() == expr.left.precedence() {
 				return;
 			}
+
 			if !expr.left.is_immutable_value() && expr.right.is_immutable_value() {
 				if let Some(inverse_operator) = operator.compare_inverse_operator() {
 					expr.operator = inverse_operator;
 				}
+
 				std::mem::swap(&mut expr.left, &mut expr.right);
 			}
 		}
@@ -328,9 +374,11 @@ impl<'a> VisitMut<'a> for Compressor<'a> {
 			if self.drop_debugger(stmt) {
 				return false;
 			}
+
 			if self.drop_console(stmt) {
 				return false;
 			}
+
 			true
 		});
 
@@ -343,8 +391,11 @@ impl<'a> VisitMut<'a> for Compressor<'a> {
 
 	fn visit_statement(&mut self, stmt:&mut Statement<'a>) {
 		self.compress_block(stmt);
+
 		self.compress_while(stmt);
+
 		self.folder.fold_condition(stmt);
+
 		walk_mut::walk_statement(self, stmt);
 	}
 
@@ -357,14 +408,18 @@ impl<'a> VisitMut<'a> for Compressor<'a> {
 	fn visit_variable_declaration(&mut self, decl:&mut VariableDeclaration<'a>) {
 		for declarator in decl.declarations.iter_mut() {
 			self.visit_variable_declarator(declarator);
+
 			self.compress_variable_declarator(declarator);
 		}
 	}
 
 	fn visit_expression(&mut self, expr:&mut Expression<'a>) {
 		walk_mut::walk_expression(self, expr);
+
 		self.compress_console(expr);
+
 		self.folder.fold_expression(expr);
+
 		if !self.compress_undefined(expr) {
 			self.compress_boolean(expr);
 		}
@@ -372,6 +427,7 @@ impl<'a> VisitMut<'a> for Compressor<'a> {
 
 	fn visit_binary_expression(&mut self, expr:&mut BinaryExpression<'a>) {
 		walk_mut::walk_binary_expression(self, expr);
+
 		self.compress_typeof_undefined(expr);
 	}
 }

@@ -93,6 +93,7 @@ impl NoRestrictedJestMethods {
 
     fn run<'a>(&self, possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
@@ -112,9 +113,11 @@ impl NoRestrictedJestMethods {
         let Some(mem_expr) = call_expr.callee.as_member_expression() else {
             return;
         };
+
         let Some(property_name) = mem_expr.static_property_name() else {
             return;
         };
+
         let Some((span, _)) = mem_expr.static_property_info() else {
             return;
         };
@@ -178,6 +181,7 @@ fn test() {
         (
             "
                 import { jest } from '@jest/globals';
+
                 jest.advanceTimersByTime();
             ",
             Some(serde_json::json!([{ "advanceTimersByTime": null }])),
@@ -213,6 +217,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest);
+
     fail.extend(fail_vitest);
 
     Tester::new(NoRestrictedJestMethods::NAME, pass, fail)

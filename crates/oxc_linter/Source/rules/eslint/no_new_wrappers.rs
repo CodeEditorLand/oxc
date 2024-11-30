@@ -55,9 +55,11 @@ impl Rule for NoNewWrappers {
         let AstKind::NewExpression(expr) = node.kind() else {
             return;
         };
+
         let Expression::Identifier(ident) = &expr.callee else {
             return;
         };
+
         if (ident.name == "String" || ident.name == "Number" || ident.name == "Boolean")
             && ctx.semantic().is_reference_to_global_variable(ident)
         {
@@ -76,6 +78,7 @@ fn test() {
         "function test(Number) { return new Number; }",
         r#"
             import String from "./string";
+
             const str = new String(42);
         "#,
         "
@@ -103,6 +106,7 @@ fn test() {
             const a = new String('bar');
             {
                 const String = CustomString;
+
                 const b = new String('foo');
             }
         ",

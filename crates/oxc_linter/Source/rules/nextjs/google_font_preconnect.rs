@@ -50,6 +50,7 @@ impl Rule for GoogleFontPreconnect {
         let Some(href_prop) = has_jsx_prop_ignore_case(jsx_opening_element, "href") else {
             return;
         };
+
         let Some(href_prop_value) = get_string_literal_prop_value(href_prop) else {
             return;
         };
@@ -57,6 +58,7 @@ impl Rule for GoogleFontPreconnect {
         let preconnect_missing =
             has_jsx_prop_ignore_case(jsx_opening_element, "rel").map_or(true, |rel_prop| {
                 let rel_prop_value = get_string_literal_prop_value(rel_prop);
+
                 rel_prop_value != Some("preconnect")
             });
 
@@ -76,10 +78,12 @@ fn test() {
 			          <link rel="preconnect" href="https://fonts.gstatic.com"/>
 			          <link
 			            href={process.env.NEXT_PUBLIC_CANONICAL_URL}
+
 			            rel="canonical"
 			          />
 			          <link
 			            href={new URL("../public/favicon.ico", import.meta.url).toString()}
+
 			            rel="icon"
 			          />
 			        </div>

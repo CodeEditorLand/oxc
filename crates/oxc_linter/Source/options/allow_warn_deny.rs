@@ -78,6 +78,7 @@ fn invalid_int_severity<D: Display>(value: D) -> OxcDiagnostic {
 
 impl TryFrom<u64> for AllowWarnDeny {
     type Error = OxcDiagnostic;
+
     fn try_from(value: u64) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::Allow),
@@ -105,6 +106,7 @@ impl TryFrom<&Number> for AllowWarnDeny {
 
     fn try_from(value: &Number) -> Result<Self, Self::Error> {
         let value = value.as_i64().ok_or_else(|| invalid_int_severity(value))?;
+
         Self::try_from(value)
     }
 }
@@ -167,8 +169,10 @@ impl JsonSchema for AllowWarnDeny {
 
     fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
         let mut string_schema = <String as JsonSchema>::json_schema(gen).into_object();
+
         string_schema.enum_values =
             Some(vec!["allow".into(), "off".into(), "warn".into(), "error".into(), "deny".into()]);
+
         string_schema.metadata().description = Some(
             r#"Oxlint rule.
 - "allow" or "off": Turn off the rule.
@@ -176,9 +180,13 @@ impl JsonSchema for AllowWarnDeny {
 - "error" or "deny": Turn the rule on as an error (will exit with a failure code)."#
                 .to_string(),
         );
+
         let mut int_schema = <u32 as JsonSchema>::json_schema(gen).into_object();
+
         int_schema.number().minimum = Some(0.0);
+
         int_schema.number().maximum = Some(2.0);
+
         int_schema.metadata().description = Some(
             "Oxlint rule.
     
@@ -189,6 +197,7 @@ impl JsonSchema for AllowWarnDeny {
         );
 
         let mut schema = SchemaObject::default();
+
         schema.subschemas().one_of = Some(vec![string_schema.into(), int_schema.into()]);
 
         schema.into()
@@ -216,6 +225,7 @@ mod test {
             (AllowWarnDeny::Warn, r#""warn""#),
             (AllowWarnDeny::Deny, r#""deny""#),
         ];
+
         for (input, expected) in tests {
             assert_eq!(serde_json::to_string(&input).unwrap(), expected);
         }
@@ -239,7 +249,9 @@ mod test {
 
         for (input, expected) in tests {
             let msg = format!("input: {input}");
+
             let actual: AllowWarnDeny = serde_json::from_str(input).expect(&msg);
+
             assert_eq!(actual, expected);
         }
     }

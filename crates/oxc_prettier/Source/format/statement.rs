@@ -29,6 +29,7 @@ pub(super) fn print_statement_sequence<'a>(
 
         if Some(stmt.span()) != last_statement_span {
             parts.extend(hardline!());
+
             if p.is_next_line_empty(stmt.span()) {
                 parts.extend(hardline!());
             }

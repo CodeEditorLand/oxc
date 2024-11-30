@@ -17,6 +17,7 @@ impl ScopeId {
         if let Some(idx) = NonMaxU32::new(idx) {
             return Self(idx);
         }
+
         panic!();
     }
 
@@ -64,16 +65,26 @@ bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub struct ScopeFlags: u16 {
         const StrictMode       = 1 << 0;
+
         const Top              = 1 << 1;
+
         const Function         = 1 << 2;
+
         const Arrow            = 1 << 3;
+
         const ClassStaticBlock = 1 << 4;
+
         const TsModuleBlock    = 1 << 5; // `declare namespace`
         const Constructor      = 1 << 6;
+
         const GetAccessor      = 1 << 7;
+
         const SetAccessor      = 1 << 8;
+
         const CatchClause      = 1 << 9;
+
         const Var = Self::Top.bits() | Self::Function.bits() | Self::ClassStaticBlock.bits() | Self::TsModuleBlock.bits();
+
         const Modifiers = Self::Constructor.bits() | Self::GetAccessor.bits() | Self::SetAccessor.bits();
     }
 }

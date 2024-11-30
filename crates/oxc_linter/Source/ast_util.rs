@@ -19,6 +19,7 @@ pub fn is_static_boolean<'a>(expr: &Expression<'a>, semantic: &Semantic<'a>) -> 
             unary_expr.operator == UnaryOperator::LogicalNot
                 && unary_expr.argument.is_constant(true, semantic)
         }
+
         _ => false,
     }
 }
@@ -31,14 +32,17 @@ fn is_logical_identity(op: LogicalOperator, expr: &Expression) -> bool {
             (op == LogicalOperator::Or && boolean_value == Some(true))
                 || (op == LogicalOperator::And && boolean_value == Some(false))
         }
+
         Expression::UnaryExpression(unary_expr) => {
             op == LogicalOperator::And && unary_expr.operator == UnaryOperator::Void
         }
+
         Expression::LogicalExpression(logical_expr) => {
             op == logical_expr.operator
                 && (is_logical_identity(logical_expr.operator, &logical_expr.left)
                     || is_logical_identity(logical_expr.operator, &logical_expr.right))
         }
+
         Expression::AssignmentExpression(assign_expr) => {
             matches!(
                 assign_expr.operator,
@@ -49,6 +53,7 @@ fn is_logical_identity(op: LogicalOperator, expr: &Expression) -> bool {
                     && assign_expr.operator == AssignmentOperator::LogicalOr))
                 && is_logical_identity(op, &assign_expr.right)
         }
+
         Expression::ParenthesizedExpression(expr) => is_logical_identity(op, &expr.expression),
         _ => false,
     }
@@ -76,16 +81,21 @@ impl<'a, 'b> IsConstant<'a, 'b> for Expression<'a> {
                     && template.quasis.iter().any(|quasi| {
                         quasi.value.cooked.as_ref().map_or(false, |cooked| !cooked.is_empty())
                     });
+
                 let test_expressions =
                     template.expressions.iter().all(|expr| expr.is_constant(false, semantic));
+
                 test_quasis || test_expressions
             }
+
             Self::ArrayExpression(expr) => {
                 if in_boolean_position {
                     return true;
                 }
+
                 expr.elements.iter().all(|element| element.is_constant(false, semantic))
             }
+
             Self::UnaryExpression(expr) => match expr.operator {
                 UnaryOperator::Void => true,
                 UnaryOperator::Typeof if in_boolean_position => true,
@@ -97,11 +107,15 @@ impl<'a, 'b> IsConstant<'a, 'b> for Expression<'a> {
                     && expr.left.is_constant(false, semantic)
                     && expr.right.is_constant(false, semantic)
             }
+
             Self::LogicalExpression(expr) => {
                 let is_left_constant = expr.left.is_constant(in_boolean_position, semantic);
+
                 let is_right_constant = expr.right.is_constant(in_boolean_position, semantic);
+
                 let is_left_short_circuit =
                     is_left_constant && is_logical_identity(expr.operator, &expr.left);
+
                 let is_right_short_circuit = in_boolean_position
                     && is_right_constant
                     && is_logical_identity(expr.operator, &expr.right);
@@ -109,15 +123,18 @@ impl<'a, 'b> IsConstant<'a, 'b> for Expression<'a> {
                     || is_left_short_circuit
                     || is_right_short_circuit
             }
+
             Self::NewExpression(_) => in_boolean_position,
             Self::AssignmentExpression(expr) => match expr.operator {
                 AssignmentOperator::Assign => expr.right.is_constant(in_boolean_position, semantic),
                 AssignmentOperator::LogicalAnd if in_boolean_position => {
                     is_logical_identity(LogicalOperator::And, &expr.right)
                 }
+
                 AssignmentOperator::LogicalOr if in_boolean_position => {
                     is_logical_identity(LogicalOperator::Or, &expr.right)
                 }
+
                 _ => false,
             },
             Self::SequenceExpression(sequence_expr) => sequence_expr
@@ -129,9 +146,11 @@ impl<'a, 'b> IsConstant<'a, 'b> for Expression<'a> {
             Self::ParenthesizedExpression(paren_expr) => {
                 paren_expr.expression.is_constant(in_boolean_position, semantic)
             }
+
             Self::Identifier(ident) => {
                 ident.name == "undefined" && semantic.is_reference_to_global_variable(ident)
             }
+
             _ if self.is_literal() => true,
             _ => false,
         }
@@ -151,6 +170,7 @@ impl<'a, 'b> IsConstant<'a, 'b> for CallExpression<'a> {
                 return semantic.is_reference_to_global_variable(ident);
             }
         }
+
         false
     }
 }
@@ -173,6 +193,7 @@ impl<'a, 'b> IsConstant<'a, 'b> for ArrayExpressionElement<'a> {
             match_expression!(Self) => {
                 self.to_expression().is_constant(in_boolean_position, semantic)
             }
+
             Self::Elision(_) => true,
         }
     }
@@ -191,14 +212,17 @@ pub fn get_enclosing_function<'a, 'b>(
     semantic: &'b Semantic<'a>,
 ) -> Option<&'b AstNode<'a>> {
     let mut current_node = node;
+
     loop {
         if matches!(current_node.kind(), AstKind::Program(_)) {
             return None;
         }
+
         if matches!(current_node.kind(), AstKind::Function(_) | AstKind::ArrowFunctionExpression(_))
         {
             return Some(current_node);
         }
+
         current_node = semantic.nodes().parent_node(current_node.id())?;
     }
 }
@@ -206,6 +230,7 @@ pub fn get_enclosing_function<'a, 'b>(
 /// Returns if `arg` is the `n`th (0-indexed) argument of `call`.
 pub fn is_nth_argument<'a>(call: &CallExpression<'a>, arg: &Argument<'a>, n: usize) -> bool {
     let nth = &call.arguments[n];
+
     nth.span() == arg.span()
 }
 
@@ -220,6 +245,7 @@ pub fn outermost_paren<'a, 'b>(
         if let Some(parent) = semantic.nodes().parent_node(node.id()) {
             if let AstKind::ParenthesizedExpression(_) = parent.kind() {
                 node = parent;
+
                 continue;
             }
         }
@@ -278,7 +304,9 @@ pub fn get_declaration_of_variable<'a, 'b>(
     semantic: &'b Semantic<'a>,
 ) -> Option<&'b AstNode<'a>> {
     let symbol_id = get_symbol_id_of_variable(ident, semantic)?;
+
     let symbol_table = semantic.symbols();
+
     Some(semantic.nodes().get_node(symbol_table.get_declaration(symbol_id)))
 }
 
@@ -287,7 +315,9 @@ pub fn get_declaration_from_reference_id<'a, 'b>(
     semantic: &'b Semantic<'a>,
 ) -> Option<&'b AstNode<'a>> {
     let symbol_table = semantic.symbols();
+
     let symbol_id = symbol_table.get_reference(reference_id).symbol_id()?;
+
     Some(semantic.nodes().get_node(symbol_table.get_declaration(symbol_id)))
 }
 
@@ -304,18 +334,24 @@ pub fn extract_regex_flags<'a>(
     if args.len() <= 1 {
         return None;
     }
+
     let flag_arg = match &args[1] {
         Argument::StringLiteral(flag_arg) => flag_arg.value.clone(),
         Argument::TemplateLiteral(template) if template.is_no_substitution_template() => {
             template.quasi().expect("no-substitution templates always have a quasi")
         }
+
         _ => return None,
     };
+
     let mut flags = RegExpFlags::empty();
+
     for ch in flag_arg.chars() {
         let flag = RegExpFlags::try_from(ch).ok()?;
+
         flags |= flag;
     }
+
     Some(flags)
 }
 
@@ -339,6 +375,7 @@ pub fn is_method_call<'a>(
     }
 
     let callee_without_parentheses = call_expr.callee.without_parentheses();
+
     let member_expr = match callee_without_parentheses {
         match_member_expression!(Expression) => callee_without_parentheses.to_member_expression(),
         Expression::ChainExpression(chain) => match chain.expression.member_expression() {
@@ -352,6 +389,7 @@ pub fn is_method_call<'a>(
         let Expression::Identifier(ident) = member_expr.object().without_parentheses() else {
             return false;
         };
+
         if !objects.contains(&ident.name.as_str()) {
             return false;
         }
@@ -361,6 +399,7 @@ pub fn is_method_call<'a>(
         let Some(static_property_name) = member_expr.static_property_name() else {
             return false;
         };
+
         if !methods.contains(&static_property_name) {
             return false;
         }
@@ -380,6 +419,7 @@ pub fn is_new_expression<'a>(
             return false;
         }
     }
+
     if let Some(max_arg_count) = max_arg_count {
         if new_expr.arguments.len() > max_arg_count {
             return false;
@@ -401,6 +441,7 @@ pub fn call_expr_method_callee_info<'a>(
     call_expr: &'a CallExpression<'a>,
 ) -> Option<(Span, &'a str)> {
     let member_expr = call_expr.callee.without_parentheses().as_member_expression()?;
+
     member_expr.static_property_info()
 }
 
@@ -416,6 +457,7 @@ pub fn is_global_require_call(call_expr: &CallExpression, ctx: &Semantic) -> boo
     if call_expr.arguments.len() != 1 {
         return false;
     }
+
     call_expr.callee.is_global_reference_name("require", ctx.symbols())
 }
 
@@ -433,6 +475,7 @@ pub fn get_function_like_declaration<'b>(
     ctx: &Semantic<'b>,
 ) -> Option<&'b BindingIdentifier<'b>> {
     let parent = outermost_paren_parent(node, ctx)?;
+
     let decl = parent.kind().as_variable_declarator()?;
 
     decl.id.get_binding_identifier()

@@ -12,12 +12,14 @@ use super::to_identifier;
 
 pub fn get_var_name_from_node<'a, N: GatherNodeParts<'a>>(node: &N) -> String {
     let mut name = String::new();
+
     node.gather(&mut |mut part| {
         if name.is_empty() {
             part = part.trim_start_matches('_');
         } else {
             name.push('$');
         }
+
         name.push_str(part);
     });
 
@@ -73,6 +75,7 @@ impl<'a> GatherNodeParts<'a> for ExportDefaultDeclarationKind<'a> {
             ExportDefaultDeclarationKind::FunctionDeclaration(decl) => decl.gather(f),
             ExportDefaultDeclarationKind::ClassDeclaration(decl) => decl.gather(f),
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => {}
+
             match_expression!(ExportDefaultDeclarationKind) => self.to_expression().gather(f),
         }
     }
@@ -204,14 +207,19 @@ impl<'a> GatherNodeParts<'a> for MemberExpression<'a> {
         match self {
             MemberExpression::ComputedMemberExpression(expr) => {
                 expr.object.gather(f);
+
                 expr.expression.gather(f);
             }
+
             MemberExpression::StaticMemberExpression(expr) => {
                 expr.object.gather(f);
+
                 expr.property.gather(f);
             }
+
             MemberExpression::PrivateFieldExpression(expr) => {
                 expr.object.gather(f);
+
                 expr.field.gather(f);
             }
         }
@@ -259,6 +267,7 @@ impl<'a> GatherNodeParts<'a> for ImportExpression<'a> {
 impl<'a> GatherNodeParts<'a> for YieldExpression<'a> {
     fn gather<F: FnMut(&str)>(&self, f: &mut F) {
         f("yield");
+
         if let Some(argument) = &self.argument {
             argument.gather(f);
         }
@@ -268,6 +277,7 @@ impl<'a> GatherNodeParts<'a> for YieldExpression<'a> {
 impl<'a> GatherNodeParts<'a> for AwaitExpression<'a> {
     fn gather<F: FnMut(&str)>(&self, f: &mut F) {
         f("await");
+
         self.argument.gather(f);
     }
 }
@@ -299,6 +309,7 @@ impl<'a> GatherNodeParts<'a> for UpdateExpression<'a> {
 impl<'a> GatherNodeParts<'a> for MetaProperty<'a> {
     fn gather<F: FnMut(&str)>(&self, f: &mut F) {
         self.meta.gather(f);
+
         self.property.gather(f);
     }
 }
@@ -310,6 +321,7 @@ impl<'a> GatherNodeParts<'a> for AssignmentTarget<'a> {
             match_simple_assignment_target!(Self) => {
                 self.to_simple_assignment_target().gather(f);
             }
+
             match_assignment_target_pattern!(Self) => {}
         }
     }
@@ -494,6 +506,7 @@ impl<'a> GatherNodeParts<'a> for JSXElementName<'a> {
 impl<'a> GatherNodeParts<'a> for JSXNamespacedName<'a> {
     fn gather<F: FnMut(&str)>(&self, f: &mut F) {
         self.namespace.gather(f);
+
         self.property.gather(f);
     }
 }
@@ -501,6 +514,7 @@ impl<'a> GatherNodeParts<'a> for JSXNamespacedName<'a> {
 impl<'a> GatherNodeParts<'a> for JSXMemberExpression<'a> {
     fn gather<F: FnMut(&str)>(&self, f: &mut F) {
         self.object.gather(f);
+
         self.property.gather(f);
     }
 }

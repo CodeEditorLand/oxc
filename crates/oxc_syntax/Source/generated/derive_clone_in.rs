@@ -11,6 +11,7 @@ use crate::operator::*;
 
 impl<'alloc> CloneIn<'alloc> for NumberBase {
     type Cloned = NumberBase;
+
     fn clone_in(&self, _: &'alloc Allocator) -> Self::Cloned {
         match self {
             Self::Float => NumberBase::Float,
@@ -24,6 +25,7 @@ impl<'alloc> CloneIn<'alloc> for NumberBase {
 
 impl<'alloc> CloneIn<'alloc> for BigintBase {
     type Cloned = BigintBase;
+
     fn clone_in(&self, _: &'alloc Allocator) -> Self::Cloned {
         match self {
             Self::Decimal => BigintBase::Decimal,
@@ -36,6 +38,7 @@ impl<'alloc> CloneIn<'alloc> for BigintBase {
 
 impl<'alloc> CloneIn<'alloc> for AssignmentOperator {
     type Cloned = AssignmentOperator;
+
     fn clone_in(&self, _: &'alloc Allocator) -> Self::Cloned {
         match self {
             Self::Assign => AssignmentOperator::Assign,
@@ -60,6 +63,7 @@ impl<'alloc> CloneIn<'alloc> for AssignmentOperator {
 
 impl<'alloc> CloneIn<'alloc> for BinaryOperator {
     type Cloned = BinaryOperator;
+
     fn clone_in(&self, _: &'alloc Allocator) -> Self::Cloned {
         match self {
             Self::Equality => BinaryOperator::Equality,
@@ -90,6 +94,7 @@ impl<'alloc> CloneIn<'alloc> for BinaryOperator {
 
 impl<'alloc> CloneIn<'alloc> for LogicalOperator {
     type Cloned = LogicalOperator;
+
     fn clone_in(&self, _: &'alloc Allocator) -> Self::Cloned {
         match self {
             Self::Or => LogicalOperator::Or,
@@ -101,6 +106,7 @@ impl<'alloc> CloneIn<'alloc> for LogicalOperator {
 
 impl<'alloc> CloneIn<'alloc> for UnaryOperator {
     type Cloned = UnaryOperator;
+
     fn clone_in(&self, _: &'alloc Allocator) -> Self::Cloned {
         match self {
             Self::UnaryPlus => UnaryOperator::UnaryPlus,
@@ -116,6 +122,7 @@ impl<'alloc> CloneIn<'alloc> for UnaryOperator {
 
 impl<'alloc> CloneIn<'alloc> for UpdateOperator {
     type Cloned = UpdateOperator;
+
     fn clone_in(&self, _: &'alloc Allocator) -> Self::Cloned {
         match self {
             Self::Increment => UpdateOperator::Increment,

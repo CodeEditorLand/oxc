@@ -40,6 +40,7 @@ impl<'a> ToBoolean<'a> for Expression<'a> {
                     .and_then(|quasi| quasi.value.cooked.as_ref())
                     .map(|cooked| !cooked.is_empty())
             }
+
             _ => None,
         }
     }

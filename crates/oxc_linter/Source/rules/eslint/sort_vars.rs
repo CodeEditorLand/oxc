@@ -69,6 +69,7 @@ impl Rule for SortVars {
         };
 
         let mut previous: Option<&VariableDeclarator> = None;
+
         for current in var_decl
             .declarations
             .iter()

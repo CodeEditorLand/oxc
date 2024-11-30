@@ -53,24 +53,34 @@ impl Rule for NoCaseDeclarations {
                 match stmt {
                     Statement::FunctionDeclaration(d) => {
                         let start = d.span.start;
+
                         let end = start + 8;
+
                         ctx.diagnostic(no_case_declarations_diagnostic(Span::new(start, end)));
                     }
+
                     Statement::ClassDeclaration(d) => {
                         let start = d.span.start;
+
                         let end = start + 5;
+
                         ctx.diagnostic(no_case_declarations_diagnostic(Span::new(start, end)));
                     }
+
                     Statement::VariableDeclaration(var) if var.kind.is_lexical() => {
                         let start = var.span.start;
+
                         let end = match var.kind {
                             VariableDeclarationKind::Const => 5,
                             VariableDeclarationKind::Let => 3,
                             _ => unreachable!(),
                         };
+
                         let end = start + end;
+
                         ctx.diagnostic(no_case_declarations_diagnostic(Span::new(start, end)));
                     }
+
                     _ => {}
                 };
             }

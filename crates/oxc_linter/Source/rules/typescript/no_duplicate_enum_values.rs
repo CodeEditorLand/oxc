@@ -91,12 +91,16 @@ impl Rule for NoDuplicateEnumValues {
         let AstKind::TSEnumDeclaration(enum_body) = node.kind() else {
             return;
         };
+
         let mut seen_number_values: Vec<(f64, Span)> = vec![];
+
         let mut seen_string_values: FxHashMap<&str, Span> = FxHashMap::default();
+
         for enum_member in &enum_body.members {
             let Some(initializer) = &enum_member.initializer else {
                 continue;
             };
+
             match initializer {
                 Expression::NumericLiteral(num) => {
                     if let Some((_, old_span)) =
@@ -111,11 +115,13 @@ impl Rule for NoDuplicateEnumValues {
                         seen_number_values.push((num.value, num.span));
                     }
                 }
+
                 Expression::StringLiteral(s) => {
                     if let Some(old_span) = seen_string_values.insert(s.value.as_str(), s.span) {
                         // Formatting here for prettier messages. This makes it
                         // look like "Duplicate enum value 'A'"
                         let v = format!("'{}'", s.value);
+
                         ctx.diagnostic(no_duplicate_enum_values_diagnostic(
                             old_span,
                             enum_member,
@@ -123,6 +129,7 @@ impl Rule for NoDuplicateEnumValues {
                         ));
                     }
                 }
+
                 _ => {}
             }
         }

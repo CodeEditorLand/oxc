@@ -69,6 +69,7 @@ impl Rule for ConsistentIndexedObjectStyle {
                 _ => ConsistentIndexedObjectStyleConfig::IndexSignature,
             },
         );
+
         Self { is_record_mode: config == ConsistentIndexedObjectStyleConfig::Record }
     }
 
@@ -79,7 +80,9 @@ impl Rule for ConsistentIndexedObjectStyle {
                     if inf.body.body.len() > 1 {
                         return;
                     }
+
                     let member = inf.body.body.first();
+
                     let Some(member) = member else {
                         return;
                     };
@@ -97,6 +100,7 @@ impl Rule for ConsistentIndexedObjectStyle {
                                     ));
                                 }
                             }
+
                             TSTypeName::QualifiedName(_) => {
                                 ctx.diagnostic(consistent_indexed_object_style_diagnostic(
                                     "record",
@@ -128,6 +132,7 @@ impl Rule for ConsistentIndexedObjectStyle {
                                 }
                             }
                         }
+
                         _ => {
                             ctx.diagnostic(consistent_indexed_object_style_diagnostic(
                                 "record",
@@ -137,6 +142,7 @@ impl Rule for ConsistentIndexedObjectStyle {
                         }
                     }
                 }
+
                 AstKind::TSTypeLiteral(lit) => {
                     if lit.members.len() > 1 {
                         return;
@@ -168,6 +174,7 @@ impl Rule for ConsistentIndexedObjectStyle {
                                     ));
                                 }
                             }
+
                             TSTypeName::QualifiedName(_) => {
                                 ctx.diagnostic(consistent_indexed_object_style_diagnostic(
                                     "record",
@@ -199,6 +206,7 @@ impl Rule for ConsistentIndexedObjectStyle {
                                 }
                             }
                         }
+
                         _ => {
                             ctx.diagnostic(consistent_indexed_object_style_diagnostic(
                                 "record",
@@ -208,6 +216,7 @@ impl Rule for ConsistentIndexedObjectStyle {
                         }
                     }
                 }
+
                 _ => {}
             }
         } else if let AstKind::TSTypeReference(tref) = node.kind() {
@@ -217,6 +226,7 @@ impl Rule for ConsistentIndexedObjectStyle {
                 }
 
                 let Some(params) = &tref.type_parameters else { return };
+
                 if params.params.len() != 2 {
                     return;
                 }
@@ -232,9 +242,13 @@ impl Rule for ConsistentIndexedObjectStyle {
                         ),
                         |fixer| {
                             let key = fixer.source_range(first.span);
+
                             let params_span = Span::new(first.span.end + 1, tref.span.end - 1);
+
                             let params = fixer.source_range(params_span).trim();
+
                             let content = format!("{{ [key: {key}]: {params} }}");
+
                             fixer.replace(tref.span, content)
                         },
                     );

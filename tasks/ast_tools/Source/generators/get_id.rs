@@ -46,6 +46,7 @@ fn generate_for_type(def: &TypeDef) -> Option<TokenStream> {
         .iter()
         .filter_map(|field| {
             let field_ident = field.ident().expect("expected named field");
+
             let field_name = field_ident.to_string();
 
             let type_name = match (field_name.as_str(), field.typ.raw()) {
@@ -54,11 +55,14 @@ fn generate_for_type(def: &TypeDef) -> Option<TokenStream> {
                 ("reference_id", "Cell<Option<ReferenceId>>") => "ReferenceId",
                 _ => return None,
             };
+
             let type_ident = type_name.to_ident();
 
             // Generate getter method
             let get_doc1 = format!(" Get [`{type_name}`] of [`{struct_name}`].");
+
             let get_doc2 = format!(" Only use this method on a post-semantic AST where [`{type_name}`]s are always defined.");
+
             let get_doc3 = format!(" Panics if `{field_name}` is [`None`].");
 
             let get_method = quote! {
@@ -76,7 +80,9 @@ fn generate_for_type(def: &TypeDef) -> Option<TokenStream> {
 
             // Generate setter method
             let set_method_ident = format_ident!("set_{field_name}");
+
             let set_doc = format!(" Set [`{type_name}`] of [`{struct_name}`].");
+
             let set_method = quote! {
                 #[doc = #set_doc]
                 #[inline]
@@ -100,6 +106,7 @@ fn generate_for_type(def: &TypeDef) -> Option<TokenStream> {
     }
 
     let struct_name_ident = struct_name.to_ident();
+
     let lifetime = if def.has_lifetime { quote!(<'a>) } else { TokenStream::default() };
 
     Some(quote! {

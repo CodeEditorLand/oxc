@@ -70,9 +70,11 @@ impl Rule for NoNegatedCondition {
 
                 if_stmt.test.without_parentheses()
             }
+
             AstKind::ConditionalExpression(conditional_expr) => {
                 conditional_expr.test.without_parentheses()
             }
+
             _ => {
                 return;
             }
@@ -84,6 +86,7 @@ impl Rule for NoNegatedCondition {
                     return;
                 }
             }
+
             Expression::BinaryExpression(binary_expr) => {
                 if !matches!(
                     binary_expr.operator,
@@ -92,6 +95,7 @@ impl Rule for NoNegatedCondition {
                     return;
                 }
             }
+
             _ => {
                 return;
             }

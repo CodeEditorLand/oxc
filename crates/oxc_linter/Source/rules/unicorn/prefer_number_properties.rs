@@ -68,16 +68,19 @@ impl Rule for PreferNumberProperties {
                                 "NaN",
                             ));
                         }
+
                         Some("Infinity") => {
                             ctx.diagnostic(prefer_number_properties_diagnostic(
                                 member_expr.span(),
                                 "Infinity",
                             ));
                         }
+
                         _ => {}
                     }
                 }
             }
+
             AstKind::IdentifierReference(ident_ref) => match ident_ref.name.as_str() {
                 "NaN" | "Infinity" => {
                     ctx.diagnostic(prefer_number_properties_diagnostic(
@@ -85,6 +88,7 @@ impl Rule for PreferNumberProperties {
                         &ident_ref.name,
                     ));
                 }
+
                 _ => {}
             },
             AstKind::CallExpression(call_expr) => {
@@ -99,6 +103,7 @@ impl Rule for PreferNumberProperties {
                     ));
                 }
             }
+
             _ => {}
         }
     }
@@ -109,6 +114,7 @@ fn extract_ident_from_expression<'b>(expr: &'b Expression<'_>) -> Option<&'b str
         Expression::Identifier(ident_name) => Some(ident_name.name.as_str()),
         match_member_expression!(Expression) => {
             let member_expr = expr.to_member_expression();
+
             let Expression::Identifier(ident_name) = member_expr.object() else {
                 return None;
             };
@@ -119,6 +125,7 @@ fn extract_ident_from_expression<'b>(expr: &'b Expression<'_>) -> Option<&'b str
                 None
             }
         }
+
         _ => None,
     }
 }

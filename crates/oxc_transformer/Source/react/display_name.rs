@@ -73,6 +73,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactDisplayName<'a, 'ctx> {
         };
 
         let mut ancestors = ctx.ancestors();
+
         let name = loop {
             let Some(ancestor) = ancestors.next() else {
                 return;
@@ -84,6 +85,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactDisplayName<'a, 'ctx> {
                     AssignmentTarget::AssignmentTargetIdentifier(ident) => {
                         break ident.name.clone();
                     }
+
                     AssignmentTarget::StaticMemberExpression(expr) => {
                         break expr.property.name.clone();
                     }
@@ -93,8 +95,10 @@ impl<'a, 'ctx> Traverse<'a> for ReactDisplayName<'a, 'ctx> {
                         if let Some(name) = expr.static_property_name() {
                             break name;
                         }
+
                         return;
                     }
+
                     _ => return,
                 },
                 // `let foo = React.createClass({})`
@@ -102,6 +106,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactDisplayName<'a, 'ctx> {
                     if let BindingPatternKind::BindingIdentifier(ident) = &declarator.id().kind {
                         break ident.name.clone();
                     }
+
                     return;
                 }
                 // `{foo: React.createClass({})}`
@@ -112,6 +117,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactDisplayName<'a, 'ctx> {
                     if let Some(name) = prop.key().static_name() {
                         break ctx.ast.atom(&name);
                     }
+
                     return;
                 }
                 // `export default React.createClass({})`
@@ -138,6 +144,7 @@ impl<'a, 'ctx> ReactDisplayName<'a, 'ctx> {
             callee @ match_member_expression!(Expression) => {
                 !callee.to_member_expression().is_specific_member_access("React", "createClass")
             }
+
             Expression::Identifier(ident) => ident.name != "createReactClass",
             _ => true,
         } {
@@ -147,7 +154,9 @@ impl<'a, 'ctx> ReactDisplayName<'a, 'ctx> {
         if call_expr.arguments.len() != 1 {
             return None;
         }
+
         let arg = call_expr.arguments.get_mut(0)?;
+
         match arg {
             Argument::ObjectExpression(obj_expr) => Some(obj_expr),
             _ => None,
@@ -165,9 +174,11 @@ impl<'a, 'ctx> ReactDisplayName<'a, 'ctx> {
         let not_safe = obj_expr.properties.iter().any(|prop| {
             matches!(prop, ObjectPropertyKind::ObjectProperty(p) if p.key.static_name().is_some_and(|name| name == DISPLAY_NAME))
         });
+
         if not_safe {
             return;
         }
+
         obj_expr.properties.insert(
             0,
             ctx.ast.object_property_kind_object_property(

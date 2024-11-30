@@ -26,6 +26,7 @@ impl DisplayDot for ControlFlowGraph {
                 &[Config::EdgeNoLabel, Config::NodeNoLabel],
                 &|_graph, edge| {
                     let weight = edge.weight();
+
                     let mut attrs = Attrs::default().with("label", format!("{weight:?}"));
 
                     if matches!(weight, EdgeType::Unreachable)
@@ -40,11 +41,13 @@ impl DisplayDot for ControlFlowGraph {
                 },
                 &|_graph, node| {
                     let block = &self.basic_blocks[*node.1];
+
                     let mut attrs = Attrs::default().with("label", block.display_dot());
 
                     if *node.1 == 0 {
                         attrs += ("color", "green");
                     }
+
                     if block.is_unreachable() {
                         attrs += ("style", "dotted");
                     }
@@ -78,6 +81,7 @@ impl DisplayDot for Instruction {
             InstructionKind::Return(ReturnInstructionKind::ImplicitUndefined) => {
                 "return <implicit undefined>"
             }
+
             InstructionKind::ImplicitReturn => "return",
             InstructionKind::Return(ReturnInstructionKind::NotImplicitUndefined) => {
                 "return <value>"
@@ -143,6 +147,7 @@ impl<'a> Attrs<'a> {
         V: Into<Attr<'a>>,
     {
         self += (key, value);
+
         self
     }
 }
@@ -174,8 +179,10 @@ impl fmt::Debug for Attrs<'_> {
         }
 
         let l = self.0.len();
+
         for (i, (k, v)) in self.0.iter().enumerate() {
             write!(f, "{k}={v:?}")?;
+
             if i < l - 1 {
                 write!(f, ", ")?;
             }

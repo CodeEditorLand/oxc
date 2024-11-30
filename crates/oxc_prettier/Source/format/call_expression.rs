@@ -93,6 +93,7 @@ pub fn is_commons_js_or_amd_call<'a>(
             return arguments.len() == 1 && matches!(arguments[0], Argument::StringLiteral(_))
                 || arguments.len() > 1;
         }
+
         if callee.name == "define" {
             // TODO: the parent node is ExpressionStatement
             return arguments.len() == 1
@@ -102,5 +103,6 @@ pub fn is_commons_js_or_amd_call<'a>(
                     && matches!(arguments[1], Argument::ArrayExpression(_)));
         }
     }
+
     false
 }

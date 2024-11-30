@@ -17,9 +17,11 @@ pub fn is_create_element_call(call_expr: &CallExpression) -> bool {
         Expression::StaticMemberExpression(member_expr) => {
             member_expr.property.name == "createElement"
         }
+
         Expression::ComputedMemberExpression(member_expr) => {
             member_expr.static_property_name().is_some_and(|name| name == "createElement")
         }
+
         Expression::Identifier(ident) => ident.name == "createElement",
         _ => false,
     }
@@ -52,6 +54,7 @@ pub fn get_jsx_attribute_name<'a>(attr: &JSXAttributeName<'a>) -> Cow<'a, str> {
         JSXAttributeName::NamespacedName(name) => {
             Cow::Owned(format!("{}:{}", name.namespace.name, name.property.name))
         }
+
         JSXAttributeName::Identifier(ident) => Cow::Borrowed(ident.name.as_str()),
     }
 }
@@ -87,6 +90,7 @@ pub fn is_hidden_from_screen_reader<'a>(
                 false
             }
         }
+
         _ => false,
     })
 }
@@ -100,6 +104,7 @@ pub fn object_has_accessible_child<'a>(ctx: &LintContext<'a>, node: &JSXElement<
             !matches!(&container.expression, JSXExpression::NullLiteral(_))
                 && !container.expression.is_undefined()
         }
+
         _ => false,
     }) || has_jsx_prop_ignore_case(&node.opening_element, "dangerouslySetInnerHTML").is_some()
         || has_jsx_prop_ignore_case(&node.opening_element, "children").is_some()
@@ -135,6 +140,7 @@ pub fn is_interactive_element(element_type: &str, jsx_opening_el: &JSXOpeningEle
                     return false;
                 }
             }
+
             true
         }
         "a" => has_jsx_prop(jsx_opening_el, "href").is_some(),
@@ -173,6 +179,7 @@ pub fn is_es6_component(node: &AstNode) -> bool {
     let AstKind::Class(class_expr) = node.kind() else {
         return false;
     };
+
     if let Some(super_class) = &class_expr.super_class {
         if let Some(member_expr) = super_class.as_member_expression() {
             if let Expression::Identifier(ident) = member_expr.object() {
@@ -197,10 +204,12 @@ pub fn get_parent_component<'a, 'b>(
 ) -> Option<&'b AstNode<'a>> {
     for node_id in ctx.nodes().ancestor_ids(node.id()) {
         let node = ctx.nodes().get_node(node_id);
+
         if is_es5_component(node) || is_es6_component(node) {
             return Some(node);
         }
     }
+
     None
 }
 
@@ -226,6 +235,7 @@ pub fn get_element_type<'c, 'a>(
         .map(|s| s.value.as_str());
 
     let raw_type = polymorphic_prop.unwrap_or_else(|| name.as_str());
+
     match jsx_a11y.components.get(raw_type) {
         Some(component) => Some(Cow::Borrowed(component)),
         None => Some(Cow::Borrowed(raw_type)),
@@ -240,6 +250,7 @@ pub fn parse_jsx_value(value: &JSXAttributeValue) -> Result<f64, ()> {
             JSXExpression::TemplateLiteral(tmpl) => {
                 tmpl.quasis.first().unwrap().value.raw.parse().or(Err(()))
             }
+
             JSXExpression::NumericLiteral(num) => Ok(num.value),
             _ => Err(()),
         },
@@ -273,18 +284,23 @@ pub fn is_react_hook(expr: &Expression) -> bool {
             // `match_member_expression` macro.
 
             let expr = unsafe { expr.as_member_expression().unwrap_unchecked() };
+
             let MemberExpression::StaticMemberExpression(static_expr) = expr else { return false };
 
             let is_valid_property = is_react_hook_name(&static_expr.property.name);
+
             let is_valid_namespace = match &static_expr.object {
                 Expression::Identifier(ident) => {
                     // TODO: test PascalCase
                     ident.name.chars().next().is_some_and(char::is_uppercase)
                 }
+
                 _ => false,
             };
+
             is_valid_namespace && is_valid_property
         }
+
         Expression::Identifier(ident) => is_react_hook_name(ident.name.as_str()),
         _ => false,
     }

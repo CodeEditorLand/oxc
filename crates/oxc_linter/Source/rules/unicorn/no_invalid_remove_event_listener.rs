@@ -65,8 +65,10 @@ impl Rule for NoInvalidRemoveEventListener {
                 if v.property.name != "removeEventListener" {
                     return;
                 }
+
                 v.property.span
             }
+
             _ => return,
         };
 
@@ -98,6 +100,7 @@ impl Rule for NoInvalidRemoveEventListener {
                         return;
                     }
                 }
+
                 _ => {
                     return;
                 }
@@ -105,14 +108,17 @@ impl Rule for NoInvalidRemoveEventListener {
         }
 
         let listener_span = listener.span();
+
         let listener_span = if listener_span.size() > 20 {
             match listener {
                 Argument::FunctionExpression(func_expr) => {
                     Span::new(func_expr.span.start, func_expr.params.span.end)
                 }
+
                 Argument::ArrowFunctionExpression(arrow_expr) => {
                     Span::new(arrow_expr.span.start, arrow_expr.body.span.start)
                 }
+
                 Argument::CallExpression(_) => listener_span,
                 _ => unreachable!(),
             }

@@ -81,12 +81,14 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
 
         // collect `y` and `z` from `{ ...x, y, z }`
         let mut obj_prop_list = ctx.ast.vec();
+
         while obj_expr
             .properties
             .last()
             .map_or(false, |prop| matches!(prop, ObjectPropertyKind::ObjectProperty(..)))
         {
             let prop = obj_expr.properties.pop().unwrap();
+
             obj_prop_list.push(prop);
         }
 
@@ -96,20 +98,27 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
         };
 
         let mut arguments = ctx.ast.vec();
+
         arguments.push(Argument::from(ctx.ast.move_expression(expr)));
+
         arguments.push(Argument::from(ctx.ast.move_expression(&mut spread_prop.argument)));
 
         let object_id = self.get_object_symbol_id(ctx);
+
         let callee = self.get_extend_object_callee(object_id, ctx);
 
         // ({ ...x }) => _objectSpread({}, x)
         *expr = ctx.ast.expression_call(SPAN, callee, NONE, arguments, false);
 
         // ({ ...x, y, z }) => _objectSpread(_objectSpread({}, x), { y, z });
+
         if !obj_prop_list.is_empty() {
             obj_prop_list.reverse();
+
             let mut arguments = ctx.ast.vec();
+
             arguments.push(Argument::from(ctx.ast.move_expression(expr)));
+
             arguments.push(Argument::from(ctx.ast.expression_object(SPAN, obj_prop_list, None)));
 
             let callee = self.get_extend_object_callee(object_id, ctx);
@@ -143,8 +152,11 @@ impl<'a, 'ctx> ObjectRestSpread<'a, 'ctx> {
     fn object_assign(symbol_id: Option<SymbolId>, ctx: &mut TraverseCtx<'a>) -> Expression<'a> {
         let ident =
             ctx.create_reference_id(SPAN, Atom::from("Object"), symbol_id, ReferenceFlags::Read);
+
         let object = ctx.ast.expression_from_identifier_reference(ident);
+
         let property = ctx.ast.identifier_name(SPAN, Atom::from("assign"));
+
         Expression::from(ctx.ast.member_expression_static(SPAN, object, property, false))
     }
 }

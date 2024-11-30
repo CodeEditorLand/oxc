@@ -99,6 +99,7 @@ impl Rule for NumericSeparatorsStyle {
                     );
                 }
             }
+
             AstKind::BigIntLiteral(number) => {
                 let raw = number.span.source_text(ctx.source_text());
 
@@ -115,6 +116,7 @@ impl Rule for NumericSeparatorsStyle {
                     );
                 }
             }
+
             _ => {}
         };
     }
@@ -126,12 +128,15 @@ impl Rule for NumericSeparatorsStyle {
             if let Some(config) = config.get("binary") {
                 cfg.binary.set_numeric_base_from_config(config);
             }
+
             if let Some(config) = config.get("hexadecimal") {
                 cfg.hexadecimal.set_numeric_base_from_config(config);
             }
+
             if let Some(config) = config.get("number") {
                 cfg.number.set_numeric_base_from_config(config);
             }
+
             if let Some(config) = config.get("octal") {
                 cfg.octal.set_numeric_base_from_config(config);
             }
@@ -163,13 +168,16 @@ impl NumericSeparatorsStyle {
         use oxc_syntax::number::BigintBase;
 
         let raw_without_bigint_n_suffix = &raw[..raw.len() - 1];
+
         let mut formatted = match number.base {
             BigintBase::Binary => self.format_binary(raw_without_bigint_n_suffix),
             BigintBase::Decimal => self.format_decimal(raw_without_bigint_n_suffix),
             BigintBase::Hex => self.format_hex(raw_without_bigint_n_suffix),
             BigintBase::Octal => self.format_octal(raw_without_bigint_n_suffix),
         };
+
         formatted.push('n');
+
         formatted
     }
 
@@ -179,7 +187,9 @@ impl NumericSeparatorsStyle {
         let mut to_format = raw_number[2..].cow_replace('_', "").into_owned();
 
         add_separators(&mut to_format, &SeparatorDir::Right, &self.binary);
+
         to_format.insert_str(0, prefix);
+
         to_format
     }
 
@@ -189,7 +199,9 @@ impl NumericSeparatorsStyle {
         let mut to_format = number_raw[2..].cow_replace('_', "").into_owned();
 
         add_separators(&mut to_format, &SeparatorDir::Right, &self.hexadecimal);
+
         to_format.insert_str(0, prefix);
+
         to_format
     }
 
@@ -197,6 +209,7 @@ impl NumericSeparatorsStyle {
         // Legacy octal numbers are 0-prefixed, e.g. `010 === 8`.
         // Legacy octal notation does not support `_` prefixes.
         let is_legacy = number_raw.as_bytes()[1] != b'o' && number_raw.as_bytes()[1] != b'O';
+
         if is_legacy {
             return number_raw.to_string();
         }
@@ -206,7 +219,9 @@ impl NumericSeparatorsStyle {
         let mut to_format = number_raw[2..].cow_replace('_', "").into_owned();
 
         add_separators(&mut to_format, &SeparatorDir::Right, &self.octal);
+
         to_format.insert_str(0, prefix);
+
         to_format
     }
 
@@ -220,8 +235,11 @@ impl NumericSeparatorsStyle {
 
         let mut push_formatted_part = |part: &str, dir: &SeparatorDir, out: &mut String| {
             tmp.push_str(part);
+
             add_separators(&mut tmp, dir, &self.number);
+
             out.push_str(&tmp);
+
             tmp.clear();
         };
 
@@ -235,6 +253,7 @@ impl NumericSeparatorsStyle {
 
         if let Some(decimal_part) = parsed.decimal_part {
             out.push('.');
+
             push_formatted_part(
                 decimal_part.cow_replace('_', "").as_ref(),
                 &SeparatorDir::Left,
@@ -272,6 +291,7 @@ impl NumericBaseConfig {
         if let Some(group_length) = val.get("groupLength").and_then(serde_json::Value::as_u64) {
             self.group_length = usize::try_from(group_length).unwrap();
         }
+
         if let Some(minimum_digits) = val.get("minimumDigits").and_then(serde_json::Value::as_u64) {
             self.minimum_digits = usize::try_from(minimum_digits).unwrap();
         }
@@ -291,15 +311,20 @@ fn add_separators(s: &mut String, dir: &SeparatorDir, config: &NumericBaseConfig
     match dir {
         SeparatorDir::Right => {
             let mut pos = s.len();
+
             while pos > config.group_length {
                 pos -= config.group_length;
+
                 s.insert(pos, '_');
             }
         }
+
         SeparatorDir::Left => {
             let mut pos = config.group_length;
+
             while pos < s.len() {
                 s.insert(pos, '_');
+
                 pos += config.group_length + 1;
             }
         }
@@ -329,6 +354,7 @@ fn parse_number_literal(num: &str) -> ParsedNumberLiteral {
 
     // Integer part is everything until the decimal separator or the exponent (exclusive).
     let integer_part = num.split_once(['.', 'e', 'E']).map_or(num, |(integer, _)| integer);
+
     offset += integer_part.len();
 
     if !integer_part.is_empty() {
@@ -343,7 +369,9 @@ fn parse_number_literal(num: &str) -> ParsedNumberLiteral {
             // Decimal part is everything after the decimal separator until the exponent.
             let decimal_part =
                 num[offset..].split_once(['e', 'E']).map_or(&num[offset..], |(decimal, _)| decimal);
+
             offset += decimal_part.len();
+
             if !decimal_part.is_empty() {
                 parsed.decimal_part = Some(decimal_part);
             }
@@ -354,18 +382,21 @@ fn parse_number_literal(num: &str) -> ParsedNumberLiteral {
     if let Some(ch) = num[offset..].chars().next() {
         if ch == 'e' || ch == 'E' {
             parsed.exponent_mark = Some(ch);
+
             offset += 1; // note: assuming that 'e' or 'E' is always one byte long
 
             // Exponent sign is either '+' or '-', following the exponent marker.
             if let Some(ch) = num[offset..].chars().next() {
                 if ch == '+' || ch == '-' {
                     parsed.exponent_sign = Some(&num[offset..=offset]);
+
                     offset += 1; // note: assuming that '+' or '-' is always one byte long
                 }
             }
 
             // Exponent part is everything after the exponent sign.
             let exponent_part = &num[offset..];
+
             if !exponent_part.is_empty() {
                 parsed.exponent_part = Some(exponent_part);
             }
@@ -715,6 +746,7 @@ fn test_misc() {
     ];
 
     let fail = vec!["1_23_4444"];
+
     let fix = vec![("1_23_4444", "1_234_444")];
 
     Tester::new(NumericSeparatorsStyle::NAME, pass, fail).expect_fix(fix).test();
@@ -735,22 +767,32 @@ mod internal_tests {
                 "octal": {"groupLength": 128, "minimumDigits": 256},
                 "onlyIfContainsSeparator": true
         }]);
+
         let rule = NumericSeparatorsStyle::from_configuration(config);
 
         assert_eq!(rule.binary.group_length, 2);
+
         assert_eq!(rule.binary.minimum_digits, 4);
+
         assert_eq!(rule.hexadecimal.group_length, 8);
+
         assert_eq!(rule.hexadecimal.minimum_digits, 16);
+
         assert_eq!(rule.number.group_length, 32);
+
         assert_eq!(rule.number.minimum_digits, 64);
+
         assert_eq!(rule.octal.group_length, 128);
+
         assert_eq!(rule.octal.minimum_digits, 256);
+
         assert!(rule.only_if_contains_separator);
     }
 
     #[test]
     fn test_from_empty_configuration() {
         let rule = NumericSeparatorsStyle::from_configuration(json!([]));
+
         assert_eq!(rule, NumericSeparatorsStyle::default());
     }
 }

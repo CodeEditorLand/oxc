@@ -11,10 +11,13 @@ use oxlint::cli::{CliRunResult, LintRunner, Runner};
 
 fn main() -> CliRunResult {
     init_tracing();
+
     init_miette();
 
     let command = oxlint::cli::lint_command().run();
+
     command.handle_threads();
+
     LintRunner::new(command).run()
 }
 
@@ -35,6 +38,7 @@ fn init_tracing() {
             |_| Targets::new(),
             |env_var| {
                 use std::str::FromStr;
+
                 Targets::from_str(&env_var).unwrap()
             },
         ))

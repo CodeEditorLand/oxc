@@ -106,6 +106,7 @@ impl Oxlintrc {
 
         let json = serde_json::from_str::<serde_json::Value>(&string).map_err(|err| {
             let guess = mime_guess::from_path(path);
+
             let err = match guess.first() {
                 // syntax error
                 Some(mime) if mime.subtype() == "json" => err.to_string(),
@@ -116,6 +117,7 @@ impl Oxlintrc {
                     )
                 }
             };
+
             OxcDiagnostic::error(format!("Failed to parse eslint config {path:?}.\n{err}"))
         })?;
 
@@ -135,44 +137,59 @@ impl Oxlintrc {
 #[cfg(test)]
 mod test {
     use super::*;
+
     use serde_json::json;
 
     #[test]
     fn test_oxlintrc_de_empty() {
         let config: Oxlintrc = serde_json::from_value(json!({})).unwrap();
+
         assert_eq!(config.plugins, LintPlugins::default());
+
         assert_eq!(config.rules, OxlintRules::default());
+
         assert!(config.rules.is_empty());
+
         assert_eq!(config.settings, OxlintSettings::default());
+
         assert_eq!(config.env, OxlintEnv::default());
+
         assert_eq!(config.path, PathBuf::default());
     }
 
     #[test]
     fn test_oxlintrc_de_plugins_empty_array() {
         let config: Oxlintrc = serde_json::from_value(json!({ "plugins": [] })).unwrap();
+
         assert_eq!(config.plugins, LintPlugins::empty());
     }
 
     #[test]
     fn test_oxlintrc_empty_config_plugins() {
         let config: Oxlintrc = serde_json::from_str(r"{}").unwrap();
+
         assert_eq!(config.plugins, LintPlugins::default());
     }
 
     #[test]
     fn test_oxlintrc_specifying_plugins_will_override() {
         let config: Oxlintrc = serde_json::from_str(r#"{ "plugins": ["react", "oxc"] }"#).unwrap();
+
         assert_eq!(config.plugins, LintPlugins::REACT.union(LintPlugins::OXC));
+
         let config: Oxlintrc =
             serde_json::from_str(r#"{ "plugins": ["typescript", "unicorn"] }"#).unwrap();
+
         assert_eq!(config.plugins, LintPlugins::TYPESCRIPT.union(LintPlugins::UNICORN));
+
         let config: Oxlintrc =
             serde_json::from_str(r#"{ "plugins": ["typescript", "unicorn", "react", "oxc", "import", "jsdoc", "jest", "vitest", "jsx-a11y", "nextjs", "react-perf", "promise", "node", "security"] }"#).unwrap();
+
         assert_eq!(config.plugins, LintPlugins::all());
 
         let config: Oxlintrc =
             serde_json::from_str(r#"{ "plugins": ["typescript", "@typescript-eslint"] }"#).unwrap();
+
         assert_eq!(config.plugins, LintPlugins::TYPESCRIPT);
     }
 }

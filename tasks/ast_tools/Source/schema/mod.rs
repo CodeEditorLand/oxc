@@ -82,6 +82,7 @@ impl TypeName {
 impl<'a> From<crate::util::TypeIdentResult<'a>> for TypeName {
     fn from(it: crate::util::TypeIdentResult<'a>) -> Self {
         use crate::util::TypeIdentResult;
+
         match it {
             TypeIdentResult::Ident(it) => Self::Ident(it.to_string()),
             TypeIdentResult::Vec(it) => Self::Vec(Box::new(Self::from(*it))),
@@ -145,6 +146,7 @@ pub fn lower_ast_types(ctx: &EarlyCtx) -> Schema {
         .flat_map(|it| &it.items)
         .map(|it| lower_ast_type(&it.borrow(), ctx))
         .collect();
+
     Schema { defs }
 }
 
@@ -162,11 +164,13 @@ fn lower_ast_enum(it @ rust::Enum { item, meta }: &rust::Enum, ctx: &EarlyCtx) -
         .clone()
         .layout()
         .map_or_else(|| panic!("Uncalculated layout on {}!", item.ident), KnownLayout::unpack);
+
     let (size_32, align_32, offsets_32) = meta
         .layout_32
         .clone()
         .layout()
         .map_or_else(|| panic!("Uncalculated layout on {}!", item.ident), KnownLayout::unpack);
+
     EnumDef {
         id: ctx.type_id(&it.ident().to_string()).unwrap(),
         name: it.ident().to_string(),
@@ -200,11 +204,13 @@ fn lower_ast_struct(it @ rust::Struct { item, meta }: &rust::Struct, ctx: &Early
         .clone()
         .layout()
         .map_or_else(|| panic!("Uncalculated layout on {}!", item.ident), KnownLayout::unpack);
+
     let (size_32, align_32, offsets_32) = meta
         .layout_32
         .clone()
         .layout()
         .map_or_else(|| panic!("Uncalculated layout on {}!", item.ident), KnownLayout::unpack);
+
     StructDef {
         id: ctx.type_id(&it.ident().to_string()).unwrap(),
         name: it.ident().to_string(),
@@ -238,6 +244,7 @@ where
                 Expr::Lit(ExprLit { lit: Lit::Int(lit), .. }) => {
                     lit.base10_parse().expect("invalid base10 enum discriminant")
                 }
+
                 _ => panic!("invalid enum discriminant {:?} on {}", disc, enum_dbg_name()),
             },
         ),
@@ -276,10 +283,13 @@ fn lower_field(field: &Field, ctx: &EarlyCtx) -> FieldDef {
 
 fn create_type_ref(ty: &Type, ctx: &EarlyCtx) -> TypeRef {
     let ident = ty.get_ident();
+
     let id = ident.as_ident().and_then(|id| ctx.type_id(&id.to_string()));
+
     let transparent_id = ctx.type_id(&ident.inner_ident().to_string());
     #[expect(clippy::disallowed_methods)]
     let raw = ty.to_token_stream().to_string().replace(' ', "");
+
     TypeRef {
         id,
         transparent_id,
@@ -297,6 +307,7 @@ fn get_docs(attrs: &[Attribute]) -> Vec<String> {
                 if !path.is_ident("doc") {
                     return None;
                 }
+
                 match &lit.lit {
                     Lit::Str(lit) => Some(lit.value().trim().to_string()),
                     _ => None,
@@ -310,6 +321,7 @@ fn get_docs(attrs: &[Attribute]) -> Vec<String> {
 
 fn parse_generate_derive(attrs: &[Attribute]) -> Vec<String> {
     let mut derives = FxHashSet::default();
+
     for attr in attrs {
         if !attr.path().is_ident("generate_derive") {
             continue;
@@ -322,5 +334,6 @@ fn parse_generate_derive(attrs: &[Attribute]) -> Vec<String> {
             derives.insert(arg.to_string());
         }
     }
+
     Vec::from_iter(derives)
 }

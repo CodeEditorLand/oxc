@@ -128,6 +128,7 @@ fn match_argument_value_with_regex(allow: &[CompactStr], argument_value: &str) -
 impl Rule for NoRequireImports {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         Self(Box::new(NoRequireImportsConfig {
             allow: obj
                 .and_then(|v| v.get("allow"))
@@ -175,6 +176,7 @@ impl Rule for NoRequireImports {
 
                             ctx.diagnostic(no_require_imports_diagnostic(quasi.span));
                         }
+
                         Argument::StringLiteral(string_literal) => {
                             if match_argument_value_with_regex(&self.allow, &string_literal.value) {
                                 return;
@@ -182,6 +184,7 @@ impl Rule for NoRequireImports {
 
                             ctx.diagnostic(no_require_imports_diagnostic(string_literal.span));
                         }
+
                         _ => {}
                     }
                 }
@@ -192,6 +195,7 @@ impl Rule for NoRequireImports {
 
                 ctx.diagnostic(no_require_imports_diagnostic(call_expr.span));
             }
+
             AstKind::TSImportEqualsDeclaration(decl) => match decl.module_reference {
                 TSModuleReference::ExternalModuleReference(ref mod_ref) => {
                     if self.allow_as_import {
@@ -208,6 +212,7 @@ impl Rule for NoRequireImports {
 
                     ctx.diagnostic(no_require_imports_diagnostic(decl.span));
                 }
+
                 TSModuleReference::IdentifierReference(_) | TSModuleReference::QualifiedName(_) => {
                 }
             },
@@ -231,7 +236,9 @@ fn test() {
         (
             "
 			import { createRequire } from 'module';
+
 			const require = createRequire();
+
 			require('remark-preset-prettier');
 			    ",
             None,
@@ -268,6 +275,7 @@ fn test() {
         (
             "
 			let require = bazz;
+
 			trick(require('foo'));
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),
@@ -275,6 +283,7 @@ fn test() {
         (
             "
 			let require = bazz;
+
 			const foo = require('./foo.json') as Foo;
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),
@@ -282,6 +291,7 @@ fn test() {
         (
             "
 			let require = bazz;
+
 			const foo: Foo = require('./foo.json').default;
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),
@@ -289,6 +299,7 @@ fn test() {
         (
             "
 			let require = bazz;
+
 			const foo = <Foo>require('./foo.json');
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),
@@ -296,7 +307,9 @@ fn test() {
         (
             "
 			let require = bazz;
+
 			const configValidator = new Validator(require('./a.json'));
+
 			configValidator.addSchema(require('./a.json'));
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),
@@ -304,6 +317,7 @@ fn test() {
         (
             "
 			let require = bazz;
+
 			require('foo');
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),
@@ -311,6 +325,7 @@ fn test() {
         (
             "
 			let require = bazz;
+
 			require?.('foo');
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),
@@ -318,7 +333,9 @@ fn test() {
         (
             "
 			import { createRequire } from 'module';
+
 			const require = createRequire();
+
 			require('remark-preset-prettier');
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),
@@ -384,6 +401,7 @@ fn test() {
         (
             "
 			const configValidator = new Validator(require('./a.json'));
+
 			configValidator.addSchema(require('./a.json'));
 			      ",
             Some(serde_json::json!([{ "allowAsImport": true }])),

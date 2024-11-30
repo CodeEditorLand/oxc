@@ -10,6 +10,7 @@ use oxc_span::SourceType;
 #[napi]
 pub fn minify(filename: String, source_text: String) -> String {
     let allocator = Allocator::default();
+
     let source_type = SourceType::from_path(&filename).unwrap_or_default().with_typescript(true);
 
     let mut program = Parser::new(&allocator, &source_text, source_type).parse().program;

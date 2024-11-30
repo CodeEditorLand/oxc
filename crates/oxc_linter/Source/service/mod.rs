@@ -44,9 +44,11 @@ impl LintServiceOptions {
         let tsconfig = tsconfig.into();
         // Should this be canonicalized?
         let tsconfig = if tsconfig.is_relative() { self.cwd.join(tsconfig) } else { tsconfig };
+
         debug_assert!(tsconfig.is_file());
 
         self.tsconfig = Some(tsconfig);
+
         self
     }
 
@@ -54,6 +56,7 @@ impl LintServiceOptions {
     #[must_use]
     pub fn with_cross_module(mut self, cross_module: bool) -> Self {
         self.cross_module = cross_module;
+
         self
     }
 
@@ -71,12 +74,14 @@ pub struct LintService {
 impl LintService {
     pub fn new(linter: Linter, options: LintServiceOptions) -> Self {
         let runtime = Arc::new(Runtime::new(linter, options));
+
         Self { runtime }
     }
 
     #[cfg(test)]
     pub(crate) fn from_linter(linter: Linter, options: LintServiceOptions) -> Self {
         let runtime = Arc::new(Runtime::new(linter, options));
+
         Self { runtime }
     }
 
@@ -94,6 +99,7 @@ impl LintService {
             .iter_paths()
             .par_bridge()
             .for_each_with(&self.runtime, |runtime, path| runtime.process_path(path, tx_error));
+
         tx_error.send(None).unwrap();
     }
 
@@ -110,7 +116,9 @@ impl LintService {
             .iter_paths()
             .flat_map(|path| {
                 let source_type = oxc_span::SourceType::from_path(path).unwrap();
+
                 self.runtime.init_cache_state(path);
+
                 self.runtime.process_source(
                     path,
                     allocator,

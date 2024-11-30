@@ -82,6 +82,7 @@ impl Rule for NoUselessFallbackInSpread {
         if can_fix(&logical_expression.left) {
             ctx.diagnostic_with_fix(diagnostic, |fixer| {
                 let left_text = fixer.source_range(logical_expression.left.span());
+
                 fixer.replace(spread_element.span, format!("...{left_text}"))
             });
         } else {
@@ -92,6 +93,7 @@ impl Rule for NoUselessFallbackInSpread {
 
 fn can_fix(left: &Expression<'_>) -> bool {
     const BANNED_IDENTIFIERS: [&str; 3] = ["undefined", "NaN", "Infinity"];
+
     match left.without_parentheses() {
         Expression::Identifier(ident) => !BANNED_IDENTIFIERS.contains(&ident.name.as_str()),
         Expression::LogicalExpression(expr) => can_fix(&expr.left),

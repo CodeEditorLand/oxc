@@ -25,6 +25,7 @@ pub trait ConstantEvaluation<'a> {
             "Infinity" if self.is_global_reference(ident) => {
                 Some(ConstantValue::Number(f64::INFINITY))
             }
+
             _ => None,
         }
     }
@@ -44,22 +45,27 @@ pub trait ConstantEvaluation<'a> {
 
     fn get_side_free_string_value(&self, expr: &Expression<'a>) -> Option<Cow<'a, str>> {
         let value = expr.to_js_string();
+
         if value.is_some() && !expr.may_have_side_effects() {
             return value;
         }
+
         None
     }
 
     fn get_side_free_boolean_value(&self, expr: &Expression<'a>) -> Option<bool> {
         let value = expr.to_boolean();
+
         if value.is_some() && !expr.may_have_side_effects() {
             return value;
         }
+
         None
     }
 
     fn get_side_free_bigint_value(&self, expr: &Expression<'a>) -> Option<BigInt> {
         let value = expr.to_big_int();
+
         if value.is_some() && expr.may_have_side_effects() {
             None
         } else {
@@ -81,7 +87,9 @@ pub trait ConstantEvaluation<'a> {
                     // a && true -> None
                     LogicalOperator::And => {
                         let left = self.get_boolean_value(&logical_expr.left);
+
                         let right = self.get_boolean_value(&logical_expr.right);
+
                         match (left, right) {
                             (Some(true), Some(true)) => Some(true),
                             (Some(false), _) | (_, Some(false)) => Some(false),
@@ -93,20 +101,25 @@ pub trait ConstantEvaluation<'a> {
                     // a || b -> None
                     LogicalOperator::Or => {
                         let left = self.get_boolean_value(&logical_expr.left);
+
                         let right = self.get_boolean_value(&logical_expr.right);
+
                         match (left, right) {
                             (Some(true), _) | (_, Some(true)) => Some(true),
                             (Some(false), Some(false)) => Some(false),
                             (None, _) | (_, None) => None,
                         }
                     }
+
                     LogicalOperator::Coalesce => None,
                 }
             }
+
             Expression::SequenceExpression(sequence_expr) => {
                 // For sequence expression, the value is the value of the RHS.
                 sequence_expr.expressions.last().and_then(|e| self.get_boolean_value(e))
             }
+
             Expression::UnaryExpression(unary_expr) => {
                 match unary_expr.operator {
                     UnaryOperator::Void => Some(false),
@@ -116,13 +129,16 @@ pub trait ConstantEvaluation<'a> {
                         // `~0 -> true` `+1 -> true` `+0 -> false` `-0 -> false`
                         self.eval_to_number(expr).map(|value| !value.is_zero())
                     }
+
                     UnaryOperator::LogicalNot => {
                         // !true -> false
                         self.get_boolean_value(&unary_expr.argument).map(|b| !b)
                     }
+
                     _ => None,
                 }
             }
+
             Expression::AssignmentExpression(assign_expr) => {
                 match assign_expr.operator {
                     AssignmentOperator::LogicalAnd | AssignmentOperator::LogicalOr => None,
@@ -130,8 +146,10 @@ pub trait ConstantEvaluation<'a> {
                     _ => self.get_boolean_value(&assign_expr.right),
                 }
             }
+
             expr => {
                 use crate::ToBoolean;
+
                 expr.to_boolean()
             }
         }
@@ -149,14 +167,17 @@ pub trait ConstantEvaluation<'a> {
                 UnaryOperator::UnaryNegation => {
                     self.eval_to_number(&unary_expr.argument).map(|v| -v)
                 }
+
                 UnaryOperator::LogicalNot => {
                     self.get_boolean_value(expr).map(|b| if b { 1_f64 } else { 0_f64 })
                 }
+
                 UnaryOperator::Void => Some(f64::NAN),
                 _ => None,
             },
             expr => {
                 use crate::ToNumber;
+
                 expr.to_number()
             }
         }
@@ -169,12 +190,15 @@ pub trait ConstantEvaluation<'a> {
                 UnaryOperator::UnaryNegation => {
                     self.eval_to_big_int(&unary_expr.argument).map(|v| -v)
                 }
+
                 _ => None,
             },
             Expression::BigIntLiteral(_) => {
                 use crate::ToBigInt;
+
                 expr.to_big_int()
             }
+
             _ => None,
         }
     }
@@ -192,43 +216,62 @@ pub trait ConstantEvaluation<'a> {
             Expression::StringLiteral(lit) => {
                 Some(ConstantValue::String(Cow::Borrowed(lit.value.as_str())))
             }
+
             _ => None,
         }
     }
 
     fn eval_binary_expression(&self, e: &BinaryExpression<'a>) -> Option<ConstantValue<'a>> {
         let left = &e.left;
+
         let right = &e.right;
+
         match e.operator {
             BinaryOperator::Addition => {
                 if left.may_have_side_effects() || right.may_have_side_effects() {
                     return None;
                 }
+
                 let left_type = ValueType::from(left);
+
                 let right_type = ValueType::from(right);
+
                 if left_type.is_string() || right_type.is_string() {
                     let lval = self.eval_expression(left)?;
+
                     let rval = self.eval_expression(right)?;
+
                     let lstr = lval.to_js_string()?;
+
                     let rstr = rval.to_js_string()?;
+
                     return Some(ConstantValue::String(lstr + rstr));
                 }
+
                 if left_type.is_number() || right_type.is_number() {
                     let lval = self.eval_expression(left)?;
+
                     let rval = self.eval_expression(right)?;
+
                     let lnum = lval.to_number()?;
+
                     let rnum = rval.to_number()?;
+
                     return Some(ConstantValue::Number(lnum + rnum));
                 }
+
                 None
             }
+
             BinaryOperator::Subtraction
             | BinaryOperator::Division
             | BinaryOperator::Remainder
             | BinaryOperator::Multiplication
             | BinaryOperator::Exponential => {
                 let lval = self.eval_to_number(left)?;
+
                 let rval = self.eval_to_number(right)?;
+
                 let val = match e.operator {
                     BinaryOperator::Subtraction => lval - rval,
                     BinaryOperator::Division => lval / rval,
@@ -239,10 +282,12 @@ pub trait ConstantEvaluation<'a> {
                             lval % rval
                         }
                     }
+
                     BinaryOperator::Multiplication => lval * rval,
                     BinaryOperator::Exponential => lval.powf(rval),
                     _ => unreachable!(),
                 };
+
                 Some(ConstantValue::Number(val))
             }
             #[expect(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
@@ -250,7 +295,9 @@ pub trait ConstantEvaluation<'a> {
             | BinaryOperator::ShiftRight
             | BinaryOperator::ShiftRightZeroFill => {
                 let left_num = self.get_side_free_number_value(left);
+
                 let right_num = self.get_side_free_number_value(right);
+
                 if let (Some(left_val), Some(right_val)) = (left_num, right_num) {
                     if left_val.fract() != 0.0 || right_val.fract() != 0.0 {
                         return None;
@@ -260,7 +307,9 @@ pub trait ConstantEvaluation<'a> {
                     if !(0.0..32.0).contains(&right_val) {
                         return None;
                     }
+
                     let right_val_int = right_val as u32;
+
                     let bits = left_val.to_int_32();
 
                     let result_val: f64 = match e.operator {
@@ -270,45 +319,57 @@ pub trait ConstantEvaluation<'a> {
                             // JavaScript always treats the result of >>> as unsigned.
                             // We must force Rust to do the same here.
                             let bits = bits as u32;
+
                             let res = bits.wrapping_shr(right_val_int);
+
                             f64::from(res)
                         }
+
                         _ => unreachable!(),
                     };
+
                     return Some(ConstantValue::Number(result_val));
                 }
+
                 None
             }
+
             BinaryOperator::LessThan => {
                 return self.is_less_than(left, right, true).map(|value| match value {
                     ConstantValue::Undefined => ConstantValue::Boolean(false),
                     _ => value,
                 })
             }
+
             BinaryOperator::GreaterThan => {
                 return self.is_less_than(right, left, false).map(|value| match value {
                     ConstantValue::Undefined => ConstantValue::Boolean(false),
                     _ => value,
                 })
             }
+
             BinaryOperator::LessEqualThan => {
                 return self.is_less_than(right, left, false).map(|value| match value {
                     ConstantValue::Boolean(true) | ConstantValue::Undefined => {
                         ConstantValue::Boolean(false)
                     }
+
                     ConstantValue::Boolean(false) => ConstantValue::Boolean(true),
                     _ => unreachable!(),
                 })
             }
+
             BinaryOperator::GreaterEqualThan => {
                 return self.is_less_than(left, right, true).map(|value| match value {
                     ConstantValue::Boolean(true) | ConstantValue::Undefined => {
                         ConstantValue::Boolean(false)
                     }
+
                     ConstantValue::Boolean(false) => ConstantValue::Boolean(true),
                     _ => unreachable!(),
                 })
             }
+
             _ => None,
         }
     }
@@ -322,6 +383,7 @@ pub trait ConstantEvaluation<'a> {
                     self.eval_expression(&expr.left)
                 }
             }
+
             _ => None,
         }
     }
@@ -335,6 +397,7 @@ pub trait ConstantEvaluation<'a> {
                     {
                         "object"
                     }
+
                     Expression::FunctionExpression(_) => "function",
                     Expression::StringLiteral(_) => "string",
                     Expression::NumericLiteral(_) => "number",
@@ -343,6 +406,7 @@ pub trait ConstantEvaluation<'a> {
                     Expression::UnaryExpression(e) if e.operator == UnaryOperator::Void => {
                         "undefined"
                     }
+
                     Expression::BigIntLiteral(_) => "bigint",
                     Expression::Identifier(ident) => match ident.name.as_str() {
                         "undefined" if self.is_global_reference(ident) => "undefined",
@@ -351,28 +415,36 @@ pub trait ConstantEvaluation<'a> {
                     },
                     _ => return None,
                 };
+
                 Some(ConstantValue::String(Cow::Borrowed(s)))
             }
+
             UnaryOperator::Void => {
                 if (!expr.argument.is_number() || !expr.argument.is_number_0())
                     && !expr.may_have_side_effects()
                 {
                     return Some(ConstantValue::Undefined);
                 }
+
                 None
             }
+
             UnaryOperator::LogicalNot => {
                 self.get_boolean_value(&expr.argument).map(|b| !b).map(ConstantValue::Boolean)
             }
+
             UnaryOperator::UnaryPlus => {
                 self.eval_to_number(&expr.argument).map(ConstantValue::Number)
             }
+
             UnaryOperator::UnaryNegation => {
                 let ty = ValueType::from(&expr.argument);
+
                 match ty {
                     ValueType::BigInt => {
                         self.eval_to_big_int(&expr.argument).map(|v| -v).map(ConstantValue::BigInt)
                     }
+
                     ValueType::Number => self
                         .eval_to_number(&expr.argument)
                         .map(|v| if v.is_nan() { v } else { -v })
@@ -380,8 +452,10 @@ pub trait ConstantEvaluation<'a> {
                     _ => None,
                 }
             }
+
             UnaryOperator::BitwiseNot => {
                 let ty = ValueType::from(&expr.argument);
+
                 match ty {
                     ValueType::BigInt => {
                         self.eval_to_big_int(&expr.argument).map(|v| !v).map(ConstantValue::BigInt)
@@ -395,6 +469,7 @@ pub trait ConstantEvaluation<'a> {
                     _ => None,
                 }
             }
+
             UnaryOperator::Delete => None,
         }
     }
@@ -407,16 +482,20 @@ pub trait ConstantEvaluation<'a> {
         _left_first: bool,
     ) -> Option<ConstantValue<'a>> {
         let left = ValueType::from(left_expr);
+
         let right = ValueType::from(right_expr);
 
         if left.is_string() && right.is_string() {
             let left_string = self.get_side_free_string_value(left_expr);
+
             let right_string = self.get_side_free_string_value(right_expr);
+
             if let (Some(left_string), Some(right_string)) = (left_string, right_string) {
                 // In JS, browsers parse \v differently. So do not compare strings if one contains \v.
                 if left_string.contains('\u{000B}') || right_string.contains('\u{000B}') {
                     return None;
                 }
+
                 return Some(ConstantValue::Boolean(
                     left_string.cmp(&right_string) == Ordering::Less,
                 ));
@@ -430,6 +509,7 @@ pub trait ConstantEvaluation<'a> {
         }
 
         let left_num = self.get_side_free_number_value(left_expr)?;
+
         let right_num = self.get_side_free_number_value(right_expr)?;
 
         if left_num.is_nan() || right_num.is_nan() {

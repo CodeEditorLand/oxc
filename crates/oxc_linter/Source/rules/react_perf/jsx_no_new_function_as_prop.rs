@@ -63,6 +63,7 @@ impl ReactPerfRule for JsxNoNewFunctionAsProp {
                 // doesn't add any value.
                 Some((decl.id.span(), None))
             }
+
             AstKind::Function(f) => Some((f.id.as_ref().map_or(f.span, GetSpan::span), None)),
             _ => None,
         }
@@ -79,13 +80,16 @@ fn check_expression(expr: &Expression) -> Option<Span> {
             }
 
             let member_expr = expr.callee.as_member_expression()?;
+
             let property_name = MemberExpression::static_property_name(member_expr);
+
             if property_name == Some("bind") {
                 Some(expr.span)
             } else {
                 None
             }
         }
+
         Expression::NewExpression(expr) => {
             if is_constructor_matching_name(&expr.callee, "Function") {
                 Some(expr.span)
@@ -93,12 +97,15 @@ fn check_expression(expr: &Expression) -> Option<Span> {
                 None
             }
         }
+
         Expression::LogicalExpression(expr) => {
             check_expression(&expr.left).or_else(|| check_expression(&expr.right))
         }
+
         Expression::ConditionalExpression(expr) => {
             check_expression(&expr.consequent).or_else(|| check_expression(&expr.alternate))
         }
+
         _ => None,
     }
 }
@@ -132,11 +139,13 @@ fn test() {
         r"<Item prop={this.props.callback || (this.props.cb ? this.props.cb : function(){})} />",
         r"
         import { FC, useCallback } from 'react';
+
         export const Foo: FC = props => {
             const onClick = useCallback(
                 e => { props.onClick?.(e) },
                 [props.onClick]
             );
+
             return <button onClick={onClick} />
         }",
         r"
@@ -144,6 +153,7 @@ fn test() {
         function onClick(e: React.MouseEvent) {
             window.location.navigate(e.target.href)
         }
+
         export default function Foo() {
             return <a onClick={onClick} />
         }
@@ -170,6 +180,7 @@ fn test() {
             function onClick(e) {
                 window.location.navigate(e.target.href)
             }
+
             return <a onClick={onClick} />
         }
         ",
@@ -178,6 +189,7 @@ fn test() {
             const onClick = (e) => {
                 window.location.navigate(e.target.href)
             }
+
             return <a onClick={onClick} />
         }
         ",
@@ -186,6 +198,7 @@ fn test() {
             const onClick = function (e) {
                 window.location.navigate(e.target.href)
             }
+
             return <a onClick={onClick} />
         }
         ",

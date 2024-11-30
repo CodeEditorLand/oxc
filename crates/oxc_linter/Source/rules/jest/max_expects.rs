@@ -93,9 +93,11 @@ impl MaxExpects {
         ctx: &LintContext<'a>,
     ) {
         let node = jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Expression::Identifier(ident) = &call_expr.callee else {
             return;
         };
@@ -136,9 +138,13 @@ fn test() {
             "
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -148,9 +154,13 @@ fn test() {
             "
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                     // expect(true).toBeDefined();
                 });
@@ -161,9 +171,13 @@ fn test() {
             "
                 it('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -173,9 +187,13 @@ fn test() {
             "
                 test('should pass', async () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -187,9 +205,13 @@ fn test() {
                     expect.hasAssertions();
 
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -199,9 +221,13 @@ fn test() {
             "
                 test('should pass', async () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toEqual(expect.any(Boolean));
                 });
             ",
@@ -213,9 +239,13 @@ fn test() {
                     expect.hasAssertions();
 
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toEqual(expect.any(Boolean));
                 });
             ",
@@ -226,9 +256,13 @@ fn test() {
                 describe('test', () => {
                     test('should pass', () => {
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
                     });
                 });
@@ -239,9 +273,13 @@ fn test() {
             "
                 test.each(['should', 'pass'], () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -251,12 +289,17 @@ fn test() {
             "
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
+
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -266,13 +309,17 @@ fn test() {
             "
                 function myHelper() {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 };
 
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -282,19 +329,25 @@ fn test() {
             "
                 function myHelper1() {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 };
 
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
 
                 function myHelper2() {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 };
             ",
@@ -304,13 +357,17 @@ fn test() {
             "
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
 
                 function myHelper() {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 };
             ",
@@ -320,19 +377,25 @@ fn test() {
             "
                 const myHelper1 = () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 };
 
                 test('should pass', function() {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
 
                 const myHelper2 = function() {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 };
             ",
@@ -342,14 +405,23 @@ fn test() {
             "
                 test('should pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -362,10 +434,15 @@ fn test() {
             "
                 test('should not pass', function () {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -375,10 +452,15 @@ fn test() {
             "
                 test('should not pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -388,10 +470,15 @@ fn test() {
             "
                 it('should not pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -401,10 +488,15 @@ fn test() {
             "
                 it('should not pass', async () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -414,18 +506,29 @@ fn test() {
             "
                 test('should not pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
+
                 test('should not pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -436,10 +539,15 @@ fn test() {
                 describe('test', () => {
                     test('should not pass', () => {
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
+
                         expect(true).toBeDefined();
                     });
                 });
@@ -450,10 +558,15 @@ fn test() {
             "
                 test.each(['should', 'not', 'pass'], () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",
@@ -463,6 +576,7 @@ fn test() {
             "
                 test('should not pass', () => {
                     expect(true).toBeDefined();
+
                     expect(true).toBeDefined();
                 });
             ",

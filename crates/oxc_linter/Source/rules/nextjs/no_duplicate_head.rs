@@ -47,17 +47,21 @@ declare_oxc_lint!(
 impl Rule for NoDuplicateHead {
     fn run_on_symbol(&self, symbol_id: oxc_semantic::SymbolId, ctx: &LintContext<'_>) {
         let symbols = ctx.symbols();
+
         let name = symbols.get_name(symbol_id);
+
         if name != "Head" {
             return;
         }
 
         let flags = symbols.get_flags(symbol_id);
+
         if !flags.is_import() {
             return;
         }
 
         let scope_id = symbols.get_scope_id(symbol_id);
+
         if scope_id != ctx.scopes().root_scope_id() {
             return;
         }
@@ -66,10 +70,14 @@ impl Rule for NoDuplicateHead {
         // Avoid allocating a `Vec`, or looking up span in common case
         // where only a single `<Head>` is found.
         let mut first_node_id = None;
+
         let mut labels = vec![];
+
         let nodes = ctx.nodes();
+
         let get_label = |node_id| {
             let span = nodes.kind(node_id).span();
+
             LabeledSpan::underline(span)
         };
 
@@ -93,6 +101,7 @@ impl Rule for NoDuplicateHead {
             } else if labels.is_empty() {
                 // 2nd `<Head>` found - populate `labels` with both
                 let first_node_id = first_node_id.unwrap();
+
                 labels.extend([get_label(first_node_id), get_label(node_id)]);
             } else {
                 // Further `<Head>` found - add to `node_ids`

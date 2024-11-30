@@ -133,6 +133,7 @@ impl SymbolTable {
             &self.redeclaration_spans[redeclaration_id]
         } else {
             static EMPTY: &[Span] = &[];
+
             EMPTY
         }
     }
@@ -176,11 +177,17 @@ impl SymbolTable {
         node_id: NodeId,
     ) -> SymbolId {
         self.spans.push(span);
+
         self.names.push(name);
+
         self.flags.push(flags);
+
         self.scope_ids.push(scope_id);
+
         self.declarations.push(node_id);
+
         self.resolved_references.push(vec![]);
+
         self.redeclarations.push(None)
     }
 
@@ -189,6 +196,7 @@ impl SymbolTable {
             self.redeclaration_spans[redeclaration_id].push(span);
         } else {
             let redeclaration_id = self.redeclaration_spans.push(vec![span]);
+
             self.redeclarations[symbol_id] = Some(redeclaration_id);
         };
     }
@@ -244,17 +252,25 @@ impl SymbolTable {
     /// Panics if provided `reference_id` is not a resolved reference for `symbol_id`.
     pub fn delete_resolved_reference(&mut self, symbol_id: SymbolId, reference_id: ReferenceId) {
         let reference_ids = &mut self.resolved_references[symbol_id];
+
         let index = reference_ids.iter().position(|&id| id == reference_id).unwrap();
+
         reference_ids.swap_remove(index);
     }
 
     pub fn reserve(&mut self, additional_symbols: usize, additional_references: usize) {
         self.spans.reserve(additional_symbols);
+
         self.names.reserve(additional_symbols);
+
         self.flags.reserve(additional_symbols);
+
         self.scope_ids.reserve(additional_symbols);
+
         self.declarations.reserve(additional_symbols);
+
         self.resolved_references.reserve(additional_symbols);
+
         self.redeclarations.reserve(additional_symbols);
 
         self.references.reserve(additional_references);
@@ -264,6 +280,7 @@ impl SymbolTable {
 /// Checks whether the a identifier reference is a global value or not.
 pub trait IsGlobalReference {
     fn is_global_reference(&self, _symbols: &SymbolTable) -> bool;
+
     fn is_global_reference_name(&self, name: &str, _symbols: &SymbolTable) -> bool;
 }
 
@@ -294,6 +311,7 @@ impl<'a> IsGlobalReference for Expression<'a> {
         if let Expression::Identifier(ident) = self {
             return ident.is_global_reference(symbols);
         }
+
         false
     }
 
@@ -301,6 +319,7 @@ impl<'a> IsGlobalReference for Expression<'a> {
         if let Expression::Identifier(ident) = self {
             return ident.is_global_reference_name(name, symbols);
         }
+
         false
     }
 }

@@ -14,7 +14,9 @@ struct InsertReplacer;
 impl Replacer for InsertReplacer {
     fn replace_append(&mut self, caps: &Captures, dst: &mut String) {
         assert_eq!(caps.len(), 2);
+
         let arg = caps.get(1);
+
         if let Some(arg) = arg {
             dst.push_str(arg.as_str());
         }
@@ -42,7 +44,10 @@ pub fn pprint(input: &TokenStream) -> String {
     };
 
     let result = prettyplease::unparse(&parse_file(input.to_string().as_str()).unwrap());
+
     let result = ENDL_REGEX.replace_all(&result, EndlReplacer);
+
     let result = INSERT_REGEX.replace_all(&result, InsertReplacer).to_string();
+
     result
 }

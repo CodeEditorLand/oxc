@@ -49,14 +49,18 @@ impl Rule for NoNewNativeNonconstructor {
         let AstKind::NewExpression(expr) = node.kind() else {
             return;
         };
+
         let Expression::Identifier(ident) = &expr.callee else {
             return;
         };
+
         if matches!(ident.name.as_str(), "Symbol" | "BigInt")
             && ctx.semantic().is_reference_to_global_variable(ident)
         {
             let start = expr.span.start;
+
             let end = start + 3;
+
             ctx.diagnostic(no_new_native_nonconstructor_diagnostic(
                 ident.name.as_str(),
                 Span::new(start, end),

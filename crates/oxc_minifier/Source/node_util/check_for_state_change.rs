@@ -37,23 +37,29 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for Expression<'a> {
             {
                 false
             }
+
             Self::UnaryExpression(unary_expr) => {
                 unary_expr.check_for_state_change(check_for_new_objects)
             }
+
             Self::ParenthesizedExpression(p) => {
                 p.expression.check_for_state_change(check_for_new_objects)
             }
+
             Self::ConditionalExpression(p) => {
                 p.test.check_for_state_change(check_for_new_objects)
                     || p.consequent.check_for_state_change(check_for_new_objects)
                     || p.alternate.check_for_state_change(check_for_new_objects)
             }
+
             Self::SequenceExpression(s) => {
                 s.expressions.iter().any(|expr| expr.check_for_state_change(check_for_new_objects))
             }
+
             Self::BinaryExpression(binary_expr) => {
                 binary_expr.check_for_state_change(check_for_new_objects)
             }
+
             Self::ObjectExpression(object_expr) => {
                 if check_for_new_objects {
                     return true;
@@ -64,15 +70,18 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for Expression<'a> {
                     .iter()
                     .any(|property| property.check_for_state_change(check_for_new_objects))
             }
+
             Self::ArrayExpression(array_expr) => {
                 if check_for_new_objects {
                     return true;
                 }
+
                 array_expr
                     .elements
                     .iter()
                     .any(|element| element.check_for_state_change(check_for_new_objects))
             }
+
             _ => true,
         }
     }
@@ -83,6 +92,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for UnaryExpression<'a> {
         if is_simple_unary_operator(self.operator) {
             return self.argument.check_for_state_change(check_for_new_objects);
         }
+
         true
     }
 }
@@ -90,6 +100,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for UnaryExpression<'a> {
 impl<'a, 'b> CheckForStateChange<'a, 'b> for BinaryExpression<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         let left = self.left.check_for_state_change(check_for_new_objects);
+
         let right = self.right.check_for_state_change(check_for_new_objects);
 
         left || right
@@ -103,6 +114,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for ArrayExpressionElement<'a> {
             match_expression!(Self) => {
                 self.to_expression().check_for_state_change(check_for_new_objects)
             }
+
             Self::Elision(_) => false,
         }
     }

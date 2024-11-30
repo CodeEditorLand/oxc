@@ -66,6 +66,7 @@ impl Rule for NewForBuiltins {
                     ctx.diagnostic(disallow(new_expr.span, builtin_name));
                 }
             }
+
             AstKind::CallExpression(call_expr) => {
                 let Some(builtin_name) =
                     is_expr_global_builtin(call_expr.callee.without_parentheses(), ctx)
@@ -89,6 +90,7 @@ impl Rule for NewForBuiltins {
                     ctx.diagnostic(enforce(call_expr.span, builtin_name));
                 }
             }
+
             _ => {}
         }
     }
@@ -103,10 +105,13 @@ fn is_expr_global_builtin<'a, 'b>(
             if !ctx.semantic().is_reference_to_global_variable(ident) {
                 return None;
             }
+
             Some(ident.name.as_str())
         }
+
         match_member_expression!(Expression) => {
             let member_expr = expr.to_member_expression();
+
             let Expression::Identifier(ident) = member_expr.object() else {
                 return None;
             };
@@ -117,6 +122,7 @@ fn is_expr_global_builtin<'a, 'b>(
 
             member_expr.static_property_name()
         }
+
         _ => None,
     }
 }
@@ -197,18 +203,22 @@ fn test() {
         r"const foo = Symbol()",
         r"
             import { Map } from 'immutable';
+
             const m = Map();
         ",
         r"
         	const {Map} = require('immutable');
+
         	const foo = Map();
         ",
         r"
         	const {String} = require('guitar');
+
         	const lowE = new String();
         ",
         r"
         	import {String} from 'guitar';
+
         	const lowE = new String();
         ",
         r"new Foo();Bar();",
@@ -272,16 +282,20 @@ fn test() {
 				// This should not reported
 				return WeakMap()
 			}
+
 			function constCheck() {
 				{
 					const Array = function() {};
 				}
+
 				return Array()
 			}
+
 			function letCheck() {
 				{
 					let Map = function() {};
 				}
+
 				return Map()
 			}
         ",

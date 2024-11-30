@@ -25,6 +25,7 @@ impl<'a> IsolatedDeclarations<'a> {
             Expression::StringLiteral(_) | Expression::TemplateLiteral(_) => {
                 Some(self.ast.ts_type_string_keyword(SPAN))
             }
+
             Expression::Identifier(ident) => match ident.name.as_str() {
                 "undefined" => Some(self.ast.ts_type_undefined_keyword(SPAN)),
                 _ => None,
@@ -32,16 +33,20 @@ impl<'a> IsolatedDeclarations<'a> {
             Expression::FunctionExpression(func) => {
                 self.transform_function_to_ts_type(func).map(|x| x.clone_in(self.ast.allocator))
             }
+
             Expression::ArrowFunctionExpression(func) => self
                 .transform_arrow_function_to_ts_type(func)
                 .map(|x| x.clone_in(self.ast.allocator)),
             Expression::ObjectExpression(expr) => {
                 Some(self.transform_object_expression_to_ts_type(expr, false))
             }
+
             Expression::ArrayExpression(expr) => {
                 self.error(array_inferred(expr.span));
+
                 Some(self.ast.ts_type_unknown_keyword(expr.span))
             }
+
             Expression::TSAsExpression(expr) => {
                 if expr.type_annotation.is_const_type_reference() {
                     self.transform_expression_to_ts_type(&expr.expression)
@@ -49,22 +54,29 @@ impl<'a> IsolatedDeclarations<'a> {
                     Some(expr.type_annotation.clone_in(self.ast.allocator))
                 }
             }
+
             Expression::ClassExpression(expr) => {
                 self.error(inferred_type_of_class_expression(expr.span));
+
                 Some(self.ast.ts_type_unknown_keyword(SPAN))
             }
+
             Expression::ParenthesizedExpression(expr) => {
                 self.infer_type_from_expression(&expr.expression)
             }
+
             Expression::TSNonNullExpression(expr) => {
                 self.infer_type_from_expression(&expr.expression)
             }
+
             Expression::TSSatisfiesExpression(expr) => {
                 self.infer_type_from_expression(&expr.expression)
             }
+
             Expression::TSTypeAssertion(expr) => {
                 Some(expr.type_annotation.clone_in(self.ast.allocator))
             }
+
             Expression::UnaryExpression(expr) => {
                 if Self::can_infer_unary_expression(expr) {
                     self.infer_type_from_expression(&expr.argument)
@@ -72,6 +84,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+
             _ => None,
         }
     }
@@ -87,6 +100,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 .as_ref()
                 .map(|x| x.type_annotation.clone_in(self.ast.allocator));
         }
+
         if let BindingPatternKind::AssignmentPattern(pattern) = &param.pattern.kind {
             if let Some(annotation) = pattern.left.type_annotation.as_ref() {
                 Some(annotation.type_annotation.clone_in(self.ast.allocator))

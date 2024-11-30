@@ -61,6 +61,7 @@ impl Rule for NoCondAssign {
                 _ => NoCondAssignConfig::ExceptParens,
             },
         );
+
         Self { config }
     }
 
@@ -74,36 +75,45 @@ impl Rule for NoCondAssign {
                     self.check_expression(ctx, expr);
                 }
             }
+
             AstKind::ConditionalExpression(expr) => {
                 self.check_expression(ctx, expr.test.get_inner_expression());
             }
+
             AstKind::AssignmentExpression(expr) if self.config == NoCondAssignConfig::Always => {
                 let mut spans = vec![];
+
                 for ancestor in ctx.nodes().ancestors(node.id()).skip(1) {
                     match ancestor.kind() {
                         AstKind::IfStatement(if_stmt) => {
                             spans.push(if_stmt.test.span());
                         }
+
                         AstKind::WhileStatement(while_stmt) => {
                             spans.push(while_stmt.test.span());
                         }
+
                         AstKind::DoWhileStatement(do_while_stmt) => {
                             spans.push(do_while_stmt.test.span());
                         }
+
                         AstKind::ForStatement(for_stmt) => {
                             if let Some(test) = &for_stmt.test {
                                 spans.push(test.span());
                             }
                         }
+
                         AstKind::ConditionalExpression(cond_expr) => {
                             spans.push(cond_expr.span());
                         }
+
                         AstKind::Function(_)
                         | AstKind::ArrowFunctionExpression(_)
                         | AstKind::Program(_)
                         | AstKind::BlockStatement(_) => {
                             break;
                         }
+
                         _ => {}
                     };
                 }
@@ -114,6 +124,7 @@ impl Rule for NoCondAssign {
                     Self::emit_diagnostic(ctx, expr);
                 }
             }
+
             _ => {}
         }
     }
@@ -123,10 +134,13 @@ impl NoCondAssign {
     #[allow(clippy::cast_possible_truncation)]
     fn emit_diagnostic(ctx: &LintContext<'_>, expr: &AssignmentExpression<'_>) {
         let mut operator_span = Span::new(expr.left.span().end, expr.right.span().start);
+
         let start =
             operator_span.source_text(ctx.source_text()).find(expr.operator.as_str()).unwrap_or(0)
                 as u32;
+
         operator_span.start += start;
+
         operator_span.end = operator_span.start + expr.operator.as_str().len() as u32;
 
         ctx.diagnostic(no_cond_assign_diagnostic(operator_span));
@@ -134,9 +148,11 @@ impl NoCondAssign {
 
     fn check_expression(&self, ctx: &LintContext<'_>, expr: &Expression<'_>) {
         let mut expr = expr;
+
         if self.config == NoCondAssignConfig::Always {
             expr = expr.get_inner_expression();
         }
+
         if let Expression::AssignmentExpression(expr) = expr {
             Self::emit_diagnostic(ctx, expr);
         }
@@ -200,6 +216,7 @@ fn test() {
         (
             "
             if (['a', 'b', 'c', 'd'].includes(value)) newValue = value;
+
             else newValue = 'default';
             ",
             Some(serde_json::json!(["always"])),

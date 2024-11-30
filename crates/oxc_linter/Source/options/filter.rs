@@ -108,6 +108,7 @@ impl LintFilterKind {
                     let plugin = parts
                         .next()
                         .ok_or(InvalidFilterKind::PluginMissing(Cow::Borrowed(filter)))?;
+
                     if plugin.is_empty() {
                         return Err(InvalidFilterKind::PluginMissing(Cow::Borrowed(filter)));
                     }
@@ -115,18 +116,21 @@ impl LintFilterKind {
                     let rule = parts
                         .next()
                         .ok_or(InvalidFilterKind::RuleMissing(Cow::Borrowed(filter)))?;
+
                     if rule.is_empty() {
                         return Err(InvalidFilterKind::RuleMissing(Cow::Borrowed(filter)));
                     }
 
                     (LintPlugins::from(plugin), Cow::Borrowed(rule))
                 }
+
                 Cow::Owned(filter) => {
                     let mut parts = filter.splitn(2, '/');
 
                     let plugin = parts
                         .next()
                         .ok_or_else(|| InvalidFilterKind::PluginMissing(filter.clone().into()))?;
+
                     if plugin.is_empty() {
                         return Err(InvalidFilterKind::PluginMissing(filter.into()));
                     }
@@ -134,6 +138,7 @@ impl LintFilterKind {
                     let rule = parts
                         .next()
                         .ok_or_else(|| InvalidFilterKind::RuleMissing(filter.clone().into()))?;
+
                     if rule.is_empty() {
                         return Err(InvalidFilterKind::RuleMissing(filter.into()));
                     }
@@ -141,6 +146,7 @@ impl LintFilterKind {
                     (LintPlugins::from(plugin), Cow::Owned(rule.to_string()))
                 }
             };
+
             Ok(LintFilterKind::Rule(plugin, rule))
         } else {
             match RuleCategory::try_from(filter.as_ref()) {
@@ -202,6 +208,7 @@ impl fmt::Display for InvalidFilterKind {
                     "Filter '{filter}' must match <plugin>/<rule> but is missing a plugin name."
                 )
             }
+
             Self::RuleMissing(filter) => {
                 write!(
                     f,
@@ -221,7 +228,9 @@ mod test {
     #[test]
     fn test_from_category() {
         let correctness: LintFilter = LintFilter::new(AllowWarnDeny::Warn, "correctness").unwrap();
+
         assert_eq!(correctness.severity(), AllowWarnDeny::Warn);
+
         assert!(
             matches!(correctness.kind(), LintFilterKind::Category(RuleCategory::Correctness)),
             "{:?}",
@@ -232,15 +241,20 @@ mod test {
     #[test]
     fn test_eslint_deny() {
         let filter = LintFilter::deny(LintFilterKind::try_from("no-const-assign").unwrap());
+
         assert_eq!(filter.severity(), AllowWarnDeny::Deny);
+
         assert_eq!(filter.kind(), &LintFilterKind::Generic("no-const-assign".into()));
 
         let filter = LintFilter::deny(LintFilterKind::try_from("eslint/no-const-assign").unwrap());
+
         assert_eq!(filter.severity(), AllowWarnDeny::Deny);
+
         assert_eq!(
             filter.kind(),
             &LintFilterKind::Rule(LintPlugins::from("eslint"), "no-const-assign".into())
         );
+
         assert!(matches!(filter.kind(), LintFilterKind::Rule(_, _)));
     }
 
@@ -263,6 +277,7 @@ mod test {
 
         for (input, expected) in test_cases {
             let actual = LintFilterKind::try_from(input).unwrap();
+
             assert_eq!(actual, expected, "input: {input}");
         }
     }
@@ -273,6 +288,7 @@ mod test {
 
         for input in test_cases {
             let actual = LintFilterKind::parse(Cow::Borrowed(input));
+
             assert!(
                 actual.is_err(),
                 "input '{input}' produced filter '{:?}' but it should have errored",

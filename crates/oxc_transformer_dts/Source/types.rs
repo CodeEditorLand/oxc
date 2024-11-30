@@ -11,6 +11,7 @@ use crate::TransformerDts;
 impl<'a> TransformerDts<'a> {
     pub fn transform_function_to_ts_type(&self, func: &Function<'a>) -> Option<TSType<'a>> {
         let return_type = self.infer_function_return_type(func);
+
         let params = self.transform_formal_parameters(&func.params);
 
         return_type.map(|return_type| {
@@ -29,6 +30,7 @@ impl<'a> TransformerDts<'a> {
         func: &ArrowFunctionExpression<'a>,
     ) -> Option<TSType<'a>> {
         let return_type = self.infer_arrow_function_return_type(func);
+
         let params = self.transform_formal_parameters(&func.params);
 
         return_type.map(|return_type| {
@@ -71,13 +73,16 @@ impl<'a> TransformerDts<'a> {
                                 )
                                 .with_label(object.span),
                             );
+
                             return None;
                         }
 
                         if let Expression::FunctionExpression(function) = &object.value {
                             if !is_const && object.method {
                                 let return_type = self.infer_function_return_type(function);
+
                                 let params = self.transform_formal_parameters(&function.params);
+
                                 return Some(self.ctx.ast.ts_method_signature(
                                     object.span,
                                     self.ctx.ast.copy(&object.key),
@@ -104,8 +109,10 @@ impl<'a> TransformerDts<'a> {
                                 self.ctx.ast.ts_type_annotation(SPAN, type_annotation)
                             }),
                         );
+
                         Some(property_signature)
                     }
+
                     ObjectPropertyKind::SpreadProperty(spread) => {
                         self.ctx.error(
                             OxcDiagnostic::error(
@@ -114,10 +121,12 @@ impl<'a> TransformerDts<'a> {
                             )
                             .with_label(spread.span),
                         );
+
                         None
                     }
                 }
             }));
+
         self.ctx.ast.ts_type_literal(SPAN, members)
     }
 
@@ -136,11 +145,14 @@ impl<'a> TransformerDts<'a> {
                         )
                         .with_label(spread.span),
                     );
+
                     None
                 }
+
                 ArrayExpressionElement::Elision(elision) => {
                     Some(TSTupleElement::from(self.ctx.ast.ts_undefined_keyword(elision.span)))
                 }
+
                 _ => Some(TSTupleElement::from(
                     self.transform_expression_to_ts_type(element.to_expression()),
                 )),
@@ -148,6 +160,7 @@ impl<'a> TransformerDts<'a> {
         ));
 
         let ts_type = self.ctx.ast.ts_tuple_type(SPAN, element_types);
+
         if is_const {
             self.ctx.ast.ts_type_operator_type(SPAN, TSTypeOperatorOperator::Readonly, ts_type)
         } else {
@@ -169,9 +182,11 @@ impl<'a> TransformerDts<'a> {
             Expression::BigintLiteral(lit) => {
                 self.ctx.ast.ts_literal_type(SPAN, TSLiteral::BigintLiteral(self.ctx.ast.copy(lit)))
             }
+
             Expression::StringLiteral(lit) => {
                 self.ctx.ast.ts_literal_type(SPAN, TSLiteral::StringLiteral(self.ctx.ast.copy(lit)))
             }
+
             Expression::TemplateLiteral(lit) => self
                 .ctx
                 .ast
@@ -183,10 +198,13 @@ impl<'a> TransformerDts<'a> {
             Expression::ArrayExpression(expr) => {
                 self.transform_array_expression_to_ts_type(expr, true)
             }
+
             Expression::ObjectExpression(expr) => {
                 // { readonly a: number }
+
                 self.transform_object_expression_to_ts_type(expr, true)
             }
+
             _ => {
                 unreachable!()
             }

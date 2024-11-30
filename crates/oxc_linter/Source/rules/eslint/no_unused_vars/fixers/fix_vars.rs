@@ -42,6 +42,7 @@ impl NoUnusedVars {
             #[cfg(not(debug_assertions))]
             return fixer.noop();
         };
+
         let (span, declarations) = match parent {
             AstKind::VariableDeclaration(decl) => (decl.span, &decl.declarations),
             _ => {
@@ -63,7 +64,9 @@ impl NoUnusedVars {
             // be removed, but for `const { x, y } = obj;` or `let x = 1, y = 2`
             // we need to keep the other declarations
             let has_neighbors = declarations.len() > 1;
+
             debug_assert!(!declarations.is_empty());
+
             let binding_info = symbol.get_binding_info(&decl.id.kind);
 
             match binding_info {
@@ -71,8 +74,10 @@ impl NoUnusedVars {
                     if has_neighbors {
                         return symbol.delete_from_list(fixer, declarations, decl).dangerously();
                     }
+
                     return fixer.delete_range(span).dangerously();
                 }
+
                 BindingInfo::MultiDestructure(mut span, is_object, is_last) => {
                     let source_after = &fixer.source_text()[(span.end as usize)..];
                     // remove trailing commas
@@ -84,11 +89,15 @@ impl NoUnusedVars {
                     //            ^                         ^^^
                     if !is_object && is_last {
                         debug_assert!(span.start > 0);
+
                         let source_before = &fixer.source_text()[..(span.start as usize)];
+
                         let chars = source_before.chars().rev();
+
                         let start_offset = count_whitespace_or_commas(chars);
                         // do not walk past the beginning of the file
                         debug_assert!(start_offset < span.start);
+
                         span = span.expand_left(start_offset);
                     }
 
@@ -101,6 +110,7 @@ impl NoUnusedVars {
                         fixer.replace(span, ",").dangerously()
                     };
                 }
+
                 BindingInfo::NotFound => {
                     return fixer.noop();
                 }
@@ -122,19 +132,26 @@ impl NoUnusedVars {
             IgnorePattern::Default => {
                 format!("_{}", symbol.name())
             }
+
             IgnorePattern::Some(re) if re.as_str() == "^_" => {
                 format!("_{}", symbol.name())
             }
+
             _ => return None,
         };
 
         // adjust name to avoid conflicts
         let scopes = symbol.scopes();
+
         let scope_id = symbol.scope_id();
+
         let mut i = 0;
+
         let mut new_name = ignored_name.clone();
+
         while scopes.has_binding(scope_id, &new_name) {
             new_name = format!("{ignored_name}{i}");
+
             i += 1;
         }
 

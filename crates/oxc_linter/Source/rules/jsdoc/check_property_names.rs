@@ -63,6 +63,7 @@ declare_oxc_lint!(
 impl Rule for CheckPropertyNames {
     fn run_once(&self, ctx: &LintContext) {
         let settings = &ctx.settings().jsdoc;
+
         let resolved_property_tag_name = settings.resolve_tag_name("property");
 
         for jsdoc in ctx
@@ -73,10 +74,12 @@ impl Rule for CheckPropertyNames {
             .filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
         {
             let mut seen: FxHashMap<&str, FxHashSet<Span>> = FxHashMap::default();
+
             for tag in jsdoc.tags() {
                 if tag.kind.parsed() != resolved_property_tag_name {
                     continue;
                 }
+
                 let (_, Some(name_part), _) = tag.type_name_comment() else {
                     continue;
                 };
@@ -88,6 +91,7 @@ impl Rule for CheckPropertyNames {
                     let mut parts = type_name.split('.').collect::<Vec<_>>();
                     // `foo[].bar` -> `foo[]`
                     parts.pop();
+
                     let parent_name = parts.join(".");
                     // `foo[]` -> `foo`
                     let parent_name = parent_name.trim_end_matches("[]");
@@ -111,6 +115,7 @@ impl Rule for CheckPropertyNames {
                         )
                     })
                     .collect::<Vec<_>>();
+
                 ctx.diagnostic(
                     OxcDiagnostic::warn("Duplicate @property found.")
                         .with_help(format!(
@@ -224,6 +229,7 @@ fn test() {
 			           */
 			          function quux (code = 1) {
 			            this.error = new Error('oops');
+
 			            this.code = code;
 			          }
 			      ",

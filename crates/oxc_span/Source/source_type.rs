@@ -277,6 +277,7 @@ impl SourceType {
         if yes {
             self.module_kind = ModuleKind::Script;
         }
+
         self
     }
 
@@ -287,6 +288,7 @@ impl SourceType {
         } else {
             self.module_kind = ModuleKind::Script;
         }
+
         self
     }
 
@@ -295,6 +297,7 @@ impl SourceType {
         if yes {
             self.module_kind = ModuleKind::Unambiguous;
         }
+
         self
     }
 
@@ -303,6 +306,7 @@ impl SourceType {
         if yes {
             self.language = Language::TypeScript;
         }
+
         self
     }
 
@@ -311,6 +315,7 @@ impl SourceType {
         if yes {
             self.language = Language::TypeScriptDefinition;
         }
+
         self
     }
 
@@ -319,6 +324,7 @@ impl SourceType {
         if yes {
             self.variant = LanguageVariant::Jsx;
         }
+
         self
     }
 
@@ -378,6 +384,7 @@ impl SourceType {
             .filter(|s| VALID_EXTENSIONS.contains(s))
             .ok_or_else(|| {
                 let path = path.as_ref().to_string_lossy();
+
                 UnknownExtension::new(format!(
                     "Please provide a valid file extension for {path}: .js, .mjs, .jsx or .cjs \
 					 for JavaScript, or .ts, .d.ts, .mts, .cts or .tsx for TypeScript"
@@ -424,39 +431,56 @@ mod tests {
     fn test_ts_from_path() {
         let ts = SourceType::from_path("foo.ts")
             .expect("foo.ts should be a valid TypeScript file path.");
+
         let mts = SourceType::from_path("foo.mts")
             .expect("foo.mts should be a valid TypeScript file path.");
+
         let cts = SourceType::from_path("foo.cts")
             .expect("foo.cts should be a valid TypeScript file path.");
+
         let tsx = SourceType::from_path("foo.tsx")
             .expect("foo.tsx should be a valid TypeScript file path.");
 
         for ty in &[ts, mts, cts, tsx] {
             assert!(ty.is_typescript());
+
             assert!(!ty.is_typescript_definition());
+
             assert!(!ty.is_javascript());
         }
 
         assert_eq!(SourceType::ts(), ts);
 
         assert!(ts.is_module());
+
         assert!(mts.is_module());
+
         assert!(!cts.is_module());
+
         assert!(tsx.is_module());
 
         assert!(!ts.is_script());
+
         assert!(!mts.is_script());
+
         assert!(cts.is_script());
+
         assert!(!tsx.is_script());
 
         assert!(ts.is_strict());
+
         assert!(mts.is_strict());
+
         assert!(!cts.is_strict());
+
         assert!(tsx.is_strict());
 
         assert!(!ts.is_jsx());
+
         assert!(!mts.is_jsx());
+
         assert!(!cts.is_jsx());
+
         assert!(tsx.is_jsx());
     }
 
@@ -465,33 +489,45 @@ mod tests {
     fn test_d_ts_from_path() {
         let dts = SourceType::from_path("foo.d.ts")
             .expect("foo.d.ts should be a valid TypeScript definition file path.");
+
         let dmts = SourceType::from_path("foo.d.mts")
             .expect("foo.d.mts should be a valid TypeScript definition file path.");
+
         let dcts = SourceType::from_path("foo.d.cts")
             .expect("foo.d.cts should be a valid TypeScript definition file path.");
 
         for ty in &[dts, dmts, dcts] {
             assert!(ty.is_typescript());
+
             assert!(ty.is_typescript_definition());
+
             assert!(!ty.is_javascript());
         }
 
         assert_eq!(SourceType::d_ts(), dts);
 
         assert!(dts.is_module());
+
         assert!(dmts.is_module());
+
         assert!(!dcts.is_module());
 
         assert!(!dts.is_script());
+
         assert!(!dmts.is_script());
+
         assert!(dcts.is_script());
 
         assert!(dts.is_strict());
+
         assert!(dmts.is_strict());
+
         assert!(!dcts.is_strict());
 
         assert!(!dts.is_jsx());
+
         assert!(!dmts.is_jsx());
+
         assert!(!dcts.is_jsx());
     }
 
@@ -500,34 +536,48 @@ mod tests {
     fn test_js_from_path() {
         let js = SourceType::from_path("foo.js")
             .expect("foo.js should be a valid JavaScript file path.");
+
         let mjs = SourceType::from_path("foo.mjs")
             .expect("foo.mjs should be a valid JavaScript file path.");
+
         let cjs = SourceType::from_path("foo.cjs")
             .expect("foo.cjs should be a valid JavaScript file path.");
+
         let jsx = SourceType::from_path("foo.jsx")
             .expect("foo.jsx should be a valid JavaScript file path.");
 
         for ty in &[js, mjs, cjs, jsx] {
             assert!(ty.is_javascript(), "{ty:?}");
+
             assert!(!ty.is_typescript(), "{ty:?}");
         }
 
         assert_eq!(SourceType::jsx(), js);
+
         assert_eq!(SourceType::jsx().with_module(true), jsx);
 
         assert!(js.is_module());
+
         assert!(mjs.is_module());
+
         assert!(cjs.is_script());
+
         assert!(jsx.is_module());
 
         assert!(js.is_strict());
+
         assert!(mjs.is_strict());
+
         assert!(!cjs.is_strict());
+
         assert!(jsx.is_strict());
 
         assert!(js.is_jsx());
+
         assert!(mjs.is_jsx());
+
         assert!(cjs.is_jsx());
+
         assert!(jsx.is_jsx());
     }
 }

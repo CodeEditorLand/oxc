@@ -177,7 +177,9 @@ impl Rule for NoAsyncEndpointHandlers {
             .and_then(Value::as_array)
             .map(|names| names.iter().filter_map(Value::as_str).map(CompactStr::from).collect())
             .unwrap_or_default();
+
         allowed_names.sort_unstable();
+
         allowed_names.dedup();
 
         Self(Box::new(NoAsyncEndpointHandlersConfig { allowed_names }))
@@ -185,9 +187,11 @@ impl Rule for NoAsyncEndpointHandlers {
 
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         let kind = node.kind();
+
         let Some((_endpoint, args)) = utils::as_endpoint_registration(&kind) else {
             return;
         };
+
         for arg in
             args.iter().filter_map(Argument::as_expression).map(Expression::get_inner_expression)
         {
@@ -219,13 +223,17 @@ impl NoAsyncEndpointHandlers {
 
                 // Cannot check imported handlers without cross-file analysis.
                 let flags = ctx.symbols().get_flags(symbol_id);
+
                 if flags.is_import() {
                     return;
                 }
 
                 let decl_id = ctx.symbols().get_declaration(symbol_id);
+
                 let decl_node = ctx.nodes().get_node(decl_id);
+
                 let registered_at = registered_at.or(Some(handler.span));
+
                 match decl_node.kind() {
                     AstKind::Function(f) => self.check_function(ctx, registered_at, id_name, f),
                     AstKind::VariableDeclarator(decl) => {
@@ -239,24 +247,30 @@ impl NoAsyncEndpointHandlers {
                                     return;
                                 }
                             }
+
                             self.check_endpoint_expr(ctx, id_name, registered_at, init);
                         }
                     }
+
                     _ => {}
                 }
             }
+
             func if utils::is_endpoint_handler(func) => {
                 match func {
                     // `app.get('/', (async?) function (req, res) {}`
                     Expression::FunctionExpression(f) => {
                         self.check_function(ctx, registered_at, id_name, f);
                     }
+
                     Expression::ArrowFunctionExpression(f) => {
                         self.check_arrow(ctx, registered_at, id_name, f);
                     }
+
                     _ => unreachable!(),
                 }
             }
+
             _ => {}
         }
     }
@@ -273,6 +287,7 @@ impl NoAsyncEndpointHandlers {
         }
 
         let name = f.name().map(|n| n.as_str()).or(id_name);
+
         if name.is_some_and(|name| self.is_allowed_name(name)) {
             return;
         }
@@ -290,6 +305,7 @@ impl NoAsyncEndpointHandlers {
         if !f.r#async {
             return;
         }
+
         if id_name.is_some_and(|name| self.is_allowed_name(name)) {
             return;
         }
@@ -338,6 +354,7 @@ fn test() {
         (
             "
             async function middleware(req, res, next) {}
+
             app.use(middleware)
             ",
             Some(json!([ { "allowedNames": ["middleware"] } ])),
@@ -361,6 +378,7 @@ fn test() {
         (
             "
             async function foo(req, res) {}
+
             app.post('/', foo)
             ",
             None,
@@ -368,6 +386,7 @@ fn test() {
         (
             "
             const foo = async (req, res) => {}
+
             app.post('/', foo)
             ",
             None,
@@ -375,6 +394,7 @@ fn test() {
         (
             "
             async function middleware(req, res, next) {}
+
             app.use(middleware)
             ",
             None,
@@ -382,7 +402,9 @@ fn test() {
         (
             "
             async function foo(req, res) {}
+
             const bar = foo;
+
             app.post('/', bar)
             ",
             None,

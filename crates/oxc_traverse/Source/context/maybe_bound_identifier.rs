@@ -45,6 +45,7 @@ impl<'a> MaybeBoundIdentifier<'a> {
         ctx: &TraverseCtx<'a>,
     ) -> Self {
         let symbol_id = ctx.symbols().get_reference(ident.reference_id()).symbol_id();
+
         Self { name: ident.name.clone(), symbol_id }
     }
 
@@ -274,6 +275,7 @@ impl<'a> MaybeBoundIdentifier<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let ident = self.create_spanned_reference(span, flags, ctx);
+
         Expression::Identifier(ctx.alloc(ident))
     }
 
@@ -286,6 +288,7 @@ impl<'a> MaybeBoundIdentifier<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> AssignmentTarget<'a> {
         let ident = self.create_spanned_reference(span, flags, ctx);
+
         AssignmentTarget::AssignmentTargetIdentifier(ctx.alloc(ident))
     }
 
@@ -298,6 +301,7 @@ impl<'a> MaybeBoundIdentifier<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> SimpleAssignmentTarget<'a> {
         let ident = self.create_spanned_reference(span, flags, ctx);
+
         SimpleAssignmentTarget::AssignmentTargetIdentifier(ctx.alloc(ident))
     }
 }

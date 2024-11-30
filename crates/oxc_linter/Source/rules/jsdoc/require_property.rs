@@ -61,8 +61,11 @@ declare_oxc_lint!(
 impl Rule for RequireProperty {
     fn run_once(&self, ctx: &LintContext) {
         let settings = &ctx.settings().jsdoc;
+
         let resolved_property_tag_name = settings.resolve_tag_name("property");
+
         let resolved_typedef_tag_name = settings.resolve_tag_name("typedef");
+
         let resolved_namespace_tag_name = settings.resolve_tag_name("namespace");
 
         for jsdoc in ctx
@@ -73,6 +76,7 @@ impl Rule for RequireProperty {
             .filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
         {
             let mut should_report = None;
+
             for tag in jsdoc.tags() {
                 let tag_name = tag.kind.parsed();
 
@@ -90,6 +94,7 @@ impl Rule for RequireProperty {
                     };
 
                     let r#type = type_part.parsed();
+
                     if r#type == "Object" || r#type == "object" || r#type == "PlainObject" {
                         should_report = Some(tag.kind.span.merge(&type_part.span));
                     }

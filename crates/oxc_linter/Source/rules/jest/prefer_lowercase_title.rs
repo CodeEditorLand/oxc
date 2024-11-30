@@ -134,15 +134,18 @@ declare_oxc_lint!(
 impl Rule for PreferLowercaseTitle {
     fn from_configuration(value: serde_json::Value) -> Self {
         let obj = value.get(0);
+
         let ignore_top_level_describe = obj
             .and_then(|config| config.get("ignoreTopLevelDescribe"))
             .and_then(serde_json::Value::as_bool)
             .unwrap_or(false);
+
         let ignore = obj
             .and_then(|config| config.get("ignore"))
             .and_then(serde_json::Value::as_array)
             .map(|v| v.iter().filter_map(serde_json::Value::as_str).map(CompactStr::from).collect())
             .unwrap_or_default();
+
         let allowed_prefixes = obj
             .and_then(|config| config.get("allowedPrefixes"))
             .and_then(serde_json::Value::as_array)
@@ -168,9 +171,11 @@ impl Rule for PreferLowercaseTitle {
 impl PreferLowercaseTitle {
     fn run<'a>(&self, possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
             parse_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
@@ -178,6 +183,7 @@ impl PreferLowercaseTitle {
         };
 
         let scopes = ctx.scopes();
+
         let ignores = Self::populate_ignores(&self.ignore);
 
         if ignores.contains(&jest_fn_call.name.as_ref()) {
@@ -202,15 +208,20 @@ impl PreferLowercaseTitle {
             let Some(template_string) = template_expr.quasi() else {
                 return;
             };
+
             self.lint_string(ctx, template_string.as_str(), template_expr.span);
         }
     }
 
     fn populate_ignores(ignore: &[CompactStr]) -> Vec<&str> {
         let mut ignores: Vec<&str> = vec![];
+
         let test_case_name = ["fit", "it", "xit", "test", "xtest"];
+
         let describe_alias = ["describe", "fdescribe", "xdescribe"];
+
         let test_name = "test";
+
         let it_name = "it";
 
         if ignore.iter().any(|alias| alias == "describe") {
@@ -240,6 +251,7 @@ impl PreferLowercaseTitle {
         };
 
         let lower = first_char.to_ascii_lowercase();
+
         if first_char == lower {
             return;
         }
@@ -297,6 +309,7 @@ fn test() {
         (
             "
                 describe.each()(1);
+
                 describe.each()(2);
             ",
             None,
@@ -305,6 +318,7 @@ fn test() {
         (
             "
                 import { jest } from '@jest/globals';
+
                 jest.doMock('my-module');
             ",
             None,
@@ -401,6 +415,7 @@ fn test() {
         (
             "
                 import { describe as context } from '@jest/globals';
+
                 context(`Foo`, () => {});
             ",
             None,
@@ -442,6 +457,7 @@ fn test() {
         (
             "
                 import { describe, describe as context } from '@jest/globals';
+
                 describe('MyClass', () => {
                     context('MyMethod', () => {
                         it('Does things', () => {
@@ -481,10 +497,12 @@ fn test() {
         (
             "
                 import { describe as context } from '@jest/globals';
+
                 context(`Foo`, () => {});
             ",
             "
                 import { describe as context } from '@jest/globals';
+
                 context(`foo`, () => {});
             ",
             None,
@@ -583,6 +601,7 @@ fn test() {
         (
             "
                 import { describe, describe as context } from '@jest/globals';
+
                 describe('MyClass', () => {
                     context('MyMethod', () => {
                         it('Does things', () => {
@@ -593,6 +612,7 @@ fn test() {
             ",
             "
                 import { describe, describe as context } from '@jest/globals';
+
                 describe('MyClass', () => {
                     context('myMethod', () => {
                         it('does things', () => {

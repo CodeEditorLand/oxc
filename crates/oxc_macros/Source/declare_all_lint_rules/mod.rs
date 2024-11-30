@@ -17,10 +17,12 @@ pub struct LintRuleMeta {
 impl Parse for LintRuleMeta {
 	fn parse(input:ParseStream<'_>) -> Result<Self> {
 		let path = input.parse::<syn::Path>()?;
+
 		let name = syn::parse_str(
 			&path.segments.iter().last().unwrap().ident.to_string().to_case(Case::Pascal),
 		)
 		.unwrap();
+
 		Ok(Self { name, path })
 	}
 }
@@ -46,13 +48,18 @@ pub fn declare_all_lint_rules(metadata:AllLintRulesMeta) -> TokenStream {
 	// all the top-level module trees
 	let module_tries = {
 		let mut builder = RulePathTrieBuilder::new();
+
 		for rule in &rules {
 			builder.push(rule);
 		}
+
 		builder.finish()
 	};
+
 	let use_stmts = module_tries.iter().map(|node| node.use_stmt(true));
+
 	let struct_names = rules.iter().map(|rule| &rule.name).collect::<Vec<_>>();
+
 	let mod_names = rules.iter().map(|node| {
 		node.path
 			.segments
@@ -62,12 +69,14 @@ pub fn declare_all_lint_rules(metadata:AllLintRulesMeta) -> TokenStream {
 			.collect::<Vec<_>>()
 			.join("/")
 	});
+
 	let ids = rules.iter().enumerate().map(|(i, _)| i).collect::<Vec<_>>();
 
 	let expanded = quote! {
 		#(#use_stmts)*
 
 		use crate::{context::LintContext, rule::{Rule, RuleCategory, RuleMeta}, AstNode};
+
 		use oxc_semantic::SymbolId;
 
 		#[derive(Debug, Clone)]

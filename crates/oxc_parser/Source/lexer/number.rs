@@ -16,13 +16,17 @@ pub fn parse_int(s: &str, kind: Kind, has_sep: bool) -> Result<f64, &'static str
         Kind::Decimal => {
             Ok(if has_sep { parse_decimal_with_underscores(s) } else { parse_decimal(s) })
         }
+
         Kind::Binary => {
             let s = &s[2..];
+
             Ok(if has_sep { parse_binary_with_underscores(s) } else { parse_binary(s) })
         }
+
         Kind::Octal => {
             // Octals always begin with `0`. Trim off leading `0`, `0o` or `0O`.
             let second_byte = s.as_bytes()[1];
+
             let s = if second_byte == b'o' || second_byte == b'O' {
                 // SAFETY: We just checked that 2nd byte is ASCII, so slicing off 2 bytes
                 // must be in bounds and on a UTF-8 character boundary.
@@ -30,19 +34,25 @@ pub fn parse_int(s: &str, kind: Kind, has_sep: bool) -> Result<f64, &'static str
             } else {
                 &s[1..] // legacy octal
             };
+
             Ok(if has_sep { parse_octal_with_underscores(s) } else { parse_octal(s) })
         }
+
         Kind::Hex => {
             let s = &s[2..];
+
             Ok(if has_sep { parse_hex_with_underscores(s) } else { parse_hex(s) })
         }
+
         _ => unreachable!(),
     }
 }
 
 pub fn parse_float(s: &str, has_sep: bool) -> Result<f64, &'static str> {
     let s = if has_sep { s.cow_replace('_', "") } else { Cow::Borrowed(s) };
+
     debug_assert!(!s.contains('_'));
+
     s.parse::<f64>().map_err(|_| "invalid float")
 }
 
@@ -57,6 +67,7 @@ pub fn parse_float(s: &str, has_sep: bool) -> Result<f64, &'static str> {
 #[inline]
 const fn decimal_byte_to_value(b: u8) -> u8 {
     debug_assert!(b >= b'0' && b <= b'9');
+
     b & 15
 }
 
@@ -67,11 +78,13 @@ fn parse_decimal(s: &str) -> f64 {
     const MAX_FAST_DECIMAL_LEN: usize = 19;
 
     debug_assert!(!s.is_empty());
+
     if s.len() > MAX_FAST_DECIMAL_LEN {
         return parse_decimal_slow(s);
     }
 
     let mut result = 0_u64;
+
     for &b in s.as_bytes() {
         // The latency of the multiplication can be hidden by issuing it
         // before the result is needed to improve performance on
@@ -80,9 +93,12 @@ fn parse_decimal(s: &str) -> f64 {
         // doing multiplication first and let the CPU spends other cycles
         // doing other computation and get multiplication result later.
         result *= 10;
+
         let n = decimal_byte_to_value(b);
+
         result += n as u64;
     }
+
     result as f64
 }
 
@@ -93,18 +109,23 @@ fn parse_decimal_with_underscores(s: &str) -> f64 {
     const MAX_FAST_DECIMAL_LEN: usize = 19;
 
     debug_assert!(!s.is_empty());
+
     if s.len() > MAX_FAST_DECIMAL_LEN {
         return parse_decimal_slow(&s.cow_replace('_', ""));
     }
 
     let mut result = 0_u64;
+
     for &b in s.as_bytes() {
         if b != b'_' {
             result *= 10;
+
             let n = decimal_byte_to_value(b);
+
             result += n as u64;
         }
     }
+
     result as f64
 }
 
@@ -129,6 +150,7 @@ fn parse_decimal_slow(s: &str) -> f64 {
 #[inline]
 const fn binary_byte_to_value(b: u8) -> u8 {
     debug_assert!(b == b'0' || b == b'1');
+
     b & 1
 }
 
@@ -153,6 +175,7 @@ fn parse_binary(s: &str) -> f64 {
     const MAX_FAST_BINARY_LEN: usize = 64;
 
     debug_assert!(!s.is_empty());
+
     debug_assert!(!s.starts_with("0b") && !s.starts_with("0B"));
 
     if s.len() > MAX_FAST_BINARY_LEN {
@@ -160,10 +183,13 @@ fn parse_binary(s: &str) -> f64 {
     }
 
     let mut result = 0_u64;
+
     for &b in s.as_bytes() {
         result <<= 1;
+
         result |= binary_byte_to_value(b) as u64;
     }
+
     result as f64
 }
 
@@ -171,10 +197,13 @@ fn parse_binary(s: &str) -> f64 {
 #[inline(never)]
 fn parse_binary_slow(s: &str) -> f64 {
     let mut result = 0_f64;
+
     for &b in s.as_bytes() {
         let value = f64::from(binary_byte_to_value(b));
+
         result = result.mul_add(2.0, value);
     }
+
     result
 }
 
@@ -185,6 +214,7 @@ fn parse_binary_with_underscores(s: &str) -> f64 {
     const MAX_FAST_BINARY_LEN: usize = 64;
 
     debug_assert!(!s.is_empty());
+
     debug_assert!(!s.starts_with("0b") && !s.starts_with("0B"));
 
     if s.len() > MAX_FAST_BINARY_LEN {
@@ -192,12 +222,15 @@ fn parse_binary_with_underscores(s: &str) -> f64 {
     }
 
     let mut result = 0_u64;
+
     for &b in s.as_bytes() {
         if b != b'_' {
             result <<= 1;
+
             result |= binary_byte_to_value(b) as u64;
         }
     }
+
     result as f64
 }
 
@@ -205,12 +238,15 @@ fn parse_binary_with_underscores(s: &str) -> f64 {
 #[inline(never)]
 fn parse_binary_with_underscores_slow(s: &str) -> f64 {
     let mut result = 0_f64;
+
     for &b in s.as_bytes() {
         if b != b'_' {
             let value = f64::from(binary_byte_to_value(b));
+
             result = result.mul_add(2.0, value);
         }
     }
+
     result
 }
 
@@ -225,6 +261,7 @@ fn parse_binary_with_underscores_slow(s: &str) -> f64 {
 #[inline]
 const fn octal_byte_to_value(b: u8) -> u8 {
     debug_assert!(b >= b'0' && b <= b'7');
+
     b & 7
 }
 
@@ -234,17 +271,23 @@ fn parse_octal(s: &str) -> f64 {
     const MAX_FAST_OCTAL_LEN: usize = 21;
 
     debug_assert!(!s.is_empty());
+
     debug_assert!(!s.starts_with("0o") && !s.starts_with("0O"));
+
     if s.len() > MAX_FAST_OCTAL_LEN {
         return parse_octal_slow(s);
     }
 
     let mut result = 0_u64;
+
     for &b in s.as_bytes() {
         let n = octal_byte_to_value(b);
+
         result <<= 3;
+
         result |= n as u64;
     }
+
     result as f64
 }
 
@@ -253,10 +296,13 @@ fn parse_octal(s: &str) -> f64 {
 #[allow(clippy::cast_precision_loss, clippy::cast_lossless)]
 fn parse_octal_slow(s: &str) -> f64 {
     let mut result = 0_f64;
+
     for &b in s.as_bytes() {
         let value = f64::from(octal_byte_to_value(b));
+
         result = result.mul_add(8.0, value);
     }
+
     result
 }
 
@@ -266,19 +312,25 @@ fn parse_octal_with_underscores(s: &str) -> f64 {
     const MAX_FAST_OCTAL_LEN: usize = 21;
 
     debug_assert!(!s.is_empty());
+
     debug_assert!(!s.starts_with("0o") && !s.starts_with("0O"));
+
     if s.len() > MAX_FAST_OCTAL_LEN {
         return parse_octal_with_underscores_slow(s);
     }
 
     let mut result = 0_u64;
+
     for &b in s.as_bytes() {
         if b != b'_' {
             let n = octal_byte_to_value(b);
+
             result <<= 3;
+
             result |= n as u64;
         }
     }
+
     result as f64
 }
 
@@ -287,12 +339,15 @@ fn parse_octal_with_underscores(s: &str) -> f64 {
 #[allow(clippy::cast_precision_loss, clippy::cast_lossless)]
 fn parse_octal_with_underscores_slow(s: &str) -> f64 {
     let mut result = 0_f64;
+
     for &b in s.as_bytes() {
         if b != b'_' {
             let value = f64::from(octal_byte_to_value(b));
+
             result = result.mul_add(8.0, value);
         }
     }
+
     result
 }
 
@@ -314,6 +369,7 @@ fn parse_octal_with_underscores_slow(s: &str) -> f64 {
 #[inline]
 const fn hex_byte_to_value(b: u8) -> u8 {
     debug_assert!((b >= b'0' && b <= b'9') || (b >= b'A' && b <= b'F') || (b >= b'a' && b <= b'f'));
+
     if b < b'A' {
         b & 15 // 0-9
     } else {
@@ -327,6 +383,7 @@ fn parse_hex(s: &str) -> f64 {
     const MAX_FAST_HEX_LEN: usize = 16;
 
     debug_assert!(!s.is_empty());
+
     debug_assert!(!s.starts_with("0x"));
 
     if s.len() > MAX_FAST_HEX_LEN {
@@ -334,11 +391,15 @@ fn parse_hex(s: &str) -> f64 {
     }
 
     let mut result = 0_u64;
+
     for &b in s.as_bytes() {
         let n = hex_byte_to_value(b);
+
         result <<= 4;
+
         result |= n as u64;
     }
+
     result as f64
 }
 
@@ -346,10 +407,13 @@ fn parse_hex(s: &str) -> f64 {
 #[inline(never)]
 fn parse_hex_slow(s: &str) -> f64 {
     let mut result = 0_f64;
+
     for &b in s.as_bytes() {
         let value = f64::from(hex_byte_to_value(b));
+
         result = result.mul_add(16.0, value);
     }
+
     result
 }
 
@@ -359,6 +423,7 @@ fn parse_hex_with_underscores(s: &str) -> f64 {
     const MAX_FAST_HEX_LEN: usize = 16;
 
     debug_assert!(!s.is_empty());
+
     debug_assert!(!s.starts_with("0x"));
 
     if s.len() > MAX_FAST_HEX_LEN {
@@ -366,13 +431,17 @@ fn parse_hex_with_underscores(s: &str) -> f64 {
     }
 
     let mut result = 0_u64;
+
     for &b in s.as_bytes() {
         if b != b'_' {
             let n = hex_byte_to_value(b);
+
             result <<= 4;
+
             result |= n as u64;
         }
     }
+
     result as f64
 }
 
@@ -380,12 +449,15 @@ fn parse_hex_with_underscores(s: &str) -> f64 {
 #[inline(never)]
 fn parse_hex_with_underscores_slow(s: &str) -> f64 {
     let mut result = 0_f64;
+
     for &b in s.as_bytes() {
         if b != b'_' {
             let value = f64::from(hex_byte_to_value(b));
+
             result = result.mul_add(16.0, value);
         }
     }
+
     result
 }
 
@@ -393,7 +465,9 @@ fn parse_hex_with_underscores_slow(s: &str) -> f64 {
 
 pub fn parse_big_int(s: &str, kind: Kind, has_sep: bool) -> Result<BigInt, &'static str> {
     let s = if has_sep { s.cow_replace('_', "") } else { Cow::Borrowed(s) };
+
     debug_assert!(!s.contains('_'));
+
     parse_big_int_without_underscores(&s, kind)
 }
 
@@ -405,6 +479,7 @@ fn parse_big_int_without_underscores(s: &str, kind: Kind) -> Result<BigInt, &'st
         Kind::Binary | Kind::Octal | Kind::Hex => &s[2..],
         _ => unreachable!(),
     };
+
     let radix = match kind {
         Kind::Decimal => 10,
         Kind::Binary => 2,
@@ -430,6 +505,7 @@ mod test {
     {
         for (s, expected) in test_cases {
             let parsed = parse_int(s, kind, has_sep);
+
             assert_eq!(
                 parsed,
                 Ok(expected as f64),
@@ -437,12 +513,14 @@ mod test {
             );
         }
     }
+
     fn assert_all_floats_eq<I>(test_cases: I, has_sep: bool)
     where
         I: IntoIterator<Item = (&'static str, f64)>,
     {
         for (s, expected) in test_cases {
             let parsed = parse_float(s, has_sep);
+
             assert_eq!(
                 parsed,
                 Ok(expected),
@@ -454,22 +532,30 @@ mod test {
     const _: () = {
         // decimal
         assert!(decimal_byte_to_value(b'0') == 0);
+
         assert!(decimal_byte_to_value(b'9') == 9);
 
         // binary
         assert!(binary_byte_to_value(b'0') == 0);
+
         assert!(binary_byte_to_value(b'1') == 1);
 
         // octal
         assert!(octal_byte_to_value(b'0') == 0);
+
         assert!(octal_byte_to_value(b'7') == 7);
 
         // hex
         assert!(hex_byte_to_value(b'0') == 0);
+
         assert!(hex_byte_to_value(b'9') == 9);
+
         assert!(hex_byte_to_value(b'A') == 10);
+
         assert!(hex_byte_to_value(b'F') == 15);
+
         assert!(hex_byte_to_value(b'a') == 10);
+
         assert!(hex_byte_to_value(b'f') == 15);
     };
 
@@ -486,16 +572,19 @@ mod test {
             parse_int("12300000000000000000000000", Kind::Decimal, false),
             Ok(12300000000000000000000000_i128 as f64)
         );
+
         assert_eq!(
             // 0x10000000000000000 = 1 << 64
             parse_int("0x10000000000000000", Kind::Hex, false),
             Ok(0x10000000000000000_i128 as f64)
         );
+
         assert_eq!(
             // 0o2000000000000000000000 = 1 << 64
             parse_int("0o2000000000000000000000", Kind::Octal, false),
             Ok(0o2000000000000000000000_i128 as f64)
         );
+
         assert_eq!(
             // 0b10000000000000000000000000000000000000000000000000000000000000000 = 1 << 64
             parse_int(
@@ -524,6 +613,7 @@ mod test {
             ("1.7976931348623157e+308", 1.7976931348623157e+308),
             ("0.000000001", 0.000_000_001),
         ];
+
         assert_all_floats_eq(cases, false);
     }
 
@@ -536,6 +626,7 @@ mod test {
             ("000000000000", 0),
             ("9007199254740991", 9007199254740991), // max safe integer, 2^53 - 1
         ];
+
         let binary = vec![
             ("0b0", 0b0),
             ("0b1", 0b1),
@@ -543,7 +634,9 @@ mod test {
             ("0b110001001000100", 0b110001001000100),
             ("0b110001001000100", 0b110001001000100),
         ];
+
         let octal = vec![("0o0", 0o0), ("0o1", 0o1), ("0o10", 0o10), ("0o777", 0o777)];
+
         let hex: Vec<(&str, i64)> = vec![
             ("0x0", 0x0),
             ("0X0", 0x0),
@@ -554,8 +647,11 @@ mod test {
         ];
 
         assert_all_ints_eq(decimal, Kind::Decimal, false);
+
         assert_all_ints_eq(binary, Kind::Binary, false);
+
         assert_all_ints_eq(octal, Kind::Octal, false);
+
         assert_all_ints_eq(hex, Kind::Hex, false);
     }
 
@@ -616,8 +712,11 @@ mod test {
         ];
 
         assert_all_ints_eq(decimal, Kind::Decimal, true);
+
         assert_all_ints_eq(binary, Kind::Binary, true);
+
         assert_all_ints_eq(octal, Kind::Octal, true);
+
         assert_all_ints_eq(hex, Kind::Hex, true);
     }
 
@@ -636,17 +735,22 @@ mod test {
         ];
 
         assert_all_floats_eq(no_sep.clone(), false);
+
         assert_all_floats_eq(sep.clone(), true);
+
         for (s, expected) in no_sep {
             let parsed = parse_float(s, false);
+
             assert_eq!(
                 parsed,
                 Ok(expected),
                 "expected {s} to parse to {expected}, but got {parsed:?}"
             );
         }
+
         for (s, expected) in sep {
             let parsed = parse_float(s, true);
+
             assert_eq!(
                 parsed,
                 Ok(expected),

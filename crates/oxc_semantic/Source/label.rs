@@ -17,11 +17,13 @@ pub struct UnusedLabels<'a> {
 impl<'a> UnusedLabels<'a> {
     pub fn add(&mut self, name: &'a str) {
         self.scopes.push(LabeledScope { name, used: false, parent: self.curr_scope });
+
         self.curr_scope = self.scopes.len() - 1;
     }
 
     pub fn reference(&mut self, name: &'a str) {
         let scope = self.scopes.iter_mut().rev().find(|x| x.name == name);
+
         if let Some(scope) = scope {
             scope.used = true;
         }
@@ -29,9 +31,11 @@ impl<'a> UnusedLabels<'a> {
 
     pub fn mark_unused(&mut self, current_node_id: NodeId) {
         let scope = &self.scopes[self.curr_scope];
+
         if !scope.used {
             self.labels.push(current_node_id);
         }
+
         self.curr_scope = scope.parent;
     }
 }

@@ -111,10 +111,15 @@ pub struct ModuleLexer {
 #[allow(clippy::needless_pass_by_value)]
 fn module_lexer(source_text: &str, options: &ParserOptions) -> ModuleLexer {
     let allocator = Allocator::default();
+
     let ret = parse(&allocator, source_text, options);
+
     let module_lexer = oxc_module_lexer::ModuleLexer::new().build(&ret.program);
+
     let imports = module_lexer.imports.into_iter().map(ModuleLexerImportSpecifier::from).collect();
+
     let exports = module_lexer.exports.into_iter().map(ModuleLexerExportSpecifier::from).collect();
+
     ModuleLexer {
         imports,
         exports,
@@ -133,6 +138,7 @@ fn module_lexer(source_text: &str, options: &ParserOptions) -> ModuleLexer {
 #[allow(clippy::needless_pass_by_value)]
 pub fn module_lexer_sync(source_text: String, options: Option<ParserOptions>) -> ModuleLexer {
     let options = options.unwrap_or_default();
+
     module_lexer(&source_text, &options)
 }
 
@@ -144,6 +150,7 @@ pub struct ResolveTask {
 #[napi]
 impl Task for ResolveTask {
     type JsValue = ModuleLexer;
+
     type Output = ModuleLexer;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
@@ -165,5 +172,6 @@ pub fn module_lexer_async(
     options: Option<ParserOptions>,
 ) -> AsyncTask<ResolveTask> {
     let options = options.unwrap_or_default();
+
     AsyncTask::new(ResolveTask { source_text, options })
 }

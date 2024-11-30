@@ -64,6 +64,7 @@ impl Rule for NoDynamicRequire {
                     ctx.diagnostic(no_dnyamic_require_diagnostic(import.source.span()));
                 }
             }
+
             AstKind::CallExpression(call) => {
                 if call.arguments.is_empty() {
                     return;
@@ -81,6 +82,7 @@ impl Rule for NoDynamicRequire {
                     ctx.diagnostic(no_dnyamic_require_diagnostic(call.callee.span()));
                 }
             }
+
             _ => {}
         };
     }

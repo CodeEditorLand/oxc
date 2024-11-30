@@ -33,6 +33,7 @@ impl<'a> RefreshIdentifierResolver<'a> {
         }
 
         let mut parts = input.split('.');
+
         let first_part = parts.next().unwrap();
 
         if first_part == "import" {
@@ -42,6 +43,7 @@ impl<'a> RefreshIdentifierResolver<'a> {
                 ast.identifier_name(SPAN, "import"),
                 ast.identifier_name(SPAN, parts.next().unwrap()),
             );
+
             if let Some(property) = parts.next() {
                 expr = Expression::from(ast.member_expression_static(
                     SPAN,
@@ -50,12 +52,15 @@ impl<'a> RefreshIdentifierResolver<'a> {
                     false,
                 ));
             }
+
             return Self::Expression(expr);
         }
 
         // Handle `window.$RefreshReg$` member expression
         let object = ast.identifier_reference(SPAN, first_part);
+
         let property = ast.identifier_name(SPAN, parts.next().unwrap());
+
         Self::Member((object, property))
     }
 
@@ -65,21 +70,25 @@ impl<'a> RefreshIdentifierResolver<'a> {
             Self::Identifier(ident) => {
                 let reference_id =
                     ctx.create_unbound_reference(ident.name.to_compact_str(), ReferenceFlags::Read);
+
                 Expression::Identifier(ctx.ast.alloc_identifier_reference_with_reference_id(
                     ident.span,
                     ident.name.clone(),
                     reference_id,
                 ))
             }
+
             Self::Member((ident, property)) => {
                 let reference_id =
                     ctx.create_unbound_reference(ident.name.to_compact_str(), ReferenceFlags::Read);
+
                 let ident =
                     Expression::Identifier(ctx.ast.alloc_identifier_reference_with_reference_id(
                         ident.span,
                         ident.name.clone(),
                         reference_id,
                     ));
+
                 Expression::from(ctx.ast.member_expression_static(
                     SPAN,
                     ident,
@@ -87,6 +96,7 @@ impl<'a> RefreshIdentifierResolver<'a> {
                     false,
                 ))
             }
+
             Self::Expression(expr) => expr.clone_in(ctx.ast.allocator),
         }
     }
@@ -137,13 +147,17 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
 impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
     fn enter_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         let mut new_statements = ctx.ast.vec_with_capacity(program.body.len());
+
         for mut statement in program.body.drain(..) {
             let next_statement = self.process_statement(&mut statement, ctx);
+
             new_statements.push(statement);
+
             if let Some(assignment_expression) = next_statement {
                 new_statements.push(assignment_expression);
             }
         }
+
         program.body = new_statements;
     }
 
@@ -153,7 +167,9 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
         }
 
         let mut variable_declarator_items = ctx.ast.vec_with_capacity(self.registrations.len());
+
         let mut new_statements = ctx.ast.vec_with_capacity(self.registrations.len() + 1);
+
         for (binding, persistent_id) in self.registrations.drain(..) {
             variable_declarator_items.push(ctx.ast.variable_declarator(
                 SPAN,
@@ -164,6 +180,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
             ));
 
             let callee = self.refresh_reg.to_expression(ctx);
+
             let arguments = ctx.ast.vec_from_array([
                 Argument::from(binding.create_read_expression(ctx)),
                 Argument::from(ctx.ast.expression_string_literal(
@@ -172,17 +189,20 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
                     None,
                 )),
             ]);
+
             new_statements.push(ctx.ast.statement_expression(
                 SPAN,
                 ctx.ast.expression_call(SPAN, callee, NONE, arguments, false),
             ));
         }
+
         program.body.push(Statement::from(ctx.ast.declaration_variable(
             SPAN,
             VariableDeclarationKind::Var,
             variable_declarator_items,
             false,
         )));
+
         program.body.extend(new_statements);
     }
 
@@ -201,6 +221,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
                 if call_fn.is_some() {
                     Self::transform_arrow_function_to_block(arrow, ctx);
                 }
+
                 call_fn
             }
             // hoc(_c = function() { })
@@ -213,6 +234,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
         let Some((binding_identifier, mut arguments)) = signature else {
             return;
         };
+
         let binding = BoundIdentifier::from_binding_ident(&binding_identifier);
 
         if !matches!(expr, Expression::CallExpression(_)) {
@@ -220,25 +242,30 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
             if let Ancestor::VariableDeclaratorInit(declarator) = ctx.parent() {
                 if let Some(ident) = declarator.id().get_binding_identifier() {
                     let id_binding = BoundIdentifier::from_binding_ident(ident);
+
                     self.handle_function_in_variable_declarator(
                         &id_binding,
                         &binding,
                         arguments,
                         ctx,
                     );
+
                     return;
                 }
             }
         }
 
         let mut found_call_expression = false;
+
         for ancestor in ctx.ancestors() {
             if ancestor.is_assignment_expression() {
                 continue;
             }
+
             if ancestor.is_call_expression() {
                 found_call_expression = true;
             }
+
             break;
         }
 
@@ -273,13 +300,17 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
         let Some(id) = func.id.as_ref() else {
             return;
         };
+
         let id_binding = BoundIdentifier::from_binding_ident(id);
 
         arguments.insert(0, Argument::from(id_binding.create_read_expression(ctx)));
 
         let binding = BoundIdentifier::from_binding_ident(&binding_identifier);
+
         let callee = binding.create_read_expression(ctx);
+
         let expr = ctx.ast.expression_call(SPAN, callee, NONE, arguments, false);
+
         let statement = ctx.ast.statement_expression(SPAN, expr);
 
         // Get the address of the statement containing this `FunctionDeclaration`
@@ -295,6 +326,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
             // `Function` is always stored in a `Box`, so has a stable memory address.
             _ => Address::from_ptr(func),
         };
+
         self.ctx.statement_injector.insert_after(&address, statement);
     }
 
@@ -304,6 +336,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) {
         let current_scope_id = ctx.current_scope_id();
+
         if !ctx.scopes().get_flags(current_scope_id).is_function() {
             return;
         }
@@ -329,6 +362,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
                         (None, false)
                     }
                 }
+
                 _ => unreachable!(),
             };
 
@@ -356,6 +390,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
                                     false,
                                 ));
                             }
+
                             expr
                         }),
                 );
@@ -370,6 +405,7 @@ impl<'a, 'ctx> Traverse<'a> for ReactRefresh<'a, 'ctx> {
         };
 
         let args = &call_expr.arguments;
+
         let args_key = if hook_name == "useState" && args.len() > 0 {
             args[0].span().source_text(self.ctx.source_text)
         } else if hook_name == "useReducer" && args.len() > 1 {
@@ -397,8 +433,11 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> AssignmentTarget<'a> {
         let binding = ctx.generate_uid_in_root_scope("c", SymbolFlags::FunctionScopedVariable);
+
         let target = binding.create_target(ReferenceFlags::Write, ctx);
+
         self.registrations.push((binding, persistent_id));
+
         target
     }
 
@@ -418,7 +457,9 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
                 // Instead we assume it's registered at definition.
                 return is_componentish_name(&ident.name);
             }
+
             Expression::FunctionExpression(_) => {}
+
             Expression::ArrowFunctionExpression(arrow) => {
                 // Don't transform `() => () => {}`
                 if arrow
@@ -428,6 +469,7 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
                     return false;
                 }
             }
+
             Expression::CallExpression(ref mut call_expr) => {
                 let allowed_callee = matches!(
                     call_expr.callee,
@@ -470,6 +512,7 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
                     return false;
                 }
             }
+
             _ => {
                 return false;
             }
@@ -488,19 +531,23 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
     }
 
     /// _c = id.name;
+
     fn create_assignment_expression(
         &mut self,
         id: &BindingIdentifier<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) -> Statement<'a> {
         let left = self.create_registration(id.name.clone(), ctx);
+
         let right = ctx.create_bound_ident_expr(
             SPAN,
             id.name.clone(),
             id.symbol_id(),
             ReferenceFlags::Read,
         );
+
         let expr = ctx.ast.expression_assignment(SPAN, AssignmentOperator::Assign, left, right);
+
         ctx.ast.statement_expression(SPAN, expr)
     }
 
@@ -525,12 +572,16 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
             // We also need it for www that has transforms like cx()
             // that don't understand if something is part of a string.
             let mut hasher = Sha1::new();
+
             hasher.update(key);
+
             key = BASE64_STANDARD.encode(hasher.finalize());
         }
 
         let callee_list = self.non_builtin_hooks_callee.remove(&scope_id).unwrap_or_default();
+
         let callee_len = callee_list.len();
+
         let custom_hooks_in_scope = ctx.ast.vec_from_iter(
             callee_list.into_iter().filter_map(|e| e.map(ArrayExpressionElement::from)),
         );
@@ -538,6 +589,7 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
         let force_reset = custom_hooks_in_scope.len() != callee_len;
 
         let mut arguments = ctx.ast.vec();
+
         arguments.push(Argument::from(ctx.ast.expression_string_literal(
             SPAN,
             ctx.ast.atom(&key),
@@ -550,12 +602,14 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
 
         if !custom_hooks_in_scope.is_empty() {
             // function () { return custom_hooks_in_scope }
+
             let formal_parameters = ctx.ast.formal_parameters(
                 SPAN,
                 FormalParameterKind::FormalParameter,
                 ctx.ast.vec(),
                 NONE,
             );
+
             let function_body = ctx.ast.function_body(
                 SPAN,
                 ctx.ast.vec(),
@@ -564,7 +618,9 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
                     Some(ctx.ast.expression_array(SPAN, custom_hooks_in_scope, None)),
                 )),
             );
+
             let scope_id = ctx.create_child_scope_of_current(ScopeFlags::Function);
+
             let function = Argument::FunctionExpression(ctx.ast.alloc_function_with_scope_id(
                 FunctionType::FunctionExpression,
                 SPAN,
@@ -579,12 +635,14 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
                 Some(function_body),
                 scope_id,
             ));
+
             arguments.push(function);
         }
 
         let binding = ctx.generate_uid_in_current_hoist_scope("s");
 
         // _s();
+
         let call_expression = ctx.ast.statement_expression(
             SPAN,
             ctx.ast.expression_call(
@@ -599,6 +657,7 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
         body.statements.insert(0, call_expression);
 
         // _s = refresh_sig();
+
         self.ctx.var_declarations.insert_var(
             &binding,
             Some(ctx.ast.expression_call(
@@ -615,6 +674,7 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
         // _s(App, signature_key, false, function() { return [] });
         //                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ custom hooks only
         let binding_identifier = binding.create_binding_identifier(ctx);
+
         Some((binding_identifier, arguments))
     }
 
@@ -627,6 +687,7 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
             Statement::VariableDeclaration(variable) => {
                 self.handle_variable_declaration(variable, ctx)
             }
+
             Statement::FunctionDeclaration(func) => self.handle_function_declaration(func, ctx),
             Statement::ExportNamedDeclaration(export_decl) => {
                 if let Some(declaration) = &mut export_decl.declaration {
@@ -634,19 +695,23 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
                         Declaration::FunctionDeclaration(func) => {
                             self.handle_function_declaration(func, ctx)
                         }
+
                         Declaration::VariableDeclaration(variable) => {
                             self.handle_variable_declaration(variable, ctx)
                         }
+
                         _ => None,
                     }
                 } else {
                     None
                 }
             }
+
             Statement::ExportDefaultDeclaration(ref mut stmt_decl) => {
                 match &mut stmt_decl.declaration {
                     declaration @ match_expression!(ExportDefaultDeclarationKind) => {
                         let expression = declaration.to_expression_mut();
+
                         if !matches!(expression, Expression::CallExpression(_)) {
                             // For now, we only support possible HOC calls here.
                             // Named function declarations are handled in FunctionDeclaration.
@@ -670,6 +735,7 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
 
                         None
                     }
+
                     ExportDefaultDeclarationKind::FunctionDeclaration(func) => {
                         if let Some(id) = &func.id {
                             if func.is_typescript_syntax() || !is_componentish_name(&id.name) {
@@ -678,11 +744,14 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
 
                             return Some(self.create_assignment_expression(id, ctx));
                         }
+
                         None
                     }
+
                     _ => None,
                 }
             }
+
             _ => None,
         }
     }
@@ -713,8 +782,11 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
         }
 
         let declarator = decl.declarations.first_mut().unwrap_or_else(|| unreachable!());
+
         let init = declarator.init.as_mut()?;
+
         let id = declarator.id.get_binding_identifier()?;
+
         let symbol_id = id.symbol_id();
 
         if !is_componentish_name(&id.name) {
@@ -725,10 +797,12 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
             // Likely component definitions.
             Expression::ArrowFunctionExpression(arrow) => {
                 // () => () => {}
+
                 if arrow.get_expression().is_some_and(|expr| matches!(expr, Expression::ArrowFunctionExpression(_))) {
                     return None;
                 }
             }
+
             Expression::FunctionExpression(_)
             // Maybe something like styled.div`...`
             | Expression::TaggedTemplateExpression(_) => {
@@ -741,11 +815,13 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
                 // (eg: with @babel/plugin-transform-react-display-name or
                 // babel-plugin-styled-components)
             }
+
             Expression::CallExpression(call_expr) => {
                 let is_import_expression = match call_expr.callee.get_inner_expression() {
                     Expression::ImportExpression(_) => {
                         true
                     }
+
                     Expression::Identifier(ident) => {
                         ident.name.starts_with("require")
                     },
@@ -756,6 +832,7 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
                     return None;
                 }
             }
+
             _ => {
                 return None;
             }
@@ -793,7 +870,9 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
         // we don't mess up the inferred 'Foo' function name.
 
         // Result: let Foo = () => {}; __signature(Foo, ...);
+
         arguments.insert(0, Argument::from(id_binding.create_read_expression(ctx)));
+
         let statement = ctx.ast.statement_expression(
             SPAN,
             ctx.ast.expression_call(
@@ -814,9 +893,12 @@ impl<'a, 'ctx> ReactRefresh<'a, 'ctx> {
             } else {
                 // Otherwise just a `const Foo = () => {}` which is a `Statement::VariableDeclaration`
                 let var_decl = ctx.ancestor(1);
+
                 debug_assert!(matches!(var_decl, Ancestor::VariableDeclarationDeclarations(_)));
+
                 var_decl.address()
             };
+
         self.ctx.statement_injector.insert_after(&address, statement);
     }
 

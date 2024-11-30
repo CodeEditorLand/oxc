@@ -71,6 +71,7 @@ impl Comment {
     #[inline]
     pub fn new(start: u32, end: u32, kind: CommentKind) -> Self {
         let span = Span::new(start, end);
+
         Self {
             span,
             attached_to: 0,
@@ -118,7 +119,9 @@ impl Comment {
         if !self.is_leading() {
             return false;
         }
+
         let source_text = self.content_span().source_text(source_text);
+
         source_text.starts_with('!')
             || source_text.contains("@license")
             || source_text.contains("@preserve")

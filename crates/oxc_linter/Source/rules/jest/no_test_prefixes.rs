@@ -69,13 +69,17 @@ impl Rule for NoTestPrefixes {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
     let node = possible_jest_node.node;
+
     let AstKind::CallExpression(call_expr) = node.kind() else {
         return;
     };
+
     let Some(jest_fn_call) = parse_general_jest_fn_call(call_expr, possible_jest_node, ctx) else {
         return;
     };
+
     let ParsedGeneralJestFnCall { kind, name, .. } = &jest_fn_call;
+
     let Some(kind) = kind.to_general() else {
         return;
     };
@@ -92,6 +96,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
         Expression::TaggedTemplateExpression(tagged_template_expr) => {
             tagged_template_expr.tag.span()
         }
+
         Expression::CallExpression(child_call_expr) => child_call_expr.callee.span(),
         _ => call_expr.callee.span(),
     };
@@ -107,11 +112,13 @@ fn get_preferred_node_names(jest_fn_call: &ParsedGeneralJestFnCall) -> String {
     let ParsedGeneralJestFnCall { members, name, .. } = jest_fn_call;
 
     let preferred_modifier = if name.starts_with('f') { "only" } else { "skip" };
+
     let member_names = members
         .iter()
         .filter_map(KnownMemberExpressionProperty::name)
         .collect::<Vec<_>>()
         .join(".");
+
     let name_slice = &name[1..];
 
     if member_names.is_empty() {
@@ -159,6 +166,7 @@ fn test() {
         (
             "
                 import { xit } from '@jest/globals';
+
                 xit('foo', function () {})
             ",
             None,
@@ -166,6 +174,7 @@ fn test() {
         (
             "
                 import { xit as skipThis } from '@jest/globals';
+
                 skipThis('foo', function () {})
             ",
             None,
@@ -173,6 +182,7 @@ fn test() {
         (
             "
                 import { fit as onlyThis } from '@jest/globals';
+
                 onlyThis('foo', function () {})
             ",
             None,
@@ -204,6 +214,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest);
+
     fail.extend(fail_vitest);
 
     let fix = vec![

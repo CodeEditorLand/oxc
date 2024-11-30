@@ -42,8 +42,10 @@ impl Rule for DefaultParamLast {
                 if !function.is_declaration() && !function.is_expression() {
                     return;
                 }
+
                 check_params(&function.params.items, ctx);
             }
+
             AstKind::ArrowFunctionExpression(function) => check_params(&function.params.items, ctx),
             _ => {}
         }
@@ -52,11 +54,14 @@ impl Rule for DefaultParamLast {
 
 fn check_params<'a>(items: &'a [FormalParameter<'a>], ctx: &LintContext<'a>) {
     let mut has_seen_plain_param = false;
+
     for param in items.iter().rev() {
         if !param.pattern.kind.is_assignment_pattern() {
             has_seen_plain_param = true;
+
             continue;
         }
+
         if has_seen_plain_param && param.pattern.kind.is_assignment_pattern() {
             ctx.diagnostic(default_param_last_diagnostic(param.span));
         }

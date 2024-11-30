@@ -5,6 +5,7 @@
 macro_rules! text {
     ($s:expr) => {{
         let s: &'static str = $s;
+
         Doc::Str(s)
     }};
 }
@@ -50,6 +51,7 @@ macro_rules! indent_if_break {
 macro_rules! line {
     () => {{
         use $crate::ir::Line;
+
         Doc::Line(Line::default())
     }};
 }
@@ -58,6 +60,7 @@ macro_rules! line {
 macro_rules! softline {
     () => {{
         use $crate::ir::Line;
+
         Doc::Line(Line::softline())
     }};
 }
@@ -85,6 +88,7 @@ macro_rules! array {
 macro_rules! group {
     ($p:ident, $( $x:expr ),* $(,)?) => {{
         use $crate::ir::Group;
+
         let mut temp_vec = $p.vec();
         $(
             temp_vec.push($x);
@@ -97,11 +101,13 @@ macro_rules! group {
 macro_rules! conditional_group {
     ($p:ident, $c: expr, $( $x:expr ),* $(,)?) => {{
         use $crate::ir::Group;
+
         let mut temp_vec = $p.vec();
         $(
             temp_vec.push($x);
         )*
         let contents = $p.vec_single($c);
+
         Doc::Group(Group::new_conditional_group(contents, temp_vec))
     }};
 }
@@ -110,6 +116,7 @@ macro_rules! conditional_group {
 macro_rules! group_break {
     ($p:ident, $( $x:expr ),* $(,)?) => {{
         use $crate::ir::Group;
+
         let mut temp_vec = $p.vec();
         $(
             temp_vec.push($x);
@@ -122,6 +129,7 @@ macro_rules! group_break {
 macro_rules! if_break {
     ($p:ident, $s:expr, $flat:expr, $group_id:expr) => {{
         use $crate::ir::IfBreak;
+
         Doc::IfBreak(IfBreak {
             break_contents: $p.boxed(Doc::Str($s)),
             flat_content: $p.boxed(Doc::Str($flat)),
@@ -158,6 +166,7 @@ macro_rules! wrap {
         let leading = $p.print_leading_comments(kind.span());
 
         let doc = $block;
+
         let doc = if $p.need_parens(kind) { array![$p, text!("("), doc, text!(")")] } else { doc };
 
         // TODO: dangling comments?
@@ -166,6 +175,7 @@ macro_rules! wrap {
         let doc = $p.print_comments(leading, doc, trailing);
 
         $p.leave_node();
+
         doc
     }};
 }

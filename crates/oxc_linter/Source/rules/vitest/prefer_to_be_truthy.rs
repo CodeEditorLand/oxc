@@ -19,20 +19,25 @@ pub fn prefer_to_be_simply_bool<'a>(
     value: bool,
 ) {
     let node = possible_vitest_node.node;
+
     let AstKind::CallExpression(call_expr) = node.kind() else {
         return;
     };
+
     let Some(vitest_expect_fn_call) =
         parse_expect_and_typeof_vitest_fn_call(call_expr, possible_vitest_node, ctx)
     else {
         return;
     };
+
     let Some(matcher) = vitest_expect_fn_call.matcher() else {
         return;
     };
+
     if !is_equality_matcher(matcher) || vitest_expect_fn_call.args.len() == 0 {
         return;
     }
+
     let Some(arg_expr) = vitest_expect_fn_call.args.first().and_then(Argument::as_expression)
     else {
         return;
@@ -60,6 +65,7 @@ pub fn prefer_to_be_simply_bool<'a>(
                     } else {
                         format!("{call_name}()")
                     };
+
                     fixer.replace(span, new_matcher)
                 },
             );
@@ -167,6 +173,7 @@ fn test() {
             None,
         ),
     ];
+
     Tester::new(PreferToBeTruthy::NAME, pass, fail)
         .expect_fix(fix)
         .with_vitest_plugin(true)

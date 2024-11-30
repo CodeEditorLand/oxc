@@ -120,6 +120,7 @@ mod test {
 			// ParserOptions::default()),
 		] {
 			let res = PatternParser::new(&allocator, source_text, *options).parse();
+
 			if let Err(err) = res {
 				panic!("Failed to parse {source_text} with {options:?}\n💥 {err}");
 			}
@@ -285,6 +286,7 @@ mod test {
 	#[test]
 	fn should_handle_empty() {
 		let allocator = Allocator::default();
+
 		let pattern = PatternParser::new(&allocator, "", ParserOptions::default()).parse().unwrap();
 
 		assert_eq!(pattern.body.body[0].body.len(), 1);
@@ -293,6 +295,7 @@ mod test {
 	#[test]
 	fn should_handle_unicode() {
 		let allocator = Allocator::default();
+
 		let source_text = "このEmoji🥹の数が変わる";
 
 		for (options, expected) in &[
@@ -301,6 +304,7 @@ mod test {
 			(ParserOptions::default().with_unicode_sets_mode(), 14),
 		] {
 			let pattern = PatternParser::new(&allocator, source_text, *options).parse().unwrap();
+
 			assert_eq!(pattern.body.body[0].body.len(), *expected);
 		}
 	}

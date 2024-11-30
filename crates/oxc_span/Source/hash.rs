@@ -26,6 +26,7 @@ impl<T> ContentHash for Discriminant<T> {
 impl<T: ContentHash> ContentHash for Option<T> {
     fn content_hash<H: Hasher>(&self, state: &mut H) {
         ContentHash::content_hash(&discriminant(self), state);
+
         if let Some(it) = self {
             ContentHash::content_hash(it, state);
         }

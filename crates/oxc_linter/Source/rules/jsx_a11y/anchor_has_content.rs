@@ -67,6 +67,7 @@ impl Rule for AnchorHasContent {
             let Some(name) = &get_element_type(ctx, &jsx_el.opening_element) else {
                 return;
             };
+
             if name == "a" {
                 if is_hidden_from_screen_reader(ctx, &jsx_el.opening_element) {
                     return;
@@ -83,12 +84,15 @@ impl Rule for AnchorHasContent {
                 }
 
                 let diagnostic = missing_content(jsx_el.span);
+
                 if jsx_el.children.len() == 1 {
                     let child = &jsx_el.children[0];
+
                     if let JSXChild::Element(child) = child {
                         ctx.diagnostic_with_suggestion(diagnostic, |_fixer| {
                             remove_hidden_attributes(child)
                         });
+
                         return;
                     }
                 }

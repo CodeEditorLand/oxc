@@ -50,6 +50,7 @@ impl<'s, 'a> Symbol<'s, 'a> {
                             .first()
                             .is_some_and(|s| matches!(s, Statement::ReturnStatement(_)));
                     }
+
                     _ => return false,
                 },
                 _ => return false,
@@ -61,7 +62,9 @@ impl<'s, 'a> Symbol<'s, 'a> {
 
     pub fn is_in_declared_module(&self) -> bool {
         let scopes = self.scopes();
+
         let nodes = self.nodes();
+
         scopes.ancestors(self.scope_id())
             .map(|scope_id| scopes.get_node_id(scope_id))
             .map(|node_id| nodes.get_node(node_id))
@@ -84,6 +87,7 @@ impl NoUnusedVars {
         if is_ambient_namespace(namespace) {
             return true;
         }
+
         symbol.is_in_declared_module()
     }
 
@@ -132,9 +136,11 @@ impl NoUnusedVars {
         // is safer.
         let Some((params, params_id)) = symbol.iter_parents().find_map(|p| {
             let params = p.kind().as_formal_parameters()?;
+
             Some((params, p.id()))
         }) else {
             debug_assert!(false, "FormalParameter should always have a parent FormalParameters");
+
             return false;
         };
 
@@ -165,10 +171,12 @@ impl NoUnusedVars {
         // check all parameters after this one for usages.
         let position =
             params.items.iter().enumerate().find(|(_, p)| p.span == param.span).map(|(i, _)| i);
+
         debug_assert!(
             position.is_some(),
             "could not find FormalParameter in a FormalParameters node that is its parent."
         );
+
         let Some(position) = position else {
             return false;
         };
@@ -179,6 +187,7 @@ impl NoUnusedVars {
         }
 
         let ctx = BindingContext { options: self, semantic };
+
         params
             .items
             .iter()
@@ -207,6 +216,7 @@ impl NoUnusedVars {
         let Some(parent) = parents_iter.next() else {
             return false;
         };
+
         if matches!(parent, AstKind::Function(f) if f.r#type == FunctionType::TSDeclareFunction) {
             return true;
         }

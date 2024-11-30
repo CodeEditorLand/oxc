@@ -57,11 +57,13 @@ impl<'a> ModuleImports<'a> {
 	/// Add `var named_import from 'source'`
 	pub fn add_require(&self, source:Atom<'a>, import:NamedImport<'a>, front:bool) {
 		let len = self.imports.borrow().len();
+
 		self.imports
 			.borrow_mut()
 			.entry(ImportType::new(ImportKind::Require, source))
 			.or_default()
 			.push(import);
+
 		if front {
 			self.imports.borrow_mut().move_index(len, 0);
 		}
@@ -84,6 +86,7 @@ impl<'a> ModuleImports<'a> {
 	) -> Statement<'a> {
 		let specifiers = ctx.ast.vec_from_iter(names.into_iter().map(|name| {
 			let local = name.local.unwrap_or_else(|| name.imported.clone());
+
 			ImportDeclarationSpecifier::ImportSpecifier(ctx.ast.alloc_import_specifier(
 				SPAN,
 				ModuleExportName::IdentifierName(IdentifierName::new(SPAN, name.imported)),
@@ -91,6 +94,7 @@ impl<'a> ModuleImports<'a> {
 				ImportOrExportKind::Value,
 			))
 		}));
+
 		let import_stmt = ctx.ast.module_declaration_import_declaration(
 			SPAN,
 			Some(specifiers),
@@ -98,6 +102,7 @@ impl<'a> ModuleImports<'a> {
 			NONE,
 			ImportOrExportKind::Value,
 		);
+
 		ctx.ast.statement_module_declaration(import_stmt)
 	}
 
@@ -107,30 +112,42 @@ impl<'a> ModuleImports<'a> {
 		ctx:&mut TraverseCtx<'a>,
 	) -> Statement<'a> {
 		let var_kind = VariableDeclarationKind::Var;
+
 		let symbol_id = ctx.scopes().get_root_binding("require");
+
 		let ident =
 			ctx.create_reference_id(SPAN, Atom::from("require"), symbol_id, ReferenceFlags::read());
+
 		let callee = ctx.ast.expression_from_identifier_reference(ident);
 
 		let args = {
 			let arg = Argument::from(ctx.ast.expression_string_literal(SPAN, source));
+
 			ctx.ast.vec1(arg)
 		};
+
 		let name = names.into_iter().next().unwrap();
+
 		let id = {
 			let ident = BindingIdentifier::new_with_symbol_id(SPAN, name.imported, name.symbol_id);
+
 			ctx.ast.binding_pattern(
 				ctx.ast.binding_pattern_kind_from_binding_identifier(ident),
 				NONE,
 				false,
 			)
 		};
+
 		let decl = {
 			let init = ctx.ast.expression_call(SPAN, callee, NONE, args, false);
+
 			let decl = ctx.ast.variable_declarator(SPAN, var_kind, id, Some(init), false);
+
 			ctx.ast.vec1(decl)
 		};
+
 		let var_decl = ctx.ast.declaration_variable(SPAN, var_kind, decl, false);
+
 		ctx.ast.statement_declaration(var_decl)
 	}
 }

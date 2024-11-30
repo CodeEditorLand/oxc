@@ -446,6 +446,7 @@ fn is_valid_data_attr(name: &str) -> bool {
     }
 
     let data_name = &name["data-".len()..];
+
     if data_name.is_empty() {
         return false;
     }
@@ -481,9 +482,11 @@ impl Rule for NoUnknownProperty {
         let AstKind::JSXOpeningElement(el) = &node.kind() else {
             return;
         };
+
         let JSXElementName::Identifier(ident) = &el.name else {
             return;
         };
+
         let el_type = ident.name.as_str();
 
         // fbt/fbs nodes are bonkers, let's not go there
@@ -496,9 +499,11 @@ impl Rule for NoUnknownProperty {
                 let JSXAttributeItem::Attribute(jsx_attr) = attr else {
                     return true;
                 };
+
                 let JSXAttributeName::Identifier(ident) = &jsx_attr.name else {
                     return true;
                 };
+
                 ident.name.as_str() != "is"
             });
 
@@ -510,10 +515,13 @@ impl Rule for NoUnknownProperty {
             })
             .for_each(|attr| {
                 let span = attr.name.span();
+
                 let actual_name = get_jsx_attribute_name(&attr.name);
+
                 if self.0.ignore.contains(&(actual_name)) {
                     return;
                 };
+
                 if is_valid_data_attr(&actual_name) {
                     if self.0.require_data_lowercase && has_uppercase(&actual_name) {
                         ctx.diagnostic(data_lowercase_required(
@@ -521,12 +529,16 @@ impl Rule for NoUnknownProperty {
                             &actual_name.cow_to_lowercase(),
                         ));
                     }
+
                     return;
                 };
+
                 if ARIA_PROPERTIES.contains(&actual_name) || !is_valid_html_tag {
                     return;
                 };
+
                 let name = normalize_attribute_case(&actual_name);
+
                 if let Some(tags) = ATTRIBUTE_TAGS_MAP.get(name) {
                     if !tags.contains(el_type) {
                         ctx.diagnostic(invalid_prop_on_tag(
@@ -535,6 +547,7 @@ impl Rule for NoUnknownProperty {
                             &tags.iter().join(", "),
                         ));
                     }
+
                     return;
                 }
 

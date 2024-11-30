@@ -57,14 +57,18 @@ impl Rule for ErasingOp {
         match binary_expression.operator {
             BinaryOperator::Multiplication | BinaryOperator::BitwiseAnd => {
                 check_op(binary_expression, &binary_expression.left, ctx);
+
                 check_op(binary_expression, &binary_expression.right, ctx);
             }
+
             BinaryOperator::Division => {
                 if is_number_value(&binary_expression.right, 0.0) {
                     return;
                 }
+
                 check_op(binary_expression, &binary_expression.left, ctx);
             }
+
             _ => (),
         }
     }

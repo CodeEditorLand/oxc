@@ -73,11 +73,14 @@ impl Rule for JsxNoUselessFragment {
                 if !is_jsx_fragment(&jsx_elem.opening_element) {
                     return;
                 }
+
                 self.check_element(node, jsx_elem, ctx);
             }
+
             AstKind::JSXFragment(jsx_elem) => {
                 self.check_fragment(node, jsx_elem, ctx);
             }
+
             _ => {}
         }
     }
@@ -98,11 +101,13 @@ impl JsxNoUselessFragment {
             && !(self.allow_expressions && is_fragment_with_single_expression(&elem.children))
         {
             let span = elem.opening_element.span;
+
             ctx.diagnostic(needs_more_children(span));
         }
 
         if is_child_of_html_element(node, ctx) {
             let span = elem.opening_element.span;
+
             ctx.diagnostic(child_of_html_element(span));
         }
     }
@@ -113,11 +118,13 @@ impl JsxNoUselessFragment {
             && !(self.allow_expressions && is_fragment_with_single_expression(&elem.children))
         {
             let span = elem.opening_fragment.span;
+
             ctx.diagnostic(needs_more_children(span));
         }
 
         if is_child_of_html_element(node, ctx) {
             let span = elem.opening_fragment.span;
+
             ctx.diagnostic(child_of_html_element(span));
         }
     }
@@ -179,6 +186,7 @@ fn is_jsx_fragment(elem: &JSXOpeningElement) -> bool {
                 false
             }
         }
+
         JSXElementName::NamespacedName(_)
         | JSXElementName::Identifier(_)
         | JSXElementName::ThisExpression(_) => false,
@@ -194,12 +202,14 @@ fn has_less_than_two_children(children: &oxc_allocator::Vec<'_, JSXChild<'_>>) -
                 if let JSXExpression::CallExpression(_) = v.expression {
                     return true;
                 }
+
                 return false;
             }
 
             false
         });
     }
+
     false
 }
 
@@ -216,6 +226,7 @@ fn is_fragment_with_only_text_and_is_not_child<'a>(
         let Some(parent) = ctx.nodes().parent_kind(id) else {
             return false;
         };
+
         return !matches!(parent, AstKind::JSXElement(_) | AstKind::JSXFragment(_));
     }
 

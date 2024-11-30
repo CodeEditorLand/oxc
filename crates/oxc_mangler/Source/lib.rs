@@ -68,6 +68,7 @@ impl Mangler {
     #[must_use]
     pub fn with_options(mut self, options: MangleOptions) -> Self {
         self.options = options;
+
         self
     }
 
@@ -77,6 +78,7 @@ impl Mangler {
 
     pub fn get_reference_name(&self, reference_id: ReferenceId) -> Option<&str> {
         let symbol_id = self.symbol_table.get_reference(reference_id).symbol_id()?;
+
         Some(self.symbol_table.get_name(symbol_id))
     }
 
@@ -112,6 +114,7 @@ impl Mangler {
                 // `bindings` are stored in order, traverse and increment slot
                 for symbol_id in bindings.values().copied() {
                     slots[symbol_id] = slot;
+
                     slot += 1;
                 }
             }
@@ -127,18 +130,23 @@ impl Mangler {
             Self::tally_slot_frequencies(&symbol_table, &scope_tree, total_number_of_slots, &slots);
 
         let root_unresolved_references = scope_tree.root_unresolved_references();
+
         let root_bindings = scope_tree.get_bindings(scope_tree.root_scope_id());
 
         let mut reserved_names = Vec::with_capacity(total_number_of_slots);
 
         let generate_name = if self.options.debug { debug_name } else { base54 };
+
         let mut count = 0;
+
         for _ in 0..total_number_of_slots {
             let name = loop {
                 let name = generate_name(count);
+
                 count += 1;
                 // Do not mangle keywords and unresolved references
                 let n = name.as_str();
+
                 if !is_keyword(n)
                     && !is_special_name(n)
                     && !root_unresolved_references.contains_key(n)
@@ -147,6 +155,7 @@ impl Mangler {
                     break name;
                 }
             };
+
             reserved_names.push(name);
         }
 
@@ -173,6 +182,7 @@ impl Mangler {
             // (freq_iter is sorted by frequency from highest to lowest,
             //  so taking means take the N most frequent symbols remaining)
             let slice_of_same_len_strings = slice_of_same_len_strings_group.collect_vec();
+
             let mut symbols_renamed_in_this_batch =
                 freq_iter.by_ref().take(slice_of_same_len_strings.len()).collect::<Vec<_>>();
 
@@ -197,6 +207,7 @@ impl Mangler {
         }
 
         self.symbol_table = symbol_table;
+
         self
     }
 
@@ -207,21 +218,30 @@ impl Mangler {
         slots: &IndexVec<SymbolId, Slot>,
     ) -> Vec<SlotFrequency> {
         let root_scope_id = scope_tree.root_scope_id();
+
         let mut frequencies = vec![SlotFrequency::default(); total_number_of_slots];
+
         for (symbol_id, slot) in slots.iter_enumerated() {
             if symbol_table.get_scope_id(symbol_id) == root_scope_id {
                 continue;
             }
+
             if is_special_name(symbol_table.get_name(symbol_id)) {
                 continue;
             }
+
             let index = *slot;
+
             frequencies[index].slot = *slot;
+
             frequencies[index].frequency +=
                 symbol_table.get_resolved_reference_ids(symbol_id).len();
+
             frequencies[index].symbol_ids.push(symbol_id);
         }
+
         frequencies.sort_unstable_by_key(|x| std::cmp::Reverse(x.frequency));
+
         frequencies
     }
 }
@@ -254,17 +274,24 @@ fn base54(n: usize) -> CompactStr {
     // Base 54 at first because these are the usable first characters in JavaScript identifiers
     // <https://tc39.es/ecma262/#prod-IdentifierStart>
     let base = 54usize;
+
     let mut ret = String::new();
+
     ret.push(BASE54_CHARS[num % base] as char);
+
     num /= base;
     // Base 64 for the rest because after the first character we can also use 0-9 too
     // <https://tc39.es/ecma262/#prod-IdentifierPart>
     let base = 64usize;
+
     while num > 0 {
         num -= 1;
+
         ret.push(BASE54_CHARS[num % base] as char);
+
         num /= base;
     }
+
     CompactStr::new(&ret)
 }
 

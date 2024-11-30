@@ -47,6 +47,7 @@ impl<'a> Lexer<'a> {
                         // SAFETY: Next byte is `0xE2` which is always 1st byte of a 3-byte UTF-8 char.
                         // So safe to advance `pos` by 1 and read 2 bytes.
                         let next2 = unsafe { pos.add(1).read2() };
+
                         if matches!(next2, LS_BYTES_2_AND_3 | PS_BYTES_2_AND_3) {
                             // Irregular line break
                             self.trivia_builder
@@ -63,6 +64,7 @@ impl<'a> Lexer<'a> {
                             // SAFETY: `0xE2` is always 1st byte of a 3-byte UTF-8 char,
                             // so consuming 3 bytes will place `pos` on next UTF-8 char boundary.
                             pos = unsafe { pos.add(2) };
+
                             true
                         }
                     })
@@ -70,11 +72,13 @@ impl<'a> Lexer<'a> {
             },
             handle_eof: {
                 self.trivia_builder.add_line_comment(self.token.start, self.offset());
+
                 return Kind::Skip;
             },
         };
 
         self.token.is_on_new_line = true;
+
         Kind::Skip
     }
 
@@ -93,6 +97,7 @@ impl<'a> Lexer<'a> {
                 if next_byte == b'*' {
                     // SAFETY: Next byte is `*` (ASCII) so after it is UTF-8 char boundary
                     let after_star = unsafe { pos.add(1) };
+
                     if after_star.addr() < self.source.end_addr() {
                         // If next byte isn't `/`, continue
                         // SAFETY: Have checked there's at least 1 further byte to read
@@ -100,6 +105,7 @@ impl<'a> Lexer<'a> {
                             // Consume `*/`
                             // SAFETY: Consuming `*/` leaves `pos` on a UTF-8 char boundary
                             pos = unsafe { pos.add(2) };
+
                             false
                         } else {
                             true
@@ -116,6 +122,7 @@ impl<'a> Lexer<'a> {
                         // SAFETY: Next byte is `0xE2` which is always 1st byte of a 3-byte UTF-8 char.
                         // So safe to advance `pos` by 1 and read 2 bytes.
                         let next2 = unsafe { pos.add(1).read2() };
+
                         if matches!(next2, LS_BYTES_2_AND_3 | PS_BYTES_2_AND_3) {
                             // Irregular line break
                             self.token.is_on_new_line = true;
@@ -128,6 +135,7 @@ impl<'a> Lexer<'a> {
                         // SAFETY: `0xE2` is always 1st byte of a 3-byte UTF-8 char,
                         // so consuming 3 bytes will place `pos` on next UTF-8 char boundary.
                         pos = unsafe { pos.add(2) };
+
                         true
                     })
                 } else {
@@ -136,16 +144,19 @@ impl<'a> Lexer<'a> {
                     self.token.is_on_new_line = true;
                     // SAFETY: Regular line breaks are ASCII, so skipping 1 byte is a UTF-8 char boundary.
                     let after_line_break = unsafe { pos.add(1) };
+
                     return self.skip_multi_line_comment_after_line_break(after_line_break);
                 }
             },
             handle_eof: {
                 self.error(diagnostics::unterminated_multi_line_comment(self.unterminated_range()));
+
                 return Kind::Eof;
             },
         };
 
         self.trivia_builder.add_block_comment(self.token.start, self.offset());
+
         Kind::Skip
     }
 
@@ -159,17 +170,23 @@ impl<'a> Lexer<'a> {
         if self.multi_line_comment_end_finder.is_none() {
             self.multi_line_comment_end_finder = Some(Finder::new("*/"));
         }
+
         let finder = self.multi_line_comment_end_finder.as_ref().unwrap();
 
         let remaining = self.source.str_from_pos_to_end(pos).as_bytes();
+
         if let Some(index) = finder.find(remaining) {
             // SAFETY: `pos + index + 2` is end of `*/`, so a valid `SourcePosition`
             self.source.set_position(unsafe { pos.add(index + 2) });
+
             self.trivia_builder.add_block_comment(self.token.start, self.offset());
+
             Kind::Skip
         } else {
             self.source.advance_to_end();
+
             self.error(diagnostics::unterminated_multi_line_comment(self.unterminated_range()));
+
             Kind::Eof
         }
     }
@@ -180,9 +197,12 @@ impl<'a> Lexer<'a> {
             if is_line_terminator(*c) {
                 break;
             }
+
             self.consume_char();
         }
+
         self.token.is_on_new_line = true;
+
         Kind::HashbangComment
     }
 }

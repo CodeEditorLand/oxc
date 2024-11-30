@@ -31,12 +31,14 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
         let (for_of, label) = match stmt {
             Statement::LabeledStatement(labeled) => {
                 let LabeledStatement { label, body, .. } = labeled.as_mut();
+
                 if let Statement::ForOfStatement(for_of) = body {
                     (for_of, Some(label))
                 } else {
                     return;
                 }
             }
+
             Statement::ForOfStatement(for_of) => (for_of, None),
             _ => return,
         };
@@ -46,6 +48,7 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
         }
 
         let allow_multiple_statements = Self::is_multiple_statements_allowed(ctx);
+
         let parent_scope_id = if allow_multiple_statements {
             ctx.current_scope_id()
         } else {
@@ -60,6 +63,7 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
         // 2. insert the rest of the statements before the current statement.
         // TODO: Once we have a method to replace the current statement, we can simplify this logic.
         let mut statements = self.transform_for_of_statement(for_of, parent_scope_id, ctx);
+
         let mut new_stmt = statements.pop().unwrap();
 
         // If it's a labeled statement, we need to wrap the ForStatement with a labeled statement.
@@ -67,14 +71,18 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
             let Statement::TryStatement(try_statement) = &mut new_stmt else {
                 unreachable!("The last statement should be a try statement, please see the `build_for_await` function");
             };
+
             let try_statement_block_body = &mut try_statement.block.body;
+
             let for_statement = try_statement_block_body.pop().unwrap();
+
             try_statement_block_body.push(ctx.ast.statement_labeled(
                 SPAN,
                 label.clone(),
                 for_statement,
             ));
         }
+
         self.ctx.statement_injector.insert_many_before(&new_stmt, statements);
 
         // If the parent node doesn't allow multiple statements, we need to wrap the new statement
@@ -110,7 +118,9 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
             ForStatementLeft::VariableDeclaration(variable) => {
                 // for await (let i of test)
                 let mut declarator = variable.declarations.pop().unwrap();
+
                 declarator.init = Some(step_value);
+
                 Statement::VariableDeclaration(ctx.ast.alloc_variable_declaration(
                     SPAN,
                     declarator.kind,
@@ -118,23 +128,29 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                     false,
                 ))
             }
+
             left @ match_assignment_target!(ForStatementLeft) => {
                 // for await (i of test), for await ({ i } of test)
                 let target = ctx.ast.move_assignment_target(left.to_assignment_target_mut());
+
                 let expression = ctx.ast.expression_assignment(
                     SPAN,
                     AssignmentOperator::Assign,
                     target,
                     step_value,
                 );
+
                 ctx.ast.statement_expression(SPAN, expression)
             }
         };
 
         let body = {
             let mut statements = ctx.ast.vec_with_capacity(2);
+
             statements.push(assignment_statement);
+
             let stmt_body = &mut stmt.body;
+
             if let Statement::BlockStatement(block) = stmt_body {
                 if block.body.is_empty() {
                     // If the block is empty, we don’t need to add it to the body;
@@ -144,16 +160,19 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                     statements.push(ctx.ast.move_statement(stmt_body));
                 }
             }
+
             statements
         };
 
         let iterator = ctx.ast.move_expression(&mut stmt.right);
+
         let iterator = self.ctx.helper_call_expr(
             Helper::AsyncIterator,
             SPAN,
             ctx.ast.vec1(Argument::from(iterator)),
             ctx,
         );
+
         Self::build_for_await(iterator, &step_key, body, stmt.scope_id(), parent_scope_id, ctx)
     }
 
@@ -202,15 +221,18 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
 
         let iterator_had_error_key =
             ctx.generate_uid("didIteratorError", var_scope_id, SymbolFlags::FunctionScopedVariable);
+
         let iterator_abrupt_completion = ctx.generate_uid(
             "iteratorAbruptCompletion",
             var_scope_id,
             SymbolFlags::FunctionScopedVariable,
         );
+
         let iterator_error_key =
             ctx.generate_uid("iteratorError", var_scope_id, SymbolFlags::FunctionScopedVariable);
 
         let mut items = ctx.ast.vec_with_capacity(4);
+
         items.push(Statement::from(ctx.ast.declaration_variable(
             SPAN,
             VariableDeclarationKind::Var,
@@ -223,6 +245,7 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
             )),
             false,
         )));
+
         items.push(Statement::from(ctx.ast.declaration_variable(
             SPAN,
             VariableDeclarationKind::Var,
@@ -235,6 +258,7 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
             )),
             false,
         )));
+
         items.push(Statement::from(ctx.ast.declaration_variable(
             SPAN,
             VariableDeclarationKind::Var,
@@ -250,8 +274,10 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
 
         let iterator_key =
             ctx.generate_uid("iterator", var_scope_id, SymbolFlags::FunctionScopedVariable);
+
         let block = {
             let block_scope_id = ctx.create_child_scope(parent_scope_id, ScopeFlags::empty());
+
             let for_statement_scope_id =
                 ctx.create_child_scope(block_scope_id, ScopeFlags::empty());
 
@@ -345,12 +371,15 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
 
         let catch_clause = {
             let catch_scope_id = ctx.create_child_scope(parent_scope_id, ScopeFlags::CatchClause);
+
             let block_scope_id = ctx.create_child_scope(catch_scope_id, ScopeFlags::empty());
+
             let err_ident = ctx.generate_binding(
                 Atom::from("err"),
                 block_scope_id,
                 SymbolFlags::CatchVariable | SymbolFlags::FunctionScopedVariable,
             );
+
             Some(ctx.ast.catch_clause_with_scope_id(
                 SPAN,
                 Some(ctx.ast.catch_parameter(SPAN, err_ident.create_binding_pattern(ctx))),
@@ -386,12 +415,15 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
 
         let finally = {
             let finally_scope_id = ctx.create_child_scope(parent_scope_id, ScopeFlags::empty());
+
             let try_statement = {
                 let try_block_scope_id =
                     ctx.create_child_scope(finally_scope_id, ScopeFlags::empty());
+
                 let if_statement = {
                     let if_block_scope_id =
                         ctx.create_child_scope(try_block_scope_id, ScopeFlags::empty());
+
                     ctx.ast.statement_if(
                         SPAN,
                         ctx.ast.expression_logical(
@@ -435,17 +467,21 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                         None,
                     )
                 };
+
                 let block = ctx.ast.block_statement_with_scope_id(
                     SPAN,
                     ctx.ast.vec1(if_statement),
                     try_block_scope_id,
                 );
+
                 let finally = {
                     let finally_scope_id =
                         ctx.create_child_scope(finally_scope_id, ScopeFlags::empty());
+
                     let if_statement = {
                         let if_block_scope_id =
                             ctx.create_child_scope(finally_scope_id, ScopeFlags::empty());
+
                         ctx.ast.statement_if(
                             SPAN,
                             iterator_had_error_key.create_read_expression(ctx),
@@ -460,12 +496,14 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                             None,
                         )
                     };
+
                     ctx.ast.block_statement_with_scope_id(
                         SPAN,
                         ctx.ast.vec1(if_statement),
                         finally_scope_id,
                     )
                 };
+
                 ctx.ast.statement_try(SPAN, block, NONE, Some(finally))
             };
 
@@ -474,12 +512,14 @@ impl<'a, 'ctx> AsyncGeneratorFunctions<'a, 'ctx> {
                 ctx.ast.vec1(try_statement),
                 finally_scope_id,
             );
+
             Some(block_statement)
         };
 
         let try_statement = ctx.ast.statement_try(SPAN, block, catch_clause, finally);
 
         items.push(try_statement);
+
         items
     }
 }

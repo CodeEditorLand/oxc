@@ -110,10 +110,15 @@ impl<'alloc, T> Vec<'alloc, T> {
     #[inline]
     pub fn from_iter_in<I: IntoIterator<Item = T>>(iter: I, allocator: &'alloc Allocator) -> Self {
         let iter = iter.into_iter();
+
         let hint = iter.size_hint();
+
         let capacity = hint.1.unwrap_or(hint.0);
+
         let mut vec = ManuallyDrop::new(vec::Vec::with_capacity_in(capacity, &**allocator));
+
         vec.extend(iter);
+
         Self(vec)
     }
 
@@ -136,12 +141,14 @@ impl<'alloc, T> Vec<'alloc, T> {
     #[inline]
     pub fn from_array_in<const N: usize>(array: [T; N], allocator: &'alloc Allocator) -> Self {
         let boxed = Box::new_in(array, allocator);
+
         let ptr = Box::into_non_null(boxed).as_ptr().cast::<T>();
         // SAFETY: `ptr` has correct alignment - it was just allocated as `[T; N]`.
         // `ptr` was allocated with correct size for `[T; N]`.
         // `len` and `capacity` are both `N`.
         // Allocated size cannot be larger than `isize::MAX`, or `Box::new_in` would have failed.
         let vec = unsafe { vec::Vec::from_raw_parts_in(ptr, N, N, &**allocator) };
+
         Self(ManuallyDrop::new(vec))
     }
 
@@ -167,7 +174,9 @@ impl<'alloc, T> Vec<'alloc, T> {
     /// [owned slice]: Box
     pub fn into_boxed_slice(self) -> Box<'alloc, [T]> {
         let inner = ManuallyDrop::into_inner(self.0);
+
         let slice = inner.leak();
+
         let ptr = NonNull::from(slice);
         // SAFETY: `ptr` points to a valid slice `[T]`.
         // `allocator_api2::vec::Vec::leak` consumes the inner `Vec` without dropping it.
@@ -196,6 +205,7 @@ impl<'alloc, T> ops::DerefMut for Vec<'alloc, T> {
 
 impl<'alloc, T> IntoIterator for Vec<'alloc, T> {
     type IntoIter = <vec::Vec<T, &'alloc Bump> as IntoIterator>::IntoIter;
+
     type Item = T;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -208,6 +218,7 @@ impl<'alloc, T> IntoIterator for Vec<'alloc, T> {
 
 impl<'alloc, T> IntoIterator for &'alloc Vec<'alloc, T> {
     type IntoIter = std::slice::Iter<'alloc, T>;
+
     type Item = &'alloc T;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -240,9 +251,11 @@ where
         S: Serializer,
     {
         let mut seq = s.serialize_seq(Some(self.0.len()))?;
+
         for e in self.0.iter() {
             seq.serialize_element(e)?;
         }
+
         seq.end()
     }
 }
@@ -258,6 +271,7 @@ impl<'alloc, T: Hash> Hash for Vec<'alloc, T> {
 impl<'alloc, T: Debug> Debug for Vec<'alloc, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let inner = &*self.0;
+
         f.debug_tuple("Vec").field(inner).finish()
     }
 }
@@ -265,30 +279,41 @@ impl<'alloc, T: Debug> Debug for Vec<'alloc, T> {
 #[cfg(test)]
 mod test {
     use super::Vec;
+
     use crate::{Allocator, Box};
 
     #[test]
     fn vec_with_capacity() {
         let allocator = Allocator::default();
+
         let v: Vec<i32> = Vec::with_capacity_in(10, &allocator);
+
         assert!(v.is_empty());
     }
 
     #[test]
     fn vec_debug() {
         let allocator = Allocator::default();
+
         let mut v = Vec::new_in(&allocator);
+
         v.push("x");
+
         let v = format!("{v:?}");
+
         assert_eq!(v, "Vec([\"x\"])");
     }
 
     #[test]
     fn vec_serialize() {
         let allocator = Allocator::default();
+
         let mut v = Vec::new_in(&allocator);
+
         v.push("x");
+
         let v = serde_json::to_string(&v).unwrap();
+
         assert_eq!(v, "[\"x\"]");
     }
 
@@ -302,7 +327,9 @@ mod test {
     #[test]
     fn vec_to_boxed_slice() {
         let allocator = Allocator::default();
+
         let mut v = Vec::with_capacity_in(10, &allocator);
+
         v.extend([1, 2, 3]);
 
         let b = v.into_boxed_slice();

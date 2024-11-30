@@ -57,6 +57,7 @@ impl Rule for NoObjectConstructor {
             AstKind::NewExpression(new_expr) => {
                 (new_expr.span, &new_expr.callee, &new_expr.arguments, &new_expr.type_parameters)
             }
+
             _ => {
                 return;
             }
@@ -103,6 +104,7 @@ fn test() {
         "var yield = bar.yield
         Object()",
         "var foo = { bar: baz }
+
         Object()",
         "<foo />
         Object()",
@@ -111,10 +113,13 @@ fn test() {
         // No semicolon required before `({})` because ASI does not occur
         "Object()",
         "{}
+
         Object()",
         "function foo() {}
+
         Object()",
         "class Foo {}
+
         Object()",
         "foo: Object();",
         "foo();Object();",
@@ -129,6 +134,7 @@ fn test() {
         "with (obj) Object();",
         // No semicolon required before `({})` because ASI still occurs
         "const foo = () => {}
+
         Object()",
         "a++
         Object()",
@@ -159,6 +165,7 @@ fn test() {
         Object()",
         "const foo = bar
         export { foo }
+
         Object()",
         "export { foo } from 'bar'
         Object()",
@@ -167,6 +174,7 @@ fn test() {
         "import foo from 'bar
          Object()",
         "var yield = 5;
+
         yield: while (foo) {
             if (bar)
                 break yield

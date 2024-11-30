@@ -40,7 +40,9 @@ fn no_non_null_asserted_nullish_coalescing_diagnostic(span: Span) -> OxcDiagnost
 impl Rule for NoNonNullAssertedNullishCoalescing {
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
         let AstKind::LogicalExpression(expr) = node.kind() else { return };
+
         let Expression::TSNonNullExpression(ts_non_null_expr) = &expr.left else { return };
+
         if let Expression::Identifier(ident) = &ts_non_null_expr.expression {
             if let Some(symbol_id) = ctx.scopes().get_binding(node.scope_id(), &ident.name) {
                 if !has_assignment_before_node(symbol_id, ctx, expr.span.end) {
@@ -70,9 +72,11 @@ fn has_assignment_before_node(
     }
 
     let declaration_id = symbol_table.get_declaration(symbol_id);
+
     let AstKind::VariableDeclarator(decl) = ctx.nodes().kind(declaration_id) else {
         return false;
     };
+
     decl.definite || decl.init.is_some()
 }
 
@@ -125,6 +129,7 @@ fn test() {
         "
         	      function foo() {
         	        let x: string;
+
         	        return x ?? '';
         	      }
         	    ",
@@ -147,21 +152,28 @@ fn test() {
         "foo()! ?? bar!;",
         "
         	let x!: string;
+
         	x! ?? '';
         	      ",
         "
         	let x: string;
+
         	x = foo();
+
         	x! ?? '';
         	      ",
         "
         	let x: string;
+
         	x = foo();
+
         	x! ?? '';
+
         	x = foo();
         	      ",
         "
         	let x = foo();
+
         	x! ?? '';
         	      ",
         "
@@ -172,12 +184,14 @@ fn test() {
         	      ",
         "
         	let x!: string;
+
         	function foo() {
         	  return x! ?? '';
         	}
         	      ",
         "
         	let x = foo();
+
         	x  ! ?? '';
         	      ",
     ];

@@ -26,18 +26,27 @@ use rustc_hash::FxHashMap;
 
 fn main() -> std::io::Result<()> {
     let test_file_name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
+
     let ast_file_name = env::args().nth(1).unwrap_or_else(|| "test.ast.txt".to_string());
+
     let cfg_file_name = env::args().nth(1).unwrap_or_else(|| "test.cfg.txt".to_string());
+
     let dot_file_name = env::args().nth(1).unwrap_or_else(|| "test.dot".to_string());
 
     let test_file_path = Path::new(&test_file_name);
+
     let ast_file_path = Path::new(&ast_file_name);
+
     let cfg_file_path = Path::new(&cfg_file_name);
+
     let dot_file_path = Path::new(&dot_file_name);
 
     let source_text = Arc::new(std::fs::read_to_string(test_file_path)?);
+
     let allocator = Allocator::default();
+
     let source_type = SourceType::from_path(test_file_path).unwrap();
+
     let parser_ret = Parser::new(&allocator, &source_text, source_type).parse();
 
     if !parser_ret.errors.is_empty() {
@@ -48,11 +57,14 @@ fn main() -> std::io::Result<()> {
             .join("\n\n");
 
         println!("Parsing failed:\n\n{error_message}",);
+
         return Ok(());
     }
 
     let program = parser_ret.program;
+
     std::fs::write(ast_file_path, format!("{:#?}", &program))?;
+
     println!("Wrote AST to: {}", &ast_file_name);
 
     let semantic =
@@ -66,6 +78,7 @@ fn main() -> std::io::Result<()> {
             .join("\n\n");
 
         println!("Semantic analysis failed:\n\n{error_message}",);
+
         return Ok(());
     }
 
@@ -75,9 +88,12 @@ fn main() -> std::io::Result<()> {
         .expect("we set semantic to build the control flow (`with_cfg`) for us so it should always be `Some`");
 
     let mut ast_nodes_by_block = FxHashMap::<_, Vec<_>>::default();
+
     for node in semantic.semantic.nodes() {
         let block = node.cfg_id();
+
         let block_ix = cfg.graph.node_weight(block).unwrap();
+
         ast_nodes_by_block.entry(*block_ix).or_default().push(node);
     }
 
@@ -86,6 +102,7 @@ fn main() -> std::io::Result<()> {
         .iter_enumerated()
         .map(|(i, it)| {
             let it = it.display_dot();
+
             format!(
                 "bb{i}: {{\n{}\n---\n{}\n}}",
                 it.lines().map(|x| format!("\t{}", x.trim())).join("\n"),
@@ -100,6 +117,7 @@ fn main() -> std::io::Result<()> {
         .join("\n\n");
 
     std::fs::write(cfg_file_path, basic_blocks_printed)?;
+
     println!("Wrote CFG blocks to: {}", &cfg_file_name);
 
     let cfg_dot_diagram = format!(
@@ -109,7 +127,9 @@ fn main() -> std::io::Result<()> {
             &[Config::EdgeNoLabel, Config::NodeNoLabel],
             &|_graph, edge| {
                 let weight = edge.weight();
+
                 let label = format!("label = \"{weight:?}\"");
+
                 if matches!(weight, EdgeType::Unreachable)
                     || cfg.basic_block(edge.source()).is_unreachable()
                 {
@@ -122,6 +142,7 @@ fn main() -> std::io::Result<()> {
                 let nodes = ast_nodes_by_block.get(node.1).map_or("None".to_string(), |nodes| {
                     let nodes: Vec<_> =
                         nodes.iter().map(|node| format!("{}", node.kind().debug_name())).collect();
+
                     if nodes.len() > 1 {
                         format!(
                             "{}\\l",
@@ -131,6 +152,7 @@ fn main() -> std::io::Result<()> {
                         nodes.into_iter().join("")
                     }
                 });
+
                 format!(
                     "xlabel = \"nodes{} [{}]\\l\", label = \"bb{}\n{}\"",
                     node.1,
@@ -141,7 +163,9 @@ fn main() -> std::io::Result<()> {
             }
         )
     );
+
     std::fs::write(dot_file_path, cfg_dot_diagram)?;
+
     println!("Wrote CFG dot diagram to: {}", &dot_file_name);
 
     Ok(())

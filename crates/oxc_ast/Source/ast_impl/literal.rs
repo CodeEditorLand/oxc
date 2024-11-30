@@ -52,6 +52,7 @@ impl<'a> NumericLiteral<'a> {
     pub fn ecmascript_to_int32(num: f64) -> i32 {
         // Fast path for most common case. Also covers -0.0
         let int32_value = num as i32;
+
         if (f64::from(int32_value) - num).abs() < f64::EPSILON {
             return int32_value;
         }
@@ -76,6 +77,7 @@ impl<'a> NumericLiteral<'a> {
 impl<'a> ContentHash for NumericLiteral<'a> {
     fn content_hash<H: Hasher>(&self, state: &mut H) {
         ContentHash::content_hash(&self.base, state);
+
         ContentHash::content_hash(&self.raw, state);
     }
 }
@@ -224,27 +226,35 @@ impl fmt::Display for RegExpFlags {
         if self.contains(Self::G) {
             write!(f, "g")?;
         }
+
         if self.contains(Self::I) {
             write!(f, "i")?;
         }
+
         if self.contains(Self::M) {
             write!(f, "m")?;
         }
+
         if self.contains(Self::S) {
             write!(f, "s")?;
         }
+
         if self.contains(Self::U) {
             write!(f, "u")?;
         }
+
         if self.contains(Self::Y) {
             write!(f, "y")?;
         }
+
         if self.contains(Self::D) {
             write!(f, "d")?;
         }
+
         if self.contains(Self::V) {
             write!(f, "v")?;
         }
+
         Ok(())
     }
 }
@@ -256,9 +266,11 @@ impl<'a> StringLiteral<'a> {
     /// See: <https://tc39.es/ecma262/multipage/abstract-operations.html#sec-isstringwellformedunicode>
     pub fn is_string_well_formed_unicode(&self) -> bool {
         let mut chars = self.value.chars();
+
         while let Some(c) = chars.next() {
             if c == '\\' && chars.next() == Some('u') {
                 let hex = &chars.as_str()[..4];
+
                 if let Ok(hex) = u32::from_str_radix(hex, 16) {
                     if (0xd800..=0xdfff).contains(&hex) {
                         return false;
@@ -266,6 +278,7 @@ impl<'a> StringLiteral<'a> {
                 };
             }
         }
+
         true
     }
 }

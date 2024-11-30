@@ -75,9 +75,11 @@ impl JsxNoTargetBlank {
         if !self.links {
             return false;
         }
+
         if tag_name == "a" {
             return true;
         }
+
         return ctx.settings().react.get_link_component_attrs(tag_name).is_some();
     }
 
@@ -85,9 +87,11 @@ impl JsxNoTargetBlank {
         if !self.forms {
             return false;
         }
+
         if tag_name == "form" {
             return true;
         }
+
         return ctx.settings().react.get_form_component_attrs(tag_name).is_some();
     }
 }
@@ -131,22 +135,31 @@ impl Rule for JsxNoTargetBlank {
             let Some(tag_name) = &jsx_ele.name.get_identifier_name() else {
                 return;
             };
+
             if self.check_is_link(tag_name, ctx) || self.check_is_forms(tag_name, ctx) {
                 let mut target_blank_tuple = (false, "", false, false);
+
                 let mut rel_valid_tuple = (false, "", false, false);
+
                 let mut is_href_valid = true;
+
                 let mut has_href_value = false;
+
                 let mut is_warn_on_spread_attributes = false;
+
                 let mut target_span = None;
+
                 let mut spread_span = Span::default();
 
                 jsx_ele.attributes.iter().for_each(|attribute| match attribute {
                     JSXAttributeItem::Attribute(attribute) => {
                         if let JSXAttributeName::Identifier(identifier) = &attribute.deref().name {
                             let attribute_name = identifier.name.as_str();
+
                             if attribute_name == "target" {
                                 if let Some(val) = attribute.deref().value.as_ref() {
                                     target_blank_tuple = check_target(val);
+
                                     target_span = attribute.value.as_ref().map(GetSpan::span);
                                 }
                             } else if attribute_name == "href"
@@ -166,6 +179,7 @@ impl Rule for JsxNoTargetBlank {
                             {
                                 if let Some(val) = attribute.value.as_ref() {
                                     has_href_value = true;
+
                                     is_href_valid = check_href(val, &self.enforce_dynamic_links);
                                 }
                             } else if attribute_name == "rel" {
@@ -175,13 +189,19 @@ impl Rule for JsxNoTargetBlank {
                             };
                         }
                     }
+
                     JSXAttributeItem::SpreadAttribute(_) => {
                         if self.warn_on_spread_attributes {
                             is_warn_on_spread_attributes = true;
+
                             spread_span = attribute.span();
+
                             target_blank_tuple = (false, "", false, false);
+
                             rel_valid_tuple = (false, "", false, false);
+
                             is_href_valid = false;
+
                             has_href_value = true;
                         };
                     }
@@ -191,11 +211,14 @@ impl Rule for JsxNoTargetBlank {
                     if (has_href_value && is_href_valid) || rel_valid_tuple.0 {
                         return;
                     }
+
                     ctx.diagnostic(explicit_props_in_spread_attributes(spread_span));
+
                     return;
                 }
 
                 let span = target_span.unwrap_or(jsx_ele.span);
+
                 if !is_href_valid {
                     if !target_blank_tuple.1.is_empty() && target_blank_tuple.1 == rel_valid_tuple.1
                     {
@@ -204,6 +227,7 @@ impl Rule for JsxNoTargetBlank {
                         {
                             self.diagnostic(span, ctx);
                         }
+
                         return;
                     }
 
@@ -264,8 +288,10 @@ fn match_href_expression(
         Expression::Identifier(_) => *is_dynamic_link = true,
         Expression::ConditionalExpression(expr) => {
             match_href_expression(&expr.consequent, is_external_link, is_dynamic_link);
+
             match_href_expression(&expr.alternate, is_external_link, is_dynamic_link);
         }
+
         _ => {}
     }
 }
@@ -275,20 +301,26 @@ fn check_href(
     enforce_dynamic_links: &EnforceDynamicLinksEnum,
 ) -> bool {
     let mut is_dynamic_link = false;
+
     let mut is_external_link = false;
+
     let is_enforce_dynamic_links_never =
         matches!(enforce_dynamic_links, EnforceDynamicLinksEnum::Never);
+
     match attribute_value {
         JSXAttributeValue::StringLiteral(str) => {
             is_external_link = check_is_external_link(&str.value);
         }
+
         JSXAttributeValue::ExpressionContainer(expr) => {
             if let Some(expr) = expr.expression.as_expression() {
                 match_href_expression(expr, &mut is_external_link, &mut is_dynamic_link);
             }
         }
+
         _ => {}
     };
+
     if is_enforce_dynamic_links_never {
         // correct:
         // 1. <a target="_blank" href="./link.js"></a>
@@ -307,17 +339,21 @@ fn check_href(
 
 fn check_rel_val(str: &StringLiteral, allow_referrer: bool) -> bool {
     let mut splits = str.value.as_str().split(' ');
+
     if allow_referrer {
         return splits.any(|str| {
             if str == "noopener" {
                 return true;
             }
+
             if str == "noreferrer" {
                 return true;
             }
+
             false
         });
     }
+
     splits.any(|str| str.eq_ignore_ascii_case("noreferrer"))
 }
 
@@ -326,11 +362,14 @@ fn match_rel_expression<'a>(
     allow_referrer: bool,
 ) -> (bool, &'a str, bool, bool) {
     let default = (false, "", false, false);
+
     match expr {
         Expression::StringLiteral(str) => (check_rel_val(str, allow_referrer), "", false, false),
         Expression::ConditionalExpression(expr) => {
             let consequent = match_rel_expression(&expr.consequent, allow_referrer);
+
             let alternate = match_rel_expression(&expr.alternate, allow_referrer);
+
             if let Expression::Identifier(identifier) = &expr.test {
                 return (
                     consequent.0 && alternate.0,
@@ -341,6 +380,7 @@ fn match_rel_expression<'a>(
             }
             (consequent.0 && alternate.0, "", consequent.0, alternate.0)
         }
+
         _ => default,
     }
 }
@@ -350,10 +390,12 @@ fn check_rel<'a>(
     allow_referrer: bool,
 ) -> (bool, &'a str, bool, bool) {
     let default = (false, "", false, false);
+
     match attribute_value {
         JSXAttributeValue::StringLiteral(str) => {
             (check_rel_val(str, allow_referrer), "", false, false)
         }
+
         JSXAttributeValue::ExpressionContainer(expr) => match &expr.expression {
             JSXExpression::EmptyExpression(_) => default,
             expr @ match_expression!(JSXExpression) => {
@@ -366,13 +408,17 @@ fn check_rel<'a>(
 
 fn match_target_expression<'a>(expr: &'a Expression<'a>) -> (bool, &'a str, bool, bool) {
     let default = (false, "", false, false);
+
     match expr {
         Expression::StringLiteral(str) => {
             (str.value.eq_ignore_ascii_case("_blank"), "", false, false)
         }
+
         Expression::ConditionalExpression(expr) => {
             let consequent = match_target_expression(&expr.consequent);
+
             let alternate = match_target_expression(&expr.alternate);
+
             if let Expression::Identifier(identifier) = &expr.test {
                 return (
                     consequent.0 || alternate.0,
@@ -383,16 +429,19 @@ fn match_target_expression<'a>(expr: &'a Expression<'a>) -> (bool, &'a str, bool
             }
             (consequent.0 || alternate.0, "", consequent.0, alternate.0)
         }
+
         _ => default,
     }
 }
 
 fn check_target<'a>(attribute_value: &'a JSXAttributeValue<'a>) -> (bool, &'a str, bool, bool) {
     let default = (false, "", false, false);
+
     match attribute_value {
         JSXAttributeValue::StringLiteral(str) => {
             (str.value.eq_ignore_ascii_case("_blank"), "", false, false)
         }
+
         JSXAttributeValue::ExpressionContainer(expr) => {
             if let Some(expr) = expr.expression.as_expression() {
                 match_target_expression(expr)
@@ -400,6 +449,7 @@ fn check_target<'a>(attribute_value: &'a JSXAttributeValue<'a>) -> (bool, &'a st
                 default
             }
         }
+
         _ => default,
     }
 }

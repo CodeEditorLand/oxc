@@ -112,11 +112,13 @@ fn is_mistype_option_fallback(node:&AstNode) -> bool {
 	let AstKind::BinaryExpression(binary_expr) = node.kind() else {
 		return false;
 	};
+
 	if binary_expr.operator == BinaryOperator::BitwiseOR {
 		if let Expression::Identifier(_) = &binary_expr.left {
 			return !is_numeric_expr(&binary_expr.right, true);
 		}
 	}
+
 	false
 }
 
@@ -133,10 +135,12 @@ fn is_numeric_expr(expr:&Expression, is_outer_most:bool) -> bool {
                 unary_expr.operator != UnaryOperator::Typeof
             }
         }
+
         Expression::BinaryExpression(binary_expr) => !is_string_concat(binary_expr),
         Expression::ParenthesizedExpression(paren_expr) => {
             is_numeric_expr(&paren_expr.expression, false)
         }
+
         _ => {
             if is_outer_most {
                 expr.is_undefined()

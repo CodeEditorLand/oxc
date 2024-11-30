@@ -64,14 +64,17 @@ impl Rule for PreferToHaveLength {
 impl PreferToHaveLength {
     fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(parsed_expect_call) =
             parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
         };
+
         let Some(static_expr) = call_expr.callee.as_member_expression() else {
             return;
         };
@@ -79,9 +82,11 @@ impl PreferToHaveLength {
         match static_expr.object() {
             expr @ match_member_expression!(Expression) => {
                 let mem_expr = expr.to_member_expression();
+
                 let Expression::CallExpression(expr_call_expr) = mem_expr.object() else {
                     return;
                 };
+
                 match mem_expr {
                     MemberExpression::ComputedMemberExpression(_) => Self::check_and_fix(
                         call_expr,
@@ -102,6 +107,7 @@ impl PreferToHaveLength {
                     MemberExpression::PrivateFieldExpression(_) => (),
                 };
             }
+
             Expression::CallExpression(expr_call_expr) => {
                 Self::check_and_fix(
                     call_expr,
@@ -112,6 +118,7 @@ impl PreferToHaveLength {
                     ctx,
                 );
             }
+
             _ => (),
         }
     }
@@ -127,6 +134,7 @@ impl PreferToHaveLength {
         let Some(argument) = expr_call_expr.arguments.first() else {
             return;
         };
+
         let Some(static_mem_expr) = argument.as_member_expression() else {
             return;
         };
@@ -134,15 +142,18 @@ impl PreferToHaveLength {
         let Some(expect_property_name) = static_mem_expr.static_property_name() else {
             return;
         };
+
         let Some(matcher) = parsed_expect_call.matcher() else {
             return;
         };
+
         if expect_property_name != "length" || !is_equality_matcher(matcher) {
             return;
         }
 
         ctx.diagnostic_with_fix(use_to_have_length(matcher.span), |fixer| {
             let code = Self::build_code(fixer, static_mem_expr, kind, property_name);
+
             let offset = u32::try_from(
                 fixer
                     .source_range(Span::new(matcher.span.end, call_expr.span().end))
@@ -150,6 +161,7 @@ impl PreferToHaveLength {
                     .unwrap(),
             )
             .unwrap();
+
             fixer.replace(Span::new(call_expr.span.start, matcher.span.end + offset), code)
         });
     }
@@ -163,25 +175,33 @@ impl PreferToHaveLength {
         let mut formatter = fixer.codegen();
 
         formatter.print_str("expect(");
+
         formatter.print_str(
             fixer.source_range(Span::new(mem_expr.span().start, mem_expr.object().span().end)),
         );
+
         formatter.print_str(")");
 
         if let Some(kind_val) = kind {
             if kind_val == "ComputedMember" {
                 let property = property_name.unwrap();
+
                 formatter.print_str("[\"");
+
                 formatter.print_str(property);
+
                 formatter.print_str("\"]");
             } else if kind_val == "StaticMember" {
                 formatter.print_str(".");
+
                 let property = property_name.unwrap();
+
                 formatter.print_str(property);
             }
         }
 
         formatter.print_str(".toHaveLength");
+
         formatter.into_source_text()
     }
 }

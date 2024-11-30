@@ -1186,6 +1186,7 @@ impl<'a> ContentEq for AssignmentTargetMaybeDefault<'a> {
                 Self::AssignmentTargetWithDefault(other) if ContentEq::content_eq(it, other) => {
                     true
                 }
+
                 _ => false,
             },
             Self::AssignmentTargetIdentifier(it) => match other {
@@ -1252,6 +1253,7 @@ impl<'a> ContentEq for AssignmentTargetProperty<'a> {
                 {
                     true
                 }
+
                 _ => false,
             },
             Self::AssignmentTargetPropertyProperty(it) => match other {
@@ -1260,6 +1262,7 @@ impl<'a> ContentEq for AssignmentTargetProperty<'a> {
                 {
                     true
                 }
+
                 _ => false,
             },
         }
@@ -1468,6 +1471,7 @@ impl<'a> ContentEq for Statement<'a> {
                 Self::TSNamespaceExportDeclaration(other) if ContentEq::content_eq(it, other) => {
                     true
                 }
+
                 _ => false,
             },
         }
@@ -2209,6 +2213,7 @@ impl<'a> ContentEq for ModuleDeclaration<'a> {
                 Self::TSNamespaceExportDeclaration(other) if ContentEq::content_eq(it, other) => {
                     true
                 }
+
                 _ => false,
             },
         }
@@ -3257,6 +3262,7 @@ impl<'a> ContentEq for TSSignature<'a> {
                 {
                     true
                 }
+
                 _ => false,
             },
             Self::TSMethodSignature(it) => match other {

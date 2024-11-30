@@ -10,6 +10,7 @@ use super::{
 /// span_start: Global positioned `Span` start for this JSDoc comment
 pub fn parse_jsdoc(source_text: &str, jsdoc_span_start: u32) -> (JSDocCommentPart, Vec<JSDocTag>) {
     debug_assert!(!source_text.starts_with("/*"));
+
     debug_assert!(!source_text.ends_with("*/"));
 
     // JSDoc consists of comment and tags.
@@ -17,6 +18,7 @@ pub fn parse_jsdoc(source_text: &str, jsdoc_span_start: u32) -> (JSDocCommentPar
     // - Both can be optional
     // - Each tag is also separated by whitespace + `@`
     let mut comment = None;
+
     let mut tags = vec![];
 
     // So, find `@` to split comment and each tag.
@@ -24,13 +26,16 @@ pub fn parse_jsdoc(source_text: &str, jsdoc_span_start: u32) -> (JSDocCommentPar
     let mut in_braces = false;
     // Also, `@` is often found inside of backtick(` or ```), like markdown.
     let mut in_backticks = false;
+
     let mut comment_found = false;
     // Parser local offsets, not for global span
     let (mut start, mut end) = (0, 0);
 
     let mut chars = source_text.chars().peekable();
+
     while let Some(ch) = chars.next() {
         let can_parse = !(in_braces || in_backticks);
+
         match ch {
             // NOTE: For now, only odd backtick(s) are handled.
             // - 1 backtick: inline code
@@ -47,6 +52,7 @@ pub fn parse_jsdoc(source_text: &str, jsdoc_span_start: u32) -> (JSDocCommentPar
             '}' => in_braces = false,
             '@' if can_parse => {
                 let part = &source_text[start..end];
+
                 let span = Span::new(
                     jsdoc_span_start + u32::try_from(start).unwrap_or_default(),
                     jsdoc_span_start + u32::try_from(end).unwrap_or_default(),
@@ -56,12 +62,14 @@ pub fn parse_jsdoc(source_text: &str, jsdoc_span_start: u32) -> (JSDocCommentPar
                     tags.push(parse_jsdoc_tag(part, span));
                 } else {
                     comment = Some(JSDocCommentPart::new(part, span));
+
                     comment_found = true;
                 }
 
                 // Prepare for the next draft
                 start = end;
             }
+
             _ => {}
         }
         // Update the current draft
@@ -71,6 +79,7 @@ pub fn parse_jsdoc(source_text: &str, jsdoc_span_start: u32) -> (JSDocCommentPar
     // If `@` not found, flush the last draft
     if start != end {
         let part = &source_text[start..end];
+
         let span = Span::new(
             jsdoc_span_start + u32::try_from(start).unwrap_or_default(),
             jsdoc_span_start + u32::try_from(end).unwrap_or_default(),
@@ -118,6 +127,7 @@ fn parse_jsdoc_tag(tag_content: &str, jsdoc_tag_span: Span) -> JSDocTag {
     // If not included, both body content will start with `* <- ...` and fails to parse(trim).
     // This is only for comment parser, it will be ignored for type and type name parser.
     let body_content = &tag_content[k_end..];
+
     let body_span = Span::new(
         jsdoc_tag_span.start + u32::try_from(k_end).unwrap_or_default(),
         jsdoc_tag_span.end,

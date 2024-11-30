@@ -14,20 +14,24 @@ use crate::{
 impl<'a> ParserImpl<'a> {
     pub(crate) fn parse_let(&mut self, stmt_ctx: StatementContext) -> Result<Statement<'a>> {
         let span = self.start_span();
+
         let peeked = self.peek_kind();
         // let = foo, let instanceof x, let + 1
         if peeked.is_assignment_operator() || peeked.is_binary_operator() {
             let expr = self.parse_assignment_expression_or_higher()?;
+
             self.parse_expression_statement(span, expr)
         // let.a = 1, let()[a] = 1
         } else if matches!(peeked, Kind::Dot | Kind::LParen) {
             let expr = self.parse_expr()?;
+
             Ok(self.ast.statement_expression(self.end_span(span), expr))
         // single statement let declaration: while (0) let
         } else if (stmt_ctx.is_single_statement() && peeked != Kind::LBrack)
             || peeked == Kind::Semicolon
         {
             let expr = self.parse_identifier_expression()?;
+
             self.parse_expression_statement(span, expr)
         } else {
             self.parse_variable_statement(stmt_ctx)
@@ -54,12 +58,16 @@ impl<'a> ParserImpl<'a> {
             Kind::Let => VariableDeclarationKind::Let,
             _ => return Err(self.unexpected()),
         };
+
         self.bump_any();
 
         let mut declarations = self.ast.vec();
+
         loop {
             let declaration = self.parse_variable_declarator(decl_ctx, kind)?;
+
             declarations.push(declaration);
+
             if !self.eat(Kind::Comma) {
                 break;
             }
@@ -99,15 +107,19 @@ impl<'a> ParserImpl<'a> {
             // const x!: number = 1
             //        ^ definite
             let mut definite = false;
+
             if binding_kind.is_binding_identifier()
                 && self.at(Kind::Bang)
                 && !self.cur_token().is_on_new_line
             {
                 self.eat(Kind::Bang);
+
                 definite = true;
             }
+
             let optional = self.eat(Kind::Question); // not allowed, but checked in checker/typescript.rs
             let type_annotation = self.parse_ts_type_annotation()?;
+
             if let Some(type_annotation) = &type_annotation {
                 Self::extend_binding_pattern_span_end(type_annotation.span, &mut binding_kind);
             }
@@ -141,6 +153,7 @@ impl<'a> ParserImpl<'a> {
     /// Section 14.3.1 Let, Const, and Using Declarations
     /// UsingDeclaration[In, Yield, Await] :
     /// using [no LineTerminator here] [lookahead ≠ await] BindingList[?In, ?Yield, ?Await, ~Pattern] ;
+
     pub(crate) fn parse_using_declaration(
         &mut self,
         statement_ctx: StatementContext,
@@ -161,11 +174,13 @@ impl<'a> ParserImpl<'a> {
         // [lookahead ≠ await]
         if self.cur_kind() == Kind::Await {
             self.error(diagnostics::await_in_using_declaration(self.cur_token().span()));
+
             self.eat(Kind::Await);
         }
 
         // BindingList[?In, ?Yield, ?Await, ~Pattern]
         let mut declarations: oxc_allocator::Vec<'_, VariableDeclarator<'_>> = self.ast.vec();
+
         loop {
             let declaration = self.parse_variable_declarator(
                 VariableDeclarationContext::new(VariableDeclarationParent::Statement),
@@ -174,6 +189,7 @@ impl<'a> ParserImpl<'a> {
 
             match declaration.id.kind {
                 BindingPatternKind::BindingIdentifier(_) => {}
+
                 _ => {
                     self.error(diagnostics::invalid_identifier_in_using_declaration(
                         declaration.id.span(),
@@ -189,6 +205,7 @@ impl<'a> ParserImpl<'a> {
             }
 
             declarations.push(declaration);
+
             if !self.eat(Kind::Comma) {
                 break;
             }
@@ -199,6 +216,7 @@ impl<'a> ParserImpl<'a> {
         } else {
             VariableDeclarationKind::Using
         };
+
         Ok(self.ast.variable_declaration(self.end_span(span), kind, declarations, false))
     }
 }

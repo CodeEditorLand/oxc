@@ -46,6 +46,7 @@ impl Rule for NoAccessKey {
         let AstKind::JSXOpeningElement(jsx_el) = node.kind() else {
             return;
         };
+
         if let Some(JSXAttributeItem::Attribute(attr)) =
             has_jsx_prop_ignore_case(jsx_el, "accessKey")
         {
@@ -55,6 +56,7 @@ impl Rule for NoAccessKey {
                         fixer.delete(&attr.span)
                     });
                 }
+
                 Some(JSXAttributeValue::ExpressionContainer(container)) => {
                     if container.expression.is_expression() && !container.expression.is_undefined()
                     {
@@ -64,6 +66,7 @@ impl Rule for NoAccessKey {
                         );
                     }
                 }
+
                 _ => {}
             }
         }

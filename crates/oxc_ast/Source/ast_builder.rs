@@ -49,7 +49,9 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn new_vec_single<T>(self, value: T) -> Vec<'a, T> {
         let mut vec = self.new_vec_with_capacity(1);
+
         vec.push(value);
+
         vec
     }
 
@@ -86,13 +88,16 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn move_expression(self, expr: &mut Expression<'a>) -> Expression<'a> {
         let null_literal = NullLiteral::new(expr.span());
+
         let null_expr = self.literal_null_expression(null_literal);
+
         mem::replace(expr, null_expr)
     }
 
     #[inline]
     pub fn move_statement(self, stmt: &mut Statement<'a>) -> Statement<'a> {
         let empty_stmt = self.empty_statement(stmt.span());
+
         mem::replace(stmt, empty_stmt)
     }
 
@@ -104,7 +109,9 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn move_assignment_target(self, target: &mut AssignmentTarget<'a>) -> AssignmentTarget<'a> {
         let ident = IdentifierReference::new(Span::default(), "".into());
+
         let dummy = self.simple_assignment_target_identifier(ident);
+
         mem::replace(target, dummy)
     }
 
@@ -116,7 +123,9 @@ impl<'a> AstBuilder<'a> {
             self.new_vec(),
             false,
         );
+
         let empty_decl = Declaration::VariableDeclaration(empty_decl);
+
         mem::replace(decl, empty_decl)
     }
 
@@ -138,7 +147,9 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn void_0(self) -> Expression<'a> {
         let left = self.number_literal(Span::default(), 0.0, "0", NumberBase::Decimal);
+
         let num = self.literal_number_expression(left);
+
         self.unary_expression(Span::default(), UnaryOperator::Void, num)
     }
 
@@ -1256,6 +1267,7 @@ impl<'a> AstBuilder<'a> {
         right: Expression<'a>,
     ) -> BindingPattern<'a> {
         let pattern = self.alloc(AssignmentPattern { span, left, right });
+
         BindingPattern {
             kind: BindingPatternKind::AssignmentPattern(pattern),
             type_annotation: None,

@@ -38,6 +38,7 @@ where
     R: fmt::Display,
 {
     let (pronoun_singular, _) = pronoun_for_symbol(symbol.flags());
+
     let name = symbol.name();
 
     let help_suffix = match pat {
@@ -45,6 +46,7 @@ where
         IgnorePattern::Default => {
             name.strip_prefix('_').map_or(".".into(), |name| format!(" to '{name}'."))
         }
+
         IgnorePattern::Some(ref r) => {
             format!(" to match the pattern /{r}/.")
         }
@@ -67,8 +69,11 @@ where
     } else {
         ("declared", "Consider removing this declaration.")
     };
+
     let name = symbol.name();
+
     let (pronoun, pronoun_plural) = pronoun_for_symbol(symbol.flags());
+
     let suffix = pat.diagnostic_help(pronoun_plural);
 
     OxcDiagnostic::warn(format!("{pronoun} '{name}' is {verb} but never used.{suffix}"))
@@ -86,7 +91,9 @@ where
     R: fmt::Display,
 {
     let name = symbol.name();
+
     let (pronoun, pronoun_plural) = pronoun_for_symbol(symbol.flags());
+
     let suffix = pat.diagnostic_help(pronoun_plural);
 
     OxcDiagnostic::warn(format!("{pronoun} '{name}' is assigned a value but never used.{suffix}"))
@@ -103,6 +110,7 @@ where
     R: fmt::Display,
 {
     let name = symbol.name();
+
     let suffix = pat.diagnostic_help("parameters");
 
     OxcDiagnostic::warn(format!("Parameter '{name}' is declared but never used.{suffix}"))
@@ -113,6 +121,7 @@ where
 /// Identifier 'x' imported but never used.
 pub fn imported(symbol: &Symbol<'_, '_>) -> OxcDiagnostic {
     let (pronoun, _) = pronoun_for_symbol(symbol.flags());
+
     let name = symbol.name();
 
     OxcDiagnostic::warn(format!("{pronoun} '{name}' is imported but never used."))

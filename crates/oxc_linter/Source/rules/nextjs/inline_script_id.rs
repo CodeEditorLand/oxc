@@ -39,6 +39,7 @@ impl Rule for InlineScriptId {
         let AstKind::ImportDefaultSpecifier(specifier) = node.kind() else {
             return;
         };
+
         let Some(AstKind::ImportDeclaration(import_decl)) = ctx.nodes().parent_kind(node.id())
         else {
             return;
@@ -58,7 +59,9 @@ impl Rule for InlineScriptId {
             let AstKind::JSXElementName(_) = node.kind() else {
                 continue;
             };
+
             let parent_node = ctx.nodes().parent_node(node.id()).unwrap();
+
             let AstKind::JSXOpeningElement(jsx_opening_element) = parent_node.kind() else {
                 continue;
             };
@@ -77,6 +80,7 @@ impl Rule for InlineScriptId {
                             prop_names_hash_set.insert(ident.name.clone());
                         }
                     }
+
                     JSXAttributeItem::SpreadAttribute(spread_attr) => {
                         if let Expression::ObjectExpression(obj_expr) =
                             spread_attr.argument.without_parentheses()

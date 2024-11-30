@@ -84,6 +84,7 @@ fn is_written_to(binding_pat: &BindingPattern, ctx: &LintContext) -> bool {
                 false
             }
         }
+
         BindingPatternKind::AssignmentPattern(_) => true,
         BindingPatternKind::ArrayPattern(array_pat) => array_pat.elements.iter().any(|elem| {
             if let Some(elem) = elem {

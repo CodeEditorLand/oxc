@@ -44,6 +44,7 @@ fn no_unexpected_multiline_diagnostic(kind: &DiagnosticKind) -> OxcDiagnostic {
             ))
             .with_help("If you did not intend for this to be a tagged template, insert ';' before the backtick")
         }
+
         DiagnosticKind::Division { slash_span } => {
             OxcDiagnostic::warn(
                 "Unexpected newline between numerator and division operator",
@@ -112,6 +113,7 @@ impl Rule for NoUnexpectedMultiline {
                 if call_expr.optional {
                     return;
                 }
+
                 if let Some(AstKind::ChainExpression(_)) = ctx.nodes().parent_kind(node.id()) {
                     return;
                 }
@@ -123,6 +125,7 @@ impl Rule for NoUnexpectedMultiline {
                 };
 
                 let span = Span::new(start, call_expr.span.end);
+
                 if let Some(open_paren_pos) = has_newline_before(ctx, span, b'(') {
                     let paren_span = Span::sized(span.start + open_paren_pos, 1);
 
@@ -134,12 +137,14 @@ impl Rule for NoUnexpectedMultiline {
                     );
                 }
             }
+
             AstKind::MemberExpression(member_expr) => {
                 if !member_expr.is_computed() || member_expr.optional() {
                     return;
                 }
 
                 let span = Span::new(member_expr.object().span().end, member_expr.span().end);
+
                 if let Some(open_bracket_pos) = has_newline_before(ctx, span, b'[') {
                     let bracket_span = Span::sized(span.start + open_bracket_pos, 1);
 
@@ -151,6 +156,7 @@ impl Rule for NoUnexpectedMultiline {
                     );
                 }
             }
+
             AstKind::TaggedTemplateExpression(tagged_template_expr) => {
                 let start = if let Some(generics) = &tagged_template_expr.type_parameters {
                     generics.span.end
@@ -159,6 +165,7 @@ impl Rule for NoUnexpectedMultiline {
                 };
 
                 let span = Span::new(start, tagged_template_expr.span.end);
+
                 if let Some(backtick_pos) = has_newline_before(ctx, span, b'`') {
                     let backtick_span = Span::sized(span.start + backtick_pos, 1);
 
@@ -170,30 +177,38 @@ impl Rule for NoUnexpectedMultiline {
                     );
                 }
             }
+
             AstKind::BinaryExpression(binary_expr) => {
                 if binary_expr.operator != BinaryOperator::Division {
                     return;
                 }
+
                 let Some(AstKind::BinaryExpression(parent_binary_expr)) =
                     ctx.nodes().parent_kind(node.id())
                 else {
                     return;
                 };
+
                 if parent_binary_expr.operator != BinaryOperator::Division {
                     return;
                 }
+
                 let span = Span::new(binary_expr.left.span().end, parent_binary_expr.span().end);
+
                 let src = ctx.source_range(span);
 
                 let Some(newline) = memchr(b'\n', src.as_bytes()) else {
                     return;
                 };
+
                 let Some(first_slash) = memchr(b'/', src.as_bytes()) else {
                     return;
                 };
+
                 let Some(second_slash) = memrchr(b'/', src.as_bytes()) else {
                     return;
                 };
+
                 if first_slash == second_slash {
                     return;
                 }
@@ -226,6 +241,7 @@ impl Rule for NoUnexpectedMultiline {
                     );
                 }
             }
+
             _ => {}
         }
     }
@@ -239,6 +255,7 @@ fn is_regex_flag(str: &str) -> bool {
             return false;
         }
     }
+
     true
 }
 
@@ -249,7 +266,9 @@ fn is_regex_flag(str: &str) -> bool {
 /// Newlines do not have to be directly before the target character, but can be anywhere before it.
 fn has_newline_before(ctx: &LintContext, span: Span, c: u8) -> Option<u32> {
     let src = ctx.source_range(span).as_bytes();
+
     let target = memchr(c, src)?;
+
     let newline = memchr(b'\n', src)?;
 
     (newline < target).then(|| u32::try_from(target).unwrap())

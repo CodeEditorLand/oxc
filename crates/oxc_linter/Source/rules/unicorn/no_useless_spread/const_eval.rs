@@ -62,6 +62,7 @@ impl<'a> ConstEval for Expression<'a> {
             Self::SequenceExpression(expr) => {
                 expr.expressions.last().map_or(ValueHint::Unknown, ConstEval::const_eval)
             }
+
             Self::ConditionalExpression(cond) => cond.const_eval(),
             Self::CallExpression(call) => call.const_eval(),
             Self::NewExpression(new) => new.const_eval(),

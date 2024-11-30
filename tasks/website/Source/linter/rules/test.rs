@@ -17,6 +17,8 @@ fn table() -> &'static RuleTable {
 
 fn parse(filename: &str, jsx: &str) -> Result<(), String> {
     let filename = format!("{filename}.tsx");
+
     let source_type = SourceType::from_path(&filename).unwrap();
+
     parse_type(&filename, jsx, source_type)
 }

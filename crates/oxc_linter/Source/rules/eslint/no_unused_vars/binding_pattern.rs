@@ -52,6 +52,7 @@ impl<'a> HasAnyUsedBinding<'a> for ObjectPattern<'a> {
         if ctx.options.ignore_rest_siblings && self.rest.is_some() {
             return true;
         }
+
         self.properties.iter().any(|p| p.value.has_any_used_binding(ctx))
             || self.rest.as_ref().map_or(false, |rest| rest.argument.has_any_used_binding(ctx))
     }

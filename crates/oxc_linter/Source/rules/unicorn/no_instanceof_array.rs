@@ -37,6 +37,7 @@ impl Rule for NoInstanceofArray {
         let AstKind::BinaryExpression(expr) = node.kind() else {
             return;
         };
+
         if expr.operator != BinaryOperator::Instanceof {
             return;
         }
@@ -46,14 +47,20 @@ impl Rule for NoInstanceofArray {
                 ctx.diagnostic_with_fix(no_instanceof_array_diagnostic(expr.span), |fixer| {
                     let modified_code = {
                         let mut codegen = String::new();
+
                         codegen.push_str("Array.isArray(");
+
                         codegen.push_str(fixer.source_range(expr.left.span()));
+
                         codegen.push(')');
+
                         codegen
                     };
+
                     fixer.replace(expr.span, modified_code)
                 });
             }
+
             _ => {}
         }
     }

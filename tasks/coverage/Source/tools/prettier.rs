@@ -20,14 +20,19 @@ fn get_result(source_text: &str, source_type: SourceType) -> TestResult {
     let options = PrettierOptions::default();
 
     let allocator = Allocator::default();
+
     let parse_options = ParseOptions { preserve_parens: false, ..ParseOptions::default() };
+
     let ParserReturn { program, .. } =
         Parser::new(&allocator, source_text, source_type).with_options(parse_options).parse();
+
     let source_text1 = Prettier::new(&allocator, options).build(&program);
 
     let allocator = Allocator::default();
+
     let ParserReturn { program, .. } =
         Parser::new(&allocator, &source_text1, source_type).with_options(parse_options).parse();
+
     let source_text2 = Prettier::new(&allocator, options).build(&program);
 
     if source_text1 == source_text2 {
@@ -64,9 +69,13 @@ impl Case for PrettierTest262Case {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let is_module = self.base.meta().flags.contains(&TestFlag::Module);
+
         let source_type = SourceType::default().with_module(is_module);
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
@@ -98,8 +107,11 @@ impl Case for PrettierBabelCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }
@@ -131,14 +143,19 @@ impl Case for PrettierTypeScriptCase {
 
     fn run(&mut self) {
         let units = self.base.units.clone();
+
         for unit in units {
             self.base.code = unit.content.to_string();
+
             let result = get_result(&unit.content, unit.source_type);
+
             if result != TestResult::Passed {
                 self.base.result = result;
+
                 return;
             }
         }
+
         self.base.result = TestResult::Passed;
     }
 }
@@ -170,8 +187,11 @@ impl Case for PrettierMiscCase {
 
     fn run(&mut self) {
         let source_text = self.base.code();
+
         let source_type = self.base.source_type();
+
         let result = get_result(source_text, source_type);
+
         self.base.set_result(result);
     }
 }

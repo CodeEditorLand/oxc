@@ -73,12 +73,14 @@ impl<'a> From<&'a BigIntLiteral<'a>> for ESTreeLiteral<'a, ()> {
             BigintBase::Decimal => src,
             BigintBase::Binary | BigintBase::Octal | BigintBase::Hex => &src[2..],
         };
+
         let radix = match value.base {
             BigintBase::Decimal => 10,
             BigintBase::Binary => 2,
             BigintBase::Octal => 8,
             BigintBase::Hex => 16,
         };
+
         let bigint = BigInt::from_str_radix(src, radix).unwrap();
 
         Self {
@@ -130,6 +132,7 @@ impl serde_json::ser::Formatter for EcmaFormatter {
         W: ?Sized + std::io::Write,
     {
         use oxc_syntax::number::ToJsString;
+
         writer.write_all(value.to_js_string().as_bytes())
     }
 }
@@ -138,14 +141,18 @@ impl<'a> Program<'a> {
     /// # Panics
     pub fn to_json(&self) -> String {
         let ser = self.serializer();
+
         String::from_utf8(ser.into_inner()).unwrap()
     }
 
     /// # Panics
     pub fn serializer(&self) -> serde_json::Serializer<std::vec::Vec<u8>, EcmaFormatter> {
         let buf = std::vec::Vec::new();
+
         let mut ser = serde_json::Serializer::with_formatter(buf, EcmaFormatter);
+
         self.serialize(&mut ser).unwrap();
+
         ser
     }
 }
@@ -179,11 +186,13 @@ impl<'a> Serialize for FormalParameters<'a> {
             type_annotation: &rest.argument.type_annotation,
             optional: rest.argument.optional,
         });
+
         let converted = SerFormalParameters {
             span: self.span,
             kind: self.kind,
             items: ElementsAndRest::new(&self.items, &converted_rest),
         };
+
         converted.serialize(serializer)
     }
 }
@@ -222,10 +231,13 @@ impl<'b, E: Serialize, R: Serialize> Serialize for ElementsAndRest<'b, E, R> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         if let Some(rest) = self.rest {
             let mut seq = serializer.serialize_seq(Some(self.elements.len() + 1))?;
+
             for element in self.elements {
                 seq.serialize_element(element)?;
             }
+
             seq.serialize_element(rest)?;
+
             seq.end()
         } else {
             self.elements.serialize(serializer)
@@ -241,6 +253,7 @@ impl<'a> Serialize for TSModuleBlock<'a> {
             span: self.span,
             body: DirectivesAndStatements { directives: &self.directives, body: &self.body },
         };
+
         converted.serialize(serializer)
     }
 }
@@ -261,15 +274,18 @@ struct DirectivesAndStatements<'a, 'b> {
 impl<'a, 'b> Serialize for DirectivesAndStatements<'a, 'b> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(Some(self.directives.len() + self.body.len()))?;
+
         for directive in self.directives {
             seq.serialize_element(&DirectiveAsStatement {
                 span: directive.span,
                 expression: &directive.expression,
             })?;
         }
+
         for stmt in self.body {
             seq.serialize_element(stmt)?;
         }
+
         seq.end()
     }
 }
@@ -289,6 +305,7 @@ impl<'a> Serialize for JSXElementName<'a> {
             Self::IdentifierReference(ident) => {
                 JSXIdentifier { span: ident.span, name: ident.name.clone() }.serialize(serializer)
             }
+
             Self::NamespacedName(name) => name.serialize(serializer),
             Self::MemberExpression(expr) => expr.serialize(serializer),
             Self::ThisExpression(expr) => {
@@ -304,6 +321,7 @@ impl<'a> Serialize for JSXMemberExpressionObject<'a> {
             Self::IdentifierReference(ident) => {
                 JSXIdentifier { span: ident.span, name: ident.name.clone() }.serialize(serializer)
             }
+
             Self::MemberExpression(expr) => expr.serialize(serializer),
             Self::ThisExpression(expr) => {
                 JSXIdentifier { span: expr.span, name: "this".into() }.serialize(serializer)

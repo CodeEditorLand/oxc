@@ -15,27 +15,36 @@ use pico_args::Arguments;
 
 fn main() {
     let mut args = Arguments::from_env();
+
     let targets: Option<String> = args.opt_value_from_str("--targets").unwrap_or(None);
+
     let target: Option<String> = args.opt_value_from_str("--target").unwrap_or(None);
+
     let name = args.free_from_str().unwrap_or_else(|_| "test.js".to_string());
 
     let path = Path::new(&name);
+
     let source_text =
         std::fs::read_to_string(path).unwrap_or_else(|err| panic!("{name} not found.\n{err}"));
+
     let allocator = Allocator::default();
+
     let source_type = SourceType::from_path(path).unwrap();
 
     let ret = Parser::new(&allocator, &source_text, source_type).parse();
 
     if !ret.errors.is_empty() {
         println!("Parser Errors:");
+
         for error in ret.errors {
             let error = error.with_source_code(source_text.clone());
+
             println!("{error:?}");
         }
     }
 
     println!("Original:\n");
+
     println!("{source_text}\n");
 
     let mut program = ret.program;
@@ -47,8 +56,10 @@ fn main() {
 
     if !ret.errors.is_empty() {
         println!("Semantic Errors:");
+
         for error in ret.errors {
             let error = error.with_source_code(source_text.clone());
+
             println!("{error:?}");
         }
     }
@@ -76,13 +87,17 @@ fn main() {
 
     if !ret.errors.is_empty() {
         println!("Transformer Errors:");
+
         for error in ret.errors {
             let error = error.with_source_code(source_text.clone());
+
             println!("{error:?}");
         }
     }
 
     let printed = CodeGenerator::new().build(&program).code;
+
     println!("Transformed:\n");
+
     println!("{printed}");
 }

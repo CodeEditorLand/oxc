@@ -184,7 +184,9 @@ fn is_safe_from_name_collisions(
     match stmt {
         Statement::BlockStatement(block) => {
             let block_scope_id = block.scope_id();
+
             let bindings = scopes.get_bindings(block_scope_id);
+
             let parent_bindings = scopes.get_bindings(parent_scope_id);
 
             if bindings.iter().any(|(name, symbol_id)| {
@@ -192,6 +194,7 @@ fn is_safe_from_name_collisions(
                 else {
                     return false;
                 };
+
                 parent_name == name && symbol_id != parent_symbol_id
             }) {
                 return false;
@@ -199,6 +202,7 @@ fn is_safe_from_name_collisions(
 
             true
         }
+
         Statement::FunctionDeclaration(_) => false,
         _ => true,
     }
@@ -212,15 +216,21 @@ fn no_else_return_diagnostic_fix(
     if_block_node: &AstNode,
 ) {
     let prev_span = else_stmt_prev.span();
+
     let else_content_span = else_stmt.span();
+
     let else_keyword_span = Span::new(prev_span.end, else_content_span.start);
+
     let diagnostic = no_else_return_diagnostic(else_keyword_span, last_return_span);
+
     let parent_scope_id = if_block_node.scope_id();
 
     if !is_safe_from_name_collisions(ctx, else_stmt, parent_scope_id) {
         ctx.diagnostic(diagnostic);
+
         return;
     }
+
     ctx.diagnostic_with_fix(diagnostic, |fixer| {
         let target_span = Span::new(prev_span.end, else_content_span.end);
 
@@ -228,10 +238,13 @@ fn no_else_return_diagnostic_fix(
         // for block statements
         let mut replacement_span = if let Statement::BlockStatement(block) = else_stmt {
             let first_stmt_start = block.body.first().map(|stmt| stmt.span().start);
+
             let last_stmt_end = block.body.last().map(|stmt| stmt.span().end);
+
             let (Some(start), Some(end)) = (first_stmt_start, last_stmt_end) else {
                 return fixer.noop();
             };
+
             Span::new(start, end)
         } else {
             else_content_span
@@ -248,8 +261,10 @@ fn no_else_return_diagnostic_fix(
             Statement::ReturnStatement(s) => !ctx.source_range(s.span).ends_with(';'),
             _ => false,
         };
+
         if needs_newline {
             let replacement = ctx.source_range(replacement_span);
+
             fixer.replace(target_span, "\n".to_string() + replacement)
         } else {
             fixer.replace_with(&target_span, &replacement_span)
@@ -264,14 +279,17 @@ fn left_offset_for_whitespace(ctx: &LintContext, position: u32) -> u32 {
     }
 
     let mut offset = 0;
+
     for c in ctx.source_text()[..(position as usize)].chars().rev() {
         if !c.is_whitespace() {
             break;
         }
+
         offset += c.len_utf8();
     }
 
     debug_assert!(offset < u32::MAX as usize);
+
     offset as u32
 }
 
@@ -279,12 +297,14 @@ fn naive_has_return(node: &Statement) -> Option<Span> {
     match node {
         Statement::BlockStatement(block) => {
             let last_child = block.body.last()?;
+
             if let Statement::ReturnStatement(r) = last_child {
                 Some(r.span)
             } else {
                 None
             }
         }
+
         Statement::ReturnStatement(r) => Some(r.span),
         _ => None,
     }
@@ -295,6 +315,7 @@ fn check_for_return_or_if(node: &Statement) -> Option<Span> {
         Statement::ReturnStatement(r) => Some(r.span),
         Statement::IfStatement(if_stmt) => {
             let alternate = if_stmt.alternate.as_ref()?;
+
             if let (Some(_), Some(ret_span)) =
                 (naive_has_return(alternate), naive_has_return(&if_stmt.consequent))
             {
@@ -303,6 +324,7 @@ fn check_for_return_or_if(node: &Statement) -> Option<Span> {
                 None
             }
         }
+
         _ => None,
     }
 }
@@ -318,6 +340,7 @@ fn check_if_with_else(ctx: &LintContext, node: &AstNode) {
     let AstKind::IfStatement(if_stmt) = node.kind() else {
         return;
     };
+
     let Some(alternate) = &if_stmt.alternate else {
         return;
     };
@@ -331,25 +354,35 @@ fn check_if_without_else(ctx: &LintContext, node: &AstNode) {
     let AstKind::IfStatement(if_stmt) = node.kind() else {
         return;
     };
+
     let mut current_node = if_stmt;
+
     let mut last_alternate;
+
     let mut last_alternate_prev;
+
     let mut last_return_span;
 
     loop {
         let Some(alternate) = &current_node.alternate else {
             return;
         };
+
         let Some(ret_span) = always_returns(&current_node.consequent) else {
             return;
         };
+
         last_alternate_prev = &current_node.consequent;
+
         last_alternate = alternate;
+
         last_return_span = ret_span;
+
         match alternate {
             Statement::IfStatement(if_stmt) => {
                 current_node = if_stmt;
             }
+
             _ => break,
         }
     }
@@ -360,6 +393,7 @@ fn check_if_without_else(ctx: &LintContext, node: &AstNode) {
 impl Rule for NoElseReturn {
     fn from_configuration(value: serde_json::Value) -> Self {
         let Some(value) = value.get(0) else { return Self { allow_else_if: true } };
+
         Self {
             allow_else_if: value
                 .get("allowElseIf")
@@ -387,6 +421,7 @@ impl Rule for NoElseReturn {
         ) {
             return;
         }
+
         if self.allow_else_if {
             check_if_without_else(ctx, node);
         } else {
@@ -412,7 +447,9 @@ fn test() {
 			            function foo() {
 			                if (foo)
 			                    if (bar) return;
+
 			                    else baz;
+
 			                else qux;
 			            }
 			        ", None),
@@ -420,6 +457,7 @@ fn test() {
 			            function foo() {
 			                while (foo)
 			                    if (bar) return;
+
 			                    else baz;
 			            }
 			        ", None),
@@ -563,5 +601,6 @@ fn test() {
 ("function foo() { if (bar) { if (baz) { return true; } else { let a; } } function a(){} }", "function foo() { if (bar) { if (baz) { return true; } let a; } function a(){} }", None),
 ("if (foo) { return true; } else { let a; }", "if (foo) { return true; } let a;", None)
     ];
+
     Tester::new(NoElseReturn::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
 }

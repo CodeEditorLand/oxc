@@ -33,36 +33,46 @@ pub fn encode_to_string(sourcemap: &SourceMap) -> String {
         + sourcemap.sources.len() * 2
         + sourcemap.source_contents.as_ref().map_or(0, |sources| sources.len() * 2 + 1)
         + sourcemap.x_google_ignore_list.as_ref().map_or(0, |x| x.len() * 2 + 1);
+
     let mut contents = PreAllocatedString::new(max_segments);
 
     contents.push("{\"version\":3,".into());
+
     if let Some(file) = sourcemap.get_file() {
         contents.push("\"file\":\"".into());
+
         contents.push(file.into());
+
         contents.push("\",".into());
     }
 
     if let Some(source_root) = sourcemap.get_source_root() {
         contents.push("\"sourceRoot\":\"".into());
+
         contents.push(source_root.into());
+
         contents.push("\",".into());
     }
 
     contents.push("\"names\":[".into());
+
     contents.push_list(sourcemap.names.iter().map(escape_json_string));
 
     contents.push("],\"sources\":[".into());
+
     contents.push_list(sourcemap.sources.iter().map(escape_json_string));
 
     // Quote `source_content` in parallel
     if let Some(source_contents) = &sourcemap.source_contents {
         contents.push("],\"sourcesContent\":[".into());
+
         cfg_if::cfg_if! {
             if #[cfg(feature = "concurrent")] {
                 let quoted_source_contents: Vec<_> = source_contents
                     .par_iter()
                     .map(escape_json_string)
                     .collect();
+
                 contents.push_list(quoted_source_contents.into_iter());
             } else {
                 contents.push_list(source_contents.iter().map(escape_json_string));
@@ -72,14 +82,17 @@ pub fn encode_to_string(sourcemap: &SourceMap) -> String {
 
     if let Some(x_google_ignore_list) = &sourcemap.x_google_ignore_list {
         contents.push("],\"x_google_ignoreList\":[".into());
+
         contents.push_list(x_google_ignore_list.iter().map(ToString::to_string));
     }
 
     contents.push("],\"mappings\":\"".into());
+
     contents.push(serialize_sourcemap_mappings(sourcemap).into());
 
     if let Some(debug_id) = sourcemap.get_debug_id() {
         contents.push("\",\"debugId\":\"".into());
+
         contents.push(debug_id.into());
     }
 
@@ -150,16 +163,20 @@ fn serialize_mappings(tokens: &[Token], token_chunk: &TokenChunk) -> String {
         const MAX_TOTAL_VLQ_BYTES: usize = 5 * MAX_VLQ_BYTES;
 
         let num_line_breaks = token.get_dst_line() - prev_dst_line;
+
         if num_line_breaks != 0 {
             rv.reserve(MAX_TOTAL_VLQ_BYTES + num_line_breaks as usize);
             // SAFETY: We have reserved sufficient capacity for `num_line_breaks` bytes
             unsafe { push_bytes_unchecked(&mut rv, b';', num_line_breaks) };
+
             prev_dst_col = 0;
+
             prev_dst_line += num_line_breaks;
         } else if let Some(prev_token) = prev_token {
             if prev_token == token {
                 continue;
             }
+
             rv.reserve(MAX_TOTAL_VLQ_BYTES + 1);
             // SAFETY: We have reserved sufficient capacity for 1 byte
             unsafe { push_byte_unchecked(&mut rv, b',') };
@@ -169,17 +186,25 @@ fn serialize_mappings(tokens: &[Token], token_chunk: &TokenChunk) -> String {
         // of `encode_vlq_diff` for all calls below
         unsafe {
             encode_vlq_diff(&mut rv, token.get_dst_col(), prev_dst_col);
+
             prev_dst_col = token.get_dst_col();
 
             if let Some(source_id) = token.get_source_id() {
                 encode_vlq_diff(&mut rv, source_id, prev_source_id);
+
                 prev_source_id = source_id;
+
                 encode_vlq_diff(&mut rv, token.get_src_line(), prev_src_line);
+
                 prev_src_line = token.get_src_line();
+
                 encode_vlq_diff(&mut rv, token.get_src_col(), prev_src_col);
+
                 prev_src_col = token.get_src_col();
+
                 if let Some(name_id) = token.get_name_id() {
                     encode_vlq_diff(&mut rv, name_id, prev_name_id);
+
                     prev_name_id = name_id;
                 }
             }
@@ -232,9 +257,12 @@ unsafe fn encode_vlq(out: &mut String, num: i64) {
     // https://godbolt.org/z/Es4Pavh9j
     // This translates to a 16% speed-up for VLQ encoding.
     let mut digit;
+
     loop {
         digit = num & 0b11111;
+
         num >>= 5;
+
         if num == 0 {
             break;
         }
@@ -267,12 +295,17 @@ unsafe fn encode_vlq(out: &mut String, num: i64) {
 #[inline(always)]
 unsafe fn push_byte_unchecked(out: &mut String, b: u8) {
     debug_assert!(out.len() < out.capacity());
+
     debug_assert!(b.is_ascii());
 
     let out = out.as_mut_vec();
+
     let len = out.len();
+
     let ptr = out.as_mut_ptr().add(len);
+
     ptr.write(b);
+
     out.set_len(len + 1);
 }
 
@@ -284,15 +317,21 @@ unsafe fn push_byte_unchecked(out: &mut String, b: u8) {
 #[inline]
 unsafe fn push_bytes_unchecked(out: &mut String, b: u8, repeats: u32) {
     debug_assert!(out.capacity() - out.len() >= repeats as usize);
+
     debug_assert!(b.is_ascii());
 
     let out = out.as_mut_vec();
+
     let len = out.len();
+
     let mut ptr = out.as_mut_ptr().add(len);
+
     for _ in 0..repeats {
         ptr.write(b);
+
         ptr = ptr.add(1);
     }
+
     out.set_len(len + repeats as usize);
 }
 
@@ -313,6 +352,7 @@ impl<'a> PreAllocatedString<'a> {
     #[inline]
     fn push(&mut self, s: Cow<'a, str>) {
         self.len += s.len();
+
         self.buf.push(s);
     }
 
@@ -324,10 +364,12 @@ impl<'a> PreAllocatedString<'a> {
         let Some(first) = iter.next() else {
             return;
         };
+
         self.push(Cow::Owned(first));
 
         for other in iter {
             self.push(Cow::Borrowed(","));
+
             self.push(Cow::Owned(other));
         }
     }
@@ -335,7 +377,9 @@ impl<'a> PreAllocatedString<'a> {
     #[inline]
     fn consume(self) -> String {
         let mut buf = String::with_capacity(self.len);
+
         buf.extend(self.buf);
+
         buf
     }
 
@@ -346,6 +390,7 @@ impl<'a> PreAllocatedString<'a> {
 
 fn escape_json_string<S: AsRef<str>>(s: S) -> String {
     let s = s.as_ref();
+
     let mut escaped_buf = Vec::with_capacity(s.len() * 2 + 2);
     // This call is infallible as only error it can return is if the writer errors.
     // Writing to a `Vec<u8>` is infallible, so that's not possible here.
@@ -373,7 +418,9 @@ fn test_escape_json_string() {
 
     for (c, expected) in FIXTURES {
         let mut input = String::new();
+
         input.push(*c);
+
         assert_eq!(escape_json_string(input), *expected);
     }
 }
@@ -387,7 +434,9 @@ fn test_encode() {
         "names": ["x","alert"],
         "mappings": "AAAA,GAAIA,GAAI,EACR,IAAIA,GAAK,EAAG,CACVC,MAAM"
     }"#;
+
     let sm = SourceMap::from_json_string(input).unwrap();
+
     let sm2 = SourceMap::from_json_string(&sm.to_json_string()).unwrap();
 
     for (tok1, tok2) in sm.get_tokens().zip(sm2.get_tokens()) {
@@ -407,8 +456,11 @@ fn test_encode_escape_string() {
         vec![],
         None,
     );
+
     sm.set_x_google_ignore_list(vec![0]);
+
     sm.set_debug_id("56431d54-c0a6-451d-8ea2-ba5de5d8ca2e");
+
     assert_eq!(
         sm.to_json_string(),
         r#"{"version":3,"names":["name_length_greater_than_16_\u0000"],"sources":["\u0000"],"sourcesContent":["emoji-👀-\u0000"],"x_google_ignoreList":[0],"mappings":"","debugId":"56431d54-c0a6-451d-8ea2-ba5de5d8ca2e"}"#
@@ -459,6 +511,7 @@ fn test_vlq_encode_diff() {
         let mut out = String::with_capacity(MAX_VLQ_BYTES);
         // SAFETY: `out` has 7 bytes spare capacity
         unsafe { encode_vlq_diff(&mut out, a, b) };
+
         assert_eq!(&out, res);
     }
 }

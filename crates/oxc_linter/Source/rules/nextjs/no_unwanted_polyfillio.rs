@@ -117,6 +117,7 @@ impl Rule for NoUnwantedPolyfillio {
 
         if tag_name.as_str() != "script" {
             let next_script_import_local_name = get_next_script_import_local_name(ctx);
+
             if !matches!(next_script_import_local_name, Some(import) if tag_name.as_str() == import.as_str())
             {
                 return;
@@ -150,6 +151,7 @@ impl Rule for NoUnwantedPolyfillio {
             let Ok(url) = url::Url::parse(src_value.value.as_str()) else {
                 return;
             };
+
             let Some((_, features_value)) = url.query_pairs().find(|(key, _)| key == "features")
             else {
                 return;
@@ -159,6 +161,7 @@ impl Rule for NoUnwantedPolyfillio {
                 .split(',')
                 .filter(|feature| NEXT_POLYFILLED_FEATURES.contains(feature))
                 .collect();
+
             if !unwanted_features.is_empty() {
                 ctx.diagnostic(no_unwanted_polyfillio_diagnostic(
                     &format!(

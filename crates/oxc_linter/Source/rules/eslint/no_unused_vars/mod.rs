@@ -206,6 +206,7 @@ impl Rule for NoUnusedVars {
 
     fn run_on_symbol(&self, symbol_id: SymbolId, ctx: &LintContext<'_>) {
         let symbol = Symbol::new(ctx.semantic().as_ref(), symbol_id);
+
         if Self::should_skip_symbol(&symbol) {
             return;
         }
@@ -239,6 +240,7 @@ impl NoUnusedVars {
                 if self.report_used_ignore_pattern {
                     ctx.diagnostic(diagnostic::used_ignored(symbol, &self.vars_ignore_pattern));
                 }
+
                 return;
             },
             // not used but ignored, no violation
@@ -252,6 +254,7 @@ impl NoUnusedVars {
         }
 
         let declaration = symbol.declaration();
+
         match declaration.kind() {
             // NOTE: match_module_declaration(AstKind) does not work here
             AstKind::ImportDeclaration(_)
@@ -260,6 +263,7 @@ impl NoUnusedVars {
             | AstKind::ImportDefaultSpecifier(_)
             | AstKind::ImportNamespaceSpecifier(_) => {
                 let diagnostic = diagnostic::imported(symbol);
+
                 let declaration =
                     symbol.iter_self_and_parents().map(AstNode::kind).find_map(|kind| match kind {
                         AstKind::ImportDeclaration(import) => Some(import),
@@ -274,14 +278,17 @@ impl NoUnusedVars {
                     ctx.diagnostic(diagnostic);
                 }
             }
+
             AstKind::VariableDeclarator(decl) => {
                 if self.is_allowed_variable_declaration(symbol, decl) {
                     return;
                 };
+
                 let report =
                     if let Some(last_write) = symbol.references().rev().find(|r| r.is_write()) {
                         // ahg
                         let span = ctx.nodes().get_node(last_write.node_id()).kind().span();
+
                         diagnostic::assign(symbol, span, &self.vars_ignore_pattern)
                     } else {
                         diagnostic::declared(symbol, &self.vars_ignore_pattern)
@@ -293,39 +300,51 @@ impl NoUnusedVars {
                     self.rename_or_remove_var_declaration(fixer, symbol, decl, declaration.id())
                 });
             }
+
             AstKind::FormalParameter(param) => {
                 if self.is_allowed_argument(ctx.semantic().as_ref(), symbol, param) {
                     return;
                 }
+
                 ctx.diagnostic(diagnostic::param(symbol, &self.args_ignore_pattern));
             }
+
             AstKind::BindingRestElement(_) => {
                 if NoUnusedVars::is_allowed_binding_rest_element(symbol) {
                     return;
                 }
+
                 ctx.diagnostic(diagnostic::declared(symbol, &self.vars_ignore_pattern));
             }
+
             AstKind::TSModuleDeclaration(namespace) => {
                 if self.is_allowed_ts_namespace(symbol, namespace) {
                     return;
                 }
+
                 ctx.diagnostic(diagnostic::declared(symbol, &IgnorePattern::<&str>::None));
             }
+
             AstKind::TSInterfaceDeclaration(_) => {
                 if symbol.is_in_declared_module() {
                     return;
                 }
+
                 ctx.diagnostic(diagnostic::declared(symbol, &IgnorePattern::<&str>::None));
             }
+
             AstKind::TSTypeParameter(_) => {
                 if self.is_allowed_type_parameter(symbol, declaration.id()) {
                     return;
                 }
+
                 ctx.diagnostic(diagnostic::declared(symbol, &self.vars_ignore_pattern));
             }
+
             AstKind::CatchParameter(_) => {
                 ctx.diagnostic(diagnostic::declared(symbol, &self.caught_errors_ignore_pattern));
             }
+
             _ => ctx.diagnostic(diagnostic::declared(symbol, &IgnorePattern::<&str>::None)),
         };
     }
@@ -333,6 +352,7 @@ impl NoUnusedVars {
     fn should_skip_symbol(symbol: &Symbol<'_, '_>) -> bool {
         const AMBIENT_NAMESPACE_FLAGS: SymbolFlags =
             SymbolFlags::NameSpaceModule.union(SymbolFlags::Ambient);
+
         let flags = symbol.flags();
 
         // 1. ignore enum members. Only enums get checked
@@ -364,6 +384,7 @@ impl Symbol<'_, '_> {
     #[inline]
     fn is_possibly_jsx_factory(&self) -> bool {
         let name = self.name();
+
         name == "React" || name == "h"
     }
 
@@ -372,6 +393,7 @@ impl Symbol<'_, '_> {
             .ancestors(self.scope_id())
             .filter(|&scope_id| {
                 let flags = self.scopes().get_flags(scope_id);
+
                 flags.contains(ScopeFlags::TsModuleBlock)
             })
             .any(|ambient_module_scope_id| {

@@ -101,6 +101,7 @@ impl Rule for NoDisabledTests {
 
 fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
     let node = possible_jest_node.node;
+
     if let AstKind::CallExpression(call_expr) = node.kind() {
         if let Some(jest_fn_call) = parse_general_jest_fn_call(call_expr, possible_jest_node, ctx) {
             let ParsedGeneralJestFnCall { kind, members, name, .. } = jest_fn_call;
@@ -109,12 +110,15 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
                 JestFnKind::Expect | JestFnKind::ExpectTypeOf | JestFnKind::Unknown => return,
                 JestFnKind::General(kind) => kind,
             };
+
             if matches!(kind, JestGeneralFnKind::Test)
                 && call_expr.arguments.len() < 2
                 && members.iter().all(|member| member.is_name_unequal("todo"))
             {
                 let (error, help) = Message::MissingFunction.details();
+
                 ctx.diagnostic(no_disabled_tests_diagnostic(error, help, call_expr.span));
+
                 return;
             }
 
@@ -126,7 +130,9 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
                 } else {
                     Message::DisabledTestWithX.details()
                 };
+
                 ctx.diagnostic(no_disabled_tests_diagnostic(error, help, call_expr.callee.span()));
+
                 return;
             }
 
@@ -138,6 +144,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
                 } else {
                     Message::DisabledTestWithSkip.details()
                 };
+
                 ctx.diagnostic(no_disabled_tests_diagnostic(error, help, call_expr.callee.span()));
             }
         } else if let Expression::Identifier(ident) = &call_expr.callee {
@@ -146,6 +153,7 @@ fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>)
             {
                 // `describe('foo', function () { pending() })`
                 let (error, help) = Message::Pending.details();
+
                 ctx.diagnostic(no_disabled_tests_diagnostic(error, help, call_expr.span));
             }
         }
@@ -252,6 +260,7 @@ fn test() {
         "#,
         "
             import { test } from './test-utils';
+
 	    test('something');
         ",
     ];
@@ -273,6 +282,7 @@ fn test() {
     ];
 
     pass.extend(pass_vitest.into_iter().map(|x| (x, None)));
+
     fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
 
     Tester::new(NoDisabledTests::NAME, pass, fail)

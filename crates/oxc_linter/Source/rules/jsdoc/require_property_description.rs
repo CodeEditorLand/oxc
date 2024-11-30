@@ -50,6 +50,7 @@ declare_oxc_lint!(
 impl Rule for RequirePropertyDescription {
     fn run_once(&self, ctx: &LintContext) {
         let settings = &ctx.settings().jsdoc;
+
         let resolved_property_tag_name = settings.resolve_tag_name("property");
 
         for jsdoc in ctx
@@ -65,7 +66,9 @@ impl Rule for RequirePropertyDescription {
                 if tag_name.parsed() != resolved_property_tag_name {
                     continue;
                 }
+
                 let (_, _, comment_part) = tag.type_name_comment();
+
                 if !comment_part.parsed().is_empty() {
                     continue;
                 };

@@ -57,6 +57,7 @@ impl CompactStr {
     #[inline]
     pub const fn new_const(s: &'static str) -> Self {
         assert!(s.len() <= MAX_INLINE_LEN);
+
         Self(CompactString::const_new(s))
     }
 
@@ -288,10 +289,15 @@ mod test {
     #[test]
     fn test_compactstr_eq() {
         let foo = CompactStr::new("foo");
+
         assert_eq!(foo, "foo");
+
         assert_eq!(&foo, "foo");
+
         assert_eq!("foo", foo);
+
         assert_eq!("foo", &foo);
+
         assert_eq!(foo.into_compact_string(), CompactString::new("foo"));
     }
 

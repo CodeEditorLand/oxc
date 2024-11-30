@@ -194,6 +194,7 @@ declare_oxc_lint!(
 impl Rule for NoSideEffectsInInitialization {
     fn from_configuration(value: serde_json::Value) -> Self {
         let mut functions = vec![];
+
         let mut modules = vec![];
 
         if let Value::Array(arr) = value {
@@ -203,13 +204,16 @@ impl Rule for NoSideEffectsInInitialization {
                 };
 
                 // { "function": "Object.freeze" }
+
                 if let Some(name) = obj.get("function").and_then(Value::as_str) {
                     functions.push(name.to_string());
+
                     continue;
                 }
 
                 // { "module": "react", "functions": ["createContext", "createRef"] }
                 // { "module": "react", "functions": "*" }
+
                 if let Some(name) = obj.get("module").and_then(Value::as_str) {
                     let functions = match obj.get("functions") {
                         Some(Value::Array(arr)) => {
@@ -218,8 +222,10 @@ impl Rule for NoSideEffectsInInitialization {
                                 .filter_map(Value::as_str)
                                 .map(String::from)
                                 .collect::<Vec<_>>();
+
                             Some(ModuleFunctions::Specific(val))
                         }
+
                         Some(Value::String(str)) => {
                             if str == "*" {
                                 Some(ModuleFunctions::All)
@@ -227,8 +233,10 @@ impl Rule for NoSideEffectsInInitialization {
                                 None
                             }
                         }
+
                         _ => None,
                     };
+
                     if let Some(functions) = functions {
                         modules.push(WhitelistModule { name: name.to_string(), functions });
                     }
@@ -243,10 +251,13 @@ impl Rule for NoSideEffectsInInitialization {
         let Some(root) = ctx.nodes().root_node() else {
             return;
         };
+
         let AstKind::Program(program) = root.kind() else { unreachable!() };
+
         let node_listener_options = NodeListenerOptions::new(ctx)
             .with_whitelist_functions(&self.functions)
             .with_whitelist_modules(&self.modules);
+
         program.report_effects(&node_listener_options);
     }
 }
@@ -359,7 +370,9 @@ fn test() {
         "export function /* tree-shaking no-side-effects-when-called */ x(){}",
         "
             { let x = ext; }
+
             let x =  () => {}
+
             export {/* tree-shaking no-side-effects-when-called */ x}
         ",
         "const x = function(){}; export {/* tree-shaking no-side-effects-when-called */ x}",
@@ -534,9 +547,11 @@ fn test() {
         function a() {
             a 
         }
+
         function b() {
             b
         }
+
         export {
             a,
             b
@@ -650,6 +665,7 @@ fn test() {
         "const x = ext; export {/* tree-shaking no-side-effects-when-called */ x}",
         "
             { let x = () => {}; }
+
             let x = ext 
             export {/* tree-shaking no-side-effects-when-called */ x}
         ",
@@ -847,6 +863,7 @@ fn test() {
             a.map(v => v + 1);
           }
         }
+
         f();
         ",
     ];

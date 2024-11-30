@@ -63,6 +63,7 @@ impl<'a, 'ctx> TypeScriptAnnotations<'a, 'ctx> {
 impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
     fn exit_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         let mut no_modules_remaining = true;
+
         let mut some_modules_deleted = false;
 
         program.body.retain_mut(|stmt| {
@@ -70,6 +71,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 Statement::ExportNamedDeclaration(decl) if decl.declaration.is_some() => {
                     decl.declaration.as_ref().is_some_and(|decl| !decl.is_typescript_syntax())
                 }
+
                 Statement::ExportNamedDeclaration(decl) => {
                     if decl.export_kind.is_type() {
                         false
@@ -90,6 +92,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                         !decl.specifiers.is_empty()
                     }
                 }
+
                 Statement::ExportAllDeclaration(decl) => !decl.export_kind.is_type(),
                 Statement::ExportDefaultDeclaration(decl) => !decl.is_typescript_syntax(),
                 Statement::ImportDeclaration(decl) => {
@@ -101,6 +104,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                         if specifiers.is_empty() {
                             // import {} from 'mod' -> import 'mod'
                             decl.specifiers = None;
+
                             true
                         } else {
                             specifiers.retain(|specifier| {
@@ -111,13 +115,16 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                                         }
                                         &s.local
                                     }
+
                                     ImportDeclarationSpecifier::ImportDefaultSpecifier(s) => {
                                         &s.local
                                     }
+
                                     ImportDeclarationSpecifier::ImportNamespaceSpecifier(s) => {
                                         &s.local
                                     }
                                 };
+
                                 self.has_value_reference(&id.name, ctx)
                             });
                             !specifiers.is_empty()
@@ -126,9 +133,11 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                         true
                     }
                 }
+
                 Statement::TSExportAssignment(_) | Statement::TSNamespaceExportDeclaration(_) => {
                     false
                 }
+
                 _ => return true,
             };
 
@@ -148,6 +157,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
             let export_decl = Statement::ExportNamedDeclaration(
                 ctx.ast.plain_export_named_declaration(SPAN, ctx.ast.vec(), None),
             );
+
             program.body.push(export_decl);
         }
     }
@@ -158,6 +168,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
         _ctx: &mut TraverseCtx<'a>,
     ) {
         expr.type_parameters = None;
+
         expr.return_type = None;
     }
 
@@ -188,6 +199,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 expr @ match_member_expression!(Expression) => {
                     ChainElement::from(expr.into_member_expression())
                 }
+
                 _ => {
                     /* syntax error */
                     return;
@@ -198,8 +210,11 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
 
     fn enter_class(&mut self, class: &mut Class<'a>, _ctx: &mut TraverseCtx<'a>) {
         class.type_parameters = None;
+
         class.super_type_parameters = None;
+
         class.implements = None;
+
         class.r#abstract = false;
     }
 
@@ -210,6 +225,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 matches!(method.r#type, MethodDefinitionType::MethodDefinition)
                     && !method.value.is_typescript_syntax()
             }
+
             ClassElement::PropertyDefinition(prop) => {
                 if prop.declare {
                     false
@@ -217,9 +233,11 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                     matches!(prop.r#type, PropertyDefinitionType::PropertyDefinition)
                 }
             }
+
             ClassElement::AccessorProperty(prop) => {
                 matches!(prop.r#type, AccessorPropertyType::AccessorProperty)
             }
+
             ClassElement::TSIndexSignature(_) => false,
             ClassElement::StaticBlock(_) => true,
         });
@@ -242,6 +260,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 // `foo!++` to `foo++`
                 inner_expr @ Expression::Identifier(_) => {
                     let inner_expr = ctx.ast.move_expression(inner_expr);
+
                     let Expression::Identifier(ident) = inner_expr else {
                         unreachable!();
                     };
@@ -250,9 +269,11 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 // `foo.bar!++` to `foo.bar++`
                 inner_expr @ match_member_expression!(Expression) => {
                     let inner_expr = ctx.ast.move_expression(inner_expr);
+
                     let member_expr = inner_expr.into_member_expression();
                     *target = SimpleAssignmentTarget::from(member_expr);
                 }
+
                 _ => {
                     // This should be never hit until more syntax is added to the JavaScript/TypeScrips
                     self.ctx.error(OxcDiagnostic::error("Cannot strip out typescript syntax if SimpleAssignmentTarget is not an IdentifierReference or MemberExpression"));
@@ -268,8 +289,10 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
     ) {
         if let Some(expr) = target.get_expression_mut() {
             let inner_expr = expr.get_inner_expression_mut();
+
             if inner_expr.is_member_expression() {
                 let inner_expr = ctx.ast.move_expression(inner_expr);
+
                 let member_expr = inner_expr.into_member_expression();
                 *target = AssignmentTarget::from(member_expr);
             }
@@ -286,7 +309,9 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
 
     fn exit_function(&mut self, func: &mut Function<'a>, _ctx: &mut TraverseCtx<'a>) {
         func.this_param = None;
+
         func.type_parameters = None;
+
         func.return_type = None;
     }
 
@@ -318,13 +343,17 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 }
 
                 param.readonly = false;
+
                 param.accessibility = None;
+
                 param.r#override = false;
             }
         }
 
         def.accessibility = None;
+
         def.optional = false;
+
         def.r#override = false;
     }
 
@@ -375,11 +404,17 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
         );
 
         def.accessibility = None;
+
         def.declare = false;
+
         def.definite = false;
+
         def.r#override = false;
+
         def.optional = false;
+
         def.readonly = false;
+
         def.type_annotation = None;
     }
 
@@ -389,7 +424,9 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
         _ctx: &mut TraverseCtx<'a>,
     ) {
         def.accessibility = None;
+
         def.definite = false;
+
         def.type_annotation = None;
     }
 
@@ -417,6 +454,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
         }
 
         let has_super_call = matches!(stmt, Statement::ExpressionStatement(stmt) if stmt.expression.is_super_call_expression());
+
         if !has_super_call {
             return;
         }
@@ -428,6 +466,7 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 .iter()
                 .map(|assignment| assignment.create_this_property_assignment(ctx)),
         );
+
         self.has_super_call = true;
     }
 
@@ -461,10 +500,13 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 {
                     Some(expr.span)
                 }
+
                 _ => None,
             };
+
             if let Some(span) = consequent_span {
                 let consequent = ctx.ast.move_statement(&mut stmt.consequent);
+
                 stmt.consequent = Self::create_block_with_statement(consequent, span, ctx);
             }
 
@@ -474,10 +516,13 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
                 {
                     Some(expr.span)
                 }
+
                 _ => None,
             };
+
             if let Some(span) = alternate_span {
                 let alternate = stmt.alternate.take().unwrap();
+
                 stmt.alternate = Some(Self::create_block_with_statement(alternate, span, ctx));
             }
         }
@@ -491,16 +536,19 @@ impl<'a, 'ctx> Traverse<'a> for TypeScriptAnnotations<'a, 'ctx> {
 
     fn enter_for_statement(&mut self, stmt: &mut ForStatement<'a>, ctx: &mut TraverseCtx<'a>) {
         let scope_id = stmt.scope_id();
+
         Self::replace_for_statement_body_with_empty_block_if_ts(&mut stmt.body, scope_id, ctx);
     }
 
     fn enter_for_in_statement(&mut self, stmt: &mut ForInStatement<'a>, ctx: &mut TraverseCtx<'a>) {
         let scope_id = stmt.scope_id();
+
         Self::replace_for_statement_body_with_empty_block_if_ts(&mut stmt.body, scope_id, ctx);
     }
 
     fn enter_for_of_statement(&mut self, stmt: &mut ForOfStatement<'a>, ctx: &mut TraverseCtx<'a>) {
         let scope_id = stmt.scope_id();
+
         Self::replace_for_statement_body_with_empty_block_if_ts(&mut stmt.body, scope_id, ctx);
     }
 
@@ -558,7 +606,9 @@ impl<'a, 'ctx> TypeScriptAnnotations<'a, 'ctx> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Statement<'a> {
         let scope_id = ctx.insert_scope_below_statement(&stmt, ScopeFlags::empty());
+
         let block = ctx.ast.alloc_block_statement_with_scope_id(span, ctx.ast.vec1(stmt), scope_id);
+
         Statement::BlockStatement(block)
     }
 
@@ -577,6 +627,7 @@ impl<'a, 'ctx> TypeScriptAnnotations<'a, 'ctx> {
     ) {
         if stmt.is_typescript_syntax() {
             let scope_id = ctx.create_child_scope(parent_scope_id, ScopeFlags::empty());
+
             let block =
                 ctx.ast.alloc_block_statement_with_scope_id(stmt.span(), ctx.ast.vec(), scope_id);
             *stmt = Statement::BlockStatement(block);
@@ -591,9 +642,11 @@ impl<'a, 'ctx> TypeScriptAnnotations<'a, 'ctx> {
             // That means the import is shadowed, and we can safely remove the import.
             let has_value_redeclaration =
                 (ctx.symbols().get_flags(symbol_id) - SymbolFlags::Import).is_value();
+
             if has_value_redeclaration {
                 return false;
             }
+
             if ctx
                 .symbols()
                 .get_resolved_references(symbol_id)
@@ -617,6 +670,7 @@ impl<'a> Assignment<'a> {
     // Creates `this.name = name`
     fn create_this_property_assignment(&self, ctx: &mut TraverseCtx<'a>) -> Statement<'a> {
         let reference_id = ctx.create_bound_reference(self.symbol_id, ReferenceFlags::Read);
+
         let id = ctx.ast.identifier_reference_with_reference_id(
             self.span,
             self.name.clone(),

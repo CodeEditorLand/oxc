@@ -6,8 +6,10 @@ use oxc_tasks_common::TestFiles;
 
 fn bench_parser(criterion: &mut Criterion) {
     let mut group = criterion.benchmark_group("parser");
+
     for file in TestFiles::complicated().files() {
         let source_type = SourceType::from_path(&file.file_name).unwrap();
+
         group.bench_with_input(
             BenchmarkId::from_parameter(&file.file_name),
             &file.source_text,
@@ -16,6 +18,7 @@ fn bench_parser(criterion: &mut Criterion) {
                 // User code would likely reuse the same allocator over and over to parse multiple files,
                 // so we do the same here.
                 let mut allocator = Allocator::default();
+
                 b.iter(|| {
                     Parser::new(&allocator, source_text, source_type)
                         .with_options(ParseOptions {
@@ -23,11 +26,13 @@ fn bench_parser(criterion: &mut Criterion) {
                             ..ParseOptions::default()
                         })
                         .parse();
+
                     allocator.reset();
                 });
             },
         );
     }
+
     group.finish();
 }
 

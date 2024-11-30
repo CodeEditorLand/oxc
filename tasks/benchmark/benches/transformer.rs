@@ -13,7 +13,9 @@ fn bench_transformer(criterion: &mut Criterion) {
 
     for file in TestFiles::complicated().files() {
         let id = BenchmarkId::from_parameter(&file.file_name);
+
         let source_type = SourceType::from_path(&file.file_name).unwrap();
+
         let source_text = file.source_text.as_str();
 
         // Create `Allocator` outside of `bench_function`, so same allocator is used for
@@ -33,6 +35,7 @@ fn bench_transformer(criterion: &mut Criterion) {
                 // Create fresh AST + semantic data for each iteration
                 let ParserReturn { mut program, .. } =
                     Parser::new(&allocator, source_text, source_type).parse();
+
                 let (symbols, scopes) = SemanticBuilder::new()
                     // Estimate transformer will triple scopes, symbols, references
                     .with_excess_capacity(2.0)

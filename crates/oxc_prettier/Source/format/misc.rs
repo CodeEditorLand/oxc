@@ -38,15 +38,20 @@ pub(super) fn in_parentheses(kind: AstKind, text: &str, span: Span) -> bool {
     if span.start == 0 || span.end == u32::try_from(text.len()).unwrap_or_default() {
         return false;
     }
+
     let text = text.as_bytes();
+
     for i in (0..span.start as usize).rev() {
         let char = text[i];
+
         if char.is_ascii_whitespace() {
             continue;
         }
+
         if char == b'(' {
             break;
         }
+
         return false;
     }
 
@@ -54,6 +59,7 @@ pub(super) fn in_parentheses(kind: AstKind, text: &str, span: Span) -> bool {
         if char.is_ascii_whitespace() {
             continue;
         }
+
         return char == &b')';
     }
 

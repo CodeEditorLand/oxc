@@ -103,6 +103,7 @@ fn assignment_target_eq_expr<'a>(
     ctx: &LintContext<'a>,
 ) -> bool {
     let right_expr = right_expr.get_inner_expression();
+
     if let Some(simple_assignment_target) = assignment_target.as_simple_assignment_target() {
         return match simple_assignment_target {
             SimpleAssignmentTarget::AssignmentTargetIdentifier(ident) => {
@@ -112,26 +113,33 @@ fn assignment_target_eq_expr<'a>(
                     false
                 }
             }
+
             match_member_expression!(SimpleAssignmentTarget) => {
                 let member_expr = simple_assignment_target.to_member_expression();
+
                 if let Some(right_member_expr) = right_expr.as_member_expression() {
                     is_same_member_expression(member_expr, right_member_expr, ctx)
                 } else {
                     false
                 }
             }
+
             SimpleAssignmentTarget::TSAsExpression(ts_expr) => {
                 is_same_reference(&ts_expr.expression, right_expr, ctx)
             }
+
             SimpleAssignmentTarget::TSSatisfiesExpression(ts_expr) => {
                 is_same_reference(&ts_expr.expression, right_expr, ctx)
             }
+
             SimpleAssignmentTarget::TSNonNullExpression(ts_expr) => {
                 is_same_reference(&ts_expr.expression, right_expr, ctx)
             }
+
             SimpleAssignmentTarget::TSTypeAssertion(ts_expr) => {
                 is_same_reference(&ts_expr.expression, right_expr, ctx)
             }
+
             SimpleAssignmentTarget::TSInstantiationExpression(ts_expr) => {
                 is_same_reference(&ts_expr.expression, right_expr, ctx)
             }

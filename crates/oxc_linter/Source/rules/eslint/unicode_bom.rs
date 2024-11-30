@@ -57,6 +57,7 @@ impl Rule for UnicodeBom {
 
     fn run_once(&self, ctx: &LintContext) {
         let source = ctx.source_text();
+
         let has_bomb = source.starts_with('﻿');
 
         if has_bomb && matches!(self.bom_option, BomOptionType::Never) {

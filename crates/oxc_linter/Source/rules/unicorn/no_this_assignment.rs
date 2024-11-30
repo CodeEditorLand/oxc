@@ -79,6 +79,7 @@ impl Rule for NoThisAssignment {
                     binding_ident.name.as_str(),
                 ));
             }
+
             AstKind::AssignmentExpression(assignment_expr) => {
                 if !matches!(
                     assignment_expr.right.without_parentheses(),
@@ -97,6 +98,7 @@ impl Rule for NoThisAssignment {
                     ident.name.as_str(),
                 ));
             }
+
             _ => {}
         }
     }

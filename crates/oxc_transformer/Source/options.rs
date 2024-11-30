@@ -48,6 +48,7 @@ impl TransformOptions {
             } else {
                 babel_options.get_plugin(name)
             };
+
             target
                 .and_then(|plugin_options| {
                     plugin_options.and_then(|options| match serde_json::from_value::<T>(options) {
@@ -55,7 +56,9 @@ impl TransformOptions {
                         Err(err) => {
                             let kind_msg =
                                 if is_preset { format!("preset-{name}") } else { name.to_string() };
+
                             errors.push(OxcDiagnostic::error(format!("{kind_msg}: {err}")).into());
+
                             None
                         }
                     })
@@ -69,7 +72,9 @@ impl TransformOptions {
             get_options::<ReactOptions>("react", options, &mut errors, true)
         } else {
             let has_jsx_plugin = options.has_plugin("transform-react-jsx");
+
             let has_jsx_development_plugin = options.has_plugin("transform-react-jsx-development");
+
             let mut react_options = if has_jsx_plugin {
                 get_options::<ReactOptions>("transform-react-jsx", options, &mut errors, false)
             } else {
@@ -80,11 +85,17 @@ impl TransformOptions {
                     false,
                 )
             };
+
             react_options.development = options.has_plugin("transform-react-jsx-development");
+
             react_options.jsx_plugin = has_jsx_plugin || has_jsx_development_plugin;
+
             react_options.display_name_plugin = options.has_plugin("transform-react-display-name");
+
             react_options.jsx_self_plugin = options.has_plugin("transform-react-jsx-self");
+
             react_options.jsx_source_plugin = options.has_plugin("transform-react-jsx-source");
+
             react_options
         };
 
@@ -109,6 +120,7 @@ impl TransformOptions {
                 Ok(value) => value,
                 Err(err) => {
                     errors.push(OxcDiagnostic::error(err.to_string()).into());
+
                     CompilerAssumptions::default()
                 }
             }
@@ -175,29 +187,37 @@ impl BabelOptions {
     /// directories. # Panics
     pub fn from_test_path(path: &Path) -> Self {
         let mut options_json: Option<Self> = None;
+
         for path in path.ancestors().take(3) {
             let file = path.join("options.json");
+
             if !file.exists() {
                 continue;
             }
+
             let file = std::fs::read_to_string(&file).unwrap();
+
             let new_json: Self = serde_json::from_str(&file).unwrap();
+
             if let Some(existing_json) = options_json.as_mut() {
                 if existing_json.source_type.is_none() {
                     if let Some(source_type) = new_json.source_type {
                         existing_json.source_type = Some(source_type);
                     }
                 }
+
                 if existing_json.throws.is_none() {
                     if let Some(throws) = new_json.throws {
                         existing_json.throws = Some(throws);
                     }
                 }
+
                 existing_json.plugins.extend(new_json.plugins);
             } else {
                 options_json = Some(new_json);
             }
         }
+
         options_json.unwrap_or_default()
     }
 
@@ -208,7 +228,9 @@ impl BabelOptions {
     pub fn is_typescript(&self) -> bool {
         self.plugins.iter().any(|v| {
             let string_value = v.as_str().is_some_and(|v| v == "typescript");
+
             let array_value = v.get(0).and_then(Value::as_str).is_some_and(|s| s == "typescript");
+
             string_value || array_value
         })
     }
@@ -216,12 +238,14 @@ impl BabelOptions {
     pub fn is_typescript_definition(&self) -> bool {
         self.plugins.iter().filter_map(Value::as_array).any(|p| {
             let typescript = p.first().and_then(Value::as_str).is_some_and(|s| s == "typescript");
+
             let dts = p
                 .get(1)
                 .and_then(Value::as_object)
                 .and_then(|v| v.get("dts"))
                 .and_then(Value::as_bool)
                 .is_some_and(|v| v);
+
             typescript && dts
         })
     }
@@ -257,6 +281,7 @@ impl BabelOptions {
             Value::Array(a) if a.first().and_then(Value::as_str).is_some_and(|s| s == name) => {
                 Some(a.get(1).cloned())
             }
+
             _ => None,
         }
     }
@@ -268,10 +293,15 @@ fn test_deny_unknown_fields() {
       "plugins": [["transform-react-jsx", { "runtime": "automatic", "filter": 1 }]],
       "sourceType": "module"
     });
+
     let babel_options = serde_json::from_value::<BabelOptions>(options).unwrap();
+
     let result = TransformOptions::from_babel_options(&babel_options);
+
     assert!(result.is_err());
+
     let err_message =
         result.err().unwrap().iter().map(ToString::to_string).collect::<Vec<_>>().join("\n");
+
     assert!(err_message.contains("transform-react-jsx: unknown field `filter`"));
 }

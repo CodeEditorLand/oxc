@@ -55,12 +55,15 @@ impl Rule for DefaultCaseLast {
         let AstKind::SwitchStatement(switch) = node.kind() else {
             return;
         };
+
         let cases = &switch.cases;
+
         let index_of_default = cases.iter().position(|c| c.test.is_none());
 
         if let Some(index) = index_of_default {
             if index != cases.len() - 1 {
                 let default_clause = &cases[index];
+
                 ctx.diagnostic(default_case_last_diagnostic(Span::new(
                     default_clause.span.start,
                     default_clause.span.start + 7,

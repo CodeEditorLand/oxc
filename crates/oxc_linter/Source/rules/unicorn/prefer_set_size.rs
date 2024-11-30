@@ -96,6 +96,7 @@ fn is_set<'a>(maybe_set: &Expression<'a>, ctx: &LintContext<'a>) -> bool {
         if let Expression::Identifier(identifier) = &new_expr.callee {
             return identifier.name == "Set";
         }
+
         return false;
     }
 
@@ -131,8 +132,10 @@ fn is_new_set(expr: &Expression) -> bool {
         if let Expression::Identifier(identifier) = &new_expr.callee {
             return identifier.name == "Set";
         }
+
         return false;
     }
+
     false
 }
 

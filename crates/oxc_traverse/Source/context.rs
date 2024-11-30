@@ -161,8 +161,11 @@ impl<'a> TraverseCtx<'a> {
     /// Create new traversal context.
     pub(crate) fn new(scopes: ScopeTree, symbols: SymbolTable, allocator: &'a Allocator) -> Self {
         let ancestry = TraverseAncestry::new();
+
         let scoping = TraverseScoping::new(scopes, symbols);
+
         let ast = AstBuilder::new(allocator);
+
         Self { ancestry, scoping, ast }
     }
 
@@ -435,6 +438,7 @@ impl<'a> TraverseAncestry<'a> {
                 FinderRet::Continue => {}
             }
         }
+
         None
     }
 
@@ -456,7 +460,9 @@ impl<'a> TraverseAncestry<'a> {
     /// break safety invariants.
     fn new() -> Self {
         let mut stack = Vec::with_capacity(INITIAL_STACK_CAPACITY);
+
         stack.push(Ancestor::None);
+
         Self { stack }
     }
 
@@ -560,6 +566,7 @@ impl TraverseScoping {
         F: Fn(ScopeId) -> FinderRet<O>,
     {
         let mut scope_id = self.current_scope_id;
+
         loop {
             match finder(scope_id) {
                 FinderRet::Found(res) => return Some(res),
@@ -589,6 +596,7 @@ impl TraverseScoping {
     {
         self.find_scope(|scope_id| {
             let flags = self.scopes.get_flags(scope_id);
+
             finder(flags)
         })
     }

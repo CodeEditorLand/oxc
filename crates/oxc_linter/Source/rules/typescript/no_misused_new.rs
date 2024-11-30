@@ -76,6 +76,7 @@ impl Rule for NoMisusedNew {
                     }
                 }
             }
+
             AstKind::TSMethodSignature(method_sig) => {
                 if let PropertyKey::StaticIdentifier(id) = &method_sig.key {
                     if id.name == "constructor" {
@@ -83,6 +84,7 @@ impl Rule for NoMisusedNew {
                     }
                 }
             }
+
             AstKind::Class(cls) => {
                 if let Some(cls_id) = &cls.id {
                     let cls_name = &cls_id.name;
@@ -110,6 +112,7 @@ impl Rule for NoMisusedNew {
                     }
                 }
             }
+
             _ => {}
         }
     }

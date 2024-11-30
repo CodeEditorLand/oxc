@@ -23,6 +23,7 @@ impl<'a> CompressorPass<'a> for PeepholeMinimizeConditions {
 
     fn build(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         self.changed = false;
+
         oxc_traverse::walk_program(self, program, ctx);
     }
 }
@@ -34,6 +35,7 @@ impl<'a> Traverse<'a> for PeepholeMinimizeConditions {
             _ => None,
         } {
             *expr = folded_expr;
+
             self.changed = true;
         };
     }
@@ -41,8 +43,10 @@ impl<'a> Traverse<'a> for PeepholeMinimizeConditions {
     fn exit_statement(&mut self, node: &mut Statement<'a>, ctx: &mut TraverseCtx<'a>) {
         if let Statement::IfStatement(if_stmt) = node {
             self.try_fold_if_block_one(if_stmt, ctx);
+
             if let Some(new_stmt) = Self::try_fold_if_one_child(if_stmt, ctx) {
                 *node = new_stmt;
+
                 self.changed = true;
             }
         }
@@ -60,12 +64,15 @@ impl<'a> PeepholeMinimizeConditions {
         ctx: &mut TraverseCtx<'a>,
     ) -> Option<Expression<'a>> {
         debug_assert!(expr.operator.is_not());
+
         if let Expression::BinaryExpression(binary_expr) = &mut expr.argument {
             if let Some(new_op) = binary_expr.operator.equality_inverse_operator() {
                 binary_expr.operator = new_op;
+
                 return Some(ctx.ast.move_expression(&mut expr.argument));
             }
         }
+
         None
     }
 
@@ -74,12 +81,15 @@ impl<'a> PeepholeMinimizeConditions {
         if let Statement::BlockStatement(block) = &mut if_stmt.consequent {
             if block.body.len() == 1 {
                 self.changed = true;
+
                 if_stmt.consequent = ctx.ast.move_statement(block.body.first_mut().unwrap());
             }
         }
+
         if let Some(Statement::BlockStatement(block)) = &mut if_stmt.alternate {
             if block.body.len() == 1 {
                 self.changed = true;
+
                 if_stmt.alternate = Some(ctx.ast.move_statement(block.body.first_mut().unwrap()));
             }
         }
@@ -101,13 +111,16 @@ impl<'a> PeepholeMinimizeConditions {
                         return None;
                     }
                     // Make if (x) y; => x && y;
+
                     let (reverse, mut test) = match &mut if_stmt.test {
                         Expression::UnaryExpression(unary) if unary.operator.is_not() => {
                             let arg = ctx.ast.move_expression(&mut unary.argument);
                             (true, arg)
                         }
+
                         _ => (false, ctx.ast.move_expression(&mut if_stmt.test)),
                     };
+
                     match &mut test {
                         Expression::BinaryExpression(bin) if bin.operator.is_equality() => {
                             if !bin.left.is_literal() && bin.right.is_literal() {
@@ -119,16 +132,21 @@ impl<'a> PeepholeMinimizeConditions {
                                 );
                             }
                         }
+
                         _ => {}
                     }
+
                     if let Some(Statement::ExpressionStatement(alt)) = &mut if_stmt.alternate {
                         let left = ctx.ast.move_expression(&mut expr.expression);
+
                         let right = ctx.ast.move_expression(&mut alt.expression);
+
                         let cond = if reverse {
                             ctx.ast.expression_conditional(SPAN, test, right, left)
                         } else {
                             ctx.ast.expression_conditional(SPAN, test, left, right)
                         };
+
                         Some(ctx.ast.statement_expression(SPAN, cond))
                     } else if if_stmt.alternate.is_none() {
                         let new_expr = ctx.ast.expression_logical(
@@ -137,6 +155,7 @@ impl<'a> PeepholeMinimizeConditions {
                             if reverse { LogicalOperator::Or } else { LogicalOperator::And },
                             ctx.ast.move_expression(&mut expr.expression),
                         );
+
                         Some(ctx.ast.statement_expression(SPAN, new_expr))
                     } else {
                         None
@@ -158,7 +177,9 @@ mod test {
 
     fn test(source_text: &str, positive: &str) {
         let allocator = Allocator::default();
+
         let mut pass = super::PeepholeMinimizeConditions::new();
+
         tester::test(&allocator, source_text, positive, &mut pass);
     }
 
@@ -178,26 +199,37 @@ mod test {
     #[test]
     fn test_fold_one_child_blocks() {
         // late = false;
+
         fold("function f(){if(x)a();x=3}", "function f(){x&&a();x=3}");
+
         fold("function f(){if(x)a?.();x=3}", "function f(){x&&a?.();x=3}");
 
         fold("function f(){if(x){a()}x=3}", "function f(){x&&a();x=3}");
+
         fold("function f(){if(x){a?.()}x=3}", "function f(){x&&a?.();x=3}");
 
         fold("function f(){if(x){return 3}}", "function f(){if(x)return 3}");
+
         fold("function f(){if(x){a()}}", "function f(){x&&a()}");
+
         fold("function f(){if(x){throw 1}}", "function f(){if(x)throw 1;}");
 
         // Try it out with functions
         fold("function f(){if(x){foo()}}", "function f(){x&&foo()}");
+
         fold("function f(){if(x){foo()}else{bar()}}", "function f(){x?foo():bar()}");
 
         // Try it out with properties and methods
         fold("function f(){if(x){a.b=1}}", "function f(){x&&(a.b=1)}");
+
         fold("function f(){if(x){a.b*=1}}", "function f(){x&&(a.b*=1)}");
+
         fold("function f(){if(x){a.b+=1}}", "function f(){x&&(a.b+=1)}");
+
         fold("function f(){if(x){++a.b}}", "function f(){x&&++a.b}");
+
         fold("function f(){if(x){a.foo()}}", "function f(){x&&a.foo()}");
+
         fold("function f(){if(x){a?.foo()}}", "function f(){x&&a?.foo()}");
 
         // Try it out with throw/catch/finally [which should not change]
@@ -213,8 +245,11 @@ mod test {
 
         // Play with nested IFs
         fold("function f(){if(x){if(y)foo()}}", "function f(){x && (y && foo())}");
+
         fold("function f(){if(x){if(y)foo();else bar()}}", "function f(){x&&(y?foo():bar())}");
+
         fold("function f(){if(x){if(y)foo()}else bar()}", "function f(){x?y&&foo():bar()}");
+
         fold(
             "function f(){if(x){if(y)foo();else bar()}else{baz()}}",
             "function f(){x?y?foo():bar():baz()}",
@@ -225,6 +260,7 @@ mod test {
         // fold("if(e1){with(e2){if(e3){foo()}}}else{bar()}", "if(e1)with(e2)e3&&foo();else bar()");
 
         fold("if(a||b){if(c||d){var x;}}", "if(a||b)if(c||d)var x");
+
         fold("if(x){ if(y){var x;}else{var z;} }", "if(x)if(y)var x;else var z");
 
         // NOTE - technically we can remove the blocks since both the parent
@@ -234,6 +270,7 @@ mod test {
             "if(x){ if(y){var x;}else{var z;} }else{var w}",
             "if(x)if(y)var x;else var z;else var w",
         );
+
         fold("if (x) {var x;}else { if (y) { var y;} }", "if(x)var x;else if(y)var y");
 
         // Here's some of the ambiguous cases
@@ -243,7 +280,9 @@ mod test {
         );
 
         fold_same("function f(){foo()}");
+
         fold_same("switch(x){case y: foo()}");
+
         fold_same("try{foo()}catch(ex){bar()}finally{baz()}");
     }
 
@@ -252,18 +291,26 @@ mod test {
     #[ignore]
     fn test_fold_returns() {
         fold("function f(){if(x)return 1;else return 2}", "function f(){return x?1:2}");
+
         fold("function f(){if(x)return 1;return 2}", "function f(){return x?1:2}");
+
         fold("function f(){if(x)return;return 2}", "function f(){return x?void 0:2}");
+
         fold("function f(){if(x)return 1+x;else return 2-x}", "function f(){return x?1+x:2-x}");
+
         fold("function f(){if(x)return 1+x;return 2-x}", "function f(){return x?1+x:2-x}");
+
         fold(
             "function f(){if(x)return y += 1;else return y += 2}",
             "function f(){return x?(y+=1):(y+=2)}",
         );
 
         fold("function f(){if(x)return;else return 2-x}", "function f(){if(x);else return 2-x}");
+
         fold("function f(){if(x)return;return 2-x}", "function f(){return x?void 0:2-x}");
+
         fold("function f(){if(x)return x;else return}", "function f(){if(x)return x;{}}");
+
         fold("function f(){if(x)return x;return}", "function f(){if(x)return x}");
 
         fold_same("function f(){for(var x in y) { return x.y; } return k}");
@@ -276,6 +323,7 @@ mod test {
             "function f() {if (x) return 1; if (y) return 1}",
             "function f() {if (x||y) return 1;}",
         );
+
         fold(
             "function f() {if (x) return 1; if (y) foo(); else return 1}",
             "function f() {if ((!x)&&y) foo(); else return 1;}",
@@ -289,6 +337,7 @@ mod test {
         fold_same("function f() {if (x) throw 1; if (y) throw 1}");
         // Can't combine, side-effect
         fold("function f(){ if (x) g(); if (y) g() }", "function f(){ x&&g(); y&&g() }");
+
         fold("function f(){ if (x) g?.(); if (y) g?.() }", "function f(){ x&&g?.(); y&&g?.() }");
         // Can't combine, side-effect
         fold(
@@ -308,12 +357,16 @@ mod test {
     #[ignore]
     fn test_fold_assignments() {
         fold("function f(){if(x)y=3;else y=4;}", "function f(){y=x?3:4}");
+
         fold("function f(){if(x)y=1+a;else y=2+a;}", "function f(){y=x?1+a:2+a}");
 
         // and operation assignments
         fold("function f(){if(x)y+=1;else y+=2;}", "function f(){y+=x?1:2}");
+
         fold("function f(){if(x)y-=1;else y-=2;}", "function f(){y-=x?1:2}");
+
         fold("function f(){if(x)y%=1;else y%=2;}", "function f(){y%=x?1:2}");
+
         fold("function f(){if(x)y|=1;else y|=2;}", "function f(){y|=x?1:2}");
 
         // Don't fold if the 2 ops don't match.
@@ -332,7 +385,9 @@ mod test {
         // enableNormalize();
         // TODO(bradfordcsmith): Stop normalizing the expected output or document why it is necessary.
         // enableNormalizeExpectedOutput();
+
         fold("if (a) { x = 1; x++ } else { x = 2; x++ }", "x=(a) ? 1 : 2; x++");
+
         fold(
             concat!(
                 "if (a) { x = 1; x++; y += 1; z = pi; }",
@@ -340,10 +395,12 @@ mod test {
             ),
             "x=(a) ? 1 : 2; x++; y += 1; z = pi;",
         );
+
         fold(
             concat!("function z() {", "if (a) { foo(); return !0 } else { goo(); return !0 }", "}"),
             "function z() {(a) ? foo() : goo(); return !0}",
         );
+
         fold(
             concat!(
                 "function z() {if (a) { foo(); x = true; return true ",
@@ -395,9 +452,13 @@ mod test {
     #[test]
     fn test_not_cond() {
         fold("function f(){if(!x)foo()}", "function f(){x||foo()}");
+
         fold("function f(){if(!x)b=1}", "function f(){x||(b=1)}");
+
         fold("if(!x)z=1;else if(y)z=2", "x ? y&&(z=2) : z=1;");
+
         fold("if(x)y&&(z=2);else z=1;", "x ? y&&(z=2) : z=1");
+
         fold("function f(){if(!(x=1))a.b=1}", "function f(){(x=1)||(a.b=1)}");
     }
 
@@ -405,8 +466,11 @@ mod test {
     #[ignore]
     fn test_and_parentheses_count() {
         fold("function f(){if(x||y)a.foo()}", "function f(){(x||y)&&a.foo()}");
+
         fold("function f(){if(x.a)x.a=0}", "function f(){x.a&&(x.a=0)}");
+
         fold("function f(){if(x?.a)x.a=0}", "function f(){x?.a&&(x.a=0)}");
+
         fold_same("function f(){if(x()||y()){x()||y()}}");
     }
 
@@ -422,14 +486,21 @@ mod test {
     #[ignore]
     fn test_fold_not() {
         fold("while(!(x==y)){a=b;}", "while(x!=y){a=b;}");
+
         fold("while(!(x!=y)){a=b;}", "while(x==y){a=b;}");
+
         fold("while(!(x===y)){a=b;}", "while(x!==y){a=b;}");
+
         fold("while(!(x!==y)){a=b;}", "while(x===y){a=b;}");
         // Because !(x<NaN) != x>=NaN don't fold < and > cases.
         fold_same("while(!(x>y)){a=b;}");
+
         fold_same("while(!(x>=y)){a=b;}");
+
         fold_same("while(!(x<y)){a=b;}");
+
         fold_same("while(!(x<=y)){a=b;}");
+
         fold_same("while(!(x<=NaN)){a=b;}");
 
         // NOT forces a boolean context
@@ -442,12 +513,19 @@ mod test {
     #[ignore]
     fn test_minimize_expr_condition() {
         fold("(x ? true : false) && y()", "x&&y()");
+
         fold("(x ? false : true) && y()", "(!x)&&y()");
+
         fold("(x ? true : y) && y()", "(x || y)&&y()");
+
         fold("(x ? y : false) && y()", "(x && y)&&y()");
+
         fold("(x && true) && y()", "x && y()");
+
         fold("(x && false) && y()", "0&&y()");
+
         fold("(x || true) && y()", "1&&y()");
+
         fold("(x || false) && y()", "x&&y()");
     }
 
@@ -458,19 +536,33 @@ mod test {
         fold("while(!!true) foo()", "while(1) foo()");
         // These test tryMinimizeCondition
         fold("while(!!x) foo()", "while(x) foo()");
+
         fold("while(!(!x&&!y)) foo()", "while(x||y) foo()");
+
         fold("while(x||!!y) foo()", "while(x||y) foo()");
+
         fold("while(!(!!x&&y)) foo()", "while(!x||!y) foo()");
+
         fold("while(!(!x&&y)) foo()", "while(x||!y) foo()");
+
         fold("while(!(x||!y)) foo()", "while(!x&&y) foo()");
+
         fold("while(!(x||y)) foo()", "while(!x&&!y) foo()");
+
         fold("while(!(!x||y-z)) foo()", "while(x&&!(y-z)) foo()");
+
         fold("while(!(!(x/y)||z+w)) foo()", "while(x/y&&!(z+w)) foo()");
+
         fold_same("while(!(x+y||z)) foo()");
+
         fold_same("while(!(x&&y*z)) foo()");
+
         fold("while(!(!!x&&y)) foo()", "while(!x||!y) foo()");
+
         fold("while(x&&!0) foo()", "while(x) foo()");
+
         fold("while(x||!1) foo()", "while(x) foo()");
+
         fold("while(!((x,y)&&z)) foo()", "while((x,!y)||!z) foo()");
     }
 
@@ -478,7 +570,9 @@ mod test {
     #[ignore]
     fn test_minimize_demorgan_remove_leading_not() {
         fold("if(!(!a||!b)&&c) foo()", "((a&&b)&&c)&&foo()");
+
         fold("if(!(x&&y)) foo()", "x&&y||foo()");
+
         fold("if(!(x||y)) foo()", "(x||y)||foo()");
     }
 
@@ -548,6 +642,7 @@ mod test {
     #[ignore]
     fn test_no_swap_with_dangling_else() {
         fold_same("if(!x) {for(;;)foo(); for(;;)bar()} else if(y) for(;;) f()");
+
         fold_same("if(!a&&!b) {for(;;)foo(); for(;;)bar()} else if(y) for(;;) f()");
     }
 
@@ -557,15 +652,20 @@ mod test {
         fold("x ? x : y", "x || y");
         // We assume GETPROPs don't have side effects.
         fold("x.y ? x.y : x.z", "x.y || x.z");
+
         fold("x?.y ? x?.y : x.z", "x?.y || x.z");
+
         fold("x?.y ? x?.y : x?.z", "x?.y || x?.z");
 
         // This can be folded if x() does not have side effects.
         fold_same("x() ? x() : y()");
+
         fold_same("x?.() ? x?.() : y()");
 
         fold("!x ? foo() : bar()", "x ? bar() : foo()");
+
         fold("while(!(x ? y : z)) foo();", "while(x ? !y : !z) foo();");
+
         fold("(x ? !y : !z) ? foo() : bar()", "(x ? y : z) ? bar() : foo()");
     }
 
@@ -573,6 +673,7 @@ mod test {
     #[ignore]
     fn test_minimize_comma() {
         fold("while(!(inc(), test())) foo();", "while(inc(), !test()) foo();");
+
         fold("(inc(), !test()) ? foo() : bar()", "(inc(), test()) ? bar() : foo()");
     }
 
@@ -580,8 +681,11 @@ mod test {
     #[ignore]
     fn test_minimize_expr_result() {
         fold("!x||!y", "x&&y");
+
         fold("if(!(x&&!y)) foo()", "(!x||y)&&foo()");
+
         fold("if(!x||y) foo()", "(!x||y)&&foo()");
+
         fold("(!x||y)&&foo()", "x&&!y||!foo()");
     }
 
@@ -612,13 +716,19 @@ mod test {
         fold("for(;!!x;) foo()", "for(;x;) foo()");
 
         fold_same("for(a in b) foo()");
+
         fold_same("for(a in {}) foo()");
+
         fold_same("for(a in []) foo()");
+
         fold("for(a in !!true) foo()", "for(a in !0) foo()");
 
         fold_same("for(a of b) foo()");
+
         fold_same("for(a of {}) foo()");
+
         fold_same("for(a of []) foo()");
+
         fold("for(a of !!true) foo()", "for(a of !0) foo()");
     }
 
@@ -633,16 +743,24 @@ mod test {
     #[ignore]
     fn test_fold_loop_break_late() {
         // late = true;
+
         fold("for(;;) if (a) break", "for(;!a;);");
+
         fold_same("for(;;) if (a) { f(); break }");
+
         fold("for(;;) if (a) break; else f()", "for(;!a;) { { f(); } }");
+
         fold("for(;a;) if (b) break", "for(;a && !b;);");
+
         fold("for(;a;) { if (b) break; if (c) break; }", "for(;(a && !b);) if (c) break;");
+
         fold("for(;(a && !b);) if (c) break;", "for(;(a && !b) && !c;);");
+
         fold("for(;;) { if (foo) { break; var x; } } x;", "var x; for(;!foo;) {} x;");
 
         // 'while' is normalized to 'for'
         // enableNormalize();
+
         fold("while(true) if (a) break", "for(;1&&!a;);");
         // disableNormalize();
     }
@@ -651,14 +769,20 @@ mod test {
     #[ignore]
     fn test_fold_loop_break_early() {
         // late = false;
+
         fold_same("for(;;) if (a) break");
+
         fold_same("for(;;) if (a) { f(); break }");
+
         fold_same("for(;;) if (a) break; else f()");
+
         fold_same("for(;a;) if (b) break");
+
         fold_same("for(;a;) { if (b) break; if (c) break; }");
 
         fold_same("while(1) if (a) break");
         // enableNormalize();
+
         fold_same("for (; 1; ) if (a) break");
     }
 
@@ -666,12 +790,15 @@ mod test {
     #[ignore]
     fn test_fold_conditional_var_declaration() {
         fold("if(x) var y=1;else y=2", "var y=x?1:2");
+
         fold("if(x) y=1;else var y=2", "var y=x?1:2");
 
         fold_same("if(x) var y = 1; z = 2");
+
         fold_same("if(x||y) y = 1; var z = 2");
 
         fold_same("if(x) { var y = 1; print(y)} else y = 2 ");
+
         fold_same("if(x) var y = 1; else {y = 2; print(y)}");
     }
 
@@ -679,7 +806,9 @@ mod test {
     #[ignore]
     fn test_fold_if_with_lower_operators_inside() {
         fold("if (x + (y=5)) z && (w,z);", "x + (y=5) && (z && (w,z))");
+
         fold("if (!(x+(y=5))) z && (w,z);", "x + (y=5) || z && (w,z)");
+
         fold(
             "if (x + (y=5)) if (z && (w,z)) for(;;) foo();",
             "if (x + (y=5) && (z && (w,z))) for(;;) foo();",
@@ -802,7 +931,9 @@ mod test {
             "function f() { while(x) { throw Error } throw Error }",
             "function f() { while(x) { break } throw Error}",
         );
+
         fold_same("function f() { while(x) { throw Error(1) } throw Error(2)}");
+
         fold_same("function f() { while(x) { throw Error(1) } return Error(2)}");
 
         fold_same("function f() { while(x) { throw 5 } }");
@@ -898,12 +1029,16 @@ mod test {
         // enableNormalize();
 
         fold("function f() { return; }", "function f(){}");
+
         fold_same("function f() { return a; }");
+
         fold(
             "function f() { if (x) { return a } return a; }",
             "function f() { if (x) {} return a; }",
         );
+
         fold_same("function f() { try { if (x) { return a } } catch(e) {} return a; }");
+
         fold_same("function f() { try { if (x) {} } catch(e) {} return 1; }");
 
         // finally clauses may have side effects
@@ -936,11 +1071,17 @@ mod test {
         // enableNormalize();
 
         fold_same("function f() { throw a; }");
+
         fold("function f() { if (x) { throw a } throw a; }", "function f() { if (x) {} throw a; }");
+
         fold_same("function f() { try { if (x) {throw a} } catch(e) {} throw a; }");
+
         fold_same("function f() { try { if (x) {throw 1} } catch(e) {f()} throw 1; }");
+
         fold_same("function f() { try { if (x) {throw 1} } catch(e) {f()} throw 1; }");
+
         fold_same("function f() { try { if (x) {throw 1} } catch(e) {throw 1}}");
+
         fold(
             "function f() { try { if (x) {throw 1} } catch(e) {throw 1} throw 1; }",
             "function f() { try { if (x) {throw 1} } catch(e) {} throw 1; }",
@@ -970,9 +1111,13 @@ mod test {
     #[ignore]
     fn test_nested_if_combine() {
         fold("if(x)if(y){while(1){}}", "if(x&&y){while(1){}}");
+
         fold("if(x||z)if(y){while(1){}}", "if((x||z)&&y){while(1){}}");
+
         fold("if(x)if(y||z){while(1){}}", "if((x)&&(y||z)){while(1){}}");
+
         fold_same("if(x||z)if(y||z){while(1){}}");
+
         fold("if(x)if(y){if(z){while(1){}}}", "if(x&&(y&&z)){while(1){}}");
     }
 
@@ -981,16 +1126,24 @@ mod test {
     #[ignore]
     fn test_issue291() {
         fold("if (true) { f.onchange(); }", "if (1) f.onchange();");
+
         fold_same("if (f) { f.onchange(); }");
+
         fold_same("if (f) { f.bar(); } else { f.onchange(); }");
+
         fold("if (f) { f.bonchange(); }", "f && f.bonchange();");
+
         fold_same("if (f) { f['x'](); }");
 
         // optional versions
         fold("if (true) { f?.onchange(); }", "if (1) f?.onchange();");
+
         fold_same("if (f) { f?.onchange(); }");
+
         fold_same("if (f) { f?.bar(); } else { f?.onchange(); }");
+
         fold("if (f) { f?.bonchange(); }", "f && f?.bonchange();");
+
         fold_same("if (f) { f?.['x'](); }");
     }
 
@@ -1029,6 +1182,7 @@ mod test {
             "function f() { if (x) return 1; else f() }",
             "function f() { if (x) return 1; { f() } }",
         );
+
         test("function f() { if (x) return; else f() }", "function f() { if (x) {} else { f() } }");
         // This case is handled by minimize exit points.
         test_same("function f() { if (x) return; f() }");
@@ -1038,7 +1192,9 @@ mod test {
     #[ignore]
     fn test_remove_else_cause3() {
         test_same("function f() { a:{if (x) break a; else f() } }");
+
         test_same("function f() { if (x) { a:{ break a } } else f() }");
+
         test_same("function f() { if (x) a:{ break a } else f() }");
     }
 
@@ -1087,10 +1243,13 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_disabled() {
         // enableTypeCheck();
+
         test_same("var x = {}; if (x != null) throw 'a';");
+
         test_same("var x = {}; var y = x != null;");
 
         test_same("var x = 1; if (x != 0) throw 'a';");
+
         test_same("var x = 1; var y = x != 0;");
     }
 
@@ -1098,6 +1257,7 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_boolean_result0() {
         // enableTypeCheck();
+
         test_same("var x = {}; var y = x != null;");
     }
 
@@ -1105,15 +1265,23 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_boolean_result1() {
         // enableTypeCheck();
+
         test_same("var x = {}; var y = x == null;");
+
         test_same("var x = {}; var y = x !== null;");
+
         test_same("var x = undefined; var y = x !== null;");
+
         test_same("var x = {}; var y = x === null;");
+
         test_same("var x = undefined; var y = x === null;");
 
         test_same("var x = 1; var y = x != 0;");
+
         test_same("var x = 1; var y = x == 0;");
+
         test_same("var x = 1; var y = x !== 0;");
+
         test_same("var x = 1; var y = x === 0;");
     }
 
@@ -1121,25 +1289,43 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_if() {
         // enableTypeCheck();
+
         test("var x = {};\nif (x != null) throw 'a';\n", "var x={}; if (x!=null) throw 'a'");
+
         test_same("var x = {};\nif (x == null) throw 'a';\n");
+
         test_same("var x = {};\nif (x !== null) throw 'a';\n");
+
         test_same("var x = {};\nif (x === null) throw 'a';\n");
+
         test_same("var x = {};\nif (null != x) throw 'a';\n");
+
         test_same("var x = {};\nif (null == x) throw 'a';\n");
+
         test_same("var x = {};\nif (null !== x) throw 'a';\n");
+
         test_same("var x = {};\nif (null === x) throw 'a';\n");
 
         test_same("var x = 1;\nif (x != 0) throw 'a';\n");
+
         test_same("var x = 1;\nif (x != 0) throw 'a';\n");
+
         test_same("var x = 1;\nif (x == 0) throw 'a';\n");
+
         test_same("var x = 1;\nif (x !== 0) throw 'a';\n");
+
         test_same("var x = 1;\nif (x === 0) throw 'a';\n");
+
         test_same("var x = 1;\nif (0 != x) throw 'a';\n");
+
         test_same("var x = 1;\nif (0 == x) throw 'a';\n");
+
         test_same("var x = 1;\nif (0 !== x) throw 'a';\n");
+
         test_same("var x = 1;\nif (0 === x) throw 'a';\n");
+
         test_same("var x = NaN;\nif (0 === x) throw 'a';\n");
+
         test_same("var x = NaN;\nif (x === 0) throw 'a';\n");
     }
 
@@ -1147,7 +1333,9 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_expression() {
         // enableTypeCheck();
+
         test_same("var x = {}; x != null && alert('b');");
+
         test_same("var x = 1; x != 0 && alert('b');");
     }
 
@@ -1155,7 +1343,9 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_hook() {
         // enableTypeCheck();
+
         test_same(concat!("var x = {};", "var y = x != null ? 1 : 2;"));
+
         test_same(concat!("var x = 1;", "var y = x != 0 ? 1 : 2;"));
     }
 
@@ -1163,10 +1353,12 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_not() {
         // enableTypeCheck();
+
         test(
             "var x = {};\nvar y = !(x != null) ? 1 : 2;\n",
             "var x = {};\nvar y = (x == null) ? 1 : 2;\n",
         );
+
         test("var x = 1;\nvar y = !(x != 0) ? 1 : 2;\n", "var x = 1;\nvar y = x == 0 ? 1 : 2;\n");
     }
 
@@ -1174,7 +1366,9 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_while() {
         // enableTypeCheck();
+
         test_same("var x = {}; while (x != null) throw 'a';");
+
         test_same("var x = 1; while (x != 0) throw 'a';");
     }
 
@@ -1182,7 +1376,9 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_unknown_type() {
         // enableTypeCheck();
+
         test_same("var x = /** @type {?} */ ({});\nif (x != null) throw 'a';\n");
+
         test_same("var x = /** @type {?} */ (1);\nif (x != 0) throw 'a';\n");
     }
 
@@ -1190,7 +1386,9 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_all_type() {
         // enableTypeCheck();
+
         test_same("var x = /** @type {*} */ ({});\nif (x != null) throw 'a';\n");
+
         test_same("var x = /** @type {*} */ (1);\nif (x != 0) throw 'a';\n");
     }
 
@@ -1198,8 +1396,11 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_primitives_vs_null() {
         // enableTypeCheck();
+
         test_same("var x = 0;\nif (x != null) throw 'a';\n");
+
         test_same("var x = '';\nif (x != null) throw 'a';\n");
+
         test_same("var x = false;\nif (x != null) throw 'a';\n");
     }
 
@@ -1207,8 +1408,11 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_non_number_vs_zero() {
         // enableTypeCheck();
+
         test_same("var x = {};\nif (x != 0) throw 'a';\n");
+
         test_same("var x = '';\nif (x != 0) throw 'a';\n");
+
         test_same("var x = false;\nif (x != 0) throw 'a';\n");
     }
 
@@ -1216,6 +1420,7 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_boxed_number_vs_zero() {
         // enableTypeCheck();
+
         test_same("var x = new Number(0);\nif (x != 0) throw 'a';\n");
     }
 
@@ -1223,8 +1428,11 @@ mod test {
     #[ignore]
     fn test_coercion_substitution_boxed_primitives() {
         // enableTypeCheck();
+
         test_same("var x = new Number(); if (x != null) throw 'a';");
+
         test_same("var x = new String(); if (x != null) throw 'a';");
+
         test_same("var x = new Boolean();\nif (x != null) throw 'a';");
     }
 

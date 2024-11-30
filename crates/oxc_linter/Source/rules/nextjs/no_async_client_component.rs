@@ -36,6 +36,7 @@ impl Rule for NoAsyncClientComponent {
         let Some(root) = ctx.nodes().root_node() else {
             return;
         };
+
         let AstKind::Program(program) = root.kind() else { unreachable!() };
 
         if program.directives.iter().any(|directive| directive.directive.as_str() == "use client") {
@@ -45,6 +46,7 @@ impl Rule for NoAsyncClientComponent {
                 };
 
                 // export default async function MyComponent() {...}
+
                 if let ExportDefaultDeclarationKind::FunctionDeclaration(func_decl) =
                     &export_default_decl.declaration
                 {
@@ -58,10 +60,12 @@ impl Rule for NoAsyncClientComponent {
                             func_decl.id.as_ref().unwrap().span,
                         ));
                     }
+
                     continue;
                 }
 
                 // async function MyComponent() {...}; export default MyComponent;
+
                 if let ExportDefaultDeclarationKind::Identifier(export_default_id) =
                     &export_default_decl.declaration
                 {

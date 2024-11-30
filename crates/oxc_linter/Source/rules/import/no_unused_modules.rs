@@ -56,9 +56,11 @@ impl Rule for NoUnusedModules {
 
     fn run_once(&self, ctx: &LintContext<'_>) {
         let module_record = ctx.module_record();
+
         if self.missing_exports && module_record.local_export_entries.is_empty() {
             ctx.diagnostic(no_exports_found(Span::new(0, 0)));
         }
+
         if self.unused_exports {
             // TODO: implement unused exports
         }
@@ -68,6 +70,7 @@ impl Rule for NoUnusedModules {
 #[test]
 fn test() {
     use crate::tester::Tester;
+
     use serde_json::json;
 
     let missing_exports_options = json!({

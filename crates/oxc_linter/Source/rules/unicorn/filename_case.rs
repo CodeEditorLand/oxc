@@ -8,6 +8,7 @@ use crate::{context::LintContext, rule::Rule};
 
 fn join_strings_disjunction(strings: &[String]) -> String {
     let mut list = String::new();
+
     for (i, s) in strings.iter().enumerate() {
         if i == 0 {
             list.push_str(s);
@@ -17,14 +18,17 @@ fn join_strings_disjunction(strings: &[String]) -> String {
             list.push_str(&format!(", {s}"));
         }
     }
+
     list
 }
 
 fn filename_case_diagnostic(filename: &str, valid_cases: &[(&str, Case)]) -> OxcDiagnostic {
     let case_names = valid_cases.iter().map(|(name, _)| format!("{name} case")).collect::<Vec<_>>();
+
     let message = format!("Filename should be in {}", join_strings_disjunction(&case_names));
 
     let trimmed_filename = filename.trim_matches('_');
+
     let converted_filenames = valid_cases
         .iter()
         .map(|(_, case)| {
@@ -32,7 +36,9 @@ fn filename_case_diagnostic(filename: &str, valid_cases: &[(&str, Case)]) -> Oxc
                 Converter::new().remove_boundaries(&[Boundary::LowerDigit, Boundary::DigitLower]);
             // get the leading characters that were trimmed, if any, else empty string
             let leading = filename.chars().take_while(|c| c == &'_').collect::<String>();
+
             let trailing = filename.chars().rev().take_while(|c| c == &'_').collect::<String>();
+
             format!("'{leading}{}{trailing}'", converter.to_case(*case).convert(trimmed_filename))
         })
         .collect::<Vec<_>>();
@@ -123,6 +129,7 @@ impl Rule for FilenameCase {
 
         if let Some(Value::Object(map)) = case_type.get("cases") {
             let mut filename_case = off;
+
             for (key, value) in map {
                 match (key.as_str(), value) {
                     ("kebabCase", Value::Bool(b)) => filename_case.kebab_case = *b,
@@ -132,6 +139,7 @@ impl Rule for FilenameCase {
                     _ => (),
                 }
             }
+
             return filename_case;
         }
 
@@ -140,6 +148,7 @@ impl Rule for FilenameCase {
 
     fn run_once<'a>(&self, ctx: &LintContext<'_>) {
         let file_path = ctx.file_path();
+
         let Some(filename) = file_path.file_stem().and_then(|s| s.to_str()) else {
             return;
         };
@@ -155,11 +164,13 @@ impl Rule for FilenameCase {
             (self.snake_case, Case::Snake, "snake"),
             (self.pascal_case, Case::Pascal, "pascal"),
         ];
+
         let mut enabled_cases = cases.iter().filter(|(enabled, _, _)| *enabled);
 
         if !enabled_cases.any(|(_, case, _)| {
             let converter =
                 Converter::new().remove_boundaries(&[Boundary::LowerDigit, Boundary::DigitLower]);
+
             converter.to_case(*case).convert(filename) == filename
         }) {
             let valid_cases = cases
@@ -168,7 +179,9 @@ impl Rule for FilenameCase {
                     |(enabled, case, name)| if *enabled { Some((*name, *case)) } else { None },
                 )
                 .collect::<Vec<_>>();
+
             let filename = file_path.file_name().unwrap().to_string_lossy();
+
             ctx.diagnostic(filename_case_diagnostic(&filename, &valid_cases));
         }
     }
@@ -212,6 +225,7 @@ fn test() {
                 for casing in casings {
                     map.insert(casing.to_string(), Value::Bool(true));
                 }
+
                 Some(serde_json::json!([{ "cases": map }]))
             },
             None,
@@ -277,6 +291,7 @@ fn test() {
         test_cases("src/foo/FooBar.js", ["kebabCase", "pascalCase"]),
         test_cases("src/foo/___foo_bar.js", ["snakeCase", "pascalCase"]),
     ];
+
     let fail = vec![
         test_case("src/foo/foo_bar.js", ""),
         // todo: linter does not support uppercase JS files

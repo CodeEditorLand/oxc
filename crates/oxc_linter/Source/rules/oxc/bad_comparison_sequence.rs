@@ -38,6 +38,7 @@ impl Rule for BadComparisonSequence {
         let AstKind::BinaryExpression(expr) = node.kind() else {
             return;
         };
+
         if is_bad_comparison(expr) && has_no_bad_comparison_in_parents(node, ctx) {
             ctx.diagnostic(bad_comparison_sequence_diagnostic(expr.span));
         }
@@ -64,6 +65,7 @@ fn has_no_bad_comparison_in_parents<'a, 'b>(
             return false;
         }
     }
+
     false
 }
 

@@ -11,6 +11,7 @@ pub fn print_diff_in_terminal(expected: &str, actual: &str) {
                 ChangeTag::Insert => ("+", Style::new().green()),
                 ChangeTag::Equal => (" ", Style::new()),
             };
+
             print!("{}{}", style.apply_to(sign).bold(), style.apply_to(change));
         }
     }

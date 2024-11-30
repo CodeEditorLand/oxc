@@ -113,6 +113,7 @@ impl Rule for SelfClosingComp {
         );
 
         let mut is_dom_comp = false;
+
         if !is_comp {
             if let Some(tag_name) = jsx_el.opening_element.name.get_identifier_name() {
                 is_dom_comp = HTML_TAG.contains(&tag_name);
@@ -350,5 +351,6 @@ fn test() {
             Some(serde_json::json!([{ "html": true }])),
         ),
     ];
+
     Tester::new(SelfClosingComp::NAME, pass, fail).test_and_snapshot();
 }

@@ -13,6 +13,7 @@ impl<'a> Command<'a> {
 
     pub fn with_mode(mut self, mode: Mode) -> Self {
         self.mode = mode;
+
         self
     }
 }

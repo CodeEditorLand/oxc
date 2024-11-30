@@ -86,15 +86,19 @@ impl Rule for NoUselessEscape {
                         unicode_sets: literal.regex.flags.contains(RegExpFlags::V),
                         source_text: ctx.source_text(),
                     };
+
                     finder.visit_pattern(pattern);
+
                     for span in finder.useless_escape_spans {
                         let c = span.source_text(ctx.source_text()).chars().last().unwrap();
+
                         ctx.diagnostic_with_fix(no_useless_escape_diagnostic(c, span), |fixer| {
                             fixer.replace(span, c.to_string())
                         });
                     }
                 }
             }
+
             AstKind::StringLiteral(literal) => check(
                 ctx,
                 node.id(),
@@ -111,6 +115,7 @@ impl Rule for NoUselessEscape {
                     );
                 }
             }
+
             _ => {}
         }
     }
@@ -120,20 +125,26 @@ fn is_within_jsx_attribute_item(id: NodeId, ctx: &LintContext) -> bool {
     if matches!(ctx.nodes().parent_kind(id), Some(AstKind::JSXAttributeItem(_))) {
         return true;
     }
+
     false
 }
 
 #[allow(clippy::cast_possible_truncation)]
 fn check(ctx: &LintContext<'_>, node_id: NodeId, start: u32, offsets: &[usize]) {
     let source_text = ctx.source_text();
+
     for offset in offsets {
         let offset = start as usize + offset;
+
         let c = source_text[offset..].chars().next().unwrap();
+
         let offset = offset as u32;
+
         let len = c.len_utf8() as u32;
 
         if !is_within_jsx_attribute_item(node_id, ctx) {
             let span = Span::new(offset - 1, offset + len);
+
             ctx.diagnostic_with_fix(no_useless_escape_diagnostic(c, span), |fixer| {
                 fixer.replace(span, c.to_string())
             });
@@ -155,11 +166,15 @@ fn check_character(
     let char_text = character.span.source_text(source_text);
     // The character is escaped if it has at least two characters and the first character is a backslash
     let is_escaped = char_text.starts_with('\\') && char_text.len() >= 2;
+
     if !is_escaped {
         return None;
     }
+
     let span = character.span;
+
     let escape_char = char_text.chars().nth(1).unwrap();
+
     let escapes = if character_class.is_some() {
         if unicode_sets {
             REGEX_CLASSSET_CHARACTER_ESCAPES
@@ -169,6 +184,7 @@ fn check_character(
     } else {
         REGEX_NON_CHARCLASS_ESCAPES
     };
+
     if escapes.contains(escape_char) {
         return None;
     }
@@ -185,6 +201,7 @@ fn check_character(
                 return None;
             }
         }
+
         if unicode_sets {
             if REGEX_CLASS_SET_RESERVED_DOUBLE_PUNCTUATOR.contains(escape_char) {
                 if let Some(prev_char) = source_text.chars().nth(span.end as usize) {
@@ -193,6 +210,7 @@ fn check_character(
                         return None;
                     }
                 }
+
                 if let Some(prev_prev_char) = source_text.chars().nth(span.start as usize - 1) {
                     if prev_prev_char == escape_char {
                         if escape_char != '^' {
@@ -205,6 +223,7 @@ fn check_character(
                         }
 
                         let caret_index = class.span.start + 1;
+
                         if caret_index < span.start - 1 {
                             return None;
                         }
@@ -235,7 +254,9 @@ fn check_string(string: &str) -> Vec<usize> {
     }
 
     let quote_char = string.chars().next().unwrap();
+
     let bytes = &string[1..string.len() - 1].as_bytes();
+
     let escapes = memmem::find_iter(bytes, "\\").collect::<Vec<_>>();
 
     if escapes.is_empty() {
@@ -243,12 +264,14 @@ fn check_string(string: &str) -> Vec<usize> {
     }
 
     let mut offsets = vec![];
+
     let mut prev_offset = None; // for checking double escape `\\`
     for offset in escapes {
         // Safety:
         // The offset comes from a utf8 checked string
 
         let s = unsafe { std::str::from_utf8_unchecked(&bytes[offset..]) };
+
         if let Some(c) = s.chars().nth(1) {
             if !(c == quote_char
                 || (offset > 0 && prev_offset == Some(offset - 1))
@@ -260,6 +283,7 @@ fn check_string(string: &str) -> Vec<usize> {
                 offsets.push(offset + 2);
             }
         }
+
         prev_offset.replace(offset);
     }
 
@@ -272,8 +296,11 @@ fn check_template(string: &str) -> Vec<usize> {
     }
 
     let mut offsets = vec![];
+
     let mut in_escape = false;
+
     let mut prev_non_escape_char = '`';
+
     let mut byte_offset = 1;
 
     let mut chars = string.chars().peekable();
@@ -283,6 +310,7 @@ fn check_template(string: &str) -> Vec<usize> {
 
         if in_escape {
             in_escape = false;
+
             match c {
                 c if c.is_ascii_digit() || c == '`' => { /* noop */ }
                 '{' => {
@@ -295,11 +323,14 @@ fn check_template(string: &str) -> Vec<usize> {
                         offsets.push(byte_offset - c.len_utf8());
                     }
                 }
+
                 c if !VALID_STRING_ESCAPES.contains(c) => {
                     offsets.push(byte_offset - c.len_utf8());
                 }
+
                 _ => {}
             }
+
             prev_non_escape_char = c;
         } else if c == '\\' {
             in_escape = true;
@@ -324,6 +355,7 @@ impl<'a> Visit<'a> for UselessEscapeFinder<'a> {
             self.character_classes.push(class);
         }
     }
+
     fn leave_node(&mut self, kind: RegExpAstKind<'a>) {
         if let RegExpAstKind::CharacterClass(_) = kind {
             self.character_classes.pop();
@@ -332,6 +364,7 @@ impl<'a> Visit<'a> for UselessEscapeFinder<'a> {
 
     fn visit_character(&mut self, ch: &Character) {
         let character_class = self.character_classes.last().copied();
+
         if let Some(span) =
             check_character(self.source_text, ch, character_class, self.unicode_sets)
         {
@@ -502,6 +535,7 @@ fn test() {
         r"/[\&&&\&]/v",  // { "ecmaVersion": 2024 },
         r"/[[\-]\-]/v",  // { "ecmaVersion": 2024 },
         r"/[\^]/v",      // { "ecmaVersion": 2024 }
+
         r"/[\s\-(]/",    // https://github.com/oxc-project/oxc/issues/5227
         r"/\c/",         // https://github.com/oxc-project/oxc/issues/6046
         r"/\\c/",        // https://github.com/oxc-project/oxc/issues/6046

@@ -63,20 +63,24 @@ impl Targets {
                         ))
                         .into());
                     }
+
                     None => None,
                 };
 
                 if map.is_empty() {
                     if let Some(q) = q {
                         let mut q = q?;
+
                         if let Some(node) = node {
                             q.insert("node".to_string(), node);
                         }
+
                         return Ok(q);
                     }
                 }
 
                 let mut result = Versions::default();
+
                 for (k, v) in &map {
                     match v {
                         QueryOrVersion::Query(q) => {
@@ -86,6 +90,7 @@ impl Targets {
                                 result.insert(k.to_string(), *v);
                             }
                         }
+
                         QueryOrVersion::Version(v) => {
                             result.insert(k.to_string(), *v);
                         }
@@ -94,6 +99,7 @@ impl Targets {
 
                 Err(OxcDiagnostic::error(format!("Targets: {result:?}")).into())
             }
+
             Targets::EsModules(_) => {
                 Err(OxcDiagnostic::error("Targets: The `esmodules` is not supported").into())
             }
@@ -125,6 +131,7 @@ type QueryResult = Result<Versions, Error>;
 
 fn cache() -> &'static DashMap<Query, Versions> {
     static CACHE: OnceLock<DashMap<Query, Versions>> = OnceLock::new();
+
     CACHE.get_or_init(DashMap::new)
 }
 
@@ -154,8 +161,10 @@ impl Query {
 
                     Ok(versions)
                 }
+
                 Err(err) => {
                     let msg = format!("failed to resolve query: {err}");
+
                     Err(OxcDiagnostic::error(msg).into())
                 }
             }
@@ -173,6 +182,7 @@ impl Query {
                     query(&[s])
                 }
             }
+
             Query::Multiple(ref s) => query(s),
         }?;
 
@@ -189,6 +199,7 @@ mod tests {
     #[test]
     fn test_empty() {
         let res = Query::Single(String::new()).exec().unwrap();
+
         assert!(!res.is_any_target(), "empty query should return non-empty result");
     }
 }

@@ -52,14 +52,18 @@ impl Rule for AriaUnsupportedElements {
             let Some(el_type) = get_element_type(ctx, jsx_el) else {
                 return;
             };
+
             if RESERVED_HTML_TAG.contains(&el_type) {
                 for attr in &jsx_el.attributes {
                     let attr = match attr {
                         JSXAttributeItem::Attribute(attr) => attr,
                         JSXAttributeItem::SpreadAttribute(_) => continue,
                     };
+
                     let attr_name = get_jsx_attribute_name(&attr.name);
+
                     let attr_name = attr_name.cow_to_lowercase();
+
                     if INVALID_ATTRIBUTES.contains(&attr_name) {
                         ctx.diagnostic_with_fix(
                             aria_unsupported_elements_diagnostic(attr.span, &attr_name),

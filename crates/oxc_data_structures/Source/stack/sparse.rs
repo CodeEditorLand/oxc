@@ -86,10 +86,12 @@ impl<T> SparseStack<T> {
     pub fn push(&mut self, value: Option<T>) {
         let has_value = if let Some(value) = value {
             self.values.push(value);
+
             true
         } else {
             false
         };
+
         self.has_values.push(has_value);
     }
 
@@ -100,6 +102,7 @@ impl<T> SparseStack<T> {
     #[inline]
     pub fn pop(&mut self) -> Option<T> {
         let has_value = self.has_values.pop();
+
         if has_value {
             debug_assert!(!self.values.is_empty());
             // SAFETY: Last `self.has_values` is only `true` if there's a corresponding value in `self.values`.
@@ -107,6 +110,7 @@ impl<T> SparseStack<T> {
             // We maintain it here too because we just popped from `self.has_values`, so that `true`
             // has been consumed at the same time we consume its corresponding value from `self.values`.
             let value = unsafe { self.values.pop_unchecked() };
+
             Some(value)
         } else {
             None
@@ -117,11 +121,13 @@ impl<T> SparseStack<T> {
     #[inline]
     pub fn last(&self) -> Option<&T> {
         let has_value = *self.has_values.last();
+
         if has_value {
             debug_assert!(!self.values.is_empty());
             // SAFETY: Last `self.has_values` is only `true` if there's a corresponding value in `self.values`.
             // This invariant is maintained in `push`, `pop`, `take_last`, `last_or_init`, and `last_mut_or_init`.
             let value = unsafe { self.values.last_unchecked() };
+
             Some(value)
         } else {
             None
@@ -132,6 +138,7 @@ impl<T> SparseStack<T> {
     #[inline]
     pub fn take_last(&mut self) -> Option<T> {
         let has_value = self.has_values.last_mut();
+
         if *has_value {
             *has_value = false;
 
@@ -141,6 +148,7 @@ impl<T> SparseStack<T> {
             // We maintain it here too because we just set last `self.has_values` to `false`
             // at the same time as we consume the corresponding value from `self.values`.
             let value = unsafe { self.values.pop_unchecked() };
+
             Some(value)
         } else {
             None
@@ -152,8 +160,10 @@ impl<T> SparseStack<T> {
     #[inline]
     pub fn last_or_init<I: FnOnce() -> T>(&mut self, init: I) -> &T {
         let has_value = self.has_values.last_mut();
+
         if !*has_value {
             *has_value = true;
+
             self.values.push(init());
         }
 
@@ -170,8 +180,10 @@ impl<T> SparseStack<T> {
     #[inline]
     pub fn last_mut_or_init<I: FnOnce() -> T>(&mut self, init: I) -> &mut T {
         let has_value = self.has_values.last_mut();
+
         if !*has_value {
             *has_value = true;
+
             self.values.push(init());
         }
 

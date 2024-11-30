@@ -94,6 +94,7 @@ impl Rule for PreferDomNodeDataset {
                     return;
                 }
             }
+
             _ => return,
         }
 

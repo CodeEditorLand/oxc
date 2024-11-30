@@ -91,14 +91,17 @@ impl Rule for PreferToBe {
 impl PreferToBe {
     fn run<'a>(possible_jest_node: &PossibleJestNode<'a, '_>, ctx: &LintContext<'a>) {
         let node = possible_jest_node.node;
+
         let AstKind::CallExpression(call_expr) = node.kind() else {
             return;
         };
+
         let Some(jest_expect_fn_call) =
             parse_expect_jest_fn_call(call_expr, possible_jest_node, ctx)
         else {
             return;
         };
+
         let Some(matcher) = jest_expect_fn_call.matcher() else {
             return;
         };
@@ -115,6 +118,7 @@ impl PreferToBe {
                     &jest_expect_fn_call,
                     ctx,
                 );
+
                 return;
             } else if matcher.is_name_equal("toBeDefined") {
                 Self::check_and_fix(
@@ -124,6 +128,7 @@ impl PreferToBe {
                     &jest_expect_fn_call,
                     ctx,
                 );
+
                 return;
             }
         }
@@ -136,12 +141,15 @@ impl PreferToBe {
         else {
             return;
         };
+
         let first_matcher_arg = arg_expr.get_inner_expression();
 
         if first_matcher_arg.is_undefined() {
             let kind =
                 if has_not_modifier { PreferToBeKind::Defined } else { PreferToBeKind::Undefined };
+
             Self::check_and_fix(&kind, call_expr, matcher, &jest_expect_fn_call, ctx);
+
             return;
         }
 
@@ -153,6 +161,7 @@ impl PreferToBe {
                 &jest_expect_fn_call,
                 ctx,
             );
+
             return;
         }
 
@@ -164,6 +173,7 @@ impl PreferToBe {
                 &jest_expect_fn_call,
                 ctx,
             );
+
             return;
         }
 
@@ -210,6 +220,7 @@ impl PreferToBe {
         ctx: &LintContext,
     ) {
         let span = matcher.span;
+
         let end = call_expr.span.end;
 
         let is_cmp_mem_expr = match matcher.parent {
@@ -217,21 +228,25 @@ impl PreferToBe {
             Some(Expression::StaticMemberExpression(_) | Expression::PrivateFieldExpression(_)) => {
                 false
             }
+
             _ => return,
         };
 
         let modifiers = jest_expect_fn_call.modifiers();
+
         let maybe_not_modifier = modifiers.iter().find(|modifier| modifier.is_name_equal("not"));
 
         if kind == &PreferToBeKind::Undefined {
             ctx.diagnostic_with_fix(use_to_be_undefined(span), |fixer| {
                 let new_matcher =
                     if is_cmp_mem_expr { "[\"toBeUndefined\"]()" } else { "toBeUndefined()" };
+
                 let span = if let Some(not_modifier) = maybe_not_modifier {
                     Span::new(not_modifier.span.start, end)
                 } else {
                     Span::new(span.start, end)
                 };
+
                 fixer.replace(span, new_matcher)
             });
         } else if kind == &PreferToBeKind::Defined {
@@ -247,16 +262,19 @@ impl PreferToBe {
         } else if kind == &PreferToBeKind::Null {
             ctx.diagnostic_with_fix(use_to_be_null(span), |fixer| {
                 let new_matcher = if is_cmp_mem_expr { "\"toBeNull\"]()" } else { "toBeNull()" };
+
                 fixer.replace(Span::new(span.start, end), new_matcher)
             });
         } else if kind == &PreferToBeKind::NaN {
             ctx.diagnostic_with_fix(use_to_be_na_n(span), |fixer| {
                 let new_matcher = if is_cmp_mem_expr { "\"toBeNaN\"]()" } else { "toBeNaN()" };
+
                 fixer.replace(Span::new(span.start, end), new_matcher)
             });
         } else {
             ctx.diagnostic_with_fix(use_to_be(span), |fixer| {
                 let new_matcher = if is_cmp_mem_expr { "\"toBe\"" } else { "toBe" };
+
                 fixer.replace(span, new_matcher)
             });
         }

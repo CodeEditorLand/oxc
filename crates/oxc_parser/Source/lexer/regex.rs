@@ -18,25 +18,33 @@ impl<'a> Lexer<'a> {
                 Kind::SlashEq => 2,
                 _ => unreachable!(),
             };
+
         let (pattern_end, flags, flags_error) = self.read_regex()?;
+
         self.lookahead.clear();
+
         let token = self.finish_next(Kind::RegExp);
+
         Ok((token, pattern_end, flags, flags_error))
     }
 
     /// 12.9.5 Regular Expression Literals
     fn read_regex(&mut self) -> Result<(u32, RegExpFlags, bool)> {
         let mut in_escape = false;
+
         let mut in_character_class = false;
+
         loop {
             match self.next_char() {
                 None => {
                     return Err(diagnostics::unterminated_reg_exp(self.unterminated_range()));
                     // return (self.offset(), RegExpFlags::empty());
                 }
+
                 Some(c) if is_line_terminator(c) => {
                     return Err(diagnostics::unterminated_reg_exp(self.unterminated_range()));
                 }
+
                 Some(c) => {
                     if in_escape {
                         in_escape = false;
@@ -62,22 +70,29 @@ impl<'a> Lexer<'a> {
             self.peek_byte()
         {
             self.consume_char();
+
             let Ok(flag) = RegExpFlags::try_from(b) else {
                 self.error(diagnostics::reg_exp_flag(
                     b as char,
                     self.current_offset().expand_left(1),
                 ));
+
                 flags_error = true;
+
                 continue;
             };
+
             if flags.contains(flag) {
                 self.error(diagnostics::reg_exp_flag_twice(
                     b as char,
                     self.current_offset().expand_left(1),
                 ));
+
                 flags_error = true;
+
                 continue;
             }
+
             flags |= flag;
         }
 

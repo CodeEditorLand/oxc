@@ -83,6 +83,7 @@ impl Rule for ArrayCallbackReturn {
             AstKind::ArrowFunctionExpression(arrow) => {
                 (&arrow.body, arrow.r#async || arrow.expression)
             }
+
             AstKind::Function(function) => {
                 if let Some(body) = &function.body {
                     (body, function.r#async || function.generator)
@@ -90,6 +91,7 @@ impl Rule for ArrayCallbackReturn {
                     return;
                 }
             }
+
             _ => return,
         };
 
@@ -140,6 +142,7 @@ pub fn get_array_method_name<'a>(
     ctx: &LintContext<'a>,
 ) -> Option<&'static str> {
     let mut current_node = node;
+
     while let Some(parent) = ctx.nodes().parent_node(current_node.id()) {
         match parent.kind() {
             // foo.every(nativeFoo || function foo() { ... })
@@ -158,6 +161,7 @@ pub fn get_array_method_name<'a>(
             // }())
             AstKind::ReturnStatement(_) => {
                 let Some(func_node) = get_enclosing_function(parent, ctx) else { break };
+
                 let func_node = outermost_paren(func_node, ctx);
 
                 // the node that calls func_node
@@ -165,8 +169,10 @@ pub fn get_array_method_name<'a>(
 
                 if let AstKind::CallExpression(call) = func_parent.kind() {
                     let expected_callee = &call.callee;
+
                     if expected_callee.span() == func_node.kind().span() {
                         current_node = func_parent;
+
                         continue;
                     }
                 }
@@ -180,6 +186,7 @@ pub fn get_array_method_name<'a>(
                 };
 
                 let callee = call.callee.get_inner_expression();
+
                 let callee = if let Some(member) = callee.as_member_expression() {
                     member
                 } else if let Expression::ChainExpression(chain) = callee {
@@ -198,6 +205,7 @@ pub fn get_array_method_name<'a>(
 
                 // "methods",
                 let method = callee.static_property_name()?;
+
                 if let Some(&array_method) = TARGET_METHODS.get_key(method) {
                     // Check that current node is parent's first argument
                     if call.arguments.len() == 1 && is_nth_argument(call, current_node_arg, 0) {

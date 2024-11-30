@@ -91,13 +91,16 @@ impl DirectiveConfig {
                     None
                 }
             }
+
             serde_json::Value::Object(o) => {
                 let re = o
                     .get("descriptionFormat")
                     .and_then(serde_json::Value::as_str)
                     .and_then(|pattern| Regex::new(pattern).ok());
+
                 Some(Self::DescriptionFormat(re))
             }
+
             _ => None,
         }
     }
@@ -156,11 +159,14 @@ impl Rule for BanTsComment {
 
     fn run_once(&self, ctx: &LintContext) {
         let comments = ctx.semantic().comments();
+
         for comm in comments {
             let raw = ctx.source_range(comm.content_span());
+
             if let Some(captures) = find_ts_comment_directive(raw, comm.is_line()) {
                 // safe to unwrap, if capture success, it can always capture one of the four directives
                 let (directive, description) = (captures.0, captures.1);
+
                 if CommentKind::Block == comm.kind
                     && (directive == "check" || directive == "nocheck")
                 {
@@ -191,8 +197,10 @@ impl Rule for BanTsComment {
                             }
                         }
                     }
+
                     config => {
                         let description_len = description.trim().len();
+
                         if (description_len as u64) < self.minimum_description_length {
                             ctx.diagnostic(comment_requires_description(
                                 directive,
@@ -244,7 +252,9 @@ pub fn find_ts_comment_directive(raw: &str, single_line: bool) -> Option<(&str, 
     let prefix = "@ts-";
 
     let mut last_line_start = None;
+
     let mut char_indices = raw.char_indices().peekable();
+
     while let Some((_, c)) = char_indices.next() {
         if c == '\n' {
             last_line_start = char_indices.peek().map(|(i, _)| *i);
@@ -252,10 +262,12 @@ pub fn find_ts_comment_directive(raw: &str, single_line: bool) -> Option<(&str, 
     }
 
     let multi_len = last_line_start.unwrap_or(0);
+
     let line = &raw[multi_len..];
 
     // Check the content before the prefix
     let index = line.find(prefix)?;
+
     if !line[..index]
         .chars()
         .all(|c| c.is_whitespace() || if single_line { c == '/' } else { c == '*' || c == '/' })
@@ -264,10 +276,13 @@ pub fn find_ts_comment_directive(raw: &str, single_line: bool) -> Option<(&str, 
     }
 
     let start = index + prefix.len();
+
     for directive in ["expect-error", "ignore", "nocheck", "check"] {
         if line.get(start..start + directive.len()) == Some(directive) {
             let start = multi_len + index + prefix.len();
+
             let end = start + directive.len();
+
             let (directive, description) = (&raw[start..end], &raw[end..]);
 
             debug_assert!(
@@ -278,6 +293,7 @@ pub fn find_ts_comment_directive(raw: &str, single_line: bool) -> Option<(&str, 
             return Some((directive, description));
         }
     }
+
     None
 }
 

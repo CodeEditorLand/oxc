@@ -44,6 +44,7 @@ impl Rule for NoSelfCompare {
         let AstKind::BinaryExpression(binary_expr) = node.kind() else {
             return;
         };
+
         if !binary_expr.operator.is_compare() && !binary_expr.operator.is_equality() {
             return;
         }

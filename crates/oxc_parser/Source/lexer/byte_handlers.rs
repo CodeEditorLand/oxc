@@ -124,7 +124,9 @@ macro_rules! ascii_byte_handler {
             // SAFETY: This macro is only used for ASCII characters
             unsafe {
                 use assert_unchecked::assert_unchecked;
+
                 assert_unchecked!(!$lex.source.is_eof());
+
                 assert_unchecked!($lex.source.peek_byte_unchecked() < 128);
             }
             $body
@@ -183,32 +185,39 @@ macro_rules! ascii_identifier_handler {
 // `\0` `\1` etc
 ascii_byte_handler!(ERR(lexer) {
     let c = lexer.consume_char();
+
     lexer.error(diagnostics::invalid_character(c, lexer.unterminated_range()));
+
     Kind::Undetermined
 });
 
 // <SPACE> <TAB> Normal Whitespace
 ascii_byte_handler!(SPS(lexer) {
     lexer.consume_char();
+
     Kind::Skip
 });
 
 // <VT> <FF> Irregular Whitespace
 ascii_byte_handler!(ISP(lexer) {
     lexer.consume_char();
+
     lexer.trivia_builder.add_irregular_whitespace(lexer.token.start, lexer.offset());
+
     Kind::Skip
 });
 
 // '\r' '\n'
 ascii_byte_handler!(LIN(lexer) {
     lexer.consume_char();
+
     lexer.line_break_handler()
 });
 
 // !
 ascii_byte_handler!(EXL(lexer) {
     lexer.consume_char();
+
     if lexer.next_ascii_byte_eq(b'=') {
         if lexer.next_ascii_byte_eq(b'=') {
             Kind::Neq2
@@ -252,6 +261,7 @@ ascii_identifier_handler!(IDT(_id_without_first_char) {
 // %
 ascii_byte_handler!(PRC(lexer) {
     lexer.consume_char();
+
     if lexer.next_ascii_byte_eq(b'=') {
         Kind::PercentEq
     } else {
@@ -262,6 +272,7 @@ ascii_byte_handler!(PRC(lexer) {
 // &
 ascii_byte_handler!(AMP(lexer) {
     lexer.consume_char();
+
     if lexer.next_ascii_byte_eq(b'&') {
         if lexer.next_ascii_byte_eq(b'=') {
             Kind::Amp2Eq
@@ -278,18 +289,21 @@ ascii_byte_handler!(AMP(lexer) {
 // (
 ascii_byte_handler!(PNO(lexer) {
     lexer.consume_char();
+
     Kind::LParen
 });
 
 // )
 ascii_byte_handler!(PNC(lexer) {
     lexer.consume_char();
+
     Kind::RParen
 });
 
 // *
 ascii_byte_handler!(ATR(lexer) {
     lexer.consume_char();
+
     if lexer.next_ascii_byte_eq(b'*') {
         if lexer.next_ascii_byte_eq(b'=') {
             Kind::Star2Eq
@@ -306,6 +320,7 @@ ascii_byte_handler!(ATR(lexer) {
 // +
 ascii_byte_handler!(PLS(lexer) {
     lexer.consume_char();
+
     if lexer.next_ascii_byte_eq(b'+') {
         Kind::Plus2
     } else if lexer.next_ascii_byte_eq(b'=') {
@@ -318,33 +333,41 @@ ascii_byte_handler!(PLS(lexer) {
 // ,
 ascii_byte_handler!(COM(lexer) {
     lexer.consume_char();
+
     Kind::Comma
 });
 
 // -
 ascii_byte_handler!(MIN(lexer) {
     lexer.consume_char();
+
     lexer.read_minus().unwrap_or_else(|| lexer.skip_single_line_comment())
 });
 
 // .
 ascii_byte_handler!(PRD(lexer) {
     lexer.consume_char();
+
     lexer.read_dot()
 });
 
 // /
 ascii_byte_handler!(SLH(lexer) {
     lexer.consume_char();
+
     match lexer.peek_byte() {
         Some(b'/') => {
             lexer.consume_char();
+
             lexer.skip_single_line_comment()
         }
+
         Some(b'*') => {
             lexer.consume_char();
+
             lexer.skip_multi_line_comment()
         }
+
         _ => {
             // regex is handled separately, see `next_regex`
             if lexer.next_ascii_byte_eq(b'=') {
@@ -359,36 +382,42 @@ ascii_byte_handler!(SLH(lexer) {
 // 0
 ascii_byte_handler!(ZER(lexer) {
     lexer.consume_char();
+
     lexer.read_zero()
 });
 
 // 1 to 9
 ascii_byte_handler!(DIG(lexer) {
     lexer.consume_char();
+
     lexer.decimal_literal_after_first_digit()
 });
 
 // :
 ascii_byte_handler!(COL(lexer) {
     lexer.consume_char();
+
     Kind::Colon
 });
 
 // ;
 ascii_byte_handler!(SEM(lexer) {
     lexer.consume_char();
+
     Kind::Semicolon
 });
 
 // <
 ascii_byte_handler!(LSS(lexer) {
     lexer.consume_char();
+
     lexer.read_left_angle().unwrap_or_else(|| lexer.skip_single_line_comment())
 });
 
 // =
 ascii_byte_handler!(EQL(lexer) {
     lexer.consume_char();
+
     if lexer.next_ascii_byte_eq(b'=') {
         if lexer.next_ascii_byte_eq(b'=') {
             Kind::Eq3
@@ -418,17 +447,21 @@ ascii_byte_handler!(QST(lexer) {
             b'?' => {
                 if next_2_bytes[1] == b'=' {
                     lexer.consume_2_chars();
+
                     Kind::Question2Eq
                 } else {
                     lexer.consume_char();
+
                     Kind::Question2
                 }
             }
             // parse `?.1` as `?` `.1`
             b'.' if !next_2_bytes[1].is_ascii_digit() => {
                 lexer.consume_char();
+
                 Kind::QuestionDot
             }
+
             _ => Kind::Question,
         }
     } else {
@@ -436,12 +469,16 @@ ascii_byte_handler!(QST(lexer) {
         match lexer.peek_byte() {
             Some(b'?') => {
                 lexer.consume_char();
+
                 Kind::Question2
             }
+
             Some(b'.') => {
                 lexer.consume_char();
+
                 Kind::QuestionDot
             }
+
             _ => Kind::Question,
         }
     }
@@ -450,12 +487,14 @@ ascii_byte_handler!(QST(lexer) {
 // @
 ascii_byte_handler!(AT_(lexer) {
     lexer.consume_char();
+
     Kind::At
 });
 
 // [
 ascii_byte_handler!(BTO(lexer) {
     lexer.consume_char();
+
     Kind::LBrack
 });
 
@@ -467,12 +506,14 @@ ascii_byte_handler!(ESC(lexer) {
 // ]
 ascii_byte_handler!(BTC(lexer) {
     lexer.consume_char();
+
     Kind::RBrack
 });
 
 // ^
 ascii_byte_handler!(CRT(lexer) {
     lexer.consume_char();
+
     if lexer.next_ascii_byte_eq(b'=') {
         Kind::CaretEq
     } else {
@@ -483,12 +524,14 @@ ascii_byte_handler!(CRT(lexer) {
 // `
 ascii_byte_handler!(TPL(lexer) {
     lexer.consume_char();
+
     lexer.read_template_literal(Kind::TemplateHead, Kind::NoSubstitutionTemplate)
 });
 
 // {
 ascii_byte_handler!(BEO(lexer) {
     lexer.consume_char();
+
     Kind::LCurly
 });
 
@@ -499,16 +542,20 @@ ascii_byte_handler!(PIP(lexer) {
     match lexer.peek_byte() {
         Some(b'|') => {
             lexer.consume_char();
+
             if lexer.next_ascii_byte_eq(b'=') {
                 Kind::Pipe2Eq
             } else {
                 Kind::Pipe2
             }
         }
+
         Some(b'=') => {
             lexer.consume_char();
+
             Kind::PipeEq
         }
+
         _ => Kind::Pipe
     }
 });
@@ -516,12 +563,14 @@ ascii_byte_handler!(PIP(lexer) {
 // }
 ascii_byte_handler!(BEC(lexer) {
     lexer.consume_char();
+
     Kind::RCurly
 });
 
 // ~
 ascii_byte_handler!(TLD(lexer) {
     lexer.consume_char();
+
     Kind::Tilde
 });
 

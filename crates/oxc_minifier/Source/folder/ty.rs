@@ -41,9 +41,11 @@ impl<'a> From<&Expression<'a>> for Ty {
 					UnaryOperator::Void => Self::Void,
 					UnaryOperator::UnaryNegation => {
 						let argument_ty = Self::from(&unary_expr.argument);
+
 						if argument_ty == Self::BigInt {
 							return Self::BigInt;
 						}
+
 						Self::Number
 					},
 					UnaryOperator::UnaryPlus => Self::Number,
@@ -56,6 +58,7 @@ impl<'a> From<&Expression<'a>> for Ty {
 				match binary_expr.operator {
 					BinaryOperator::Addition => {
 						let left_ty = Self::from(&binary_expr.left);
+
 						let right_ty = Self::from(&binary_expr.right);
 
 						if left_ty == Self::Str || right_ty == Self::Str {
