@@ -276,5 +276,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoDuplicateEnumValues::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoDuplicateEnumValues::NAME, NoDuplicateEnumValues::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

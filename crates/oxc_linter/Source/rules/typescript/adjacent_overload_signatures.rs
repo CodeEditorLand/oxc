@@ -941,5 +941,6 @@ fn test() {
       }",
     ];
 
-    Tester::new(AdjacentOverloadSignatures::NAME, pass, fail).test_and_snapshot();
+    Tester::new(AdjacentOverloadSignatures::NAME, AdjacentOverloadSignatures::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

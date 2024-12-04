@@ -248,5 +248,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(VoidDomElementsNoChildren::NAME, pass, fail).test_and_snapshot();
+    Tester::new(VoidDomElementsNoChildren::NAME, VoidDomElementsNoChildren::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

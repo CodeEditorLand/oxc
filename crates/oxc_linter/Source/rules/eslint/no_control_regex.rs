@@ -225,6 +225,7 @@ mod tests {
     fn test_hex_literals() {
         Tester::new(
             NoControlRegex::NAME,
+            NoControlRegex::CATEGORY,
             vec![
                 "x1f",                 // not a control sequence
                 r"new RegExp('\x20')", // control sequence in valid range
@@ -240,6 +241,7 @@ mod tests {
     fn test_unicode_literals() {
         Tester::new(
             NoControlRegex::NAME,
+            NoControlRegex::CATEGORY,
             vec![
                 r"u00",    // not a control sequence
                 r"\u00ff", // in valid range
@@ -271,6 +273,7 @@ mod tests {
     fn test_unicode_brackets() {
         Tester::new(
             NoControlRegex::NAME,
+            NoControlRegex::CATEGORY,
             vec![
                 r"let r = /\u{0}/", // no unicode flag, this is valid
                 r"let r = /\u{ff}/u",
@@ -303,8 +306,7 @@ mod tests {
             r"const r = /([a-z])\2/;",
             r"const r = /([a-z])\0/;",
         ];
-
-        Tester::new(NoControlRegex::NAME, pass, fail)
+        Tester::new(NoControlRegex::NAME, NoControlRegex::CATEGORY, pass, fail)
             .with_snapshot_suffix("capture-group-indexing")
             .test_and_snapshot();
     }
@@ -315,6 +317,7 @@ mod tests {
         // https://github.com/eslint/eslint/blob/v9.9.1/tests/lib/rules/no-control-regex.js
         Tester::new(
             NoControlRegex::NAME,
+            NoControlRegex::CATEGORY,
             vec![
                 "var regex = /x1f/;",
                 r"var regex = /\\x1f/",

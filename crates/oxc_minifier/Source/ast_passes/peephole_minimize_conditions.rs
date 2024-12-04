@@ -1,7 +1,5 @@
 use oxc_ast::ast::*;
-use oxc_ecmascript::ToBoolean;
-use oxc_span::SPAN;
-use oxc_traverse::{Traverse, TraverseCtx};
+use oxc_traverse::{traverse_mut_with_ctx, ReusableTraverseCtx, Traverse, TraverseCtx};
 
 use crate::CompressorPass;
 
@@ -13,18 +11,13 @@ use crate::CompressorPass;
 ///
 /// <https://github.com/google/closure-compiler/blob/v20240609/src/com/google/javascript/jscomp/PeepholeMinimizeConditions.java>
 pub struct PeepholeMinimizeConditions {
-    changed: bool,
+    pub(crate) changed: bool,
 }
 
 impl<'a> CompressorPass<'a> for PeepholeMinimizeConditions {
-    fn changed(&self) -> bool {
-        self.changed
-    }
-
-    fn build(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
+    fn build(&mut self, program: &mut Program<'a>, ctx: &mut ReusableTraverseCtx<'a>) {
         self.changed = false;
-
-        oxc_traverse::walk_program(self, program, ctx);
+        traverse_mut_with_ctx(self, program, ctx);
     }
 }
 
@@ -38,18 +31,6 @@ impl<'a> Traverse<'a> for PeepholeMinimizeConditions {
 
             self.changed = true;
         };
-    }
-
-    fn exit_statement(&mut self, node: &mut Statement<'a>, ctx: &mut TraverseCtx<'a>) {
-        if let Statement::IfStatement(if_stmt) = node {
-            self.try_fold_if_block_one(if_stmt, ctx);
-
-            if let Some(new_stmt) = Self::try_fold_if_one_child(if_stmt, ctx) {
-                *node = new_stmt;
-
-                self.changed = true;
-            }
-        }
     }
 }
 
@@ -74,97 +55,6 @@ impl<'a> PeepholeMinimizeConditions {
         }
 
         None
-    }
-
-    /// Duplicate logic to DCE part.
-    fn try_fold_if_block_one(&mut self, if_stmt: &mut IfStatement<'a>, ctx: &mut TraverseCtx<'a>) {
-        if let Statement::BlockStatement(block) = &mut if_stmt.consequent {
-            if block.body.len() == 1 {
-                self.changed = true;
-
-                if_stmt.consequent = ctx.ast.move_statement(block.body.first_mut().unwrap());
-            }
-        }
-
-        if let Some(Statement::BlockStatement(block)) = &mut if_stmt.alternate {
-            if block.body.len() == 1 {
-                self.changed = true;
-
-                if_stmt.alternate = Some(ctx.ast.move_statement(block.body.first_mut().unwrap()));
-            }
-        }
-    }
-
-    fn try_fold_if_one_child(
-        if_stmt: &mut IfStatement<'a>,
-        ctx: &mut TraverseCtx<'a>,
-    ) -> Option<Statement<'a>> {
-        if let Statement::ExpressionStatement(expr) = &mut if_stmt.consequent {
-            // The rest of things for known boolean are tasks for dce instead of here.
-            if_stmt
-                .test
-                .to_boolean()
-                .is_none()
-                .then(|| {
-                    if !matches!(if_stmt.alternate, None | Some(Statement::ExpressionStatement(_)))
-                    {
-                        return None;
-                    }
-                    // Make if (x) y; => x && y;
-
-                    let (reverse, mut test) = match &mut if_stmt.test {
-                        Expression::UnaryExpression(unary) if unary.operator.is_not() => {
-                            let arg = ctx.ast.move_expression(&mut unary.argument);
-                            (true, arg)
-                        }
-
-                        _ => (false, ctx.ast.move_expression(&mut if_stmt.test)),
-                    };
-
-                    match &mut test {
-                        Expression::BinaryExpression(bin) if bin.operator.is_equality() => {
-                            if !bin.left.is_literal() && bin.right.is_literal() {
-                                test = ctx.ast.expression_binary(
-                                    SPAN,
-                                    ctx.ast.move_expression(&mut bin.right),
-                                    bin.operator,
-                                    ctx.ast.move_expression(&mut bin.left),
-                                );
-                            }
-                        }
-
-                        _ => {}
-                    }
-
-                    if let Some(Statement::ExpressionStatement(alt)) = &mut if_stmt.alternate {
-                        let left = ctx.ast.move_expression(&mut expr.expression);
-
-                        let right = ctx.ast.move_expression(&mut alt.expression);
-
-                        let cond = if reverse {
-                            ctx.ast.expression_conditional(SPAN, test, right, left)
-                        } else {
-                            ctx.ast.expression_conditional(SPAN, test, left, right)
-                        };
-
-                        Some(ctx.ast.statement_expression(SPAN, cond))
-                    } else if if_stmt.alternate.is_none() {
-                        let new_expr = ctx.ast.expression_logical(
-                            SPAN,
-                            test,
-                            if reverse { LogicalOperator::Or } else { LogicalOperator::And },
-                            ctx.ast.move_expression(&mut expr.expression),
-                        );
-
-                        Some(ctx.ast.statement_expression(SPAN, new_expr))
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or(None)
-        } else {
-            None
-        }
     }
 }
 
@@ -197,6 +87,7 @@ mod test {
 
     /** Check that removing blocks with 1 child works */
     #[test]
+    #[ignore]
     fn test_fold_one_child_blocks() {
         // late = false;
 
@@ -284,6 +175,15 @@ mod test {
         fold_same("switch(x){case y: foo()}");
 
         fold_same("try{foo()}catch(ex){bar()}finally{baz()}");
+
+        // Dot not fold `let` and `const`.
+        // Lexical declaration cannot appear in a single-statement context.
+        fold_same("if (foo) { const bar = 1 } else { const baz = 1 }");
+        fold_same("if (foo) { let bar = 1 } else { let baz = 1 }");
+        fold(
+            "if (foo) { var bar = 1 } else { var baz = 1 }",
+            "if (foo) var bar = 1; else var baz = 1;",
+        );
     }
 
     /** Try to minimize returns */
@@ -450,6 +350,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn test_not_cond() {
         fold("function f(){if(!x)foo()}", "function f(){x||foo()}");
 

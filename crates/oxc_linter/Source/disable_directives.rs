@@ -229,7 +229,7 @@ impl<'a> DisableDirectivesBuilder<'a> {
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+    use crate::{rule::RuleMeta, rules::EslintNoDebugger, tester::Tester};
 
     for prefix in ["eslint", "oxlint"] {
         // [Disabling Rules](https://eslint.org/docs/latest/use/configure/rules#disabling-rules)
@@ -626,6 +626,8 @@ semi*/
             ),
         ];
 
-        Tester::new("no-debugger", pass, fail).intentionally_allow_no_fix_tests().test();
+        Tester::new(EslintNoDebugger::NAME, EslintNoDebugger::CATEGORY, pass, fail)
+            .intentionally_allow_no_fix_tests()
+            .test();
     }
 }

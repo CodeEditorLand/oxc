@@ -138,5 +138,5 @@ fn test() {
         ("import(name())", Some(json!([{ "esmodule": true }]))),
     ];
 
-    Tester::new(NoDynamicRequire::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoDynamicRequire::NAME, NoDynamicRequire::CATEGORY, pass, fail).test_and_snapshot();
 }

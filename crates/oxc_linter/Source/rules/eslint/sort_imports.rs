@@ -883,6 +883,7 @@ fn test() {
             None,
         ),
     ];
-
-    Tester::new(SortImports::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(SortImports::NAME, SortImports::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

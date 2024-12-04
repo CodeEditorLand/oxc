@@ -11,7 +11,7 @@ use serde::{
 
 use crate::{
     rules::{RuleEnum, RULES},
-    utils::is_jest_rule_adapted_to_vitest,
+    utils::{is_eslint_rule_adapted_to_typescript, is_jest_rule_adapted_to_vitest},
     AllowWarnDeny, RuleWithSeverity,
 };
 
@@ -166,6 +166,10 @@ fn transform_rule_and_plugin_name<'a>(
 ) -> (&'a str, &'a str) {
     if plugin_name == "vitest" && is_jest_rule_adapted_to_vitest(rule_name) {
         return (rule_name, "jest");
+    }
+
+    if plugin_name == "typescript" && is_eslint_rule_adapted_to_typescript(rule_name) {
+        return (rule_name, "eslint");
     }
 
     (rule_name, plugin_name)
@@ -482,7 +486,7 @@ mod test {
         let mut rules = RuleSet::default();
 
         rules.insert(RuleWithSeverity {
-            rule: RuleEnum::NoConsole(Default::default()),
+            rule: RuleEnum::EslintNoConsole(Default::default()),
             severity: AllowWarnDeny::Deny,
         });
 
@@ -518,7 +522,7 @@ mod test {
             let mut rules = RuleSet::default();
 
             rules.insert(RuleWithSeverity {
-                rule: RuleEnum::NoUnusedVars(Default::default()),
+                rule: RuleEnum::EslintNoUnusedVars(Default::default()),
                 severity: AllowWarnDeny::Warn,
             });
 

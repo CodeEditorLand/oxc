@@ -103,6 +103,7 @@ impl LinterBuilder {
             rules: oxlintrc_rules,
             overrides,
             path,
+            ignore_patterns: _,
         } = oxlintrc;
 
         let config = LintConfig { plugins, settings, env, globals, path: Some(path) };
@@ -317,15 +318,13 @@ impl LinterBuilder {
         let new_rules = self
             .rules
             .iter()
-            .map(|r: &RuleWithSeverity| {
-                return ESLintRule {
-                    plugin_name: r.plugin_name().to_string(),
-                    rule_name: r.rule.name().to_string(),
-                    severity: r.severity,
-                    config: rule_name_to_rule
-                        .get(&get_name(r.plugin_name(), r.rule.name()))
-                        .and_then(|r| r.config.clone()),
-                };
+            .map(|r: &RuleWithSeverity| ESLintRule {
+                plugin_name: r.plugin_name().to_string(),
+                rule_name: r.rule.name().to_string(),
+                severity: r.severity,
+                config: rule_name_to_rule
+                    .get(&get_name(r.plugin_name(), r.rule.name()))
+                    .and_then(|r| r.config.clone()),
             })
             .collect();
 
@@ -463,9 +462,16 @@ impl RulesCache {
         let mut all_rules: Vec<_> = if self.plugins.is_all() {
             RULES.clone()
         } else {
+            let mut plugins = self.plugins;
+
+            // we need to include some jest rules when vitest is enabled, see [`VITEST_COMPATIBLE_JEST_RULES`]
+            if plugins.contains(LintPlugins::VITEST) {
+                plugins = plugins.union(LintPlugins::JEST);
+            }
+
             RULES
                 .iter()
-                .filter(|rule| self.plugins.contains(LintPlugins::from(rule.plugin_name())))
+                .filter(|rule| plugins.contains(LintPlugins::from(rule.plugin_name())))
                 .cloned()
                 .collect()
         };

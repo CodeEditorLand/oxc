@@ -48,7 +48,7 @@ declare_oxc_lint!(
 /// <https://github.com/import-js/eslint-plugin-import/blob/v2.29.1/docs/rules/unambiguous.md>
 impl Rule for Unambiguous {
     fn run_once(&self, ctx: &LintContext<'_>) {
-        if ctx.semantic().module_record().not_esm {
+        if !ctx.module_record().has_module_syntax {
             ctx.diagnostic(unambiguous_diagnostic(Span::default()));
         }
     }
@@ -75,7 +75,7 @@ fn test() {
 
     let fail = vec![r"function x() {}", r"(function x() { return 42 })()"];
 
-    Tester::new(Unambiguous::NAME, pass, fail)
+    Tester::new(Unambiguous::NAME, Unambiguous::CATEGORY, pass, fail)
         .change_rule_path("index.ts")
         .with_import_plugin(true)
         .test_and_snapshot();

@@ -15,7 +15,7 @@ pub trait CheckForStateChange<'a, 'b> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool;
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for Expression<'a> {
+impl<'a> CheckForStateChange<'a, '_> for Expression<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         match self {
             Self::NumericLiteral(_)
@@ -86,7 +86,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for Expression<'a> {
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for UnaryExpression<'a> {
+impl<'a> CheckForStateChange<'a, '_> for UnaryExpression<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         if is_simple_unary_operator(self.operator) {
             return self.argument.check_for_state_change(check_for_new_objects);
@@ -96,7 +96,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for UnaryExpression<'a> {
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for BinaryExpression<'a> {
+impl<'a> CheckForStateChange<'a, '_> for BinaryExpression<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         let left = self.left.check_for_state_change(check_for_new_objects);
 
@@ -106,7 +106,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for BinaryExpression<'a> {
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for ArrayExpressionElement<'a> {
+impl<'a> CheckForStateChange<'a, '_> for ArrayExpressionElement<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         match self {
             Self::SpreadElement(element) => element.check_for_state_change(check_for_new_objects),
@@ -119,7 +119,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for ArrayExpressionElement<'a> {
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for ObjectPropertyKind<'a> {
+impl<'a> CheckForStateChange<'a, '_> for ObjectPropertyKind<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         match self {
             Self::ObjectProperty(method) => method.check_for_state_change(check_for_new_objects),
@@ -130,7 +130,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for ObjectPropertyKind<'a> {
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for SpreadElement<'a> {
+impl<'a> CheckForStateChange<'a, '_> for SpreadElement<'a> {
     fn check_for_state_change(&self, _check_for_new_objects: bool) -> bool {
         // Object-rest and object-spread may trigger a getter.
         // TODO: Closure Compiler assumes that getters may side-free when set `assumeGettersArePure`.
@@ -139,14 +139,14 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for SpreadElement<'a> {
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for ObjectProperty<'a> {
+impl<'a> CheckForStateChange<'a, '_> for ObjectProperty<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         self.key.check_for_state_change(check_for_new_objects)
             || self.value.check_for_state_change(check_for_new_objects)
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for PropertyKey<'a> {
+impl<'a> CheckForStateChange<'a, '_> for PropertyKey<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         match self {
             Self::StaticIdentifier(_) | Self::PrivateIdentifier(_) => false,
@@ -157,7 +157,7 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for PropertyKey<'a> {
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for ForStatementLeft<'a> {
+impl<'a> CheckForStateChange<'a, '_> for ForStatementLeft<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         match self {
             match_assignment_target!(Self) => {
@@ -171,13 +171,13 @@ impl<'a, 'b> CheckForStateChange<'a, 'b> for ForStatementLeft<'a> {
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for VariableDeclaration<'a> {
+impl<'a> CheckForStateChange<'a, '_> for VariableDeclaration<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         self.declarations.iter().any(|decl| decl.check_for_state_change(check_for_new_objects))
     }
 }
 
-impl<'a, 'b> CheckForStateChange<'a, 'b> for VariableDeclarator<'a> {
+impl<'a> CheckForStateChange<'a, '_> for VariableDeclarator<'a> {
     fn check_for_state_change(&self, check_for_new_objects: bool) -> bool {
         self.id.check_for_state_change(check_for_new_objects)
             || self

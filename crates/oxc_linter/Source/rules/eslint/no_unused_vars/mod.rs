@@ -205,8 +205,7 @@ impl Rule for NoUnusedVars {
     }
 
     fn run_on_symbol(&self, symbol_id: SymbolId, ctx: &LintContext<'_>) {
-        let symbol = Symbol::new(ctx.semantic().as_ref(), symbol_id);
-
+        let symbol = Symbol::new(ctx.semantic().as_ref(), ctx.module_record(), symbol_id);
         if Self::should_skip_symbol(&symbol) {
             return;
         }
@@ -302,7 +301,12 @@ impl NoUnusedVars {
             }
 
             AstKind::FormalParameter(param) => {
-                if self.is_allowed_argument(ctx.semantic().as_ref(), symbol, param) {
+                if self.is_allowed_argument(
+                    ctx.semantic().as_ref(),
+                    ctx.module_record(),
+                    symbol,
+                    param,
+                ) {
                     return;
                 }
 

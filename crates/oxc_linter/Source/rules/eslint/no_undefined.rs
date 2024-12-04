@@ -140,5 +140,5 @@ fn test() {
         "[a = undefined] = b",
     ];
 
-    Tester::new(NoUndefined::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoUndefined::NAME, NoUndefined::CATEGORY, pass, fail).test_and_snapshot();
 }

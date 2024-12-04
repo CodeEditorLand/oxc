@@ -164,5 +164,7 @@ fn test() {
         (r#"import fs from "fs/promises";"#, r#"import fs from "node:fs/promises";"#, None),
     ];
 
-    Tester::new(PreferNodeProtocol::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(PreferNodeProtocol::NAME, PreferNodeProtocol::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

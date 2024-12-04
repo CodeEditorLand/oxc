@@ -244,5 +244,7 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoRestrictedMatchers::NAME, pass, fail).with_jest_plugin(true).test_and_snapshot();
+    Tester::new(NoRestrictedMatchers::NAME, NoRestrictedMatchers::CATEGORY, pass, fail)
+        .with_jest_plugin(true)
+        .test_and_snapshot();
 }

@@ -627,5 +627,7 @@ fn tests() {
         ),
     ];
 
-    Tester::new(RequireHook::NAME, pass, fail).with_jest_plugin(true).test_and_snapshot();
+    Tester::new(RequireHook::NAME, RequireHook::CATEGORY, pass, fail)
+        .with_jest_plugin(true)
+        .test_and_snapshot();
 }

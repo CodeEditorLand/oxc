@@ -281,8 +281,7 @@ impl Rule for NoUselessUndefined {
                         if is_has_function_return_type(parent_node, ctx) {
                             return;
                         }
-
-                        return ctx.diagnostic_with_fix(
+                        ctx.diagnostic_with_fix(
                             no_useless_undefined_diagnostic(undefined_literal.span),
                             |fixer| {
                                 fixer.delete_range(Span::new(
@@ -301,8 +300,7 @@ impl Rule for NoUselessUndefined {
                         if is_has_function_return_type(parent_node, ctx) {
                             return;
                         }
-
-                        return ctx.diagnostic_with_fix(
+                        ctx.diagnostic_with_fix(
                             no_useless_undefined_diagnostic(undefined_literal.span),
                             |fixer| fixer.delete_range(delete_span),
                         );
@@ -367,8 +365,7 @@ impl Rule for NoUselessUndefined {
                 }
 
                 let delete_span = Span::new(start, end);
-
-                return ctx.diagnostic_with_fix(
+                ctx.diagnostic_with_fix(
                     no_useless_undefined_diagnostic_spans(undefined_args_spans),
                     |fixer| fixer.delete_range(delete_span),
                 );
@@ -735,5 +732,7 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoUselessUndefined::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(NoUselessUndefined::NAME, NoUselessUndefined::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

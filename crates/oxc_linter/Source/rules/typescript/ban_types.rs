@@ -173,5 +173,5 @@ type Props = {
         ),
     ];
 
-    Tester::new(BanTypes::NAME, pass, fail).test_and_snapshot();
+    Tester::new(BanTypes::NAME, BanTypes::CATEGORY, pass, fail).test_and_snapshot();
 }

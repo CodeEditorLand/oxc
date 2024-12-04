@@ -338,8 +338,7 @@ impl Rule for PreferSetHas {
 
                 references_fix.push(fixer.replace(property_info.0, "has"));
             }
-
-            return declaration_fix.extend(references_fix);
+            declaration_fix.extend(references_fix)
         });
     }
 }
@@ -1069,5 +1068,7 @@ fn test() {
         ),
     ];
 
-    Tester::new(PreferSetHas::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(PreferSetHas::NAME, PreferSetHas::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

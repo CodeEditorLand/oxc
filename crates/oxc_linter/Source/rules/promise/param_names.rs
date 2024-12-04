@@ -190,5 +190,5 @@ fn test() {
         ),
     ];
 
-    Tester::new(ParamNames::NAME, pass, fail).test_and_snapshot();
+    Tester::new(ParamNames::NAME, ParamNames::CATEGORY, pass, fail).test_and_snapshot();
 }

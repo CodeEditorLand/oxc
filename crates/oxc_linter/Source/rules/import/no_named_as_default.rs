@@ -1,9 +1,8 @@
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
-use oxc_syntax::module_record::ImportImportName;
 
-use crate::{context::LintContext, rule::Rule};
+use crate::{context::LintContext, module_record::ImportImportName, rule::Rule};
 
 fn no_named_as_default_diagnostic(
     span: Span,
@@ -109,7 +108,7 @@ fn test() {
         r#"import foo, { foo as bar } from "./export-default-string-and-named""#,
     ];
 
-    Tester::new(NoNamedAsDefault::NAME, pass, fail)
+    Tester::new(NoNamedAsDefault::NAME, NoNamedAsDefault::CATEGORY, pass, fail)
         .change_rule_path("index.js")
         .with_import_plugin(true)
         .test_and_snapshot();

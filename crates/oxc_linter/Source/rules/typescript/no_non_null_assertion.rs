@@ -92,5 +92,6 @@ fn test() {
         	      ",
     ];
 
-    Tester::new(NoNonNullAssertion::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoNonNullAssertion::NAME, NoNonNullAssertion::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

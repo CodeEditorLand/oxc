@@ -6,10 +6,9 @@ use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::SymbolId;
 use oxc_span::Span;
-use oxc_syntax::module_record::ImportImportName;
 use rustc_hash::FxHashMap;
 
-use crate::{context::LintContext, rule::Rule};
+use crate::{context::LintContext, module_record::ImportImportName, rule::Rule};
 
 fn no_named_as_default_member_dignostic(
     span: Span,
@@ -93,16 +92,13 @@ impl Rule for NoNamedAsDefaultMember {
                 continue;
             }
 
-            let Some(symbol_id) =
-                ctx.scopes().get_root_binding(import_entry.local_name.name().as_str())
+            let Some(symbol_id) = ctx.scopes().get_root_binding(import_entry.local_name.name())
             else {
                 return;
             };
 
-            has_members_map.insert(
-                symbol_id,
-                (remote_module_record_ref, import_entry.module_request.name().clone()),
-            );
+            has_members_map
+                .insert(symbol_id, (remote_module_record_ref, import_entry.module_request.clone()));
         }
 
         if has_members_map.is_empty() {
@@ -140,7 +136,7 @@ impl Rule for NoNamedAsDefaultMember {
                     },
                     &ident.name,
                     prop_str,
-                    module_name,
+                    module_name.name(),
                 ));
             };
         };
@@ -169,7 +165,7 @@ impl Rule for NoNamedAsDefaultMember {
                                 decl.span,
                                 &ident.name,
                                 &name,
-                                module_name,
+                                module_name.name(),
                             ));
                         }
                     }
@@ -217,7 +213,7 @@ fn test() {
         r#"import baz from "./named-and-default-export"; const {foo: _foo} = baz"#,
     ];
 
-    Tester::new(NoNamedAsDefaultMember::NAME, pass, fail)
+    Tester::new(NoNamedAsDefaultMember::NAME, NoNamedAsDefaultMember::CATEGORY, pass, fail)
         .change_rule_path("index.js")
         .with_import_plugin(true)
         .test_and_snapshot();

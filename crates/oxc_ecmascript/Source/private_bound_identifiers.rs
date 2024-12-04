@@ -8,7 +8,7 @@ pub trait PrivateBoundIdentifiers {
     fn private_bound_identifiers(&self) -> Option<PrivateIdentifier>;
 }
 
-impl<'a> PrivateBoundIdentifiers for ClassElement<'a> {
+impl PrivateBoundIdentifiers for ClassElement<'_> {
     fn private_bound_identifiers(&self) -> Option<PrivateIdentifier> {
         match self {
             ClassElement::StaticBlock(_) | ClassElement::TSIndexSignature(_) => None,
@@ -19,7 +19,7 @@ impl<'a> PrivateBoundIdentifiers for ClassElement<'a> {
     }
 }
 
-impl<'a> PrivateBoundIdentifiers for MethodDefinition<'a> {
+impl PrivateBoundIdentifiers for MethodDefinition<'_> {
     fn private_bound_identifiers(&self) -> Option<PrivateIdentifier> {
         self.value.body.as_ref()?;
 
@@ -31,7 +31,7 @@ impl<'a> PrivateBoundIdentifiers for MethodDefinition<'a> {
     }
 }
 
-impl<'a> PrivateBoundIdentifiers for PropertyDefinition<'a> {
+impl PrivateBoundIdentifiers for PropertyDefinition<'_> {
     fn private_bound_identifiers(&self) -> Option<PrivateIdentifier> {
         if let PropertyKey::PrivateIdentifier(ident) = &self.key {
             return Some((*ident).clone());
@@ -41,7 +41,7 @@ impl<'a> PrivateBoundIdentifiers for PropertyDefinition<'a> {
     }
 }
 
-impl<'a> PrivateBoundIdentifiers for AccessorProperty<'a> {
+impl PrivateBoundIdentifiers for AccessorProperty<'_> {
     fn private_bound_identifiers(&self) -> Option<PrivateIdentifier> {
         if let PropertyKey::PrivateIdentifier(ident) = &self.key {
             return Some((*ident).clone());

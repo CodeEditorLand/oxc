@@ -304,7 +304,7 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoJasmineGlobals::NAME, pass, fail)
+    Tester::new(NoJasmineGlobals::NAME, NoJasmineGlobals::CATEGORY, pass, fail)
         .with_jest_plugin(true)
         .expect_fix(fix)
         .test_and_snapshot();

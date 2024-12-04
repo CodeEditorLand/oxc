@@ -83,7 +83,7 @@ fn check_and_diagnostic(
 }
 
 fn get_symbol_kind<'a>(symbol_id: SymbolId, ctx: &LintContext<'a>) -> AstKind<'a> {
-    return ctx.nodes().get_node(ctx.symbols().get_declaration(symbol_id)).kind();
+    ctx.nodes().get_node(ctx.symbols().get_declaration(symbol_id)).kind()
 }
 
 #[test]
@@ -189,5 +189,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoUnsafeDeclarationMerging::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoUnsafeDeclarationMerging::NAME, NoUnsafeDeclarationMerging::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

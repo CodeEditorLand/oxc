@@ -472,5 +472,11 @@ fn test() {
 			}",
     ];
 
-    Tester::new(NoUnusedPrivateClassMembers::NAME, pass, fail).test_and_snapshot();
+    Tester::new(
+        NoUnusedPrivateClassMembers::NAME,
+        NoUnusedPrivateClassMembers::CATEGORY,
+        pass,
+        fail,
+    )
+    .test_and_snapshot();
 }

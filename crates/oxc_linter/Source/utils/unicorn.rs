@@ -199,6 +199,35 @@ pub fn is_same_reference(left: &Expression, right: &Expression, ctx: &LintContex
         }
 
         (
+            Expression::BinaryExpression(left_bin_expr),
+            Expression::BinaryExpression(right_bin_expr),
+        ) => {
+            return left_bin_expr.operator == right_bin_expr.operator
+                && is_same_reference(
+                    left_bin_expr.left.get_inner_expression(),
+                    right_bin_expr.left.get_inner_expression(),
+                    ctx,
+                )
+                && is_same_reference(
+                    left_bin_expr.right.get_inner_expression(),
+                    right_bin_expr.right.get_inner_expression(),
+                    ctx,
+                );
+        }
+
+        (
+            Expression::UnaryExpression(left_unary_expr),
+            Expression::UnaryExpression(right_unary_expr),
+        ) => {
+            return left_unary_expr.operator == right_unary_expr.operator
+                && is_same_reference(
+                    left_unary_expr.argument.get_inner_expression(),
+                    right_unary_expr.argument.get_inner_expression(),
+                    ctx,
+                );
+        }
+
+        (
             Expression::ChainExpression(left_chain_expr),
             Expression::ChainExpression(right_chain_expr),
         ) => {
@@ -258,9 +287,9 @@ pub fn is_same_member_expression(
         }
     }
 
-    return is_same_reference(
+    is_same_reference(
         left.object().get_inner_expression(),
         right.object().get_inner_expression(),
         ctx,
-    );
+    )
 }

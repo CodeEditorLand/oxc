@@ -418,8 +418,7 @@ impl<'a> TypeScriptEnum<'a> {
                 let members = self.enums.get(&ident.name)?;
 
                 let property = expr.static_property_name()?;
-
-                return members.get(property).cloned();
+                members.get(property).cloned()
             }
 
             Expression::Identifier(ident) => {

@@ -99,10 +99,9 @@ pub fn import_matcher<'a>(
     expected_module_name: &'a str,
 ) -> bool {
     let expected_module_name = expected_module_name.cow_to_lowercase();
-
-    ctx.semantic().module_record().import_entries.iter().any(|import| {
-        import.module_request.name().as_str() == expected_module_name
-            && import.local_name.name().as_str() == actual_local_name
+    ctx.module_record().import_entries.iter().any(|import| {
+        import.module_request.name() == expected_module_name
+            && import.local_name.name() == actual_local_name
     })
 }
 
@@ -112,7 +111,7 @@ pub fn is_import<'a>(
     expected_local_name: &'a str,
     expected_module_name: &'a str,
 ) -> bool {
-    if ctx.semantic().module_record().requested_modules.is_empty()
+    if ctx.module_record().requested_modules.is_empty()
         && ctx.scopes().get_bindings(ctx.scopes().root_scope_id()).is_empty()
     {
         return actual_local_name == expected_local_name;
@@ -142,7 +141,7 @@ pub fn is_children<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> b
 
     let Some(local_name) = inner_member.static_property_name() else { return false };
 
-    return is_import(ctx, ident.name.as_str(), REACT, REACT) && local_name == CHILDREN;
+    is_import(ctx, ident.name.as_str(), REACT, REACT) && local_name == CHILDREN
 }
 fn is_within_children_to_array<'a, 'b>(node: &'b AstNode<'a>, ctx: &'b LintContext<'a>) -> bool {
     let parents_iter = ctx.nodes().ancestors(node.id()).skip(2);
@@ -660,5 +659,5 @@ fn test() {
         ",
     ];
 
-    Tester::new(JsxKey::NAME, pass, fail).test_and_snapshot();
+    Tester::new(JsxKey::NAME, JsxKey::CATEGORY, pass, fail).test_and_snapshot();
 }

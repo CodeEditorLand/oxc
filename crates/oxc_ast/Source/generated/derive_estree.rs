@@ -25,31 +25,31 @@ impl Serialize for NullLiteral {
     }
 }
 
-impl<'a> Serialize for NumericLiteral<'a> {
+impl Serialize for NumericLiteral<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         crate::serialize::ESTreeLiteral::from(self).serialize(serializer)
     }
 }
 
-impl<'a> Serialize for StringLiteral<'a> {
+impl Serialize for StringLiteral<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         crate::serialize::ESTreeLiteral::from(self).serialize(serializer)
     }
 }
 
-impl<'a> Serialize for BigIntLiteral<'a> {
+impl Serialize for BigIntLiteral<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         crate::serialize::ESTreeLiteral::from(self).serialize(serializer)
     }
 }
 
-impl<'a> Serialize for RegExpLiteral<'a> {
+impl Serialize for RegExpLiteral<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         crate::serialize::ESTreeLiteral::from(self).serialize(serializer)
     }
 }
 
-impl<'a> Serialize for RegExp<'a> {
+impl Serialize for RegExp<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -61,7 +61,7 @@ impl<'a> Serialize for RegExp<'a> {
     }
 }
 
-impl<'a> Serialize for RegExpPattern<'a> {
+impl Serialize for RegExpPattern<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             RegExpPattern::Raw(x) => Serialize::serialize(x, serializer),
@@ -71,7 +71,7 @@ impl<'a> Serialize for RegExpPattern<'a> {
     }
 }
 
-impl<'a> Serialize for Program<'a> {
+impl Serialize for Program<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -91,7 +91,7 @@ impl<'a> Serialize for Program<'a> {
     }
 }
 
-impl<'a> Serialize for Expression<'a> {
+impl Serialize for Expression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             Expression::BooleanLiteral(x) => Serialize::serialize(x, serializer),
@@ -140,7 +140,7 @@ impl<'a> Serialize for Expression<'a> {
     }
 }
 
-impl<'a> Serialize for IdentifierName<'a> {
+impl Serialize for IdentifierName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -154,7 +154,7 @@ impl<'a> Serialize for IdentifierName<'a> {
     }
 }
 
-impl<'a> Serialize for IdentifierReference<'a> {
+impl Serialize for IdentifierReference<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -168,7 +168,7 @@ impl<'a> Serialize for IdentifierReference<'a> {
     }
 }
 
-impl<'a> Serialize for BindingIdentifier<'a> {
+impl Serialize for BindingIdentifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -182,7 +182,7 @@ impl<'a> Serialize for BindingIdentifier<'a> {
     }
 }
 
-impl<'a> Serialize for LabelIdentifier<'a> {
+impl Serialize for LabelIdentifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -208,7 +208,7 @@ impl Serialize for ThisExpression {
     }
 }
 
-impl<'a> Serialize for ArrayExpression<'a> {
+impl Serialize for ArrayExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -222,7 +222,7 @@ impl<'a> Serialize for ArrayExpression<'a> {
     }
 }
 
-impl<'a> Serialize for ArrayExpressionElement<'a> {
+impl Serialize for ArrayExpressionElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ArrayExpressionElement::SpreadElement(x) => Serialize::serialize(x, serializer),
@@ -293,7 +293,7 @@ impl<'a> Serialize for ArrayExpressionElement<'a> {
     }
 }
 
-impl<'a> Serialize for ObjectExpression<'a> {
+impl Serialize for ObjectExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -307,7 +307,7 @@ impl<'a> Serialize for ObjectExpression<'a> {
     }
 }
 
-impl<'a> Serialize for ObjectPropertyKind<'a> {
+impl Serialize for ObjectPropertyKind<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ObjectPropertyKind::ObjectProperty(x) => Serialize::serialize(x, serializer),
@@ -316,7 +316,7 @@ impl<'a> Serialize for ObjectPropertyKind<'a> {
     }
 }
 
-impl<'a> Serialize for ObjectProperty<'a> {
+impl Serialize for ObjectProperty<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -340,7 +340,7 @@ impl<'a> Serialize for ObjectProperty<'a> {
     }
 }
 
-impl<'a> Serialize for PropertyKey<'a> {
+impl Serialize for PropertyKey<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             PropertyKey::StaticIdentifier(x) => Serialize::serialize(x, serializer),
@@ -401,7 +401,7 @@ impl Serialize for PropertyKind {
     }
 }
 
-impl<'a> Serialize for TemplateLiteral<'a> {
+impl Serialize for TemplateLiteral<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -417,7 +417,7 @@ impl<'a> Serialize for TemplateLiteral<'a> {
     }
 }
 
-impl<'a> Serialize for TaggedTemplateExpression<'a> {
+impl Serialize for TaggedTemplateExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -435,7 +435,7 @@ impl<'a> Serialize for TaggedTemplateExpression<'a> {
     }
 }
 
-impl<'a> Serialize for TemplateElement<'a> {
+impl Serialize for TemplateElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -451,7 +451,7 @@ impl<'a> Serialize for TemplateElement<'a> {
     }
 }
 
-impl<'a> Serialize for TemplateElementValue<'a> {
+impl Serialize for TemplateElementValue<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -463,7 +463,7 @@ impl<'a> Serialize for TemplateElementValue<'a> {
     }
 }
 
-impl<'a> Serialize for MemberExpression<'a> {
+impl Serialize for MemberExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             MemberExpression::ComputedMemberExpression(x) => Serialize::serialize(x, serializer),
@@ -473,7 +473,7 @@ impl<'a> Serialize for MemberExpression<'a> {
     }
 }
 
-impl<'a> Serialize for ComputedMemberExpression<'a> {
+impl Serialize for ComputedMemberExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -491,7 +491,7 @@ impl<'a> Serialize for ComputedMemberExpression<'a> {
     }
 }
 
-impl<'a> Serialize for StaticMemberExpression<'a> {
+impl Serialize for StaticMemberExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -509,7 +509,7 @@ impl<'a> Serialize for StaticMemberExpression<'a> {
     }
 }
 
-impl<'a> Serialize for PrivateFieldExpression<'a> {
+impl Serialize for PrivateFieldExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -527,7 +527,7 @@ impl<'a> Serialize for PrivateFieldExpression<'a> {
     }
 }
 
-impl<'a> Serialize for CallExpression<'a> {
+impl Serialize for CallExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -547,7 +547,7 @@ impl<'a> Serialize for CallExpression<'a> {
     }
 }
 
-impl<'a> Serialize for NewExpression<'a> {
+impl Serialize for NewExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -565,7 +565,7 @@ impl<'a> Serialize for NewExpression<'a> {
     }
 }
 
-impl<'a> Serialize for MetaProperty<'a> {
+impl Serialize for MetaProperty<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -581,7 +581,7 @@ impl<'a> Serialize for MetaProperty<'a> {
     }
 }
 
-impl<'a> Serialize for SpreadElement<'a> {
+impl Serialize for SpreadElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -595,7 +595,7 @@ impl<'a> Serialize for SpreadElement<'a> {
     }
 }
 
-impl<'a> Serialize for Argument<'a> {
+impl Serialize for Argument<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             Argument::SpreadElement(x) => Serialize::serialize(x, serializer),
@@ -645,7 +645,7 @@ impl<'a> Serialize for Argument<'a> {
     }
 }
 
-impl<'a> Serialize for UpdateExpression<'a> {
+impl Serialize for UpdateExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -663,7 +663,7 @@ impl<'a> Serialize for UpdateExpression<'a> {
     }
 }
 
-impl<'a> Serialize for UnaryExpression<'a> {
+impl Serialize for UnaryExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -679,7 +679,7 @@ impl<'a> Serialize for UnaryExpression<'a> {
     }
 }
 
-impl<'a> Serialize for BinaryExpression<'a> {
+impl Serialize for BinaryExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -697,7 +697,7 @@ impl<'a> Serialize for BinaryExpression<'a> {
     }
 }
 
-impl<'a> Serialize for PrivateInExpression<'a> {
+impl Serialize for PrivateInExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -715,7 +715,7 @@ impl<'a> Serialize for PrivateInExpression<'a> {
     }
 }
 
-impl<'a> Serialize for LogicalExpression<'a> {
+impl Serialize for LogicalExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -733,7 +733,7 @@ impl<'a> Serialize for LogicalExpression<'a> {
     }
 }
 
-impl<'a> Serialize for ConditionalExpression<'a> {
+impl Serialize for ConditionalExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -751,7 +751,7 @@ impl<'a> Serialize for ConditionalExpression<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentExpression<'a> {
+impl Serialize for AssignmentExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -769,7 +769,7 @@ impl<'a> Serialize for AssignmentExpression<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentTarget<'a> {
+impl Serialize for AssignmentTarget<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             AssignmentTarget::AssignmentTargetIdentifier(x) => Serialize::serialize(x, serializer),
@@ -787,7 +787,7 @@ impl<'a> Serialize for AssignmentTarget<'a> {
     }
 }
 
-impl<'a> Serialize for SimpleAssignmentTarget<'a> {
+impl Serialize for SimpleAssignmentTarget<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             SimpleAssignmentTarget::AssignmentTargetIdentifier(x) => {
@@ -817,7 +817,7 @@ impl<'a> Serialize for SimpleAssignmentTarget<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentTargetPattern<'a> {
+impl Serialize for AssignmentTargetPattern<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             AssignmentTargetPattern::ArrayAssignmentTarget(x) => {
@@ -831,7 +831,7 @@ impl<'a> Serialize for AssignmentTargetPattern<'a> {
     }
 }
 
-impl<'a> Serialize for ArrayAssignmentTarget<'a> {
+impl Serialize for ArrayAssignmentTarget<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -848,7 +848,7 @@ impl<'a> Serialize for ArrayAssignmentTarget<'a> {
     }
 }
 
-impl<'a> Serialize for ObjectAssignmentTarget<'a> {
+impl Serialize for ObjectAssignmentTarget<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -865,7 +865,7 @@ impl<'a> Serialize for ObjectAssignmentTarget<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentTargetRest<'a> {
+impl Serialize for AssignmentTargetRest<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -879,7 +879,7 @@ impl<'a> Serialize for AssignmentTargetRest<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentTargetMaybeDefault<'a> {
+impl Serialize for AssignmentTargetMaybeDefault<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(x) => {
@@ -927,7 +927,7 @@ impl<'a> Serialize for AssignmentTargetMaybeDefault<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentTargetWithDefault<'a> {
+impl Serialize for AssignmentTargetWithDefault<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -943,7 +943,7 @@ impl<'a> Serialize for AssignmentTargetWithDefault<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentTargetProperty<'a> {
+impl Serialize for AssignmentTargetProperty<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(x) => {
@@ -957,7 +957,7 @@ impl<'a> Serialize for AssignmentTargetProperty<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentTargetPropertyIdentifier<'a> {
+impl Serialize for AssignmentTargetPropertyIdentifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -973,7 +973,7 @@ impl<'a> Serialize for AssignmentTargetPropertyIdentifier<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentTargetPropertyProperty<'a> {
+impl Serialize for AssignmentTargetPropertyProperty<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -989,7 +989,7 @@ impl<'a> Serialize for AssignmentTargetPropertyProperty<'a> {
     }
 }
 
-impl<'a> Serialize for SequenceExpression<'a> {
+impl Serialize for SequenceExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1015,7 +1015,7 @@ impl Serialize for Super {
     }
 }
 
-impl<'a> Serialize for AwaitExpression<'a> {
+impl Serialize for AwaitExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1029,7 +1029,7 @@ impl<'a> Serialize for AwaitExpression<'a> {
     }
 }
 
-impl<'a> Serialize for ChainExpression<'a> {
+impl Serialize for ChainExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1043,7 +1043,7 @@ impl<'a> Serialize for ChainExpression<'a> {
     }
 }
 
-impl<'a> Serialize for ChainElement<'a> {
+impl Serialize for ChainElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ChainElement::CallExpression(x) => Serialize::serialize(x, serializer),
@@ -1055,7 +1055,7 @@ impl<'a> Serialize for ChainElement<'a> {
     }
 }
 
-impl<'a> Serialize for ParenthesizedExpression<'a> {
+impl Serialize for ParenthesizedExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1069,7 +1069,7 @@ impl<'a> Serialize for ParenthesizedExpression<'a> {
     }
 }
 
-impl<'a> Serialize for Statement<'a> {
+impl Serialize for Statement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             Statement::BlockStatement(x) => Serialize::serialize(x, serializer),
@@ -1108,7 +1108,7 @@ impl<'a> Serialize for Statement<'a> {
     }
 }
 
-impl<'a> Serialize for Directive<'a> {
+impl Serialize for Directive<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1124,7 +1124,7 @@ impl<'a> Serialize for Directive<'a> {
     }
 }
 
-impl<'a> Serialize for Hashbang<'a> {
+impl Serialize for Hashbang<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1138,7 +1138,7 @@ impl<'a> Serialize for Hashbang<'a> {
     }
 }
 
-impl<'a> Serialize for BlockStatement<'a> {
+impl Serialize for BlockStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1152,7 +1152,7 @@ impl<'a> Serialize for BlockStatement<'a> {
     }
 }
 
-impl<'a> Serialize for Declaration<'a> {
+impl Serialize for Declaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             Declaration::VariableDeclaration(x) => Serialize::serialize(x, serializer),
@@ -1167,7 +1167,7 @@ impl<'a> Serialize for Declaration<'a> {
     }
 }
 
-impl<'a> Serialize for VariableDeclaration<'a> {
+impl Serialize for VariableDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1211,7 +1211,7 @@ impl Serialize for VariableDeclarationKind {
     }
 }
 
-impl<'a> Serialize for VariableDeclarator<'a> {
+impl Serialize for VariableDeclarator<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1241,7 +1241,7 @@ impl Serialize for EmptyStatement {
     }
 }
 
-impl<'a> Serialize for ExpressionStatement<'a> {
+impl Serialize for ExpressionStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1255,7 +1255,7 @@ impl<'a> Serialize for ExpressionStatement<'a> {
     }
 }
 
-impl<'a> Serialize for IfStatement<'a> {
+impl Serialize for IfStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1273,7 +1273,7 @@ impl<'a> Serialize for IfStatement<'a> {
     }
 }
 
-impl<'a> Serialize for DoWhileStatement<'a> {
+impl Serialize for DoWhileStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1289,7 +1289,7 @@ impl<'a> Serialize for DoWhileStatement<'a> {
     }
 }
 
-impl<'a> Serialize for WhileStatement<'a> {
+impl Serialize for WhileStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1305,7 +1305,7 @@ impl<'a> Serialize for WhileStatement<'a> {
     }
 }
 
-impl<'a> Serialize for ForStatement<'a> {
+impl Serialize for ForStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1325,7 +1325,7 @@ impl<'a> Serialize for ForStatement<'a> {
     }
 }
 
-impl<'a> Serialize for ForStatementInit<'a> {
+impl Serialize for ForStatementInit<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ForStatementInit::VariableDeclaration(x) => Serialize::serialize(x, serializer),
@@ -1375,7 +1375,7 @@ impl<'a> Serialize for ForStatementInit<'a> {
     }
 }
 
-impl<'a> Serialize for ForInStatement<'a> {
+impl Serialize for ForInStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1393,7 +1393,7 @@ impl<'a> Serialize for ForInStatement<'a> {
     }
 }
 
-impl<'a> Serialize for ForStatementLeft<'a> {
+impl Serialize for ForStatementLeft<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ForStatementLeft::VariableDeclaration(x) => Serialize::serialize(x, serializer),
@@ -1412,7 +1412,7 @@ impl<'a> Serialize for ForStatementLeft<'a> {
     }
 }
 
-impl<'a> Serialize for ForOfStatement<'a> {
+impl Serialize for ForOfStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1432,7 +1432,7 @@ impl<'a> Serialize for ForOfStatement<'a> {
     }
 }
 
-impl<'a> Serialize for ContinueStatement<'a> {
+impl Serialize for ContinueStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1446,7 +1446,7 @@ impl<'a> Serialize for ContinueStatement<'a> {
     }
 }
 
-impl<'a> Serialize for BreakStatement<'a> {
+impl Serialize for BreakStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1460,7 +1460,7 @@ impl<'a> Serialize for BreakStatement<'a> {
     }
 }
 
-impl<'a> Serialize for ReturnStatement<'a> {
+impl Serialize for ReturnStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1474,7 +1474,7 @@ impl<'a> Serialize for ReturnStatement<'a> {
     }
 }
 
-impl<'a> Serialize for WithStatement<'a> {
+impl Serialize for WithStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1490,7 +1490,7 @@ impl<'a> Serialize for WithStatement<'a> {
     }
 }
 
-impl<'a> Serialize for SwitchStatement<'a> {
+impl Serialize for SwitchStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1506,7 +1506,7 @@ impl<'a> Serialize for SwitchStatement<'a> {
     }
 }
 
-impl<'a> Serialize for SwitchCase<'a> {
+impl Serialize for SwitchCase<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1522,7 +1522,7 @@ impl<'a> Serialize for SwitchCase<'a> {
     }
 }
 
-impl<'a> Serialize for LabeledStatement<'a> {
+impl Serialize for LabeledStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1538,7 +1538,7 @@ impl<'a> Serialize for LabeledStatement<'a> {
     }
 }
 
-impl<'a> Serialize for ThrowStatement<'a> {
+impl Serialize for ThrowStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1552,7 +1552,7 @@ impl<'a> Serialize for ThrowStatement<'a> {
     }
 }
 
-impl<'a> Serialize for TryStatement<'a> {
+impl Serialize for TryStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1570,7 +1570,7 @@ impl<'a> Serialize for TryStatement<'a> {
     }
 }
 
-impl<'a> Serialize for CatchClause<'a> {
+impl Serialize for CatchClause<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1586,7 +1586,7 @@ impl<'a> Serialize for CatchClause<'a> {
     }
 }
 
-impl<'a> Serialize for CatchParameter<'a> {
+impl Serialize for CatchParameter<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1612,7 +1612,7 @@ impl Serialize for DebuggerStatement {
     }
 }
 
-impl<'a> Serialize for BindingPattern<'a> {
+impl Serialize for BindingPattern<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1626,7 +1626,7 @@ impl<'a> Serialize for BindingPattern<'a> {
     }
 }
 
-impl<'a> Serialize for BindingPatternKind<'a> {
+impl Serialize for BindingPatternKind<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             BindingPatternKind::BindingIdentifier(x) => Serialize::serialize(x, serializer),
@@ -1637,7 +1637,7 @@ impl<'a> Serialize for BindingPatternKind<'a> {
     }
 }
 
-impl<'a> Serialize for AssignmentPattern<'a> {
+impl Serialize for AssignmentPattern<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1653,7 +1653,7 @@ impl<'a> Serialize for AssignmentPattern<'a> {
     }
 }
 
-impl<'a> Serialize for ObjectPattern<'a> {
+impl Serialize for ObjectPattern<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1670,7 +1670,7 @@ impl<'a> Serialize for ObjectPattern<'a> {
     }
 }
 
-impl<'a> Serialize for BindingProperty<'a> {
+impl Serialize for BindingProperty<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1690,7 +1690,7 @@ impl<'a> Serialize for BindingProperty<'a> {
     }
 }
 
-impl<'a> Serialize for ArrayPattern<'a> {
+impl Serialize for ArrayPattern<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1707,7 +1707,7 @@ impl<'a> Serialize for ArrayPattern<'a> {
     }
 }
 
-impl<'a> Serialize for BindingRestElement<'a> {
+impl Serialize for BindingRestElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1721,7 +1721,7 @@ impl<'a> Serialize for BindingRestElement<'a> {
     }
 }
 
-impl<'a> Serialize for Function<'a> {
+impl Serialize for Function<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1775,7 +1775,7 @@ impl Serialize for FunctionType {
     }
 }
 
-impl<'a> Serialize for FormalParameter<'a> {
+impl Serialize for FormalParameter<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1821,7 +1821,7 @@ impl Serialize for FormalParameterKind {
     }
 }
 
-impl<'a> Serialize for FunctionBody<'a> {
+impl Serialize for FunctionBody<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1837,7 +1837,7 @@ impl<'a> Serialize for FunctionBody<'a> {
     }
 }
 
-impl<'a> Serialize for ArrowFunctionExpression<'a> {
+impl Serialize for ArrowFunctionExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1861,7 +1861,7 @@ impl<'a> Serialize for ArrowFunctionExpression<'a> {
     }
 }
 
-impl<'a> Serialize for YieldExpression<'a> {
+impl Serialize for YieldExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1877,7 +1877,7 @@ impl<'a> Serialize for YieldExpression<'a> {
     }
 }
 
-impl<'a> Serialize for Class<'a> {
+impl Serialize for Class<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1921,7 +1921,7 @@ impl Serialize for ClassType {
     }
 }
 
-impl<'a> Serialize for ClassBody<'a> {
+impl Serialize for ClassBody<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1935,7 +1935,7 @@ impl<'a> Serialize for ClassBody<'a> {
     }
 }
 
-impl<'a> Serialize for ClassElement<'a> {
+impl Serialize for ClassElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ClassElement::StaticBlock(x) => Serialize::serialize(x, serializer),
@@ -1947,7 +1947,7 @@ impl<'a> Serialize for ClassElement<'a> {
     }
 }
 
-impl<'a> Serialize for MethodDefinition<'a> {
+impl Serialize for MethodDefinition<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -1993,7 +1993,7 @@ impl Serialize for MethodDefinitionType {
     }
 }
 
-impl<'a> Serialize for PropertyDefinition<'a> {
+impl Serialize for PropertyDefinition<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2069,7 +2069,7 @@ impl Serialize for MethodDefinitionKind {
     }
 }
 
-impl<'a> Serialize for PrivateIdentifier<'a> {
+impl Serialize for PrivateIdentifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2083,7 +2083,7 @@ impl<'a> Serialize for PrivateIdentifier<'a> {
     }
 }
 
-impl<'a> Serialize for StaticBlock<'a> {
+impl Serialize for StaticBlock<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2097,7 +2097,7 @@ impl<'a> Serialize for StaticBlock<'a> {
     }
 }
 
-impl<'a> Serialize for ModuleDeclaration<'a> {
+impl Serialize for ModuleDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ModuleDeclaration::ImportDeclaration(x) => Serialize::serialize(x, serializer),
@@ -2128,7 +2128,7 @@ impl Serialize for AccessorPropertyType {
     }
 }
 
-impl<'a> Serialize for AccessorProperty<'a> {
+impl Serialize for AccessorProperty<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2156,7 +2156,7 @@ impl<'a> Serialize for AccessorProperty<'a> {
     }
 }
 
-impl<'a> Serialize for ImportExpression<'a> {
+impl Serialize for ImportExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2172,7 +2172,7 @@ impl<'a> Serialize for ImportExpression<'a> {
     }
 }
 
-impl<'a> Serialize for ImportDeclaration<'a> {
+impl Serialize for ImportDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2192,7 +2192,7 @@ impl<'a> Serialize for ImportDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for ImportDeclarationSpecifier<'a> {
+impl Serialize for ImportDeclarationSpecifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ImportDeclarationSpecifier::ImportSpecifier(x) => Serialize::serialize(x, serializer),
@@ -2207,7 +2207,7 @@ impl<'a> Serialize for ImportDeclarationSpecifier<'a> {
     }
 }
 
-impl<'a> Serialize for ImportSpecifier<'a> {
+impl Serialize for ImportSpecifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2225,7 +2225,7 @@ impl<'a> Serialize for ImportSpecifier<'a> {
     }
 }
 
-impl<'a> Serialize for ImportDefaultSpecifier<'a> {
+impl Serialize for ImportDefaultSpecifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2239,7 +2239,7 @@ impl<'a> Serialize for ImportDefaultSpecifier<'a> {
     }
 }
 
-impl<'a> Serialize for ImportNamespaceSpecifier<'a> {
+impl Serialize for ImportNamespaceSpecifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2253,7 +2253,7 @@ impl<'a> Serialize for ImportNamespaceSpecifier<'a> {
     }
 }
 
-impl<'a> Serialize for WithClause<'a> {
+impl Serialize for WithClause<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2269,7 +2269,7 @@ impl<'a> Serialize for WithClause<'a> {
     }
 }
 
-impl<'a> Serialize for ImportAttribute<'a> {
+impl Serialize for ImportAttribute<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2285,7 +2285,7 @@ impl<'a> Serialize for ImportAttribute<'a> {
     }
 }
 
-impl<'a> Serialize for ImportAttributeKey<'a> {
+impl Serialize for ImportAttributeKey<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ImportAttributeKey::Identifier(x) => Serialize::serialize(x, serializer),
@@ -2294,7 +2294,7 @@ impl<'a> Serialize for ImportAttributeKey<'a> {
     }
 }
 
-impl<'a> Serialize for ExportNamedDeclaration<'a> {
+impl Serialize for ExportNamedDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2316,7 +2316,7 @@ impl<'a> Serialize for ExportNamedDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for ExportDefaultDeclaration<'a> {
+impl Serialize for ExportDefaultDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2332,7 +2332,7 @@ impl<'a> Serialize for ExportDefaultDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for ExportAllDeclaration<'a> {
+impl Serialize for ExportAllDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2352,7 +2352,7 @@ impl<'a> Serialize for ExportAllDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for ExportSpecifier<'a> {
+impl Serialize for ExportSpecifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2370,7 +2370,7 @@ impl<'a> Serialize for ExportSpecifier<'a> {
     }
 }
 
-impl<'a> Serialize for ExportDefaultDeclarationKind<'a> {
+impl Serialize for ExportDefaultDeclarationKind<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ExportDefaultDeclarationKind::FunctionDeclaration(x) => {
@@ -2487,7 +2487,7 @@ impl<'a> Serialize for ExportDefaultDeclarationKind<'a> {
     }
 }
 
-impl<'a> Serialize for ModuleExportName<'a> {
+impl Serialize for ModuleExportName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             ModuleExportName::IdentifierName(x) => Serialize::serialize(x, serializer),
@@ -2497,7 +2497,7 @@ impl<'a> Serialize for ModuleExportName<'a> {
     }
 }
 
-impl<'a> Serialize for TSThisParameter<'a> {
+impl Serialize for TSThisParameter<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2511,7 +2511,7 @@ impl<'a> Serialize for TSThisParameter<'a> {
     }
 }
 
-impl<'a> Serialize for TSEnumDeclaration<'a> {
+impl Serialize for TSEnumDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2531,7 +2531,7 @@ impl<'a> Serialize for TSEnumDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for TSEnumMember<'a> {
+impl Serialize for TSEnumMember<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2547,7 +2547,7 @@ impl<'a> Serialize for TSEnumMember<'a> {
     }
 }
 
-impl<'a> Serialize for TSEnumMemberName<'a> {
+impl Serialize for TSEnumMemberName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSEnumMemberName::Identifier(x) => Serialize::serialize(x, serializer),
@@ -2556,7 +2556,7 @@ impl<'a> Serialize for TSEnumMemberName<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeAnnotation<'a> {
+impl Serialize for TSTypeAnnotation<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2570,7 +2570,7 @@ impl<'a> Serialize for TSTypeAnnotation<'a> {
     }
 }
 
-impl<'a> Serialize for TSLiteralType<'a> {
+impl Serialize for TSLiteralType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2584,7 +2584,7 @@ impl<'a> Serialize for TSLiteralType<'a> {
     }
 }
 
-impl<'a> Serialize for TSLiteral<'a> {
+impl Serialize for TSLiteral<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSLiteral::BooleanLiteral(x) => Serialize::serialize(x, serializer),
@@ -2599,7 +2599,7 @@ impl<'a> Serialize for TSLiteral<'a> {
     }
 }
 
-impl<'a> Serialize for TSType<'a> {
+impl Serialize for TSType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSType::TSAnyKeyword(x) => Serialize::serialize(x, serializer),
@@ -2644,7 +2644,7 @@ impl<'a> Serialize for TSType<'a> {
     }
 }
 
-impl<'a> Serialize for TSConditionalType<'a> {
+impl Serialize for TSConditionalType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2664,7 +2664,7 @@ impl<'a> Serialize for TSConditionalType<'a> {
     }
 }
 
-impl<'a> Serialize for TSUnionType<'a> {
+impl Serialize for TSUnionType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2678,7 +2678,7 @@ impl<'a> Serialize for TSUnionType<'a> {
     }
 }
 
-impl<'a> Serialize for TSIntersectionType<'a> {
+impl Serialize for TSIntersectionType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2692,7 +2692,7 @@ impl<'a> Serialize for TSIntersectionType<'a> {
     }
 }
 
-impl<'a> Serialize for TSParenthesizedType<'a> {
+impl Serialize for TSParenthesizedType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2706,7 +2706,7 @@ impl<'a> Serialize for TSParenthesizedType<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeOperator<'a> {
+impl Serialize for TSTypeOperator<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2740,7 +2740,7 @@ impl Serialize for TSTypeOperatorOperator {
     }
 }
 
-impl<'a> Serialize for TSArrayType<'a> {
+impl Serialize for TSArrayType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2754,7 +2754,7 @@ impl<'a> Serialize for TSArrayType<'a> {
     }
 }
 
-impl<'a> Serialize for TSIndexedAccessType<'a> {
+impl Serialize for TSIndexedAccessType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2770,7 +2770,7 @@ impl<'a> Serialize for TSIndexedAccessType<'a> {
     }
 }
 
-impl<'a> Serialize for TSTupleType<'a> {
+impl Serialize for TSTupleType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2784,7 +2784,7 @@ impl<'a> Serialize for TSTupleType<'a> {
     }
 }
 
-impl<'a> Serialize for TSNamedTupleMember<'a> {
+impl Serialize for TSNamedTupleMember<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2802,7 +2802,7 @@ impl<'a> Serialize for TSNamedTupleMember<'a> {
     }
 }
 
-impl<'a> Serialize for TSOptionalType<'a> {
+impl Serialize for TSOptionalType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2816,7 +2816,7 @@ impl<'a> Serialize for TSOptionalType<'a> {
     }
 }
 
-impl<'a> Serialize for TSRestType<'a> {
+impl Serialize for TSRestType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -2830,7 +2830,7 @@ impl<'a> Serialize for TSRestType<'a> {
     }
 }
 
-impl<'a> Serialize for TSTupleElement<'a> {
+impl Serialize for TSTupleElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSTupleElement::TSOptionalType(x) => Serialize::serialize(x, serializer),
@@ -3045,7 +3045,7 @@ impl Serialize for TSBigIntKeyword {
     }
 }
 
-impl<'a> Serialize for TSTypeReference<'a> {
+impl Serialize for TSTypeReference<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3061,7 +3061,7 @@ impl<'a> Serialize for TSTypeReference<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeName<'a> {
+impl Serialize for TSTypeName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSTypeName::IdentifierReference(x) => Serialize::serialize(x, serializer),
@@ -3070,7 +3070,7 @@ impl<'a> Serialize for TSTypeName<'a> {
     }
 }
 
-impl<'a> Serialize for TSQualifiedName<'a> {
+impl Serialize for TSQualifiedName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3086,7 +3086,7 @@ impl<'a> Serialize for TSQualifiedName<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeParameterInstantiation<'a> {
+impl Serialize for TSTypeParameterInstantiation<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3100,7 +3100,7 @@ impl<'a> Serialize for TSTypeParameterInstantiation<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeParameter<'a> {
+impl Serialize for TSTypeParameter<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3124,7 +3124,7 @@ impl<'a> Serialize for TSTypeParameter<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeParameterDeclaration<'a> {
+impl Serialize for TSTypeParameterDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3138,7 +3138,7 @@ impl<'a> Serialize for TSTypeParameterDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeAliasDeclaration<'a> {
+impl Serialize for TSTypeAliasDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3176,7 +3176,7 @@ impl Serialize for TSAccessibility {
     }
 }
 
-impl<'a> Serialize for TSClassImplements<'a> {
+impl Serialize for TSClassImplements<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3192,7 +3192,7 @@ impl<'a> Serialize for TSClassImplements<'a> {
     }
 }
 
-impl<'a> Serialize for TSInterfaceDeclaration<'a> {
+impl Serialize for TSInterfaceDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3214,7 +3214,7 @@ impl<'a> Serialize for TSInterfaceDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for TSInterfaceBody<'a> {
+impl Serialize for TSInterfaceBody<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3228,7 +3228,7 @@ impl<'a> Serialize for TSInterfaceBody<'a> {
     }
 }
 
-impl<'a> Serialize for TSPropertySignature<'a> {
+impl Serialize for TSPropertySignature<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3250,7 +3250,7 @@ impl<'a> Serialize for TSPropertySignature<'a> {
     }
 }
 
-impl<'a> Serialize for TSSignature<'a> {
+impl Serialize for TSSignature<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSSignature::TSIndexSignature(x) => Serialize::serialize(x, serializer),
@@ -3262,7 +3262,7 @@ impl<'a> Serialize for TSSignature<'a> {
     }
 }
 
-impl<'a> Serialize for TSIndexSignature<'a> {
+impl Serialize for TSIndexSignature<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3282,7 +3282,7 @@ impl<'a> Serialize for TSIndexSignature<'a> {
     }
 }
 
-impl<'a> Serialize for TSCallSignatureDeclaration<'a> {
+impl Serialize for TSCallSignatureDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3320,7 +3320,7 @@ impl Serialize for TSMethodSignatureKind {
     }
 }
 
-impl<'a> Serialize for TSMethodSignature<'a> {
+impl Serialize for TSMethodSignature<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3348,7 +3348,7 @@ impl<'a> Serialize for TSMethodSignature<'a> {
     }
 }
 
-impl<'a> Serialize for TSConstructSignatureDeclaration<'a> {
+impl Serialize for TSConstructSignatureDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3366,7 +3366,7 @@ impl<'a> Serialize for TSConstructSignatureDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for TSIndexSignatureName<'a> {
+impl Serialize for TSIndexSignatureName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3382,7 +3382,7 @@ impl<'a> Serialize for TSIndexSignatureName<'a> {
     }
 }
 
-impl<'a> Serialize for TSInterfaceHeritage<'a> {
+impl Serialize for TSInterfaceHeritage<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3398,7 +3398,7 @@ impl<'a> Serialize for TSInterfaceHeritage<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypePredicate<'a> {
+impl Serialize for TSTypePredicate<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3416,7 +3416,7 @@ impl<'a> Serialize for TSTypePredicate<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypePredicateName<'a> {
+impl Serialize for TSTypePredicateName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSTypePredicateName::Identifier(x) => Serialize::serialize(x, serializer),
@@ -3425,7 +3425,7 @@ impl<'a> Serialize for TSTypePredicateName<'a> {
     }
 }
 
-impl<'a> Serialize for TSModuleDeclaration<'a> {
+impl Serialize for TSModuleDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3463,7 +3463,7 @@ impl Serialize for TSModuleDeclarationKind {
     }
 }
 
-impl<'a> Serialize for TSModuleDeclarationName<'a> {
+impl Serialize for TSModuleDeclarationName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSModuleDeclarationName::Identifier(x) => Serialize::serialize(x, serializer),
@@ -3472,7 +3472,7 @@ impl<'a> Serialize for TSModuleDeclarationName<'a> {
     }
 }
 
-impl<'a> Serialize for TSModuleDeclarationBody<'a> {
+impl Serialize for TSModuleDeclarationBody<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSModuleDeclarationBody::TSModuleDeclaration(x) => Serialize::serialize(x, serializer),
@@ -3481,7 +3481,7 @@ impl<'a> Serialize for TSModuleDeclarationBody<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeLiteral<'a> {
+impl Serialize for TSTypeLiteral<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3495,7 +3495,7 @@ impl<'a> Serialize for TSTypeLiteral<'a> {
     }
 }
 
-impl<'a> Serialize for TSInferType<'a> {
+impl Serialize for TSInferType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3509,7 +3509,7 @@ impl<'a> Serialize for TSInferType<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeQuery<'a> {
+impl Serialize for TSTypeQuery<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3525,7 +3525,7 @@ impl<'a> Serialize for TSTypeQuery<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeQueryExprName<'a> {
+impl Serialize for TSTypeQueryExprName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSTypeQueryExprName::TSImportType(x) => Serialize::serialize(x, serializer),
@@ -3535,7 +3535,7 @@ impl<'a> Serialize for TSTypeQueryExprName<'a> {
     }
 }
 
-impl<'a> Serialize for TSImportType<'a> {
+impl Serialize for TSImportType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3557,7 +3557,7 @@ impl<'a> Serialize for TSImportType<'a> {
     }
 }
 
-impl<'a> Serialize for TSImportAttributes<'a> {
+impl Serialize for TSImportAttributes<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3573,7 +3573,7 @@ impl<'a> Serialize for TSImportAttributes<'a> {
     }
 }
 
-impl<'a> Serialize for TSImportAttribute<'a> {
+impl Serialize for TSImportAttribute<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3589,7 +3589,7 @@ impl<'a> Serialize for TSImportAttribute<'a> {
     }
 }
 
-impl<'a> Serialize for TSImportAttributeName<'a> {
+impl Serialize for TSImportAttributeName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSImportAttributeName::Identifier(x) => Serialize::serialize(x, serializer),
@@ -3598,7 +3598,7 @@ impl<'a> Serialize for TSImportAttributeName<'a> {
     }
 }
 
-impl<'a> Serialize for TSFunctionType<'a> {
+impl Serialize for TSFunctionType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3618,7 +3618,7 @@ impl<'a> Serialize for TSFunctionType<'a> {
     }
 }
 
-impl<'a> Serialize for TSConstructorType<'a> {
+impl Serialize for TSConstructorType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3638,7 +3638,7 @@ impl<'a> Serialize for TSConstructorType<'a> {
     }
 }
 
-impl<'a> Serialize for TSMappedType<'a> {
+impl Serialize for TSMappedType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3682,7 +3682,7 @@ impl Serialize for TSMappedTypeModifierOperator {
     }
 }
 
-impl<'a> Serialize for TSTemplateLiteralType<'a> {
+impl Serialize for TSTemplateLiteralType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3698,7 +3698,7 @@ impl<'a> Serialize for TSTemplateLiteralType<'a> {
     }
 }
 
-impl<'a> Serialize for TSAsExpression<'a> {
+impl Serialize for TSAsExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3714,7 +3714,7 @@ impl<'a> Serialize for TSAsExpression<'a> {
     }
 }
 
-impl<'a> Serialize for TSSatisfiesExpression<'a> {
+impl Serialize for TSSatisfiesExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3730,7 +3730,7 @@ impl<'a> Serialize for TSSatisfiesExpression<'a> {
     }
 }
 
-impl<'a> Serialize for TSTypeAssertion<'a> {
+impl Serialize for TSTypeAssertion<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3746,7 +3746,7 @@ impl<'a> Serialize for TSTypeAssertion<'a> {
     }
 }
 
-impl<'a> Serialize for TSImportEqualsDeclaration<'a> {
+impl Serialize for TSImportEqualsDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3764,7 +3764,7 @@ impl<'a> Serialize for TSImportEqualsDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for TSModuleReference<'a> {
+impl Serialize for TSModuleReference<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             TSModuleReference::ExternalModuleReference(x) => Serialize::serialize(x, serializer),
@@ -3774,7 +3774,7 @@ impl<'a> Serialize for TSModuleReference<'a> {
     }
 }
 
-impl<'a> Serialize for TSExternalModuleReference<'a> {
+impl Serialize for TSExternalModuleReference<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3788,7 +3788,7 @@ impl<'a> Serialize for TSExternalModuleReference<'a> {
     }
 }
 
-impl<'a> Serialize for TSNonNullExpression<'a> {
+impl Serialize for TSNonNullExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3802,7 +3802,7 @@ impl<'a> Serialize for TSNonNullExpression<'a> {
     }
 }
 
-impl<'a> Serialize for Decorator<'a> {
+impl Serialize for Decorator<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3816,7 +3816,7 @@ impl<'a> Serialize for Decorator<'a> {
     }
 }
 
-impl<'a> Serialize for TSExportAssignment<'a> {
+impl Serialize for TSExportAssignment<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3830,7 +3830,7 @@ impl<'a> Serialize for TSExportAssignment<'a> {
     }
 }
 
-impl<'a> Serialize for TSNamespaceExportDeclaration<'a> {
+impl Serialize for TSNamespaceExportDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3844,7 +3844,7 @@ impl<'a> Serialize for TSNamespaceExportDeclaration<'a> {
     }
 }
 
-impl<'a> Serialize for TSInstantiationExpression<'a> {
+impl Serialize for TSInstantiationExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3874,7 +3874,7 @@ impl Serialize for ImportOrExportKind {
     }
 }
 
-impl<'a> Serialize for JSDocNullableType<'a> {
+impl Serialize for JSDocNullableType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3890,7 +3890,7 @@ impl<'a> Serialize for JSDocNullableType<'a> {
     }
 }
 
-impl<'a> Serialize for JSDocNonNullableType<'a> {
+impl Serialize for JSDocNonNullableType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3918,7 +3918,7 @@ impl Serialize for JSDocUnknownType {
     }
 }
 
-impl<'a> Serialize for JSXElement<'a> {
+impl Serialize for JSXElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3936,7 +3936,7 @@ impl<'a> Serialize for JSXElement<'a> {
     }
 }
 
-impl<'a> Serialize for JSXOpeningElement<'a> {
+impl Serialize for JSXOpeningElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3956,7 +3956,7 @@ impl<'a> Serialize for JSXOpeningElement<'a> {
     }
 }
 
-impl<'a> Serialize for JSXClosingElement<'a> {
+impl Serialize for JSXClosingElement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -3970,7 +3970,7 @@ impl<'a> Serialize for JSXClosingElement<'a> {
     }
 }
 
-impl<'a> Serialize for JSXFragment<'a> {
+impl Serialize for JSXFragment<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -4012,7 +4012,7 @@ impl Serialize for JSXClosingFragment {
     }
 }
 
-impl<'a> Serialize for JSXNamespacedName<'a> {
+impl Serialize for JSXNamespacedName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -4028,7 +4028,7 @@ impl<'a> Serialize for JSXNamespacedName<'a> {
     }
 }
 
-impl<'a> Serialize for JSXMemberExpression<'a> {
+impl Serialize for JSXMemberExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -4044,7 +4044,7 @@ impl<'a> Serialize for JSXMemberExpression<'a> {
     }
 }
 
-impl<'a> Serialize for JSXExpressionContainer<'a> {
+impl Serialize for JSXExpressionContainer<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -4058,7 +4058,7 @@ impl<'a> Serialize for JSXExpressionContainer<'a> {
     }
 }
 
-impl<'a> Serialize for JSXExpression<'a> {
+impl Serialize for JSXExpression<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             JSXExpression::EmptyExpression(x) => Serialize::serialize(x, serializer),
@@ -4120,7 +4120,7 @@ impl Serialize for JSXEmptyExpression {
     }
 }
 
-impl<'a> Serialize for JSXAttributeItem<'a> {
+impl Serialize for JSXAttributeItem<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             JSXAttributeItem::Attribute(x) => Serialize::serialize(x, serializer),
@@ -4129,7 +4129,7 @@ impl<'a> Serialize for JSXAttributeItem<'a> {
     }
 }
 
-impl<'a> Serialize for JSXAttribute<'a> {
+impl Serialize for JSXAttribute<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -4145,7 +4145,7 @@ impl<'a> Serialize for JSXAttribute<'a> {
     }
 }
 
-impl<'a> Serialize for JSXSpreadAttribute<'a> {
+impl Serialize for JSXSpreadAttribute<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -4159,7 +4159,7 @@ impl<'a> Serialize for JSXSpreadAttribute<'a> {
     }
 }
 
-impl<'a> Serialize for JSXAttributeName<'a> {
+impl Serialize for JSXAttributeName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             JSXAttributeName::Identifier(x) => Serialize::serialize(x, serializer),
@@ -4168,7 +4168,7 @@ impl<'a> Serialize for JSXAttributeName<'a> {
     }
 }
 
-impl<'a> Serialize for JSXAttributeValue<'a> {
+impl Serialize for JSXAttributeValue<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             JSXAttributeValue::StringLiteral(x) => Serialize::serialize(x, serializer),
@@ -4179,7 +4179,7 @@ impl<'a> Serialize for JSXAttributeValue<'a> {
     }
 }
 
-impl<'a> Serialize for JSXIdentifier<'a> {
+impl Serialize for JSXIdentifier<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -4193,7 +4193,7 @@ impl<'a> Serialize for JSXIdentifier<'a> {
     }
 }
 
-impl<'a> Serialize for JSXChild<'a> {
+impl Serialize for JSXChild<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             JSXChild::Text(x) => Serialize::serialize(x, serializer),
@@ -4205,7 +4205,7 @@ impl<'a> Serialize for JSXChild<'a> {
     }
 }
 
-impl<'a> Serialize for JSXSpreadChild<'a> {
+impl Serialize for JSXSpreadChild<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 
@@ -4219,7 +4219,7 @@ impl<'a> Serialize for JSXSpreadChild<'a> {
     }
 }
 
-impl<'a> Serialize for JSXText<'a> {
+impl Serialize for JSXText<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
 

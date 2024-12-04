@@ -135,5 +135,5 @@ fn test() {
         "var fn = function () { function Function() {} }; Function('', '')",
     ];
 
-    Tester::new(NoNewFunc::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoNewFunc::NAME, NoNewFunc::CATEGORY, pass, fail).test_and_snapshot();
 }

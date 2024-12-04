@@ -79,7 +79,14 @@ impl Rule for ConsistentTypeDefinitions {
                 TSType::TSTypeLiteral(_)
                     if self.config == ConsistentTypeDefinitionsConfig::Interface =>
                 {
-                    let start = if decl.declare { decl.span.start + 8 } else { decl.span.start };
+                    let start = if decl.declare {
+                        let base_start = decl.span.start + 7;
+                        ctx.source_range(Span::new(base_start, decl.span.end))
+                            .find("type")
+                            .map_or(base_start + 1, |v| u32::try_from(v).unwrap_or(0) + base_start)
+                    } else {
+                        decl.span.start
+                    };
 
                     let name_span_start = &decl.id.span.start;
 
@@ -180,7 +187,14 @@ impl Rule for ConsistentTypeDefinitions {
             AstKind::TSInterfaceDeclaration(decl)
                 if self.config == ConsistentTypeDefinitionsConfig::Type =>
             {
-                let start = if decl.declare { decl.span.start + 8 } else { decl.span.start };
+                let start = if decl.declare {
+                    let base_start = decl.span.start + 7;
+                    ctx.source_range(Span::new(base_start, decl.span.end))
+                        .find("interface")
+                        .map_or(base_start + 1, |v| u32::try_from(v).unwrap_or(0) + base_start)
+                } else {
+                    decl.span.start
+                };
 
                 let name_span_start = &decl.id.span.start;
 
@@ -372,6 +386,11 @@ fn test() {
 			      ",
             Some(serde_json::json!(["type"])),
         ),
+        // Issue: <https://github.com/oxc-project/oxc/issues/7552>
+        ("declaretype S={}", Some(serde_json::json!(["interface"]))),
+        ("declareinterface S {}", Some(serde_json::json!(["type"]))),
+        ("export declaretype S={}", Some(serde_json::json!(["interface"]))),
+        ("export declareinterface S {}", Some(serde_json::json!(["type"]))),
     ];
 
     let fix = vec![
@@ -520,7 +539,22 @@ export declare type Test = {
             ",
             Some(serde_json::json!(["type"])),
         ),
+        // Issue: <https://github.com/oxc-project/oxc/issues/7552>
+        ("declaretype S={}", "declareinterface S {}", Some(serde_json::json!(["interface"]))),
+        ("declareinterface S {}", "declaretype S = {}", Some(serde_json::json!(["type"]))),
+        (
+            "export declaretype S={}",
+            "export declareinterface S {}",
+            Some(serde_json::json!(["interface"])),
+        ),
+        (
+            "export declareinterface S {}",
+            "export declaretype S = {}",
+            Some(serde_json::json!(["type"])),
+        ),
     ];
 
-    Tester::new(ConsistentTypeDefinitions::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(ConsistentTypeDefinitions::NAME, ConsistentTypeDefinitions::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

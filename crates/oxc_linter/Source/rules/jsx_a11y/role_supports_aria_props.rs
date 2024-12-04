@@ -1599,5 +1599,6 @@ fn test() {
         (r#"<Link href="/" aria-checked />"#, None, Some(settings()), None),
     ];
 
-    Tester::new(RoleSupportsAriaProps::NAME, pass, fail).test_and_snapshot();
+    Tester::new(RoleSupportsAriaProps::NAME, RoleSupportsAriaProps::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

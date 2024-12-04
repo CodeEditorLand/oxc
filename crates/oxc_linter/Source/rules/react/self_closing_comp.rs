@@ -351,6 +351,5 @@ fn test() {
             Some(serde_json::json!([{ "html": true }])),
         ),
     ];
-
-    Tester::new(SelfClosingComp::NAME, pass, fail).test_and_snapshot();
+    Tester::new(SelfClosingComp::NAME, SelfClosingComp::CATEGORY, pass, fail).test_and_snapshot();
 }

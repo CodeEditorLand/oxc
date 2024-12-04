@@ -231,5 +231,5 @@ fn test() {
         ("{ let Number; } (Number?.parseInt)();", None),
     ];
 
-    Tester::new(Radix::NAME, pass, fail).test_and_snapshot();
+    Tester::new(Radix::NAME, Radix::CATEGORY, pass, fail).test_and_snapshot();
 }

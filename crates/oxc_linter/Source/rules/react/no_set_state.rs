@@ -187,5 +187,5 @@ fn test() {
 			      ",
     ];
 
-    Tester::new(NoSetState::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoSetState::NAME, NoSetState::CATEGORY, pass, fail).test_and_snapshot();
 }

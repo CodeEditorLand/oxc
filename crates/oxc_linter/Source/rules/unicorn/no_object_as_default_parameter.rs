@@ -133,5 +133,6 @@ fn test() {
         r"function abc([a] = {a: 123}) {}",
     ];
 
-    Tester::new(NoObjectAsDefaultParameter::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoObjectAsDefaultParameter::NAME, NoObjectAsDefaultParameter::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

@@ -222,7 +222,7 @@ fn test() {
 
     fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
 
-    Tester::new(NoCommentedOutTests::NAME, pass, fail)
+    Tester::new(NoCommentedOutTests::NAME, NoCommentedOutTests::CATEGORY, pass, fail)
         .with_jest_plugin(true)
         .with_vitest_plugin(true)
         .test_and_snapshot();

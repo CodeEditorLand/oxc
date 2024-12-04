@@ -196,5 +196,7 @@ fn test() {
         ("type MyType = Number & String;", "type MyType = number & string;", None),
     ];
 
-    Tester::new(NoWrapperObjectTypes::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(NoWrapperObjectTypes::NAME, NoWrapperObjectTypes::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

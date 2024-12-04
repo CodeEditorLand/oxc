@@ -94,7 +94,7 @@ impl Rule for PreferObjectHasOwn {
                     let needs_space = replace_target_span.start > 1
                         && !ctx
                             .source_range(Span::new(0, replace_target_span.start))
-                            .ends_with(&[' ', '=', '/', '(']);
+                            .ends_with([' ', '=', '/', '(']);
 
                     let replacement = if needs_space { " Object.hasOwn" } else { "Object.hasOwn" };
 
@@ -388,6 +388,7 @@ fn test() {
         // Issue: <https://github.com/oxc-project/oxc/issues/7450>
         ("Object.prototype.hasOwnProperty.call(C,x);", " Object.hasOwn(C,x);", None),
     ];
-
-    Tester::new(PreferObjectHasOwn::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(PreferObjectHasOwn::NAME, PreferObjectHasOwn::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

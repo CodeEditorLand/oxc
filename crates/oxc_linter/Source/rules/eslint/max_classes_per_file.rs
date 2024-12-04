@@ -206,5 +206,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(MaxClassesPerFile::NAME, pass, fail).test_and_snapshot();
+    Tester::new(MaxClassesPerFile::NAME, MaxClassesPerFile::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

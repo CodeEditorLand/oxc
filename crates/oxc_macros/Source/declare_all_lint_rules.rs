@@ -8,7 +8,8 @@ use syn::{
 };
 
 pub struct LintRuleMeta {
-    name: syn::Ident,
+    rule_name: syn::Ident,
+    enum_name: syn::Ident,
     path: syn::Path,
 }
 
@@ -16,12 +17,22 @@ impl Parse for LintRuleMeta {
     fn parse(input: ParseStream<'_>) -> Result<Self> {
         let path = input.parse::<syn::Path>()?;
 
-        let name = syn::parse_str(
-            &path.segments.iter().last().unwrap().ident.to_string().to_case(Case::Pascal),
-        )
-        .unwrap();
+        let segments = &path.segments;
+        let combined = segments
+            .iter()
+            .rev()
+            .take(2)
+            .rev()
+            .map(|seg| seg.ident.to_string().to_case(Case::Pascal))
+            .join("");
 
-        Ok(Self { name, path })
+        let combined = combined.to_case(Case::Pascal);
+
+        let enum_name = syn::parse_str(&combined)?;
+        let rule_name = syn::parse_str(
+            &path.segments.iter().last().unwrap().ident.to_string().to_case(Case::Pascal),
+        )?;
+        Ok(Self { rule_name, enum_name, path })
     }
 }
 
@@ -45,16 +56,15 @@ pub fn declare_all_lint_rules(metadata: AllLintRulesMeta) -> TokenStream {
     let mut use_stmts = Vec::with_capacity(rules.len());
 
     let mut struct_names = Vec::with_capacity(rules.len());
-
+    let mut struct_rule_names = Vec::with_capacity(rules.len());
     let mut plugin_names = Vec::with_capacity(rules.len());
 
     let mut ids = Vec::with_capacity(rules.len());
 
     for (i, rule) in rules.iter().enumerate() {
         use_stmts.push(&rule.path);
-
-        struct_names.push(&rule.name);
-
+        struct_names.push(&rule.enum_name);
+        struct_rule_names.push(&rule.rule_name);
         plugin_names.push(
             rule.path
                 .segments
@@ -68,7 +78,7 @@ pub fn declare_all_lint_rules(metadata: AllLintRulesMeta) -> TokenStream {
     }
 
     let expanded = quote! {
-        #(pub use self::#use_stmts::#struct_names;)*
+        #(pub use self::#use_stmts::#struct_rule_names as #struct_names;)*
 
         use crate::{
             context::{ContextHost, LintContext},

@@ -1,6 +1,6 @@
 use crate::ir::{Doc, Line};
 
-impl<'a> std::fmt::Display for Doc<'a> {
+impl std::fmt::Display for Doc<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", print_doc_to_debug(self))
     }
@@ -53,19 +53,8 @@ fn print_doc_to_debug(doc: &Doc<'_>) -> std::string::String {
             string.push_str("indentIfBreak(");
 
             string.push_str("[\n");
-
-            for (idx, doc) in indent_if_break.contents.iter().enumerate() {
-                string.push_str(&print_doc_to_debug(doc));
-
-                if idx != indent_if_break.contents.len() - 1 {
-                    string.push_str(", ");
-                }
-            }
-
-            if let Some(id) = indent_if_break.group_id {
-                string.push_str(&format!(", {{id: {id}}}"));
-            }
-
+            string.push_str(&print_doc_to_debug(&indent_if_break.contents));
+            string.push_str(&format!(", {{id: {}}}", indent_if_break.group_id));
             string.push_str("])");
         }
 
@@ -87,8 +76,7 @@ fn print_doc_to_debug(doc: &Doc<'_>) -> std::string::String {
             string.push_str("], { shouldBreak: ");
 
             string.push_str(&group.should_break.to_string());
-
-            if let Some(id) = group.id {
+            if let Some(id) = group.group_id {
                 string.push_str(&format!(", id: {id}"));
             }
 
@@ -123,7 +111,7 @@ fn print_doc_to_debug(doc: &Doc<'_>) -> std::string::String {
             string.push_str(&format!(
                 "ifBreak({}, {}",
                 print_doc_to_debug(&if_break.break_contents),
-                print_doc_to_debug(&if_break.flat_content)
+                print_doc_to_debug(&if_break.flat_contents)
             ));
 
             if let Some(group_id) = if_break.group_id {

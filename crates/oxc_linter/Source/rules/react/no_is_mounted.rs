@@ -156,5 +156,5 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoIsMounted::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoIsMounted::NAME, NoIsMounted::CATEGORY, pass, fail).test_and_snapshot();
 }

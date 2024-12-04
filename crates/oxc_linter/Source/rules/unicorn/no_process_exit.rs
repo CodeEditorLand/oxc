@@ -83,7 +83,7 @@ fn is_inside_process_event_handler(ctx: &LintContext, node: &AstNode) -> bool {
 
 fn is_worker_threads_imported(ctx: &LintContext) -> bool {
     ctx.module_record().import_entries.iter().any(|entry| {
-        matches!(entry.module_request.name().as_str(), "worker_threads" | "node:worker_threads")
+        matches!(entry.module_request.name(), "worker_threads" | "node:worker_threads")
     })
 }
 
@@ -192,5 +192,5 @@ fn test() {
         (r#"lib.process.once("SIGINT", function() { process.exit(1); })"#),
     ];
 
-    Tester::new(NoProcessExit::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoProcessExit::NAME, NoProcessExit::CATEGORY, pass, fail).test_and_snapshot();
 }

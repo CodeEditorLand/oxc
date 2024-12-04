@@ -37,8 +37,7 @@ impl Rule for NoMocksImport {
         let module_records = ctx.module_record();
 
         for import_entry in &module_records.import_entries {
-            let module_specifier = import_entry.module_request.name().as_str();
-
+            let module_specifier = import_entry.module_request.name();
             if contains_mocks_dir(module_specifier) {
                 ctx.diagnostic(no_mocks_import_diagnostic(import_entry.module_request.span()));
             }
@@ -105,5 +104,7 @@ fn test() {
         ("import thing from './__mocks__/index'", None),
     ];
 
-    Tester::new(NoMocksImport::NAME, pass, fail).with_jest_plugin(true).test_and_snapshot();
+    Tester::new(NoMocksImport::NAME, NoMocksImport::CATEGORY, pass, fail)
+        .with_jest_plugin(true)
+        .test_and_snapshot();
 }

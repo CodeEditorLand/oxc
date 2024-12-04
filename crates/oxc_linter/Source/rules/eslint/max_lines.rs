@@ -447,5 +447,5 @@ fn test() {
         ),
     ];
 
-    Tester::new(MaxLines::NAME, pass, fail).test_and_snapshot();
+    Tester::new(MaxLines::NAME, MaxLines::CATEGORY, pass, fail).test_and_snapshot();
 }

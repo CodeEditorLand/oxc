@@ -361,5 +361,5 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoNamespace::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoNamespace::NAME, NoNamespace::CATEGORY, pass, fail).test_and_snapshot();
 }

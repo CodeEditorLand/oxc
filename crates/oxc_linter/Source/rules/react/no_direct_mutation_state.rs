@@ -401,5 +401,6 @@ fn test() {
         "#,
     ];
 
-    Tester::new(NoDirectMutationState::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoDirectMutationState::NAME, NoDirectMutationState::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

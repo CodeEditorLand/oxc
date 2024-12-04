@@ -205,7 +205,7 @@ fn test() {
 
     fix.extend(fix_vitest);
 
-    Tester::new(NoFocusedTests::NAME, pass, fail)
+    Tester::new(NoFocusedTests::NAME, NoFocusedTests::CATEGORY, pass, fail)
         .with_jest_plugin(true)
         .expect_fix(fix)
         .test_and_snapshot();

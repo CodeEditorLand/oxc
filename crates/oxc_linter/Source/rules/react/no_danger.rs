@@ -118,5 +118,5 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoDanger::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoDanger::NAME, NoDanger::CATEGORY, pass, fail).test_and_snapshot();
 }

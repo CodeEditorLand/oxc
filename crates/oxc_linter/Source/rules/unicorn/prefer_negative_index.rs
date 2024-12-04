@@ -216,7 +216,7 @@ fn is_same_node(left: &Expression, right: &Expression, ctx: &LintContext) -> boo
                 return false;
             };
 
-            return template_str.as_str() == right_string_lit.to_string();
+            template_str.as_str() == right_string_lit.to_string()
         }
         (
             Expression::StringLiteral(left_string_lit),
@@ -226,7 +226,7 @@ fn is_same_node(left: &Expression, right: &Expression, ctx: &LintContext) -> boo
                 return false;
             };
 
-            return left_string_lit.to_string() == template_str.as_str();
+            left_string_lit.to_string() == template_str.as_str()
         }
 
         _ => false,
@@ -317,7 +317,6 @@ fn test() {
         "foo.slice(foo.length - 1 / 1)",
         "[1, 2, 3].slice([1, 2, 3].length - 1)",
         "foo[bar++].slice(foo[bar++].length - 1)",
-        "foo[a + b].slice(foo[a + b].length - 1)",
         "foo[`${bar}`].slice(foo[`${bar}`].length - 1)",
         "function foo() {return [].slice.apply(arguments);}",
         "String.prototype.toSpliced.call(foo, foo.length - 1)",
@@ -834,6 +833,7 @@ fn test() {
         							NOT_SUPPORTED.prototype.splice.apply(foo, [foo.length - 1, foo.length - 2, foo.length - 3]);
         						", None)
     ];
-
-    Tester::new(PreferNegativeIndex::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(PreferNegativeIndex::NAME, PreferNegativeIndex::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

@@ -246,6 +246,12 @@ impl SymbolTable {
             .map(|&reference_id| &self.references[reference_id])
     }
 
+    /// Add a reference to a symbol.
+    pub fn add_resolved_reference(&mut self, symbol_id: SymbolId, reference_id: ReferenceId) {
+        let reference_ids = &mut self.resolved_references[symbol_id];
+        reference_ids.push(reference_id);
+    }
+
     /// Delete a reference to a symbol.
     ///
     /// # Panics
@@ -294,7 +300,7 @@ impl IsGlobalReference for ReferenceId {
     }
 }
 
-impl<'a> IsGlobalReference for IdentifierReference<'a> {
+impl IsGlobalReference for IdentifierReference<'_> {
     fn is_global_reference(&self, symbols: &SymbolTable) -> bool {
         self.reference_id
             .get()
@@ -306,7 +312,7 @@ impl<'a> IsGlobalReference for IdentifierReference<'a> {
     }
 }
 
-impl<'a> IsGlobalReference for Expression<'a> {
+impl IsGlobalReference for Expression<'_> {
     fn is_global_reference(&self, symbols: &SymbolTable) -> bool {
         if let Expression::Identifier(ident) = self {
             return ident.is_global_reference(symbols);

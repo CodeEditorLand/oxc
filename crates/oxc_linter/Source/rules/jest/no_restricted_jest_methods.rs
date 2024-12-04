@@ -220,7 +220,7 @@ fn test() {
 
     fail.extend(fail_vitest);
 
-    Tester::new(NoRestrictedJestMethods::NAME, pass, fail)
+    Tester::new(NoRestrictedJestMethods::NAME, NoRestrictedJestMethods::CATEGORY, pass, fail)
         .with_jest_plugin(true)
         .with_vitest_plugin(true)
         .test_and_snapshot();

@@ -328,5 +328,5 @@ fn test() {
         ),
     ];
 
-    Tester::new(ButtonHasType::NAME, pass, fail).test_and_snapshot();
+    Tester::new(ButtonHasType::NAME, ButtonHasType::CATEGORY, pass, fail).test_and_snapshot();
 }

@@ -156,5 +156,7 @@ fn test() {
         ("throw (( getGlobalThis().Error ))()", "throw new (( getGlobalThis().Error ))()"),
     ];
 
-    Tester::new(ThrowNewError::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(ThrowNewError::NAME, ThrowNewError::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

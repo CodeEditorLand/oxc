@@ -88,5 +88,6 @@ fn test() {
         ("new Promise(((((async () => {})))))", None),
     ];
 
-    Tester::new(NoAsyncPromiseExecutor::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoAsyncPromiseExecutor::NAME, NoAsyncPromiseExecutor::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

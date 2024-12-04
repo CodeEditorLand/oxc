@@ -120,5 +120,6 @@ fn test() {
         r#"'Hello, ${{foo: "bar"}.foo}'"#,
     ];
 
-    Tester::new(NoTemplateCurlyInString::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoTemplateCurlyInString::NAME, NoTemplateCurlyInString::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

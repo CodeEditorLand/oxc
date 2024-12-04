@@ -1616,5 +1616,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(LabelHasAssociatedControl::NAME, pass, fail).test_and_snapshot();
+    Tester::new(LabelHasAssociatedControl::NAME, LabelHasAssociatedControl::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

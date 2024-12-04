@@ -177,5 +177,5 @@ fn test() {
         ("const error = new AggregateError;", None),
     ];
 
-    Tester::new(ErrorMessage::NAME, pass, fail).test_and_snapshot();
+    Tester::new(ErrorMessage::NAME, ErrorMessage::CATEGORY, pass, fail).test_and_snapshot();
 }

@@ -284,5 +284,5 @@ v	ascript:"></a>"#,
         ),
     ];
 
-    Tester::new(JsxNoScriptUrl::NAME, pass, fail).test_and_snapshot();
+    Tester::new(JsxNoScriptUrl::NAME, JsxNoScriptUrl::CATEGORY, pass, fail).test_and_snapshot();
 }

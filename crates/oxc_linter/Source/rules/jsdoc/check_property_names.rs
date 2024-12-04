@@ -432,5 +432,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(CheckPropertyNames::NAME, pass, fail).test_and_snapshot();
+    Tester::new(CheckPropertyNames::NAME, CheckPropertyNames::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

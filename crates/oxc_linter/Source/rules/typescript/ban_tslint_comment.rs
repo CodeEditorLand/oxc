@@ -120,5 +120,7 @@ fn test() {
         (r"/* tslint:disable-line */", r"", None),
     ];
 
-    Tester::new(BanTslintComment::NAME, pass, fail).expect_fix(fix).test_and_snapshot();
+    Tester::new(BanTslintComment::NAME, BanTslintComment::CATEGORY, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

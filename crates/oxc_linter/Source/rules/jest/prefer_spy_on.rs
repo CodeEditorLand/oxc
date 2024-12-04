@@ -322,7 +322,7 @@ fn tests() {
         ),
     ];
 
-    Tester::new(PreferSpyOn::NAME, pass, fail)
+    Tester::new(PreferSpyOn::NAME, PreferSpyOn::CATEGORY, pass, fail)
         .with_jest_plugin(true)
         .expect_fix(fix)
         .test_and_snapshot();

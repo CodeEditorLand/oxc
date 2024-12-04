@@ -1391,5 +1391,5 @@ fn test() {
         ),
     ];
 
-    Tester::new(RequireParam::NAME, pass, fail).test_and_snapshot();
+    Tester::new(RequireParam::NAME, RequireParam::CATEGORY, pass, fail).test_and_snapshot();
 }

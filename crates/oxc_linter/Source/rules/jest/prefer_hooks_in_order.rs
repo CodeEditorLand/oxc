@@ -1408,7 +1408,7 @@ fn test() {
 
     fail.extend(fail_vitest.into_iter().map(|x| (x, None)));
 
-    Tester::new(PreferHooksInOrder::NAME, pass, fail)
+    Tester::new(PreferHooksInOrder::NAME, PreferHooksInOrder::CATEGORY, pass, fail)
         .with_jest_plugin(true)
         .with_vitest_plugin(true)
         .test_and_snapshot();

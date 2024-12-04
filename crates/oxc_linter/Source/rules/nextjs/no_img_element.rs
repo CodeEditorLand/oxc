@@ -151,5 +151,5 @@ fn test() {
 			      }"#,
     ];
 
-    Tester::new(NoImgElement::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoImgElement::NAME, NoImgElement::CATEGORY, pass, fail).test_and_snapshot();
 }

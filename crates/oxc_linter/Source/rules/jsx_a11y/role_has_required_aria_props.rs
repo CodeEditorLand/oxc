@@ -88,7 +88,7 @@ impl Rule for RoleHasRequiredAriaProps {
 
 #[test]
 fn test() {
-    use crate::{rules::RoleHasRequiredAriaProps, tester::Tester};
+    use crate::tester::Tester;
 
     fn settings() -> serde_json::Value {
         serde_json::json!({
@@ -150,5 +150,6 @@ fn test() {
         ("<MyComponent role='combobox' />", None, Some(settings()), None),
     ];
 
-    Tester::new(RoleHasRequiredAriaProps::NAME, pass, fail).test_and_snapshot();
+    Tester::new(RoleHasRequiredAriaProps::NAME, RoleHasRequiredAriaProps::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

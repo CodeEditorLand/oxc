@@ -5,9 +5,8 @@ use oxc_span::GetSpan;
 use crate::{
     binaryish::BinaryishOperator,
     comments::CommentFlags,
-    group,
-    ir::{Doc, DocBuilder, Group},
-    line, space, text, Format, Prettier,
+    ir::{Doc, DocBuilder},
+    Format, Prettier,
 };
 
 pub(super) fn print_binaryish_expression<'a>(
@@ -29,7 +28,7 @@ pub(super) fn print_binaryish_expression<'a>(
     let parts = print_binaryish_expressions(p, left, operator, right);
 
     if is_inside_parenthesis {
-        return Doc::Array(parts);
+        return p.array(parts);
     }
 
     // Avoid indenting sub-expressions in some cases where the first sub-expression is already
@@ -37,7 +36,7 @@ pub(super) fn print_binaryish_expression<'a>(
     let should_not_indent = matches!(parent_kind, AstKind::ReturnStatement(_));
 
     if should_not_indent {
-        return Doc::Group(Group::new(parts));
+        return p.group(p.array(parts));
     }
 
     let first_group_index = parts.iter().position(|part| {
@@ -60,10 +59,8 @@ pub(super) fn print_binaryish_expression<'a>(
             rest.push(part);
         }
     }
-
-    group.push(Doc::Indent(rest));
-
-    Doc::Group(Group::new(group))
+    group.push(p.indent(rest));
+    p.group(p.array(group))
 }
 
 fn print_binaryish_expressions<'a>(
@@ -83,17 +80,20 @@ fn print_binaryish_expressions<'a>(
     if left_operator.is_some_and(|left_operator| operator.should_flatten(left_operator)) {
         parts.push(match left {
             Expression::BinaryExpression(e) => {
-                Doc::Array(print_binaryish_expressions(p, &e.left, e.operator.into(), &e.right))
+                let expr_doc = print_binaryish_expressions(p, &e.left, e.operator.into(), &e.right);
+                p.array(expr_doc)
             }
 
             Expression::LogicalExpression(e) => {
-                Doc::Array(print_binaryish_expressions(p, &e.left, e.operator.into(), &e.right))
+                let expr_doc = print_binaryish_expressions(p, &e.left, e.operator.into(), &e.right);
+                p.array(expr_doc)
             }
 
             _ => unreachable!(),
         });
     } else {
-        parts.push(group!(p, left.format(p)));
+        let left_doc = left.format(p);
+        parts.push(p.group(left_doc));
     }
 
     let should_inline = should_inline_logical_expression(right);
@@ -102,11 +102,8 @@ fn print_binaryish_expressions<'a>(
 
     let right = if should_inline {
         let mut parts = p.vec();
-
-        parts.push(text!(operator.as_str()));
-
-        parts.push(space!());
-
+        parts.push(p.text(operator.as_str()));
+        parts.push(p.space());
         parts.push(right.format(p));
 
         parts
@@ -114,13 +111,10 @@ fn print_binaryish_expressions<'a>(
         let mut parts = p.vec();
 
         if line_before_operator {
-            parts.push(line!());
+            parts.push(p.line());
         }
-
-        parts.push(text!(operator.as_str()));
-
-        parts.push(if line_before_operator { space!() } else { line!() });
-
+        parts.push(p.text(operator.as_str()));
+        parts.push(if line_before_operator { p.space() } else { p.line() });
         parts.push(right.format(p));
 
         parts
@@ -131,13 +125,13 @@ fn print_binaryish_expressions<'a>(
     let should_group = should_break;
 
     if !line_before_operator {
-        parts.push(space!());
+        parts.push(p.space());
     }
 
     parts.push(if should_group {
-        Doc::Group(Group::new(right).with_break(should_break))
+        p.group_with_opts(p.array(right), should_break, None)
     } else {
-        Doc::Array(right)
+        p.array(right)
     });
 
     parts

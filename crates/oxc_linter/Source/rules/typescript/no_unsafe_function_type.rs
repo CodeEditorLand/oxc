@@ -120,5 +120,6 @@ fn test() {
 			      ",
     ];
 
-    Tester::new(NoUnsafeFunctionType::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoUnsafeFunctionType::NAME, NoUnsafeFunctionType::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

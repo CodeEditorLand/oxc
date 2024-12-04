@@ -992,5 +992,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(JsxCurlyBracePresence::NAME, pass, fail).test_and_snapshot();
+    Tester::new(JsxCurlyBracePresence::NAME, JsxCurlyBracePresence::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

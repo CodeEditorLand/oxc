@@ -2304,5 +2304,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(ExplicitFunctionReturnType::NAME, pass, fail).test_and_snapshot();
+    Tester::new(ExplicitFunctionReturnType::NAME, ExplicitFunctionReturnType::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

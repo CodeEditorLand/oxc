@@ -29,7 +29,7 @@ pub struct ESTreeLiteral<'a, T> {
     regex: Option<SerRegExpValue>,
 }
 
-impl<'a> From<&BooleanLiteral> for ESTreeLiteral<'a, bool> {
+impl From<&BooleanLiteral> for ESTreeLiteral<'_, bool> {
     fn from(value: &BooleanLiteral) -> Self {
         Self {
             span: value.span,
@@ -41,7 +41,7 @@ impl<'a> From<&BooleanLiteral> for ESTreeLiteral<'a, bool> {
     }
 }
 
-impl<'a> From<&NullLiteral> for ESTreeLiteral<'a, ()> {
+impl From<&NullLiteral> for ESTreeLiteral<'_, ()> {
     fn from(value: &NullLiteral) -> Self {
         Self { span: value.span, value: (), raw: Some("null"), bigint: None, regex: None }
     }
@@ -137,7 +137,7 @@ impl serde_json::ser::Formatter for EcmaFormatter {
     }
 }
 
-impl<'a> Program<'a> {
+impl Program<'_> {
     /// # Panics
     pub fn to_json(&self) -> String {
         let ser = self.serializer();
@@ -178,7 +178,7 @@ impl Serialize for Elision {
 
 /// Serialize `FormalParameters`, to be estree compatible, with `items` and `rest` fields combined
 /// and `argument` field flattened.
-impl<'a> Serialize for FormalParameters<'a> {
+impl Serialize for FormalParameters<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let converted_rest = self.rest.as_ref().map(|rest| SerFormalParameterRest {
             span: rest.span,
@@ -190,7 +190,7 @@ impl<'a> Serialize for FormalParameters<'a> {
         let converted = SerFormalParameters {
             span: self.span,
             kind: self.kind,
-            items: ElementsAndRest::new(&self.items, &converted_rest),
+            items: ElementsAndRest::new(&self.items, converted_rest.as_ref()),
         };
 
         converted.serialize(serializer)
@@ -218,16 +218,16 @@ struct SerFormalParameterRest<'a, 'b> {
 
 pub struct ElementsAndRest<'b, E, R> {
     elements: &'b [E],
-    rest: &'b Option<R>,
+    rest: Option<&'b R>,
 }
 
 impl<'b, E, R> ElementsAndRest<'b, E, R> {
-    pub fn new(elements: &'b [E], rest: &'b Option<R>) -> Self {
+    pub fn new(elements: &'b [E], rest: Option<&'b R>) -> Self {
         Self { elements, rest }
     }
 }
 
-impl<'b, E: Serialize, R: Serialize> Serialize for ElementsAndRest<'b, E, R> {
+impl<E: Serialize, R: Serialize> Serialize for ElementsAndRest<'_, E, R> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         if let Some(rest) = self.rest {
             let mut seq = serializer.serialize_seq(Some(self.elements.len() + 1))?;
@@ -247,7 +247,7 @@ impl<'b, E: Serialize, R: Serialize> Serialize for ElementsAndRest<'b, E, R> {
 
 /// Serialize `TSModuleBlock` to be ESTree compatible, with `body` and `directives` fields combined,
 /// and directives output as `StringLiteral` expression statements
-impl<'a> Serialize for TSModuleBlock<'a> {
+impl Serialize for TSModuleBlock<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let converted = SerTSModuleBlock {
             span: self.span,
@@ -271,7 +271,7 @@ struct DirectivesAndStatements<'a, 'b> {
     body: &'b [Statement<'a>],
 }
 
-impl<'a, 'b> Serialize for DirectivesAndStatements<'a, 'b> {
+impl Serialize for DirectivesAndStatements<'_, '_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(Some(self.directives.len() + self.body.len()))?;
 
@@ -298,7 +298,7 @@ struct DirectiveAsStatement<'a, 'b> {
     expression: &'b StringLiteral<'a>,
 }
 
-impl<'a> Serialize for JSXElementName<'a> {
+impl Serialize for JSXElementName<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             Self::Identifier(ident) => ident.serialize(serializer),
@@ -315,7 +315,7 @@ impl<'a> Serialize for JSXElementName<'a> {
     }
 }
 
-impl<'a> Serialize for JSXMemberExpressionObject<'a> {
+impl Serialize for JSXMemberExpressionObject<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             Self::IdentifierReference(ident) => {

@@ -2,10 +2,10 @@ use oxc_allocator::Vec;
 use oxc_ast::ast::*;
 use oxc_span::{GetSpan, Span};
 
-use super::call_arguments::print_call_arguments;
 use crate::{
-    ir::{Doc, DocBuilder, Group},
-    text, Format, Prettier,
+    format::call_arguments::print_call_arguments,
+    ir::{Doc, DocBuilder},
+    Format, Prettier,
 };
 
 pub(super) enum CallExpressionLike<'a, 'b> {
@@ -13,7 +13,7 @@ pub(super) enum CallExpressionLike<'a, 'b> {
     NewExpression(&'b NewExpression<'a>),
 }
 
-impl<'a, 'b> CallExpressionLike<'a, 'b> {
+impl<'a> CallExpressionLike<'a, '_> {
     pub fn is_new(&self) -> bool {
         matches!(self, CallExpressionLike::NewExpression(_))
     }
@@ -41,10 +41,10 @@ impl<'a, 'b> CallExpressionLike<'a, 'b> {
 
     pub fn type_parameters(
         &self,
-    ) -> &Option<oxc_allocator::Box<'a, TSTypeParameterInstantiation<'a>>> {
+    ) -> Option<&oxc_allocator::Box<'a, TSTypeParameterInstantiation<'a>>> {
         match self {
-            CallExpressionLike::CallExpression(call) => &call.type_parameters,
-            CallExpressionLike::NewExpression(new) => &new.type_parameters,
+            CallExpressionLike::CallExpression(call) => call.type_parameters.as_ref(),
+            CallExpressionLike::NewExpression(new) => new.type_parameters.as_ref(),
         }
     }
 }
@@ -65,7 +65,7 @@ pub(super) fn print_call_expression<'a>(
     let mut parts = p.vec();
 
     if expression.is_new() {
-        parts.push(text!("new "));
+        parts.push(p.text("new "));
     };
 
     parts.push(expression.callee().format(p));
@@ -75,12 +75,12 @@ pub(super) fn print_call_expression<'a>(
     }
 
     if expression.optional() {
-        parts.push(text!("?."));
+        parts.push(p.text("?."));
     }
 
     parts.push(print_call_arguments(p, expression));
 
-    Doc::Group(Group::new(parts))
+    p.group(p.array(parts))
 }
 
 /// <https://github.com/prettier/prettier/blob/7aecca5d6473d73f562ca3af874831315f8f2581/src/language-js/print/call-expression.js#L93-L116>

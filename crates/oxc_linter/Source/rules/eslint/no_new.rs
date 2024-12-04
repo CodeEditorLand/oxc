@@ -71,5 +71,5 @@ fn test() {
 
     let fail = vec!["new Date()", "(() => { new Date() })"];
 
-    Tester::new(NoNew::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoNew::NAME, NoNew::CATEGORY, pass, fail).test_and_snapshot();
 }

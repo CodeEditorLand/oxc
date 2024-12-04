@@ -15,9 +15,6 @@ mod import {
     pub mod export;
 
     pub mod first;
-
-    pub mod import_no_namespace;
-
     pub mod max_dependencies;
 
     pub mod named;
@@ -39,7 +36,7 @@ mod import {
     pub mod no_named_as_default;
 
     pub mod no_named_as_default_member;
-
+    pub mod no_namespace;
     pub mod no_self_import;
 
     pub mod no_webpack_loader_syntax;
@@ -231,7 +228,7 @@ mod eslint {
     pub mod no_unsafe_negation;
 
     pub mod no_unsafe_optional_chaining;
-
+    pub mod no_unused_expressions;
     pub mod no_unused_labels;
 
     pub mod no_unused_private_class_members;
@@ -293,7 +290,7 @@ mod typescript {
     pub mod ban_tslint_comment;
 
     pub mod ban_types;
-
+    pub mod consistent_generic_constructors;
     pub mod consistent_indexed_object_style;
 
     pub mod consistent_type_definitions;
@@ -1006,12 +1003,12 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_dupe_else_if,
     eslint::no_dupe_keys,
     eslint::no_duplicate_case,
-    eslint::no_empty,
+    eslint::no_else_return,
     eslint::no_empty_character_class,
     eslint::no_empty_function,
     eslint::no_empty_pattern,
     eslint::no_empty_static_block,
-    eslint::no_else_return,
+    eslint::no_empty,
     eslint::no_eq_null,
     eslint::no_eval,
     eslint::no_ex_assign,
@@ -1029,10 +1026,10 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_loss_of_precision,
     eslint::no_magic_numbers,
     eslint::no_multi_str,
-    eslint::no_new,
     eslint::no_new_func,
     eslint::no_new_native_nonconstructor,
     eslint::no_new_wrappers,
+    eslint::no_new,
     eslint::no_nonoctal_decimal_escape,
     eslint::no_obj_calls,
     eslint::no_plusplus,
@@ -1059,6 +1056,7 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_unsafe_finally,
     eslint::no_unsafe_negation,
     eslint::no_unsafe_optional_chaining,
+    eslint::no_unused_expressions,
     eslint::no_unused_labels,
     eslint::no_unused_private_class_members,
     eslint::no_unused_vars,
@@ -1087,7 +1085,7 @@ oxc_macros::declare_all_lint_rules! {
     import::default,
     import::export,
     import::first,
-    import::import_no_namespace,
+    import::no_namespace,
     import::max_dependencies,
     import::named,
     import::namespace,
@@ -1296,6 +1294,7 @@ oxc_macros::declare_all_lint_rules! {
     typescript::ban_ts_comment,
     typescript::ban_tslint_comment,
     typescript::ban_types,
+    typescript::consistent_generic_constructors,
     typescript::consistent_indexed_object_style,
     typescript::consistent_type_definitions,
     typescript::consistent_type_imports,

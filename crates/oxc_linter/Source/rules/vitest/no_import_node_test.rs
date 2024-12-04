@@ -56,8 +56,8 @@ impl Rule for NoImportNodeTest {
 
         if let Some(node_test_module) = module_record.requested_modules.get("node:test") {
             if let Some(requested_module) = node_test_module.first() {
-                ctx.diagnostic_with_fix(no_import_node_test(requested_module.span()), |fixer| {
-                    fixer.replace(requested_module.span(), "\"vitest\"")
+                ctx.diagnostic_with_fix(no_import_node_test(requested_module.span), |fixer| {
+                    fixer.replace(requested_module.span, "\"vitest\"")
                 });
             }
         }
@@ -80,7 +80,7 @@ fn test() {
         (r#"import * as foo from "node:test""#, r#"import * as foo from "vitest""#, None),
     ];
 
-    Tester::new(NoImportNodeTest::NAME, pass, fail)
+    Tester::new(NoImportNodeTest::NAME, NoImportNodeTest::CATEGORY, pass, fail)
         .with_vitest_plugin(true)
         .expect_fix(fix)
         .test_and_snapshot();

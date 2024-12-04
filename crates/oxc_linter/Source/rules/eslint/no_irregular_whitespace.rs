@@ -407,5 +407,6 @@ fn test() {
         // (r"<div>　</div>;", None),
     ];
 
-    Tester::new(NoIrregularWhitespace::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoIrregularWhitespace::NAME, NoIrregularWhitespace::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

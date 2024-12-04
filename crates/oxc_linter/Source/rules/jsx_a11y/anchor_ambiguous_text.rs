@@ -312,5 +312,6 @@ fn test() {
         ),
     ];
 
-    Tester::new(AnchorAmbiguousText::NAME, pass, fail).test_and_snapshot();
+    Tester::new(AnchorAmbiguousText::NAME, AnchorAmbiguousText::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

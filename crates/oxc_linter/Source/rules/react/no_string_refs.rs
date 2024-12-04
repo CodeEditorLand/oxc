@@ -335,5 +335,5 @@ fn test() {
         ),
     ];
 
-    Tester::new(NoStringRefs::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoStringRefs::NAME, NoStringRefs::CATEGORY, pass, fail).test_and_snapshot();
 }

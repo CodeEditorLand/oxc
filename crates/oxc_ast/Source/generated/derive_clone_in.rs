@@ -34,7 +34,7 @@ impl<'alloc> CloneIn<'alloc> for NullLiteral {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for NumericLiteral<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for NumericLiteral<'_> {
     type Cloned = NumericLiteral<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -47,7 +47,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for NumericLiteral<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for StringLiteral<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for StringLiteral<'_> {
     type Cloned = StringLiteral<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -59,7 +59,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for StringLiteral<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BigIntLiteral<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BigIntLiteral<'_> {
     type Cloned = BigIntLiteral<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -71,7 +71,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BigIntLiteral<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExpLiteral<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for RegExpLiteral<'_> {
     type Cloned = RegExpLiteral<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -83,7 +83,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExpLiteral<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExp<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for RegExp<'_> {
     type Cloned = RegExp<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -94,7 +94,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExp<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExpPattern<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for RegExpPattern<'_> {
     type Cloned = RegExpPattern<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -106,7 +106,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for RegExpPattern<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Program<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Program<'_> {
     type Cloned = Program<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -123,7 +123,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Program<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Expression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Expression<'_> {
     type Cloned = Expression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -269,7 +269,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Expression<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for IdentifierName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for IdentifierName<'_> {
     type Cloned = IdentifierName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -280,7 +280,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for IdentifierName<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for IdentifierReference<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for IdentifierReference<'_> {
     type Cloned = IdentifierReference<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -292,7 +292,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for IdentifierReference<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingIdentifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BindingIdentifier<'_> {
     type Cloned = BindingIdentifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -304,7 +304,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingIdentifier<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for LabelIdentifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for LabelIdentifier<'_> {
     type Cloned = LabelIdentifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -323,7 +323,7 @@ impl<'alloc> CloneIn<'alloc> for ThisExpression {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrayExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpression<'_> {
     type Cloned = ArrayExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -335,7 +335,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrayExpression<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrayExpressionElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpressionElement<'_> {
     type Cloned = ArrayExpressionElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -521,7 +521,7 @@ impl<'alloc> CloneIn<'alloc> for Elision {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ObjectExpression<'_> {
     type Cloned = ObjectExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -533,7 +533,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectExpression<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectPropertyKind<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ObjectPropertyKind<'_> {
     type Cloned = ObjectPropertyKind<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -549,7 +549,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectPropertyKind<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectProperty<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ObjectProperty<'_> {
     type Cloned = ObjectProperty<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -565,7 +565,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectProperty<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for PropertyKey<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for PropertyKey<'_> {
     type Cloned = PropertyKey<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -731,7 +731,7 @@ impl<'alloc> CloneIn<'alloc> for PropertyKind {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TemplateLiteral<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TemplateLiteral<'_> {
     type Cloned = TemplateLiteral<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -743,7 +743,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TemplateLiteral<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TaggedTemplateExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TaggedTemplateExpression<'_> {
     type Cloned = TaggedTemplateExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -756,7 +756,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TaggedTemplateExpression<'o
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TemplateElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TemplateElement<'_> {
     type Cloned = TemplateElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -768,7 +768,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TemplateElement<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TemplateElementValue<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TemplateElementValue<'_> {
     type Cloned = TemplateElementValue<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -779,7 +779,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TemplateElementValue<'old_a
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for MemberExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for MemberExpression<'_> {
     type Cloned = MemberExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -799,7 +799,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for MemberExpression<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ComputedMemberExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ComputedMemberExpression<'_> {
     type Cloned = ComputedMemberExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -812,7 +812,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ComputedMemberExpression<'o
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for StaticMemberExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for StaticMemberExpression<'_> {
     type Cloned = StaticMemberExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -825,7 +825,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for StaticMemberExpression<'old
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for PrivateFieldExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for PrivateFieldExpression<'_> {
     type Cloned = PrivateFieldExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -838,7 +838,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for PrivateFieldExpression<'old
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for CallExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for CallExpression<'_> {
     type Cloned = CallExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -852,7 +852,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for CallExpression<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for NewExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for NewExpression<'_> {
     type Cloned = NewExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -865,7 +865,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for NewExpression<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for MetaProperty<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for MetaProperty<'_> {
     type Cloned = MetaProperty<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -877,7 +877,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for MetaProperty<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SpreadElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for SpreadElement<'_> {
     type Cloned = SpreadElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -888,7 +888,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SpreadElement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Argument<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Argument<'_> {
     type Cloned = Argument<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1020,7 +1020,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Argument<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for UpdateExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for UpdateExpression<'_> {
     type Cloned = UpdateExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1033,7 +1033,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for UpdateExpression<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for UnaryExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for UnaryExpression<'_> {
     type Cloned = UnaryExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1045,7 +1045,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for UnaryExpression<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BinaryExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BinaryExpression<'_> {
     type Cloned = BinaryExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1058,7 +1058,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BinaryExpression<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for PrivateInExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for PrivateInExpression<'_> {
     type Cloned = PrivateInExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1071,7 +1071,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for PrivateInExpression<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for LogicalExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for LogicalExpression<'_> {
     type Cloned = LogicalExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1084,7 +1084,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for LogicalExpression<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ConditionalExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ConditionalExpression<'_> {
     type Cloned = ConditionalExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1097,7 +1097,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ConditionalExpression<'old_
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentExpression<'_> {
     type Cloned = AssignmentExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1110,7 +1110,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentExpression<'old_a
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTarget<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTarget<'_> {
     type Cloned = AssignmentTarget<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1162,7 +1162,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTarget<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SimpleAssignmentTarget<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for SimpleAssignmentTarget<'_> {
     type Cloned = SimpleAssignmentTarget<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1206,7 +1206,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SimpleAssignmentTarget<'old
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPattern<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPattern<'_> {
     type Cloned = AssignmentTargetPattern<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1222,7 +1222,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPattern<'ol
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrayAssignmentTarget<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ArrayAssignmentTarget<'_> {
     type Cloned = ArrayAssignmentTarget<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1235,7 +1235,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrayAssignmentTarget<'old_
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectAssignmentTarget<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ObjectAssignmentTarget<'_> {
     type Cloned = ObjectAssignmentTarget<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1247,7 +1247,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectAssignmentTarget<'old
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetRest<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetRest<'_> {
     type Cloned = AssignmentTargetRest<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1258,7 +1258,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetRest<'old_a
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetMaybeDefault<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetMaybeDefault<'_> {
     type Cloned = AssignmentTargetMaybeDefault<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1326,7 +1326,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetMaybeDefaul
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetWithDefault<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetWithDefault<'_> {
     type Cloned = AssignmentTargetWithDefault<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1338,7 +1338,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetWithDefault
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetProperty<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetProperty<'_> {
     type Cloned = AssignmentTargetProperty<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1358,9 +1358,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetProperty<'o
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc>
-    for AssignmentTargetPropertyIdentifier<'old_alloc>
-{
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPropertyIdentifier<'_> {
     type Cloned = AssignmentTargetPropertyIdentifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1372,7 +1370,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPropertyProperty<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPropertyProperty<'_> {
     type Cloned = AssignmentTargetPropertyProperty<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1384,7 +1382,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPropertyPro
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SequenceExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for SequenceExpression<'_> {
     type Cloned = SequenceExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1403,7 +1401,7 @@ impl<'alloc> CloneIn<'alloc> for Super {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AwaitExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AwaitExpression<'_> {
     type Cloned = AwaitExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1414,7 +1412,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AwaitExpression<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ChainExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ChainExpression<'_> {
     type Cloned = ChainExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1425,7 +1423,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ChainExpression<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ChainElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ChainElement<'_> {
     type Cloned = ChainElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1453,7 +1451,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ChainElement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ParenthesizedExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ParenthesizedExpression<'_> {
     type Cloned = ParenthesizedExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1464,7 +1462,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ParenthesizedExpression<'ol
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Statement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Statement<'_> {
     type Cloned = Statement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1567,7 +1565,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Statement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Directive<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Directive<'_> {
     type Cloned = Directive<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1579,7 +1577,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Directive<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Hashbang<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Hashbang<'_> {
     type Cloned = Hashbang<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1590,7 +1588,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Hashbang<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BlockStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BlockStatement<'_> {
     type Cloned = BlockStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1602,7 +1600,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BlockStatement<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Declaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Declaration<'_> {
     type Cloned = Declaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1642,7 +1640,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Declaration<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for VariableDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for VariableDeclaration<'_> {
     type Cloned = VariableDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1669,7 +1667,7 @@ impl<'alloc> CloneIn<'alloc> for VariableDeclarationKind {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for VariableDeclarator<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for VariableDeclarator<'_> {
     type Cloned = VariableDeclarator<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1691,7 +1689,7 @@ impl<'alloc> CloneIn<'alloc> for EmptyStatement {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExpressionStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ExpressionStatement<'_> {
     type Cloned = ExpressionStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1702,7 +1700,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExpressionStatement<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for IfStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for IfStatement<'_> {
     type Cloned = IfStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1715,7 +1713,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for IfStatement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for DoWhileStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for DoWhileStatement<'_> {
     type Cloned = DoWhileStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1727,7 +1725,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for DoWhileStatement<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for WhileStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for WhileStatement<'_> {
     type Cloned = WhileStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1739,7 +1737,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for WhileStatement<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ForStatement<'_> {
     type Cloned = ForStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1754,7 +1752,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForStatement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'_> {
     type Cloned = ForStatementInit<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1925,7 +1923,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForInStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ForInStatement<'_> {
     type Cloned = ForInStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1939,7 +1937,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForInStatement<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForStatementLeft<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ForStatementLeft<'_> {
     type Cloned = ForStatementLeft<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -1995,7 +1993,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForStatementLeft<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForOfStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ForOfStatement<'_> {
     type Cloned = ForOfStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2010,7 +2008,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ForOfStatement<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ContinueStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ContinueStatement<'_> {
     type Cloned = ContinueStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2021,7 +2019,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ContinueStatement<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BreakStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BreakStatement<'_> {
     type Cloned = BreakStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2032,7 +2030,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BreakStatement<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ReturnStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ReturnStatement<'_> {
     type Cloned = ReturnStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2043,7 +2041,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ReturnStatement<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for WithStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for WithStatement<'_> {
     type Cloned = WithStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2055,7 +2053,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for WithStatement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SwitchStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for SwitchStatement<'_> {
     type Cloned = SwitchStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2068,7 +2066,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SwitchStatement<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SwitchCase<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for SwitchCase<'_> {
     type Cloned = SwitchCase<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2080,7 +2078,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for SwitchCase<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for LabeledStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for LabeledStatement<'_> {
     type Cloned = LabeledStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2092,7 +2090,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for LabeledStatement<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ThrowStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ThrowStatement<'_> {
     type Cloned = ThrowStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2103,7 +2101,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ThrowStatement<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TryStatement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TryStatement<'_> {
     type Cloned = TryStatement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2116,7 +2114,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TryStatement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for CatchClause<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for CatchClause<'_> {
     type Cloned = CatchClause<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2129,7 +2127,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for CatchClause<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for CatchParameter<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for CatchParameter<'_> {
     type Cloned = CatchParameter<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2148,7 +2146,7 @@ impl<'alloc> CloneIn<'alloc> for DebuggerStatement {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingPattern<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BindingPattern<'_> {
     type Cloned = BindingPattern<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2160,7 +2158,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingPattern<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingPatternKind<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BindingPatternKind<'_> {
     type Cloned = BindingPatternKind<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2184,7 +2182,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingPatternKind<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentPattern<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AssignmentPattern<'_> {
     type Cloned = AssignmentPattern<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2196,7 +2194,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AssignmentPattern<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectPattern<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ObjectPattern<'_> {
     type Cloned = ObjectPattern<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2208,7 +2206,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ObjectPattern<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingProperty<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BindingProperty<'_> {
     type Cloned = BindingProperty<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2222,7 +2220,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingProperty<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrayPattern<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ArrayPattern<'_> {
     type Cloned = ArrayPattern<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2234,7 +2232,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrayPattern<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingRestElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for BindingRestElement<'_> {
     type Cloned = BindingRestElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2245,7 +2243,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for BindingRestElement<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Function<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Function<'_> {
     type Cloned = Function<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2279,7 +2277,7 @@ impl<'alloc> CloneIn<'alloc> for FunctionType {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for FormalParameters<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for FormalParameters<'_> {
     type Cloned = FormalParameters<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2292,7 +2290,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for FormalParameters<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for FormalParameter<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for FormalParameter<'_> {
     type Cloned = FormalParameter<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2320,7 +2318,7 @@ impl<'alloc> CloneIn<'alloc> for FormalParameterKind {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for FunctionBody<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for FunctionBody<'_> {
     type Cloned = FunctionBody<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2332,7 +2330,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for FunctionBody<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrowFunctionExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ArrowFunctionExpression<'_> {
     type Cloned = ArrowFunctionExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2349,7 +2347,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ArrowFunctionExpression<'ol
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for YieldExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for YieldExpression<'_> {
     type Cloned = YieldExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2361,7 +2359,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for YieldExpression<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Class<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Class<'_> {
     type Cloned = Class<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2393,7 +2391,7 @@ impl<'alloc> CloneIn<'alloc> for ClassType {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ClassBody<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ClassBody<'_> {
     type Cloned = ClassBody<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2404,7 +2402,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ClassBody<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ClassElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ClassElement<'_> {
     type Cloned = ClassElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2429,7 +2427,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ClassElement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for MethodDefinition<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for MethodDefinition<'_> {
     type Cloned = MethodDefinition<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2460,7 +2458,7 @@ impl<'alloc> CloneIn<'alloc> for MethodDefinitionType {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for PropertyDefinition<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for PropertyDefinition<'_> {
     type Cloned = PropertyDefinition<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2509,7 +2507,7 @@ impl<'alloc> CloneIn<'alloc> for MethodDefinitionKind {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for PrivateIdentifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for PrivateIdentifier<'_> {
     type Cloned = PrivateIdentifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2520,7 +2518,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for PrivateIdentifier<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for StaticBlock<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for StaticBlock<'_> {
     type Cloned = StaticBlock<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2532,7 +2530,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for StaticBlock<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ModuleDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ModuleDeclaration<'_> {
     type Cloned = ModuleDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2575,7 +2573,7 @@ impl<'alloc> CloneIn<'alloc> for AccessorPropertyType {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AccessorProperty<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for AccessorProperty<'_> {
     type Cloned = AccessorProperty<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2594,7 +2592,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for AccessorProperty<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ImportExpression<'_> {
     type Cloned = ImportExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2606,7 +2604,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportExpression<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ImportDeclaration<'_> {
     type Cloned = ImportDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2620,7 +2618,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportDeclaration<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportDeclarationSpecifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ImportDeclarationSpecifier<'_> {
     type Cloned = ImportDeclarationSpecifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2642,7 +2640,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportDeclarationSpecifier<
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportSpecifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ImportSpecifier<'_> {
     type Cloned = ImportSpecifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2655,7 +2653,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportSpecifier<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportDefaultSpecifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ImportDefaultSpecifier<'_> {
     type Cloned = ImportDefaultSpecifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2666,7 +2664,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportDefaultSpecifier<'old
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportNamespaceSpecifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ImportNamespaceSpecifier<'_> {
     type Cloned = ImportNamespaceSpecifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2677,7 +2675,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportNamespaceSpecifier<'o
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for WithClause<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for WithClause<'_> {
     type Cloned = WithClause<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2689,7 +2687,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for WithClause<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportAttribute<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ImportAttribute<'_> {
     type Cloned = ImportAttribute<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2701,7 +2699,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportAttribute<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportAttributeKey<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ImportAttributeKey<'_> {
     type Cloned = ImportAttributeKey<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2717,7 +2715,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ImportAttributeKey<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportNamedDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ExportNamedDeclaration<'_> {
     type Cloned = ExportNamedDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2732,7 +2730,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportNamedDeclaration<'old
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclaration<'_> {
     type Cloned = ExportDefaultDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2744,7 +2742,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclaration<'o
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportAllDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ExportAllDeclaration<'_> {
     type Cloned = ExportAllDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2758,7 +2756,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportAllDeclaration<'old_a
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportSpecifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ExportSpecifier<'_> {
     type Cloned = ExportSpecifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2771,7 +2769,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportSpecifier<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
     type Cloned = ExportDefaultDeclarationKind<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2973,7 +2971,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKin
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ModuleExportName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for ModuleExportName<'_> {
     type Cloned = ModuleExportName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -2993,7 +2991,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for ModuleExportName<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSThisParameter<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSThisParameter<'_> {
     type Cloned = TSThisParameter<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3005,7 +3003,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSThisParameter<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSEnumDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSEnumDeclaration<'_> {
     type Cloned = TSEnumDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3020,7 +3018,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSEnumDeclaration<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSEnumMember<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSEnumMember<'_> {
     type Cloned = TSEnumMember<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3032,7 +3030,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSEnumMember<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSEnumMemberName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSEnumMemberName<'_> {
     type Cloned = TSEnumMemberName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3043,7 +3041,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSEnumMemberName<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeAnnotation<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAnnotation<'_> {
     type Cloned = TSTypeAnnotation<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3054,7 +3052,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeAnnotation<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSLiteralType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSLiteralType<'_> {
     type Cloned = TSLiteralType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3065,7 +3063,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSLiteralType<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSLiteral<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSLiteral<'_> {
     type Cloned = TSLiteral<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3087,7 +3085,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSLiteral<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSType<'_> {
     type Cloned = TSType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3178,7 +3176,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSType<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSConditionalType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSConditionalType<'_> {
     type Cloned = TSConditionalType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3193,7 +3191,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSConditionalType<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSUnionType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSUnionType<'_> {
     type Cloned = TSUnionType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3204,7 +3202,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSUnionType<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSIntersectionType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSIntersectionType<'_> {
     type Cloned = TSIntersectionType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3215,7 +3213,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSIntersectionType<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSParenthesizedType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSParenthesizedType<'_> {
     type Cloned = TSParenthesizedType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3226,7 +3224,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSParenthesizedType<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeOperator<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeOperator<'_> {
     type Cloned = TSTypeOperator<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3250,7 +3248,7 @@ impl<'alloc> CloneIn<'alloc> for TSTypeOperatorOperator {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSArrayType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSArrayType<'_> {
     type Cloned = TSArrayType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3261,7 +3259,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSArrayType<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSIndexedAccessType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSIndexedAccessType<'_> {
     type Cloned = TSIndexedAccessType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3273,7 +3271,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSIndexedAccessType<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTupleType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTupleType<'_> {
     type Cloned = TSTupleType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3284,7 +3282,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTupleType<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSNamedTupleMember<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSNamedTupleMember<'_> {
     type Cloned = TSNamedTupleMember<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3297,7 +3295,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSNamedTupleMember<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSOptionalType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSOptionalType<'_> {
     type Cloned = TSOptionalType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3308,7 +3306,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSOptionalType<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSRestType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSRestType<'_> {
     type Cloned = TSRestType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3319,7 +3317,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSRestType<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTupleElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTupleElement<'_> {
     type Cloned = TSTupleElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3578,7 +3576,7 @@ impl<'alloc> CloneIn<'alloc> for TSBigIntKeyword {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeReference<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeReference<'_> {
     type Cloned = TSTypeReference<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3590,7 +3588,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeReference<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeName<'_> {
     type Cloned = TSTypeName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3604,7 +3602,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeName<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSQualifiedName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSQualifiedName<'_> {
     type Cloned = TSQualifiedName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3616,7 +3614,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSQualifiedName<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeParameterInstantiation<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameterInstantiation<'_> {
     type Cloned = TSTypeParameterInstantiation<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3627,7 +3625,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeParameterInstantiatio
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeParameter<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameter<'_> {
     type Cloned = TSTypeParameter<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3643,7 +3641,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeParameter<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeParameterDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameterDeclaration<'_> {
     type Cloned = TSTypeParameterDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3654,7 +3652,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeParameterDeclaration<
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeAliasDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAliasDeclaration<'_> {
     type Cloned = TSTypeAliasDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3681,7 +3679,7 @@ impl<'alloc> CloneIn<'alloc> for TSAccessibility {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSClassImplements<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSClassImplements<'_> {
     type Cloned = TSClassImplements<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3693,7 +3691,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSClassImplements<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInterfaceDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceDeclaration<'_> {
     type Cloned = TSInterfaceDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3709,7 +3707,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInterfaceDeclaration<'old
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInterfaceBody<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceBody<'_> {
     type Cloned = TSInterfaceBody<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3720,7 +3718,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInterfaceBody<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSPropertySignature<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSPropertySignature<'_> {
     type Cloned = TSPropertySignature<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3735,7 +3733,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSPropertySignature<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSSignature<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSSignature<'_> {
     type Cloned = TSSignature<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3763,7 +3761,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSSignature<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSIndexSignature<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSIndexSignature<'_> {
     type Cloned = TSIndexSignature<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3777,7 +3775,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSIndexSignature<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSCallSignatureDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSCallSignatureDeclaration<'_> {
     type Cloned = TSCallSignatureDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3803,7 +3801,7 @@ impl<'alloc> CloneIn<'alloc> for TSMethodSignatureKind {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSMethodSignature<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSMethodSignature<'_> {
     type Cloned = TSMethodSignature<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3822,7 +3820,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSMethodSignature<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSConstructSignatureDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSConstructSignatureDeclaration<'_> {
     type Cloned = TSConstructSignatureDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3836,7 +3834,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSConstructSignatureDeclara
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSIndexSignatureName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSIndexSignatureName<'_> {
     type Cloned = TSIndexSignatureName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3848,7 +3846,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSIndexSignatureName<'old_a
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInterfaceHeritage<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceHeritage<'_> {
     type Cloned = TSInterfaceHeritage<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3860,7 +3858,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInterfaceHeritage<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypePredicate<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypePredicate<'_> {
     type Cloned = TSTypePredicate<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3873,7 +3871,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypePredicate<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypePredicateName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypePredicateName<'_> {
     type Cloned = TSTypePredicateName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3887,7 +3885,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypePredicateName<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSModuleDeclaration<'_> {
     type Cloned = TSModuleDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3914,7 +3912,7 @@ impl<'alloc> CloneIn<'alloc> for TSModuleDeclarationKind {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleDeclarationName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSModuleDeclarationName<'_> {
     type Cloned = TSModuleDeclarationName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3930,7 +3928,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleDeclarationName<'ol
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleDeclarationBody<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSModuleDeclarationBody<'_> {
     type Cloned = TSModuleDeclarationBody<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3946,7 +3944,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleDeclarationBody<'ol
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleBlock<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSModuleBlock<'_> {
     type Cloned = TSModuleBlock<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3958,7 +3956,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleBlock<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeLiteral<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeLiteral<'_> {
     type Cloned = TSTypeLiteral<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3969,7 +3967,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeLiteral<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInferType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSInferType<'_> {
     type Cloned = TSInferType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3980,7 +3978,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInferType<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeQuery<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeQuery<'_> {
     type Cloned = TSTypeQuery<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -3992,7 +3990,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeQuery<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeQueryExprName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeQueryExprName<'_> {
     type Cloned = TSTypeQueryExprName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4012,7 +4010,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeQueryExprName<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSImportType<'_> {
     type Cloned = TSImportType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4027,7 +4025,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportType<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportAttributes<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSImportAttributes<'_> {
     type Cloned = TSImportAttributes<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4039,7 +4037,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportAttributes<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportAttribute<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSImportAttribute<'_> {
     type Cloned = TSImportAttribute<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4051,7 +4049,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportAttribute<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportAttributeName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSImportAttributeName<'_> {
     type Cloned = TSImportAttributeName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4067,7 +4065,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportAttributeName<'old_
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSFunctionType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSFunctionType<'_> {
     type Cloned = TSFunctionType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4081,7 +4079,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSFunctionType<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSConstructorType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSConstructorType<'_> {
     type Cloned = TSConstructorType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4095,7 +4093,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSConstructorType<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSMappedType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSMappedType<'_> {
     type Cloned = TSMappedType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4124,7 +4122,7 @@ impl<'alloc> CloneIn<'alloc> for TSMappedTypeModifierOperator {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTemplateLiteralType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTemplateLiteralType<'_> {
     type Cloned = TSTemplateLiteralType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4136,7 +4134,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTemplateLiteralType<'old_
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSAsExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSAsExpression<'_> {
     type Cloned = TSAsExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4148,7 +4146,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSAsExpression<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSSatisfiesExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSSatisfiesExpression<'_> {
     type Cloned = TSSatisfiesExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4160,7 +4158,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSSatisfiesExpression<'old_
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeAssertion<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAssertion<'_> {
     type Cloned = TSTypeAssertion<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4172,7 +4170,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSTypeAssertion<'old_alloc>
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportEqualsDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSImportEqualsDeclaration<'_> {
     type Cloned = TSImportEqualsDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4185,7 +4183,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSImportEqualsDeclaration<'
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleReference<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSModuleReference<'_> {
     type Cloned = TSModuleReference<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4205,7 +4203,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSModuleReference<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSExternalModuleReference<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSExternalModuleReference<'_> {
     type Cloned = TSExternalModuleReference<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4216,7 +4214,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSExternalModuleReference<'
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSNonNullExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSNonNullExpression<'_> {
     type Cloned = TSNonNullExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4227,7 +4225,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSNonNullExpression<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Decorator<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for Decorator<'_> {
     type Cloned = Decorator<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4238,7 +4236,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Decorator<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSExportAssignment<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSExportAssignment<'_> {
     type Cloned = TSExportAssignment<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4249,7 +4247,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSExportAssignment<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSNamespaceExportDeclaration<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSNamespaceExportDeclaration<'_> {
     type Cloned = TSNamespaceExportDeclaration<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4260,7 +4258,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSNamespaceExportDeclaratio
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for TSInstantiationExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for TSInstantiationExpression<'_> {
     type Cloned = TSInstantiationExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4283,7 +4281,7 @@ impl<'alloc> CloneIn<'alloc> for ImportOrExportKind {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSDocNullableType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSDocNullableType<'_> {
     type Cloned = JSDocNullableType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4295,7 +4293,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSDocNullableType<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSDocNonNullableType<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSDocNonNullableType<'_> {
     type Cloned = JSDocNonNullableType<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4315,7 +4313,7 @@ impl<'alloc> CloneIn<'alloc> for JSDocUnknownType {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXElement<'_> {
     type Cloned = JSXElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4328,7 +4326,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXElement<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXOpeningElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXOpeningElement<'_> {
     type Cloned = JSXOpeningElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4342,7 +4340,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXOpeningElement<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXClosingElement<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXClosingElement<'_> {
     type Cloned = JSXClosingElement<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4353,7 +4351,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXClosingElement<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXFragment<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXFragment<'_> {
     type Cloned = JSXFragment<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4382,7 +4380,7 @@ impl<'alloc> CloneIn<'alloc> for JSXClosingFragment {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXElementName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXElementName<'_> {
     type Cloned = JSXElementName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4407,7 +4405,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXElementName<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXNamespacedName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXNamespacedName<'_> {
     type Cloned = JSXNamespacedName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4419,7 +4417,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXNamespacedName<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXMemberExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXMemberExpression<'_> {
     type Cloned = JSXMemberExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4431,7 +4429,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXMemberExpression<'old_al
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXMemberExpressionObject<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXMemberExpressionObject<'_> {
     type Cloned = JSXMemberExpressionObject<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4451,7 +4449,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXMemberExpressionObject<'
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXExpressionContainer<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXExpressionContainer<'_> {
     type Cloned = JSXExpressionContainer<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4462,7 +4460,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXExpressionContainer<'old
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXExpression<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXExpression<'_> {
     type Cloned = JSXExpression<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4632,7 +4630,7 @@ impl<'alloc> CloneIn<'alloc> for JSXEmptyExpression {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXAttributeItem<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXAttributeItem<'_> {
     type Cloned = JSXAttributeItem<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4645,7 +4643,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXAttributeItem<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXAttribute<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXAttribute<'_> {
     type Cloned = JSXAttribute<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4657,7 +4655,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXAttribute<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXSpreadAttribute<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXSpreadAttribute<'_> {
     type Cloned = JSXSpreadAttribute<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4668,7 +4666,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXSpreadAttribute<'old_all
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXAttributeName<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXAttributeName<'_> {
     type Cloned = JSXAttributeName<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4681,7 +4679,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXAttributeName<'old_alloc
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXAttributeValue<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXAttributeValue<'_> {
     type Cloned = JSXAttributeValue<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4700,7 +4698,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXAttributeValue<'old_allo
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXIdentifier<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXIdentifier<'_> {
     type Cloned = JSXIdentifier<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4711,7 +4709,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXIdentifier<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXChild<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXChild<'_> {
     type Cloned = JSXChild<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4728,7 +4726,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXChild<'old_alloc> {
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXSpreadChild<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXSpreadChild<'_> {
     type Cloned = JSXSpreadChild<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
@@ -4739,7 +4737,7 @@ impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXSpreadChild<'old_alloc> 
     }
 }
 
-impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for JSXText<'old_alloc> {
+impl<'new_alloc> CloneIn<'new_alloc> for JSXText<'_> {
     type Cloned = JSXText<'new_alloc>;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {

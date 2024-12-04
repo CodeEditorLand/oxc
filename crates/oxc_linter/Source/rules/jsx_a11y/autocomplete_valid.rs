@@ -214,7 +214,7 @@ impl Rule for AutocompleteValid {
 
 #[test]
 fn test() {
-    use crate::{rules::AutocompleteValid, tester::Tester};
+    use crate::tester::Tester;
 
     fn settings() -> serde_json::Value {
         serde_json::json!({
@@ -266,5 +266,6 @@ fn test() {
         ("<Input type='text' autocomplete='baz' />;", None, Some(settings())),
     ];
 
-    Tester::new(AutocompleteValid::NAME, pass, fail).test_and_snapshot();
+    Tester::new(AutocompleteValid::NAME, AutocompleteValid::CATEGORY, pass, fail)
+        .test_and_snapshot();
 }

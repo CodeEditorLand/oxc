@@ -185,5 +185,5 @@ fn test() {
         	      ",
     ];
 
-    Tester::new(NoDynamicDelete::NAME, pass, fail).test_and_snapshot();
+    Tester::new(NoDynamicDelete::NAME, NoDynamicDelete::CATEGORY, pass, fail).test_and_snapshot();
 }
