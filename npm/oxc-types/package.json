@@ -9,7 +9,7 @@
 	},
 	"description": "Types for Oxc AST nodes",
 	"devDependencies": {
-		"@playform/build": "0.1.9"
+		"@playform/build": "0.2.0"
 	},
 	"files": [
 		"types.d.ts"

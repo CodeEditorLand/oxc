@@ -15,7 +15,7 @@
 		"@oxc-project/types": "workspace:^"
 	},
 	"devDependencies": {
-		"@playform/build": "0.1.9"
+		"@playform/build": "0.2.0"
 	},
 	"files": [
 		"oxc_wasm_bg.wasm",
