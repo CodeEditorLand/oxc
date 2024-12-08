@@ -16,7 +16,7 @@ impl TestRunner {
                 "vitest",
                 "--",
                 "run",
-                "--reporter=basic",
+                "--reporter=./reporter.mjs",
                 "--exclude=\"\"",
                 "--no-color",
                 dir,

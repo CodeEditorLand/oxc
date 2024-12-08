@@ -85,7 +85,7 @@ impl Rule for PreferIncludes {
                 return;
             };
 
-            if num_lit.raw != "0" {
+            if num_lit.raw.as_ref().unwrap() != "0" {
                 return;
             }
 
@@ -109,7 +109,7 @@ fn is_negative_one(expr: &Expression) -> bool {
         return false;
     };
 
-    num_lit.raw == "1"
+    num_lit.raw.as_ref().unwrap() == "1"
 }
 
 #[test]

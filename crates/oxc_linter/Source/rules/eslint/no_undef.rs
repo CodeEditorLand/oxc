@@ -52,6 +52,10 @@ impl Rule for NoUndef {
             for reference_id in reference_id_list {
                 let reference = symbol_table.get_reference(reference_id);
 
+                if reference.is_type() {
+                    return;
+                }
+
                 let name = ctx.semantic().reference_name(reference);
 
                 if ctx.env_contains_var(name) {
@@ -156,7 +160,9 @@ fn test() {
         "class C { static { function a() {} a; } }",
         "class C { static { a; function a() {} } }",
         "String;Array;Boolean;",
-        "function resolve<T>(path: string): T { return { path } as T; }"
+        "function resolve<T>(path: string): T { return { path } as T; }",
+        "let xyz: NodeListOf<HTMLElement>",
+        "type Foo = Record<string, unknown>;"
     ];
 
     let fail = vec![

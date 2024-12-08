@@ -10,8 +10,17 @@ use crate::{diagnostics, lexer::Kind, modifiers::Modifiers, Context, ParserImpl}
 impl<'a> ParserImpl<'a> {
     /// [Import Call](https://tc39.es/ecma262/#sec-import-calls)
     /// `ImportCall` : import ( `AssignmentExpression` )
-    pub(crate) fn parse_import_expression(&mut self, span: Span) -> Result<Expression<'a>> {
-        self.bump_any(); // advance '('
+    pub(crate) fn parse_import_expression(
+        &mut self,
+        span: Span,
+        phase: Option<ImportPhase>,
+    ) -> Result<Expression<'a>> {
+        self.expect(Kind::LParen)?;
+
+        if self.eat(Kind::RParen) {
+            return Err(oxc_diagnostics::OxcDiagnostic::error("import() requires a specifier.")
+                .with_label(self.end_span(span)));
+        }
 
         let has_in = self.ctx.has_in();
 
@@ -30,8 +39,7 @@ impl<'a> ParserImpl<'a> {
         self.bump(Kind::Comma);
 
         self.expect(Kind::RParen)?;
-
-        Ok(self.ast.expression_import(self.end_span(span), expression, arguments))
+        Ok(self.ast.expression_import(self.end_span(span), expression, arguments, phase))
     }
 
     /// Section 16.2.2 Import Declaration
@@ -52,7 +60,22 @@ impl<'a> ParserImpl<'a> {
         }
 
         // `import type ...`
-        let import_kind = self.parse_import_or_export_kind();
+        // `import source ...`
+        // `import defer ...`
+        let mut import_kind = ImportOrExportKind::Value;
+        let mut phase = None;
+        match self.cur_kind() {
+            Kind::Source if self.peek_kind().is_binding_identifier() => {
+                self.bump_any();
+                phase = Some(ImportPhase::Source);
+            }
+            Kind::Defer if self.peek_at(Kind::Star) => {
+                self.bump_any();
+                phase = Some(ImportPhase::Defer);
+            }
+            Kind::Type if self.is_ts => import_kind = self.parse_import_or_export_kind(),
+            _ => {}
+        }
 
         let specifiers = if self.at(Kind::Str) {
             // import "source"
@@ -75,6 +98,7 @@ impl<'a> ParserImpl<'a> {
                 span,
                 specifiers,
                 source,
+                phase,
                 with_clause,
                 import_kind,
             )
@@ -230,9 +254,6 @@ impl<'a> ParserImpl<'a> {
         let expression = self.parse_assignment_expression_or_higher()?;
 
         self.asi()?;
-
-        self.set_source_type_to_module_if_unambiguous();
-
         Ok(self.ast.alloc_ts_export_assignment(self.end_span(start_span), expression))
     }
 

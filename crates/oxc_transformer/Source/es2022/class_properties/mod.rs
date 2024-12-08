@@ -168,8 +168,7 @@ type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 #[derive(Debug, Default, Clone, Copy, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ClassPropertiesOptions {
-    #[serde(alias = "loose")]
-    pub(crate) set_public_class_fields: bool,
+    pub(crate) loose: bool,
 }
 
 /// Class properties transform.
@@ -227,8 +226,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         ctx: &'ctx TransformCtx<'a>,
     ) -> Self {
         // TODO: Raise error if these 2 options are inconsistent
-        let set_public_class_fields =
-            options.set_public_class_fields || ctx.assumptions.set_public_class_fields;
+        let set_public_class_fields = options.loose || ctx.assumptions.set_public_class_fields;
 
         Self {
             set_public_class_fields,
@@ -252,7 +250,8 @@ impl<'a, 'ctx> Traverse<'a> for ClassProperties<'a, 'ctx> {
     // `#[inline]` because this is a hot path
     #[inline]
     fn enter_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
-        // Note: `delete this.#prop` is an early syntax error, so no need to handle transforming it
+        // IMPORTANT: If add any other visitors here to handle private fields,
+        // also need to add them to visitor in `static_prop.rs`.
         match expr {
             // `class {}`
             Expression::ClassExpression(_) => {
@@ -276,12 +275,14 @@ impl<'a, 'ctx> Traverse<'a> for ClassProperties<'a, 'ctx> {
             }
             // `object?.#prop`
             Expression::ChainExpression(_) => {
-                // TODO: `transform_chain_expression` is no-op at present
                 self.transform_chain_expression(expr, ctx);
+            }
+            // `delete object?.#prop.xyz`
+            Expression::UnaryExpression(_) => {
+                self.transform_unary_expression(expr, ctx);
             }
             // "object.#prop`xyz`"
             Expression::TaggedTemplateExpression(_) => {
-                // TODO: `transform_tagged_template_expression` is no-op at present
                 self.transform_tagged_template_expression(expr, ctx);
             }
 

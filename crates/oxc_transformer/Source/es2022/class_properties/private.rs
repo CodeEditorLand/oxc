@@ -8,15 +8,20 @@ use oxc_ast::{ast::*, NONE};
 use oxc_span::SPAN;
 use oxc_syntax::{
     reference::{ReferenceFlags, ReferenceId},
-    symbol::{SymbolFlags, SymbolId},
+    symbol::SymbolId,
 };
-use oxc_traverse::{ast_operations::get_var_name_from_node, BoundIdentifier, TraverseCtx};
+use oxc_traverse::{
+    ast_operations::get_var_name_from_node, Ancestor, BoundIdentifier, TraverseCtx,
+};
 
 use crate::common::helper_loader::Helper;
 
 use super::{
     private_props::ResolvedPrivateProp,
-    utils::{create_assignment, create_underscore_ident_name},
+    utils::{
+        assert_expr_neither_parenthesis_nor_typescript_syntax, create_array, create_assignment,
+        create_underscore_ident_name,
+    },
     ClassProperties,
 };
 
@@ -36,12 +41,13 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let owned_expr = ctx.ast.move_expression(expr);
 
         let Expression::PrivateFieldExpression(field_expr) = owned_expr else { unreachable!() };
-        *expr = self.transform_private_field_expression_impl(field_expr, ctx);
+        *expr = self.transform_private_field_expression_impl(field_expr, false, ctx);
     }
 
     fn transform_private_field_expression_impl(
         &mut self,
         field_expr: ArenaBox<'a, PrivateFieldExpression<'a>>,
+        is_assignment: bool,
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let prop_details = self.private_props_stack.find(&field_expr.field);
@@ -83,6 +89,9 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                     ctx,
                 )
             }
+        } else if is_assignment {
+            // `_toSetter(_classPrivateFieldSet2, [_prop, object])._`
+            self.create_to_setter(prop_ident, object, span, ctx)
         } else {
             // `_classPrivateFieldGet2(_prop, object)`
             self.create_private_field_get(prop_ident, object, span, ctx)
@@ -159,16 +168,32 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let Some((callee, object)) = self.transform_private_field_callee(field_expr, ctx) else {
             return;
         };
+        Self::substitute_callee_and_insert_context(call_expr, callee, object, ctx);
+    }
 
+    /// Substitute callee and add object as first argument to call expression.
+    ///
+    /// Non-Optional:
+    ///  * `callee(...arguments)` -> `callee.call(object, ...arguments)`
+    ///
+    /// Optional:
+    ///  * `callee?.(...arguments)` -> `callee?.call(object, ...arguments)`
+    fn substitute_callee_and_insert_context(
+        call_expr: &mut CallExpression<'a>,
+        callee: Expression<'a>,
+        context: Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
         // Substitute `<callee>.call` as callee of call expression
         call_expr.callee = Expression::from(ctx.ast.member_expression_static(
             SPAN,
             callee,
             ctx.ast.identifier_name(SPAN, Atom::from("call")),
-            false,
+            // Make sure the `callee` can access `call` safely. i.e `callee?.()` -> `callee?.call()`
+            mem::replace(&mut call_expr.optional, false),
         ));
-        // Add `object` to call arguments
-        call_expr.arguments.insert(0, Argument::from(object));
+        // Insert `context` to call arguments
+        call_expr.arguments.insert(0, Argument::from(context));
     }
 
     /// Transform [`CallExpression::callee`] or [`TaggedTemplateExpression::tag`] that is a private field.
@@ -200,7 +225,9 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             self.private_props_stack.find(&field_expr.field)?;
         let prop_ident = prop_binding.create_read_expression(ctx);
 
-        let object = ctx.ast.move_expression(&mut field_expr.object);
+        // `(object.#method)()`
+        //  ^^^^^^^^^^^^^^^^ is a parenthesized expression
+        let object = ctx.ast.move_expression(field_expr.object.get_inner_expression_mut());
 
         // Get replacement for callee
         let replacement = if is_static {
@@ -676,11 +703,6 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
         let temp_var_name_base = get_var_name_from_node(field_expr);
 
-        let temp_binding = ctx.generate_uid_in_current_scope(
-            &temp_var_name_base,
-            SymbolFlags::FunctionScopedVariable,
-        );
-
         // TODO(improve-on-babel): Could avoid `move_expression` here and replace `update_expr.argument` instead.
         // Only doing this first to match the order Babel creates temp vars.
         let object = ctx.ast.move_expression(&mut field_expr.object);
@@ -739,8 +761,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             };
 
             // `_object$prop = _assertClassBrand(Class, object, _prop)._`
-            self.ctx.var_declarations.insert_var(&temp_binding, None, ctx);
-
+            let temp_binding = self.ctx.var_declarations.create_uid_var(&temp_var_name_base, ctx);
             let assignment = create_assignment(&temp_binding, get_expr, ctx);
 
             // `++_object$prop` / `_object$prop++` (reusing existing `UpdateExpression`)
@@ -776,13 +797,8 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 // Source = `object.#prop++` (postfix `++`)
 
                 // `_object$prop2 = _object$prop++`
-                let temp_binding2 = ctx.generate_uid_in_current_scope(
-                    &temp_var_name_base,
-                    SymbolFlags::FunctionScopedVariable,
-                );
-
-                self.ctx.var_declarations.insert_var(&temp_binding2, None, ctx);
-
+                let temp_binding2 =
+                    self.ctx.var_declarations.create_uid_var(&temp_var_name_base, ctx);
                 let assignment2 = create_assignment(&temp_binding2, update_expr, ctx);
 
                 // `(_object$prop = _assertClassBrand(Class, object, _prop)._, _object$prop2 = _object$prop++, _object$prop)`
@@ -825,8 +841,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             let get_call = self.create_private_field_get(prop_ident, object2, SPAN, ctx);
 
             // `_object$prop = _classPrivateFieldGet(_prop, object)`
-            self.ctx.var_declarations.insert_var(&temp_binding, None, ctx);
-
+            let temp_binding = self.ctx.var_declarations.create_uid_var(&temp_var_name_base, ctx);
             let assignment = create_assignment(&temp_binding, get_call, ctx);
 
             // `++_object$prop` / `_object$prop++` (reusing existing `UpdateExpression`)
@@ -849,13 +864,8 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             } else {
                 // Source = `object.#prop++` (postfix `++`)
                 // `_object$prop2 = _object$prop++`
-                let temp_binding2 = ctx.generate_uid_in_current_scope(
-                    &temp_var_name_base,
-                    SymbolFlags::FunctionScopedVariable,
-                );
-
-                self.ctx.var_declarations.insert_var(&temp_binding2, None, ctx);
-
+                let temp_binding2 =
+                    self.ctx.var_declarations.create_uid_var(&temp_var_name_base, ctx);
                 let assignment2 = create_assignment(&temp_binding2, update_expr, ctx);
 
                 // `(_object$prop = _classPrivateFieldGet(_prop, object), _object$prop2 = _object$prop++, _object$prop)`
@@ -886,16 +896,497 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
     //
     // `#[inline]` so that compiler sees that `expr` is an `Expression::ChainExpression`
     #[inline]
-    #[expect(clippy::unused_self)]
     pub(super) fn transform_chain_expression(
         &mut self,
         expr: &mut Expression<'a>,
-        _ctx: &mut TraverseCtx<'a>,
+        ctx: &mut TraverseCtx<'a>,
     ) {
-        let Expression::ChainExpression(_chain_expr) = expr else { unreachable!() };
+        if let Some((result, chain_expr)) = self.transform_chain_expression_impl(expr, ctx) {
+            *expr = Self::wrap_conditional_check(result, chain_expr, ctx);
+        }
+    }
 
-        // TODO: `object?.#prop`
-        // TODO: `object?.#prop()`
+    fn transform_chain_expression_impl(
+        &mut self,
+        expr: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Option<(Expression<'a>, Expression<'a>)> {
+        let Expression::ChainExpression(chain_expr) = expr else { unreachable!() };
+
+        let element = &mut chain_expr.expression;
+        if matches!(element, ChainElement::PrivateFieldExpression(_)) {
+            // The PrivateFieldExpression must be transformed, so we can convert it to a normal expression here.
+            let mut chain_expr = Self::convert_chain_expression_to_expression(expr, ctx);
+            let result =
+                self.transform_private_field_expression_of_chain_expression(&mut chain_expr, ctx);
+            Some((result, chain_expr))
+        } else if let Some(result) = self.transform_chain_expression_element(element, ctx) {
+            let chain_expr = Self::convert_chain_expression_to_expression(expr, ctx);
+            Some((result, chain_expr))
+        } else {
+            // "Entering this branch indicates that the chain element has been changed and updated directly in
+            // `element` or do nothing because haven't found any private field."
+            None
+        }
+    }
+
+    /// Transform non-private field expression of chain element.
+    ///
+    /// [`ChainElement::PrivateFieldExpression`] is handled in [`Self::transform_chain_expression`].
+    fn transform_chain_expression_element(
+        &mut self,
+        element: &mut ChainElement<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Option<Expression<'a>> {
+        match element {
+            expression @ match_member_expression!(ChainElement) => self
+                .transform_member_expression_of_chain_expression(
+                    expression.to_member_expression_mut(),
+                    ctx,
+                ),
+            ChainElement::CallExpression(call) => {
+                self.transform_call_expression_of_chain_expression(call, ctx)
+            }
+            ChainElement::TSNonNullExpression(non_null) => {
+                self.transform_chain_element_recursively(&mut non_null.expression, ctx)
+            }
+        }
+    }
+
+    /// Recursively find the first private field expression in the chain element and transform it.
+    fn transform_chain_element_recursively(
+        &mut self,
+        expr: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Option<Expression<'a>> {
+        assert_expr_neither_parenthesis_nor_typescript_syntax(expr);
+        match expr {
+            Expression::PrivateFieldExpression(_) => {
+                Some(self.transform_private_field_expression_of_chain_expression(expr, ctx))
+            }
+            match_member_expression!(Expression) => self
+                .transform_member_expression_of_chain_expression(
+                    expr.to_member_expression_mut(),
+                    ctx,
+                ),
+            Expression::CallExpression(call) => {
+                self.transform_call_expression_of_chain_expression(call, ctx)
+            }
+            _ => {
+                assert_expr_neither_parenthesis_nor_typescript_syntax(expr);
+                None
+            }
+        }
+    }
+
+    /// Go through the part of chain element and transform the object/callee of first encountered optional member/call.
+    ///
+    /// Ident:
+    ///  * `Foo?.bar`:
+    ///      - Passed-in `expr` will be mutated to `Foo.bar`
+    ///      - Returns `Foo === null || Foo === void 0 ? void 0`
+    ///
+    /// MemberExpression:
+    ///  * `Foo?.bar?.baz`:
+    ///     - Passed-in `expr` will be mutated to `_Foo$bar.baz`
+    ///     - Returns `Foo === null || Foo === void 0 ? void 0`
+    ///
+    /// CallExpression:
+    ///  See [`Self::transform_call_expression_to_bind_proper_context`]
+    ///
+    fn transform_first_optional_expression(
+        &mut self,
+        expr: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Option<Expression<'a>> {
+        let object = match expr {
+            Expression::CallExpression(call) => {
+                if call.optional {
+                    call.optional = false;
+                    if call.callee.is_member_expression() {
+                        // Special case for call expression because we need to make sure it has a proper context
+                        return Some(
+                            self.transform_call_expression_to_bind_proper_context(expr, ctx),
+                        );
+                    }
+                    &mut call.callee
+                } else {
+                    return self.transform_first_optional_expression(&mut call.callee, ctx);
+                }
+            }
+            Expression::StaticMemberExpression(member) => {
+                if member.optional {
+                    member.optional = false;
+                    &mut member.object
+                } else {
+                    return self.transform_first_optional_expression(&mut member.object, ctx);
+                }
+            }
+            Expression::ComputedMemberExpression(member) => {
+                if member.optional {
+                    member.optional = false;
+                    &mut member.object
+                } else {
+                    return self.transform_first_optional_expression(&mut member.object, ctx);
+                }
+            }
+            Expression::PrivateFieldExpression(member) => {
+                if member.optional {
+                    member.optional = false;
+                    &mut member.object
+                } else {
+                    return self.transform_first_optional_expression(&mut member.object, ctx);
+                }
+            }
+            _ => return None,
+        };
+
+        let result = self.transform_expression_to_wrap_nullish_check(object, ctx);
+        Some(result)
+    }
+
+    fn transform_private_field_expression_of_chain_expression(
+        &mut self,
+        expr: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Expression<'a> {
+        let Expression::PrivateFieldExpression(field_expr) = expr else { unreachable!() };
+
+        let object = &mut field_expr.object;
+        let left = self.transform_first_optional_expression(object, ctx).unwrap_or_else(|| {
+            // Even though no optional expression, we still need to transform the object
+            self.transform_expression_to_wrap_nullish_check(object, ctx)
+        });
+
+        if matches!(ctx.ancestor(1), Ancestor::CallExpressionCallee(_)) {
+            // `(Foo?.#m)();` -> `(Foo === null || Foo === void 0 ? void 0 : _m._.bind(Foo))();`
+            // ^^^^^^^^^^^^ is a call expression, we need to bind the proper context
+            *expr = self
+                .transform_bindable_private_field(field_expr, ctx)
+                .unwrap_or_else(|| unreachable!());
+        } else {
+            self.transform_private_field_expression(expr, ctx);
+        }
+
+        left
+    }
+
+    fn transform_member_expression_of_chain_expression(
+        &mut self,
+        member: &mut MemberExpression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Option<Expression<'a>> {
+        let is_optional = member.optional();
+        let object = member.object_mut();
+        let result = self.transform_chain_element_recursively(object, ctx)?;
+        if is_optional {
+            // `o?.Foo.#self.self?.self.unicorn;` -> `(result ? void 0 : object)?.self.unicorn`
+            //  ^^^^^^^^^^^^^^^^^ the object has transformed, if the current member is optional,
+            //                    then we need to wrap it to a conditional expression
+            let object_owner = ctx.ast.move_expression(object);
+            *object = Self::wrap_conditional_check(result, object_owner, ctx);
+            None
+        } else {
+            Some(result)
+        }
+    }
+
+    fn transform_call_expression_of_chain_expression(
+        &mut self,
+        call_expr: &mut CallExpression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Option<Expression<'a>> {
+        let is_optional = call_expr.optional;
+        let callee = call_expr.callee.get_inner_expression_mut();
+        if matches!(callee, Expression::PrivateFieldExpression(_)) {
+            let result = self.transform_first_optional_expression(callee, ctx);
+            // If the `callee` has no optional expression, we need to transform it using `transform_call_expression_impl` directly.
+            // `Foo.bar.#m?.();` -> `_assertClassBrand(Foo, _Foo$bar = Foo.bar, _m)._?.call(_Foo$bar);`
+            //          ^^^^ only the private field is optional
+            // Move out parenthesis and typescript syntax
+            call_expr.callee = ctx.ast.move_expression(callee);
+            self.transform_call_expression_impl(call_expr, ctx);
+            return result;
+        }
+
+        let result = self.transform_chain_element_recursively(callee, ctx)?;
+        if !is_optional {
+            return Some(result);
+        }
+
+        // `o?.Foo.#self.getSelf?.()?.self.#m();`
+        //               ^^^^^^^^^^^  this is a optional function call, to make sure it has a proper context,
+        //                            we also need to assign `o?.Foo.#self` to a temp variable, and
+        //                            then use it as a first argument of `getSelf` call.
+        //
+        // TODO(improve-on-babel): Consider remove this logic, because it seems no runtime behavior change.
+        let object = callee.to_member_expression_mut().object_mut();
+        let (assignment, context) = self.duplicate_object(ctx.ast.move_expression(object), ctx);
+        *object = assignment;
+        let callee = ctx.ast.move_expression(&mut call_expr.callee);
+        let callee = Self::wrap_conditional_check(result, callee, ctx);
+        Self::substitute_callee_and_insert_context(call_expr, callee, context, ctx);
+
+        None
+    }
+
+    /// Transform expression to wrap nullish check.
+    ///
+    /// Returns:
+    ///   * Bound Identifier: `A` -> `A === null || A === void 0`
+    ///   * `this`: `this` -> `this === null || this === void 0`
+    ///   * Unbound Identifier or anything else: `A.B` -> `(_A$B = A.B) === null || _A$B === void 0`
+    ///
+    /// NOTE: This method will mutate the passed-in `object` to a second copy of
+    /// [`Self::duplicate_object_twice`]'s return.
+    fn transform_expression_to_wrap_nullish_check(
+        &mut self,
+        object: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Expression<'a> {
+        let owned_object = ctx.ast.move_expression(object.get_inner_expression_mut());
+        let owned_object =
+            Self::ensure_optional_expression_wrapped_by_chain_expression(owned_object, ctx);
+        let (assignment, reference1, reference2) = self.duplicate_object_twice(owned_object, ctx);
+        *object = reference1;
+        self.wrap_nullish_check(assignment, reference2, ctx)
+    }
+
+    /// Converts chain expression to expression
+    ///
+    /// - [ChainElement::CallExpression] -> [Expression::CallExpression]
+    /// - [ChainElement::StaticMemberExpression] -> [Expression::StaticMemberExpression]
+    /// - [ChainElement::ComputedMemberExpression] -> [Expression::ComputedMemberExpression]
+    /// - [ChainElement::PrivateFieldExpression] -> [Expression::PrivateFieldExpression]
+    /// - [ChainElement::TSNonNullExpression] -> [TSNonNullExpression::expression]
+    //
+    // `#[inline]` so that compiler sees that `expr` is an [`Expression::ChainExpression`].
+    #[inline]
+    fn convert_chain_expression_to_expression(
+        expr: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Expression<'a> {
+        let Expression::ChainExpression(chain_expr) = ctx.ast.move_expression(expr) else {
+            unreachable!()
+        };
+        match chain_expr.unbox().expression {
+            element @ match_member_expression!(ChainElement) => {
+                Expression::from(element.into_member_expression())
+            }
+            ChainElement::CallExpression(call) => Expression::CallExpression(call),
+            ChainElement::TSNonNullExpression(non_null) => non_null.unbox().expression,
+        }
+    }
+
+    /// Ensure that the expression is wrapped by a chain expression.
+    ///
+    /// If the given expression contains optional expression, it will be wrapped by
+    /// a chain expression, this way we can ensure the remain optional expression can
+    /// be handled by optional-chaining plugin correctly.
+    fn ensure_optional_expression_wrapped_by_chain_expression(
+        expr: Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Expression<'a> {
+        if Self::has_optional_expression(&expr) {
+            let chain_element = match expr {
+                Expression::CallExpression(call) => ChainElement::CallExpression(call),
+                expr @ match_member_expression!(Expression) => {
+                    ChainElement::from(expr.into_member_expression())
+                }
+                _ => unreachable!(),
+            };
+            ctx.ast.expression_chain(SPAN, chain_element)
+        } else {
+            expr
+        }
+    }
+
+    /// Recursively check if the expression has optional expression.
+    #[inline]
+    fn has_optional_expression(expr: &Expression<'a>) -> bool {
+        let mut expr = expr;
+        loop {
+            match expr {
+                Expression::CallExpression(call) => {
+                    if call.optional {
+                        return true;
+                    }
+                    expr = call.callee.get_inner_expression();
+                }
+                Expression::StaticMemberExpression(member) => {
+                    if member.optional {
+                        return true;
+                    }
+                    expr = &member.object;
+                }
+                Expression::ComputedMemberExpression(member) => {
+                    if member.optional {
+                        return true;
+                    }
+                    expr = &member.object;
+                }
+                Expression::PrivateFieldExpression(member) => {
+                    if member.optional {
+                        return true;
+                    }
+                    expr = &member.object;
+                }
+                _ => return false,
+            }
+        }
+    }
+
+    /// Transform call expression to bind a proper context.
+    ///
+    /// * Callee without a private field:
+    ///  `Foo?.bar()?.zoo?.().#x;`
+    ///    -> `(_Foo$bar$zoo = (_Foo$bar = Foo?.bar())?.zoo) === null || _Foo$bar$zoo === void 0 ? void 0
+    ///   : babelHelpers.assertClassBrand(Foo, _Foo$bar$zoo.call(_Foo$bar), _x)._;`
+    ///
+    /// * Callee has a private field:
+    ///  `o?.Foo.#self.getSelf?.().#m?.();`
+    ///    -> `(_ref = o === null || o === void 0 ? void 0 : (_babelHelpers$assertC =
+    ///       babelHelpers.assertClassBrand(Foo, o.Foo, _self)._).getSelf) === null ||
+    ///       _ref === void 0 ? void 0 : babelHelpers.assertClassBrand(Foo, _ref$call
+    ///       = _ref.call(_babelHelpers$assertC), _m)._?.call(_ref$call);`
+    ///
+    fn transform_call_expression_to_bind_proper_context(
+        &mut self,
+        expr: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Expression<'a> {
+        let Expression::CallExpression(call) = expr else { unreachable!() };
+
+        let callee = &mut call.callee;
+        // `Foo?.bar()?.zoo?.()`
+        // ^^^^^^^^^^^^^^^^^ callee is a member expression
+        // ^^^^^^^^^^^ object
+        let object = callee.to_member_expression_mut().object_mut();
+
+        let context = if let Some(result) = self.transform_chain_element_recursively(object, ctx) {
+            // `o?.Foo.#self.getSelf?.().#m?.();` -> `(_ref = o === null || o === void 0 ? void 0 : (_babelHelpers$assertC =
+            //                                        babelHelpers.assertClassBrand(Foo, o.Foo, _self)._).getSelf)`
+            // ^^^^^^^^^^^^^^^^^^^^^^ to make sure get `getSelf` call has a proper context, we need to assign
+            //                        the parent of callee (i.e `o?.Foo.#self`) to a temp variable,
+            //                        and then use it as a first argument of `_ref.call`.
+            let (assignment, context) = self.duplicate_object(ctx.ast.move_expression(object), ctx);
+            *object = assignment;
+            *callee = Self::wrap_conditional_check(result, ctx.ast.move_expression(callee), ctx);
+            context
+        } else {
+            // `Foo?.bar()?.zoo?.().#x;` -> `(_Foo$bar$zoo = (_Foo$bar = Foo?.bar())?.zoo)`
+            // ^^^^^^^^^^^^^^^^ this is a optional function call, to make sure it has a proper context,
+            //                  we also need to assign `Foo?.bar()` to a temp variable, and then use
+            //                  it as a first argument of `_Foo$bar$zoo`.
+            let (assignment, context) = self.duplicate_object(ctx.ast.move_expression(object), ctx);
+            *object = assignment;
+            context
+        };
+
+        // After the below transformation, the `callee` will be a temp variable.
+        let result = self.transform_expression_to_wrap_nullish_check(callee, ctx);
+        let callee_owner = ctx.ast.move_expression(callee);
+        Self::substitute_callee_and_insert_context(call, callee_owner, context, ctx);
+        result
+    }
+
+    /// Returns `left === null`
+    fn wrap_null_check(&self, left: Expression<'a>, ctx: &TraverseCtx<'a>) -> Expression<'a> {
+        let operator = if self.ctx.assumptions.no_document_all {
+            BinaryOperator::Equality
+        } else {
+            BinaryOperator::StrictEquality
+        };
+        ctx.ast.expression_binary(SPAN, left, operator, ctx.ast.expression_null_literal(SPAN))
+    }
+
+    /// Returns `left === void 0`
+    fn wrap_void0_check(left: Expression<'a>, ctx: &TraverseCtx<'a>) -> Expression<'a> {
+        let operator = BinaryOperator::StrictEquality;
+        ctx.ast.expression_binary(SPAN, left, operator, ctx.ast.void_0(SPAN))
+    }
+
+    /// Returns `left1 === null || left2 === void 0`
+    fn wrap_nullish_check(
+        &self,
+        left1: Expression<'a>,
+        left2: Expression<'a>,
+        ctx: &TraverseCtx<'a>,
+    ) -> Expression<'a> {
+        let null_check = self.wrap_null_check(left1, ctx);
+        if self.ctx.assumptions.no_document_all {
+            null_check
+        } else {
+            let void0_check = Self::wrap_void0_check(left2, ctx);
+            ctx.ast.expression_logical(SPAN, null_check, LogicalOperator::Or, void0_check)
+        }
+    }
+
+    /// Returns `test ? void 0 : alternative`
+    fn wrap_conditional_check(
+        test: Expression<'a>,
+        alternative: Expression<'a>,
+        ctx: &TraverseCtx<'a>,
+    ) -> Expression<'a> {
+        ctx.ast.expression_conditional(SPAN, test, ctx.ast.void_0(SPAN), alternative)
+    }
+
+    /// Transform chain expression inside unary expression.
+    ///
+    /// Instance prop:
+    /// * `delete object?.#prop.xyz`
+    ///   -> `object === null || object === void 0 ? true : delete _classPrivateFieldGet(_prop, object).xyz;`
+    /// * `delete object?.#prop?.xyz;`
+    ///   -> `delete (object === null || object === void 0 ? void 0 : _classPrivateFieldGet(_prop, object))?.xyz;`
+    ///
+    /// Static prop:
+    /// * `delete object?.#prop.xyz`
+    ///   -> `object === null || object === void 0 ? true : delete _assertClassBrand(Foo, object, _prop)._.xyz;`
+    /// * `delete object?.#prop?.xyz;`
+    ///   -> `delete (object === null || object === void 0 ? void 0 : _assertClassBrand(Foo, object, _prop)._)?.xyz;`
+    //
+    // `#[inline]` so that compiler sees that `expr` is an `Expression::UnaryExpression`,
+    // and make bailing out if is not `delete <chain expression>` (it rarely will be) a fast path without
+    // cost of a function call.
+    #[inline]
+    pub(super) fn transform_unary_expression(
+        &mut self,
+        expr: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+        let Expression::UnaryExpression(unary_expr) = expr else { unreachable!() };
+
+        if unary_expr.operator == UnaryOperator::Delete
+            && matches!(unary_expr.argument, Expression::ChainExpression(_))
+        {
+            self.transform_unary_expression_impl(expr, ctx);
+        }
+    }
+
+    // Note: This is also called by visitor in `static_prop.rs`
+    pub(super) fn transform_unary_expression_impl(
+        &mut self,
+        expr: &mut Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+        let Expression::UnaryExpression(unary_expr) = expr else { unreachable!() };
+        debug_assert!(unary_expr.operator == UnaryOperator::Delete);
+        debug_assert!(matches!(unary_expr.argument, Expression::ChainExpression(_)));
+
+        if let Some((result, chain_expr)) =
+            self.transform_chain_expression_impl(&mut unary_expr.argument, ctx)
+        {
+            *expr = ctx.ast.expression_conditional(
+                unary_expr.span,
+                result,
+                ctx.ast.expression_boolean_literal(SPAN, true),
+                {
+                    // We still need this unary expr, but it needs to be used as the alternative of the conditional
+                    unary_expr.argument = chain_expr;
+                    ctx.ast.move_expression(expr)
+                },
+            );
+        }
     }
 
     /// Transform tagged template expression where tag is a private field.
@@ -923,17 +1414,17 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         let Expression::PrivateFieldExpression(field_expr) = &mut tagged_temp_expr.tag else {
             return;
         };
-        if let Some(tag) = self.transform_tagged_template_expression_impl(field_expr, ctx) {
+        if let Some(tag) = self.transform_bindable_private_field(field_expr, ctx) {
             tagged_temp_expr.tag = tag;
         };
     }
 
-    pub(super) fn transform_tagged_template_expression_impl(
+    fn transform_bindable_private_field(
         &mut self,
         field_expr: &mut PrivateFieldExpression<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) -> Option<Expression<'a>> {
-        let (callee, object) = self.transform_private_field_callee(field_expr, ctx)?;
+        let (callee, context) = self.transform_private_field_callee(field_expr, ctx)?;
 
         // Return `<callee>.bind(object)`, to be substituted as tag of tagged template expression
         let callee = Expression::from(ctx.ast.member_expression_static(
@@ -942,7 +1433,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             ctx.ast.identifier_name(SPAN, Atom::from("bind")),
             false,
         ));
-        let arguments = ctx.ast.vec1(Argument::from(object));
+        let arguments = ctx.ast.vec1(Argument::from(context));
         Some(ctx.ast.expression_call(field_expr.span, callee, NONE, arguments, false))
     }
 
@@ -974,25 +1465,25 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         }
     }
 
-    #[expect(clippy::unused_self)]
     fn transform_assignment_target_impl(
         &mut self,
         target: &mut AssignmentTarget<'a>,
-        _ctx: &mut TraverseCtx<'a>,
+        ctx: &mut TraverseCtx<'a>,
     ) {
-        let AssignmentTarget::PrivateFieldExpression(_private_field) = target else {
+        let AssignmentTarget::PrivateFieldExpression(private_field) =
+            ctx.ast.move_assignment_target(target)
+        else {
             unreachable!()
         };
-
-        // TODO: `[object.#prop] = value`
-        // TODO: `({x: object.#prop} = value)`
+        let expr = self.transform_private_field_expression_impl(private_field, true, ctx);
+        *target = AssignmentTarget::from(expr.into_member_expression());
     }
 
     /// Duplicate object to be used in get/set pair.
     ///
     /// If `object` may have side effects, create a temp var `_object` and assign to it.
     ///
-    /// * `this` -> (`this`, `this`)
+    /// * `this` -> `this`, `this`
     /// * Bound identifier `object` -> `object`, `object`
     /// * Unbound identifier `object` -> `_object = object`, `_object`
     /// * Anything else `foo()` -> `_foo = foo()`, `_foo`
@@ -1003,6 +1494,48 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         object: Expression<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) -> (Expression<'a>, Expression<'a>) {
+        let (object1, duplicates) = self.duplicate_object_multiple::<1>(object, ctx);
+        let [object2] = duplicates;
+        (object1, object2)
+    }
+
+    /// Duplicate object to be used in triple.
+    ///
+    /// If `object` may have side effects, create a temp var `_object` and assign to it.
+    ///
+    /// * `this` -> `this`, `this`, `this`
+    /// * Bound identifier `object` -> `object`, `object`, `object`
+    /// * Unbound identifier `object` -> `_object = object`, `_object`, `_object`
+    /// * Anything else `foo()` -> `_foo = foo()`, `_foo`, `_foo`
+    ///
+    /// Returns 3 `Expression`s. The first must be inserted into output first.
+    fn duplicate_object_twice(
+        &mut self,
+        object: Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> (Expression<'a>, Expression<'a>, Expression<'a>) {
+        let (object1, duplicates) = self.duplicate_object_multiple::<2>(object, ctx);
+        let [object2, object3] = duplicates;
+        (object1, object2, object3)
+    }
+
+    /// Duplicate object `N + 1` times.
+    ///
+    /// If `object` may have side effects, create a temp var `_object` and assign to it.
+    ///
+    /// * `this` -> `this`, [`this`; N]
+    /// * Bound identifier `object` -> `object`, [`object`; N]
+    /// * Unbound identifier `object` -> `_object = object`, [`_object`; N]
+    /// * Anything else `foo()` -> `_foo = foo()`, [`_foo`; N]
+    ///
+    /// Returns `N + 1` `Expression`s. The first must be inserted into output first.
+    fn duplicate_object_multiple<const N: usize>(
+        &mut self,
+        object: Expression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> (Expression<'a>, [Expression<'a>; N]) {
+        assert_expr_neither_parenthesis_nor_typescript_syntax(&object);
+
         // TODO: Handle if in a function's params
         let temp_var_binding = match &object {
             Expression::Identifier(ident) => {
@@ -1011,38 +1544,29 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 if let Some(symbol_id) = reference.symbol_id() {
                     // Reading bound identifier cannot have side effects, so no need for temp var
                     let binding = BoundIdentifier::new(ident.name.clone(), symbol_id);
-
-                    let object1 = binding.create_spanned_read_expression(ident.span, ctx);
-
-                    return (object1, object);
+                    let duplicates =
+                        create_array(|| binding.create_spanned_read_expression(ident.span, ctx));
+                    return (object, duplicates);
                 }
 
                 // Previously `x += 1` (`x` read + write), but moving to `_x = x` (`x` read only)
                 *reference.flags_mut() = ReferenceFlags::Read;
 
-                ctx.generate_uid_in_current_scope(&ident.name, SymbolFlags::FunctionScopedVariable)
+                self.ctx.var_declarations.create_uid_var(&ident.name, ctx)
             }
 
             Expression::ThisExpression(this) => {
                 // Reading `this` cannot have side effects, so no need for temp var
-                let object1 = ctx.ast.expression_this(this.span);
-
-                return (object1, object);
+                let duplicates = create_array(|| ctx.ast.expression_this(this.span));
+                return (object, duplicates);
             }
-
-            _ => ctx.generate_uid_in_current_scope_based_on_node(
-                &object,
-                SymbolFlags::FunctionScopedVariable,
-            ),
+            _ => self.ctx.var_declarations.create_uid_var_based_on_node(&object, ctx),
         };
 
-        self.ctx.var_declarations.insert_var(&temp_var_binding, None, ctx);
-
         let object1 = create_assignment(&temp_var_binding, object, ctx);
+        let references = create_array(|| temp_var_binding.create_read_expression(ctx));
 
-        let object2 = temp_var_binding.create_read_expression(ctx);
-
-        (object1, object2)
+        (object1, references)
     }
 
     /// `_classPrivateFieldGet2(_prop, object)`
@@ -1080,6 +1604,30 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             ]),
             ctx,
         )
+    }
+
+    /// `_toSetter(_classPrivateFieldSet2, [_prop, object])._`
+    fn create_to_setter(
+        &self,
+        prop_ident: Expression<'a>,
+        object: Expression<'a>,
+        span: Span,
+        ctx: &mut TraverseCtx<'a>,
+    ) -> Expression<'a> {
+        let arguments = ctx.ast.expression_array(
+            SPAN,
+            ctx.ast.vec_from_array([
+                ArrayExpressionElement::from(prop_ident),
+                ArrayExpressionElement::from(object),
+            ]),
+            None,
+        );
+        let arguments = ctx.ast.vec_from_array([
+            Argument::from(self.ctx.helper_load(Helper::ClassPrivateFieldSet2, ctx)),
+            Argument::from(arguments),
+        ]);
+        let call = self.ctx.helper_call_expr(Helper::ToSetter, span, arguments, ctx);
+        Self::create_underscore_member_expression(call, span, ctx)
     }
 
     /// `_assertClassBrand(Class, object, value)` or `_assertClassBrand(Class, object, _prop)`

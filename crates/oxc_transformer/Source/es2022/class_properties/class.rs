@@ -120,7 +120,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 // Insert `var _prop;` declaration.
                 // Do it here rather than when binding was created to maintain same order of `var`
                 // declarations as Babel. `c = class C { #x = 1; static y = 2; }` -> `var _C, _x;`
-                self.ctx.var_declarations.insert_var(&prop.binding, None, ctx);
+                self.ctx.var_declarations.insert_var(&prop.binding, ctx);
 
                 if prop.is_static {
                     return None;
@@ -143,7 +143,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
         if let Some(binding) = &self.class_bindings.temp {
             // Insert `var _Class` statement, if it wasn't already in `transform_class`
             if !self.temp_var_is_created {
-                self.ctx.var_declarations.insert_var(binding, None, ctx);
+                self.ctx.var_declarations.insert_var(binding, ctx);
             }
 
             // `_Class = class {}`
@@ -195,7 +195,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             if let Some(ident) = &class.id {
                 // Insert `var _Class` statement, if it wasn't already in `transform_class`
                 if !self.temp_var_is_created {
-                    self.ctx.var_declarations.insert_var(temp_binding, None, ctx);
+                    self.ctx.var_declarations.insert_var(temp_binding, ctx);
                 }
 
                 // Insert `_Class = Class` after class.
@@ -357,7 +357,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
                 // TODO(improve-on-babel): Inserting the temp var `var _Class` statement here is only
                 // to match Babel's output. It'd be simpler just to insert it at the end and get rid of
                 // `temp_var_is_created` that tracks whether it's done already or not.
-                self.ctx.var_declarations.insert_var(&temp_binding, None, ctx);
+                self.ctx.var_declarations.insert_var(&temp_binding, ctx);
             }
             Some(temp_binding)
         } else {
@@ -766,6 +766,16 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
 
         // Bound vars and literals do not need temp var - return unchanged.
         // e.g. `let x = 'x'; class C { [x] = 1; }` or `class C { ['x'] = 1; }`
+        //
+        // `this` does not have side effects, but it needs a temp var anyway, because `this` in computed
+        // key and `this` within class constructor resolve to different `this` bindings.
+        // So we need to create a temp var outside of the class to get the correct `this`.
+        // `class C { [this] = 1; }`
+        // -> `let _this; _this = this; class C { constructor() { this[_this] = 1; } }`
+        //
+        // TODO(improve-on-babel): Can avoid the temp var if key is for a static prop/method,
+        // as in that case the usage of `this` stays outside the class.
+        //
         // TODO: Do fuller analysis to detect expressions which cannot have side effects e.g. `'x' + 'y'`.
         let cannot_have_side_effects = match &key {
             Expression::BooleanLiteral(_)
@@ -773,8 +783,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
             | Expression::NumericLiteral(_)
             | Expression::BigIntLiteral(_)
             | Expression::RegExpLiteral(_)
-            | Expression::StringLiteral(_)
-            | Expression::ThisExpression(_) => true,
+            | Expression::StringLiteral(_) => true,
             Expression::Identifier(ident) => {
                 // Cannot have side effects if is bound.
                 // Additional check that the var is not mutated is required for cases like

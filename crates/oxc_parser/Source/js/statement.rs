@@ -51,7 +51,6 @@ impl<'a> ParserImpl<'a> {
 
             if is_top_level {
                 if let Some(module_decl) = stmt.as_module_declaration() {
-                    self.set_source_type_to_module_if_unambiguous();
                     self.module_record_builder.visit_module_declaration(module_decl);
                 }
             }
@@ -99,6 +98,10 @@ impl<'a> ParserImpl<'a> {
             self.eat_decorators()?;
         }
 
+        // For performance reasons, match orders are:
+        // 1. plain if check
+        // 2. check current token
+        // 3. peek token
         match self.cur_kind() {
             Kind::LCurly => self.parse_block_statement(),
             Kind::Semicolon => Ok(self.parse_empty_statement()),
@@ -113,19 +116,19 @@ impl<'a> ParserImpl<'a> {
             Kind::Try => self.parse_try_statement(),
             Kind::Debugger => self.parse_debugger_statement(),
             Kind::Class => self.parse_class_statement(stmt_ctx, start_span),
-            Kind::Import if !matches!(self.peek_kind(), Kind::Dot | Kind::LParen) => {
-                self.parse_import_declaration()
-            }
-
             Kind::Export => self.parse_export_declaration(),
             // [+Return] ReturnStatement[?Yield, ?Await]
             Kind::Return => self.parse_return_statement(),
             Kind::Var => self.parse_variable_statement(stmt_ctx),
+            // Fast path
+            Kind::Function => self.parse_function_declaration(stmt_ctx),
+            Kind::Let if !self.cur_token().escaped() => self.parse_let(stmt_ctx),
+            Kind::Import if !matches!(self.peek_kind(), Kind::Dot | Kind::LParen) => {
+                self.parse_import_declaration()
+            }
             Kind::Const if !(self.is_ts && self.is_at_enum_declaration()) => {
                 self.parse_variable_statement(stmt_ctx)
             }
-
-            Kind::Let if !self.cur_token().escaped() => self.parse_let(stmt_ctx),
             Kind::Await
                 if self.peek_kind() == Kind::Using && self.nth_kind(2).is_binding_identifier() =>
             {
@@ -133,7 +136,9 @@ impl<'a> ParserImpl<'a> {
             }
 
             Kind::Using if self.peek_kind().is_binding_identifier() => self.parse_using(),
-            _ if self.at_function_with_async() => self.parse_function_declaration(stmt_ctx),
+            Kind::Async if self.peek_at(Kind::Function) && !self.peek_token().is_on_new_line => {
+                self.parse_function_declaration(stmt_ctx)
+            }
             _ if self.is_ts && self.at_start_of_ts_declaration() => {
                 self.parse_ts_declaration_statement(start_span)
             }
@@ -278,7 +283,15 @@ impl<'a> ParserImpl<'a> {
         self.bump_any(); // bump `for`
 
         // [+Await]
-        let r#await = self.ctx.has_await() && self.eat(Kind::Await);
+        let r#await = if self.at(Kind::Await) {
+            if !self.ctx.has_await() {
+                self.error(diagnostics::await_expression(self.cur_token().span()));
+            }
+            self.bump_any();
+            true
+        } else {
+            false
+        };
 
         self.expect(Kind::LParen)?;
 

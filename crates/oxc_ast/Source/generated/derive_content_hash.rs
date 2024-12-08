@@ -1390,6 +1390,7 @@ impl ContentHash for ImportExpression<'_> {
         ContentHash::content_hash(&self.source, state);
 
         ContentHash::content_hash(&self.arguments, state);
+        ContentHash::content_hash(&self.phase, state);
     }
 }
 
@@ -1398,10 +1399,16 @@ impl ContentHash for ImportDeclaration<'_> {
         ContentHash::content_hash(&self.specifiers, state);
 
         ContentHash::content_hash(&self.source, state);
-
+        ContentHash::content_hash(&self.phase, state);
         ContentHash::content_hash(&self.with_clause, state);
 
         ContentHash::content_hash(&self.import_kind, state);
+    }
+}
+
+impl ContentHash for ImportPhase {
+    fn content_hash<H: Hasher>(&self, state: &mut H) {
+        ContentHash::content_hash(&discriminant(self), state);
     }
 }
 

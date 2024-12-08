@@ -40,10 +40,24 @@ pub struct Comment {
 
 #[napi(object)]
 pub struct EcmaScriptModule {
+    /// Has ESM syntax.
+    ///
+    /// i.e. `import` and `export` statements, and `import.meta`.
+    ///
+    /// Dynamic imports `import('foo')` are ignored since they can be used in non-ESM files.
+    pub has_module_syntax: bool,
     /// Import Statements.
     pub static_imports: Vec<StaticImport>,
     /// Export Statements.
     pub static_exports: Vec<StaticExport>,
+    /// Span positions` of `import.meta`
+    pub import_metas: Vec<Span>,
+}
+
+#[napi(object)]
+pub struct Span {
+    pub start: u32,
+    pub end: u32,
 }
 
 #[napi(object)]

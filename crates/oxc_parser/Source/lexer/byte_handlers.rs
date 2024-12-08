@@ -609,6 +609,7 @@ ascii_identifier_handler!(L_D(id_without_first_char) match id_without_first_char
     "eclare" => Kind::Declare,
     "efault" => Kind::Default,
     "ebugger" => Kind::Debugger,
+    "efer" => Kind::Defer,
     _ => Kind::Ident,
 });
 
@@ -704,6 +705,7 @@ ascii_identifier_handler!(L_S(id_without_first_char) match id_without_first_char
     "ymbol" => Kind::Symbol,
     "tring" => Kind::String,
     "atisfies" => Kind::Satisfies,
+    "ource" => Kind::Source,
     _ => Kind::Ident,
 });
 

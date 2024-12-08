@@ -5,7 +5,7 @@ use oxc_ecmascript::{
 };
 use oxc_span::{GetSpan, SPAN};
 use oxc_syntax::{
-    number::{NumberBase, ToJsString},
+    number::NumberBase,
     operator::{BinaryOperator, LogicalOperator},
 };
 use oxc_traverse::{traverse_mut_with_ctx, Ancestor, ReusableTraverseCtx, Traverse, TraverseCtx};
@@ -350,7 +350,7 @@ impl<'a, 'b> PeepholeFoldConstants {
                     let number_literal_expr = ctx.ast.expression_numeric_literal(
                         right_expr.span(),
                         num,
-                        num.to_js_string(),
+                        None,
                         if num.fract() == 0.0 { NumberBase::Decimal } else { NumberBase::Float },
                     );
 
@@ -373,7 +373,7 @@ impl<'a, 'b> PeepholeFoldConstants {
                     let number_literal_expr = ctx.ast.expression_numeric_literal(
                         left_expr.span(),
                         num,
-                        num.to_js_string(),
+                        None,
                         if num.fract() == 0.0 { NumberBase::Decimal } else { NumberBase::Float },
                     );
 

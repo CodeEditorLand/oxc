@@ -2,27 +2,21 @@
 // To edit this generated file you have to edit `tasks/ast_tools/src/generators/typescript.rs`
 
 export interface BooleanLiteral extends Span {
-	type: "Literal";
-
-	value: boolean;
-
-	raw: string;
+  type: 'Literal';
+  value: boolean;
+  raw: string | null;
 }
 
 export interface NullLiteral extends Span {
-	type: "Literal";
-
-	value: null;
-
-	raw: "null";
+  type: 'Literal';
+  value: null;
+  raw: 'null' | null;
 }
 
 export interface NumericLiteral extends Span {
-	type: "Literal";
-
-	value: number;
-
-	raw: string;
+  type: 'Literal';
+  value: number;
+  raw: string | null;
 }
 
 export interface StringLiteral extends Span {
@@ -34,23 +28,17 @@ export interface StringLiteral extends Span {
 }
 
 export interface BigIntLiteral extends Span {
-	type: "Literal";
-
-	raw: string;
-
-	value: null;
-
-	bigint: string;
+  type: 'Literal';
+  raw: string | null;
+  value: null;
+  bigint: string;
 }
 
 export interface RegExpLiteral extends Span {
-	type: "Literal";
-
-	raw: string;
-
-	value: {} | null;
-
-	regex: { pattern: string; flags: string };
+  type: 'Literal';
+  raw: string | null;
+  value: {} | null;
+  regex: { pattern: string; flags: string };
 }
 
 export interface RegExp {
@@ -1146,29 +1134,24 @@ export interface AccessorProperty extends Span {
 }
 
 export interface ImportExpression extends Span {
-	type: "ImportExpression";
-
-	source: Expression;
-
-	arguments: Array<Expression>;
+  type: 'ImportExpression';
+  source: Expression;
+  arguments: Array<Expression>;
+  phase: ImportPhase | null;
 }
 
 export interface ImportDeclaration extends Span {
-	type: "ImportDeclaration";
-
-	specifiers: Array<ImportDeclarationSpecifier> | null;
-
-	source: StringLiteral;
-
-	withClause: WithClause | null;
-
-	importKind: ImportOrExportKind;
+  type: 'ImportDeclaration';
+  specifiers: Array<ImportDeclarationSpecifier> | null;
+  source: StringLiteral;
+  phase: ImportPhase | null;
+  withClause: WithClause | null;
+  importKind: ImportOrExportKind;
 }
 
-export type ImportDeclarationSpecifier =
-	| ImportSpecifier
-	| ImportDefaultSpecifier
-	| ImportNamespaceSpecifier;
+export type ImportPhase = 'source' | 'defer';
+
+export type ImportDeclarationSpecifier = ImportSpecifier | ImportDefaultSpecifier | ImportNamespaceSpecifier;
 
 export interface ImportSpecifier extends Span {
 	type: "ImportSpecifier";

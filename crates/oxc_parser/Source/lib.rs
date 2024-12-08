@@ -417,7 +417,7 @@ impl<'a> ParserImpl<'a> {
     /// Recoverable errors are stored inside `errors`.
     #[inline]
     pub fn parse(mut self) -> ParserReturn<'a> {
-        let (program, panicked) = match self.parse_program() {
+        let (mut program, panicked) = match self.parse_program() {
             Ok(program) => (program, false),
             Err(error) => {
                 self.error(self.overlong_error().unwrap_or(error));
@@ -463,6 +463,16 @@ impl<'a> ParserImpl<'a> {
 
         let irregular_whitespaces =
             self.lexer.trivia_builder.irregular_whitespaces.into_boxed_slice();
+
+        let source_type = program.source_type;
+        if source_type.is_unambiguous() {
+            program.source_type = if module_record.has_module_syntax {
+                source_type.with_module(true)
+            } else {
+                source_type.with_script(true)
+            };
+        }
+
         ParserReturn {
             program,
             module_record,
@@ -499,8 +509,6 @@ impl<'a> ParserImpl<'a> {
 
         let (directives, statements) =
             self.parse_directives_and_statements(/* is_top_level */ true)?;
-
-        self.set_source_type_to_script_if_unambiguous();
 
         let span = Span::new(0, self.source_text.len() as u32);
 
@@ -591,18 +599,6 @@ impl<'a> ParserImpl<'a> {
 
     fn errors_count(&self) -> usize {
         self.errors.len() + self.lexer.errors.len()
-    }
-
-    fn set_source_type_to_module_if_unambiguous(&mut self) {
-        if self.source_type.is_unambiguous() {
-            self.source_type = self.source_type.with_module(true);
-        }
-    }
-
-    fn set_source_type_to_script_if_unambiguous(&mut self) {
-        if self.source_type.is_unambiguous() {
-            self.source_type = self.source_type.with_script(true);
-        }
     }
 
     #[inline]

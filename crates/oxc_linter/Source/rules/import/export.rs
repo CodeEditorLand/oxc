@@ -58,6 +58,9 @@ impl Rule for Export {
         let mut visited = FxHashSet::default();
 
         module_record.star_export_entries.iter().for_each(|star_export_entry| {
+            if star_export_entry.is_type {
+                return;
+            }
             let mut export_names = FxHashSet::default();
 
             let Some(module_request) = &star_export_entry.module_request else {
@@ -307,6 +310,7 @@ fn test() {
 
                 export {Bar as default};
             "#),
+            "export type * from './export-props.js'",
         ];
 
         let fail = vec![

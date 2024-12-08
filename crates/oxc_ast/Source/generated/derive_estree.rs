@@ -2167,7 +2167,7 @@ impl Serialize for ImportExpression<'_> {
         map.serialize_entry("source", &self.source)?;
 
         map.serialize_entry("arguments", &self.arguments)?;
-
+        map.serialize_entry("phase", &self.phase)?;
         map.end()
     }
 }
@@ -2183,12 +2183,21 @@ impl Serialize for ImportDeclaration<'_> {
         map.serialize_entry("specifiers", &self.specifiers)?;
 
         map.serialize_entry("source", &self.source)?;
-
+        map.serialize_entry("phase", &self.phase)?;
         map.serialize_entry("withClause", &self.with_clause)?;
 
         map.serialize_entry("importKind", &self.import_kind)?;
 
         map.end()
+    }
+}
+
+impl Serialize for ImportPhase {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match *self {
+            ImportPhase::Source => serializer.serialize_unit_variant("ImportPhase", 0u32, "source"),
+            ImportPhase::Defer => serializer.serialize_unit_variant("ImportPhase", 1u32, "defer"),
+        }
     }
 }
 

@@ -14,10 +14,20 @@ export interface Comment {
 }
 
 export interface EcmaScriptModule {
+  /**
+   * Has ESM syntax.
+   *
+   * i.e. `import` and `export` statements, and `import.meta`.
+   *
+   * Dynamic imports `import('foo')` are ignored since they can be used in non-ESM files.
+   */
+  hasModuleSyntax: boolean
   /** Import Statements. */
   staticImports: Array<StaticImport>
   /** Export Statements. */
   staticExports: Array<StaticExport>
+  /** Span positions` of `import.meta` */
+  importMetas: Array<Span>
 }
 
 export interface ExportExportName {
@@ -128,6 +138,11 @@ export declare function parseSync(filename: string, sourceText: string, options?
  * This is for benchmark purposes such as measuring napi communication overhead.
  */
 export declare function parseWithoutReturn(filename: string, sourceText: string, options?: ParserOptions | undefined | null): void
+
+export interface Span {
+  start: number
+  end: number
+}
 
 export interface StaticExport {
   start: number
