@@ -8,6 +8,7 @@
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
 	},
+	"dependencies": {},
 	"description": "The JavaScript Oxidation Compiler",
 	"devDependencies": {
 		"@playform/build": "0.2.0"
