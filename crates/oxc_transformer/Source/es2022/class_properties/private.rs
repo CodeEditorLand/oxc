@@ -637,7 +637,7 @@ impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
     ///
     /// Static prop:
     ///
-    /// * `++object.#prop++` ->
+    /// * `++object.#prop` ->
     /// ```js
     /// _prop._ = _assertClassBrand(
     ///   Class, object,

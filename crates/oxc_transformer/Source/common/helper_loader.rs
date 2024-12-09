@@ -71,7 +71,10 @@ use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
 use oxc_allocator::{String as ArenaString, Vec as ArenaVec};
-use oxc_ast::ast::{Argument, CallExpression, Expression, TSTypeParameterInstantiation};
+use oxc_ast::{
+    ast::{Argument, CallExpression, Expression},
+    NONE,
+};
 use oxc_semantic::{ReferenceFlags, SymbolFlags};
 use oxc_span::{Atom, Span, SPAN};
 use oxc_traverse::{BoundIdentifier, TraverseCtx};
@@ -156,7 +159,7 @@ pub enum Helper {
 }
 
 impl Helper {
-    const fn name(self) -> &'static str {
+    pub const fn name(self) -> &'static str {
         match self {
             Self::AwaitAsyncGenerator => "awaitAsyncGenerator",
             Self::AsyncGeneratorDelegate => "asyncGeneratorDelegate",
@@ -184,6 +187,7 @@ pub struct HelperLoaderStore<'a> {
     mode: HelperLoaderMode,
     /// Loaded helpers, determined what helpers are loaded and what imports should be added.
     loaded_helpers: RefCell<FxHashMap<Helper, BoundIdentifier<'a>>>,
+    pub(crate) used_helpers: RefCell<FxHashMap<Helper, String>>,
 }
 
 impl<'a> HelperLoaderStore<'a> {
@@ -192,6 +196,7 @@ impl<'a> HelperLoaderStore<'a> {
             module_name: options.module_name.clone(),
             mode: options.mode,
             loaded_helpers: RefCell::new(FxHashMap::default()),
+            used_helpers: RefCell::new(FxHashMap::default()),
         }
     }
 }
@@ -208,14 +213,7 @@ impl<'a> TransformCtx<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> CallExpression<'a> {
         let callee = self.helper_load(helper, ctx);
-
-        ctx.ast.call_expression(
-            span,
-            callee,
-            None::<TSTypeParameterInstantiation<'a>>,
-            arguments,
-            false,
-        )
+        ctx.ast.call_expression(span, callee, NONE, arguments, false)
     }
 
     /// Same as [`TransformCtx::helper_call`], but returns a `CallExpression` wrapped in an `Expression`.
@@ -227,23 +225,18 @@ impl<'a> TransformCtx<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let callee = self.helper_load(helper, ctx);
-
-        ctx.ast.expression_call(
-            span,
-            callee,
-            None::<TSTypeParameterInstantiation<'a>>,
-            arguments,
-            false,
-        )
+        ctx.ast.expression_call(span, callee, NONE, arguments, false)
     }
 
     /// Load a helper function and return a callee expression.
     pub fn helper_load(&self, helper: Helper, ctx: &mut TraverseCtx<'a>) -> Expression<'a> {
         let helper_loader = &self.helper_loader;
+        let source = helper_loader.get_runtime_source(helper, ctx);
+        helper_loader.used_helpers.borrow_mut().entry(helper).or_insert_with(|| source.to_string());
 
         match helper_loader.mode {
             HelperLoaderMode::Runtime => {
-                helper_loader.transform_for_runtime_helper(helper, self, ctx)
+                helper_loader.transform_for_runtime_helper(helper, source, self, ctx)
             }
 
             HelperLoaderMode::External => {
@@ -262,6 +255,7 @@ impl<'a> HelperLoaderStore<'a> {
     fn transform_for_runtime_helper(
         &self,
         helper: Helper,
+        source: Atom<'a>,
         transform_ctx: &TransformCtx<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
@@ -269,31 +263,17 @@ impl<'a> HelperLoaderStore<'a> {
 
         let binding = loaded_helpers
             .entry(helper)
-            .or_insert_with(|| self.get_runtime_helper(helper, transform_ctx, ctx));
-
+            .or_insert_with(|| Self::get_runtime_helper(helper, source, transform_ctx, ctx));
         binding.create_read_expression(ctx)
     }
 
     fn get_runtime_helper(
-        &self,
         helper: Helper,
+        source: Atom<'a>,
         transform_ctx: &TransformCtx<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) -> BoundIdentifier<'a> {
         let helper_name = helper.name();
-
-        // Construct string directly in arena without an intermediate temp allocation
-        let len = self.module_name.len() + "/helpers/".len() + helper_name.len();
-
-        let mut source = ArenaString::with_capacity_in(len, ctx.ast.allocator);
-
-        source.push_str(&self.module_name);
-
-        source.push_str("/helpers/");
-
-        source.push_str(helper_name);
-
-        let source = Atom::from(source.into_bump_str());
 
         let flag = if transform_ctx.source_type.is_module() {
             SymbolFlags::Import
@@ -306,6 +286,17 @@ impl<'a> HelperLoaderStore<'a> {
         transform_ctx.module_imports.add_default_import(source, binding.clone(), false);
 
         binding
+    }
+
+    // Construct string directly in arena without an intermediate temp allocation
+    fn get_runtime_source(&self, helper: Helper, ctx: &mut TraverseCtx<'a>) -> Atom<'a> {
+        let helper_name = helper.name();
+        let len = self.module_name.len() + "/helpers/".len() + helper_name.len();
+        let mut source = ArenaString::with_capacity_in(len, ctx.ast.allocator);
+        source.push_str(&self.module_name);
+        source.push_str("/helpers/");
+        source.push_str(helper_name);
+        Atom::from(source.into_bump_str())
     }
 
     fn transform_for_external_helper(helper: Helper, ctx: &mut TraverseCtx<'a>) -> Expression<'a> {
