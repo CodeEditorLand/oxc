@@ -1,5 +1,5 @@
 {
-	"name": "@oxc-parser/binding",
+	"name": "@codeeditorland-parser/binding",
 	"version": "0.0.1",
 	"private": false,
 	"keywords": [
@@ -28,7 +28,7 @@
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"dependencies": {
-		"@oxc-project/types": "workspace:^"
+		"@codeeditorland-project/types": "workspace:^"
 	},
 	"devDependencies": {
 		"@playform/build": "0.2.0"

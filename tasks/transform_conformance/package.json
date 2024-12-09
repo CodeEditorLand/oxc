@@ -1,11 +1,30 @@
 {
-	"author": {
-		"email": "Source/Open@Editor.Land",
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"url": "HTTPS://Editor.Land"
-	},
+	"name": "transform_conformance",
+	"version": "0.0.1",
+	"private": false,
+	"keywords": [
+		"codeeditorland",
+		"land",
+		"playform"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
 	"bugs": {
 		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"email": "Source/Open@Editor.Land",
+		"url": "HTTPS://Editor.Land"
+	},
+	"type": "module",
+	"scripts": {
+		"prepublishOnly": "Build 'Source/**/*.ts'",
+		"vitest": "vitest"
 	},
 	"dependencies": {},
 	"devDependencies": {
@@ -21,26 +40,7 @@
 		"@babel/plugin-transform-private-methods": "^7.25.9",
 		"@playform/build": "0.2.0"
 	},
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"license": "SEE LICENSE IN LICENSE",
-	"name": "transform_conformance",
-	"private": false,
 	"publishConfig": {
 		"access": "public"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"scripts": {
-		"prepublishOnly": "Build 'Source/**/*.ts'",
-		"vitest": "vitest"
-	},
-	"type": "module",
-	"version": "0.0.1"
+	}
 }
