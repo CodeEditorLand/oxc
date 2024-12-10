@@ -124,9 +124,9 @@ unicode-id-start = "1"
 
 #
 oxc-browserslist = "1.1.0"
-oxc_index = "2"
-oxc_resolver = "2.1.1"
-oxc_sourcemap = "1.0.3"
+oxc_index = { version = "2" }
+oxc_resolver = { version = "2.1.1" }
+oxc_sourcemap = { version = "1.0.3" }
 
 #
 allocator-api2 = "0.2.21"

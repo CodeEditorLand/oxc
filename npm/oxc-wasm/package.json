@@ -1,30 +1,8 @@
 {
 	"name": "@codeeditorland/oxc_wasm",
-	"version": "0.0.1",
-	"private": false,
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🖋️ Source — 👐🏻 Open —",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
 	"sideEffects": [
 		"./snippets/*"
 	],
-	"type": "module",
 	"main": "oxc_wasm.js",
 	"types": "oxc_wasm.d.ts",
 	"files": [
@@ -40,9 +18,6 @@
 	},
 	"devDependencies": {
 		"@playform/build": "0.2.0"
-	},
-	"publishConfig": {
-		"access": "public"
 	},
 	"collaborators": [
 		"Boshen <boshenc@gmail.com>",
