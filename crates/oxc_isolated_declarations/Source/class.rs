@@ -95,8 +95,8 @@ impl<'a> IsolatedDeclarations<'a> {
         }
 
         self.ast.class_element_property_definition(
-            property.r#type,
             property.span,
+            property.r#type,
             self.ast.vec(),
             property.key.clone_in(self.ast.allocator),
             value,
@@ -121,8 +121,8 @@ impl<'a> IsolatedDeclarations<'a> {
         let function = &definition.value;
 
         let value = self.ast.alloc_function(
-            FunctionType::TSEmptyBodyFunctionExpression,
             function.span,
+            FunctionType::TSEmptyBodyFunctionExpression,
             function.id.clone_in(self.ast.allocator),
             false,
             false,
@@ -135,8 +135,8 @@ impl<'a> IsolatedDeclarations<'a> {
         );
 
         self.ast.class_element_method_definition(
-            definition.r#type,
             definition.span,
+            definition.r#type,
             self.ast.vec(),
             definition.key.clone_in(self.ast.allocator),
             value,
@@ -159,8 +159,8 @@ impl<'a> IsolatedDeclarations<'a> {
         accessibility: Option<TSAccessibility>,
     ) -> ClassElement<'a> {
         self.ast.class_element_property_definition(
-            r#type,
             span,
+            r#type,
             self.ast.vec(),
             key,
             None,
@@ -189,8 +189,8 @@ impl<'a> IsolatedDeclarations<'a> {
         let key = self.ast.property_key_identifier_name(SPAN, ident_name);
 
         Some(self.ast.class_element_property_definition(
-            PropertyDefinitionType::PropertyDefinition,
             param.span,
+            PropertyDefinitionType::PropertyDefinition,
             self.ast.vec(),
             key,
             None,
@@ -543,8 +543,8 @@ impl<'a> IsolatedDeclarations<'a> {
 
                     // FIXME: missing many fields
                     let new_element = self.ast.class_element_accessor_property(
-                        property.r#type,
                         property.span,
+                        property.r#type,
                         self.ast.vec(),
                         property.key.clone_in(self.ast.allocator),
                         None,
@@ -579,7 +579,7 @@ impl<'a> IsolatedDeclarations<'a> {
             let decorators = self.ast.vec();
 
             let element = self.ast.class_element_property_definition(
-                r#type, SPAN, decorators, ident, None, false, false, false, false, false, false,
+                SPAN, r#type, decorators, ident, None, false, false, false, false, false, false,
                 false, NONE, None,
             );
 
@@ -589,8 +589,8 @@ impl<'a> IsolatedDeclarations<'a> {
         let body = self.ast.class_body(decl.body.span, elements);
 
         Some(self.ast.alloc_class(
-            decl.r#type,
             decl.span,
+            decl.r#type,
             self.ast.vec(),
             decl.id.clone_in(self.ast.allocator),
             decl.type_parameters.clone_in(self.ast.allocator),

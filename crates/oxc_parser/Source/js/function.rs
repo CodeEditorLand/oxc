@@ -195,8 +195,8 @@ impl<'a> ParserImpl<'a> {
         );
 
         Ok(self.ast.alloc_function(
-            function_type,
             self.end_span(span),
+            function_type,
             id,
             generator,
             r#async,

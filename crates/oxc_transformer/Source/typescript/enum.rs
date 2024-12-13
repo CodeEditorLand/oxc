@@ -111,8 +111,8 @@ impl<'a> TypeScriptEnum<'a> {
         let body = ast.alloc_function_body(decl.span, ast.vec(), statements);
 
         let callee = Expression::FunctionExpression(ctx.ast.alloc_function_with_scope_id(
-            FunctionType::FunctionExpression,
             SPAN,
+            FunctionType::FunctionExpression,
             None,
             false,
             false,

@@ -2248,8 +2248,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for Function<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Function {
-            r#type: CloneIn::clone_in(&self.r#type, allocator),
             span: CloneIn::clone_in(&self.span, allocator),
+            r#type: CloneIn::clone_in(&self.r#type, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             generator: CloneIn::clone_in(&self.generator, allocator),
             r#async: CloneIn::clone_in(&self.r#async, allocator),
@@ -2364,8 +2364,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for Class<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Class {
-            r#type: CloneIn::clone_in(&self.r#type, allocator),
             span: CloneIn::clone_in(&self.span, allocator),
+            r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
@@ -2432,8 +2432,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for MethodDefinition<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         MethodDefinition {
-            r#type: CloneIn::clone_in(&self.r#type, allocator),
             span: CloneIn::clone_in(&self.span, allocator),
+            r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             key: CloneIn::clone_in(&self.key, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
@@ -2463,8 +2463,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyDefinition<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PropertyDefinition {
-            r#type: CloneIn::clone_in(&self.r#type, allocator),
             span: CloneIn::clone_in(&self.span, allocator),
+            r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             key: CloneIn::clone_in(&self.key, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
@@ -2578,8 +2578,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for AccessorProperty<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AccessorProperty {
-            r#type: CloneIn::clone_in(&self.r#type, allocator),
             span: CloneIn::clone_in(&self.span, allocator),
+            r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             key: CloneIn::clone_in(&self.key, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
