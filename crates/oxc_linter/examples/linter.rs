@@ -16,62 +16,62 @@ use oxc_span::{SourceType, Span};
 // or `cargo watch -x "run -p oxc_linter --example linter"`
 
 fn main() -> std::io::Result<()> {
-    let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
+	let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
 
-    let path = Path::new(&name);
+	let path = Path::new(&name);
 
-    let source_text = std::fs::read_to_string(path)?;
+	let source_text = std::fs::read_to_string(path)?;
 
-    let allocator = Allocator::default();
+	let allocator = Allocator::default();
 
-    let source_type = SourceType::from_path(path).unwrap();
+	let source_type = SourceType::from_path(path).unwrap();
 
-    let ret = Parser::new(&allocator, &source_text, source_type).parse();
+	let ret = Parser::new(&allocator, &source_text, source_type).parse();
 
-    // Handle parser errors
-    if !ret.errors.is_empty() {
-        print_errors(&source_text, ret.errors);
+	// Handle parser errors
+	if !ret.errors.is_empty() {
+		print_errors(&source_text, ret.errors);
 
-        return Ok(());
-    }
+		return Ok(());
+	}
 
-    let semantic_ret = SemanticBuilder::new().build(&ret.program);
+	let semantic_ret = SemanticBuilder::new().build(&ret.program);
 
-    let mut errors: Vec<OxcDiagnostic> = vec![];
+	let mut errors:Vec<OxcDiagnostic> = vec![];
 
-    for node in semantic_ret.semantic.nodes() {
-        match node.kind() {
-            AstKind::DebuggerStatement(stmt) => {
-                errors.push(no_debugger(stmt.span));
-            }
+	for node in semantic_ret.semantic.nodes() {
+		match node.kind() {
+			AstKind::DebuggerStatement(stmt) => {
+				errors.push(no_debugger(stmt.span));
+			},
 
-            AstKind::ArrayPattern(array) if array.elements.is_empty() => {
-                errors.push(no_empty_pattern("array", array.span));
-            }
+			AstKind::ArrayPattern(array) if array.elements.is_empty() => {
+				errors.push(no_empty_pattern("array", array.span));
+			},
 
-            AstKind::ObjectPattern(object) if object.properties.is_empty() => {
-                errors.push(no_empty_pattern("object", object.span));
-            }
+			AstKind::ObjectPattern(object) if object.properties.is_empty() => {
+				errors.push(no_empty_pattern("object", object.span));
+			},
 
-            _ => {}
-        }
-    }
+			_ => {},
+		}
+	}
 
-    if errors.is_empty() {
-        println!("Success!");
-    } else {
-        print_errors(&source_text, errors);
-    }
+	if errors.is_empty() {
+		println!("Success!");
+	} else {
+		print_errors(&source_text, errors);
+	}
 
-    Ok(())
+	Ok(())
 }
 
-fn print_errors(source_text: &str, errors: Vec<OxcDiagnostic>) {
-    for error in errors {
-        let error = error.with_source_code(source_text.to_string());
+fn print_errors(source_text:&str, errors:Vec<OxcDiagnostic>) {
+	for error in errors {
+		let error = error.with_source_code(source_text.to_string());
 
-        println!("{error:?}");
-    }
+		println!("{error:?}");
+	}
 }
 
 // This prints:
@@ -81,8 +81,8 @@ fn print_errors(source_text: &str, errors: Vec<OxcDiagnostic>) {
 // 1 │ debugger;
 //   · ─────────
 //   ╰────
-fn no_debugger(debugger_span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::error("`debugger` statement is not allowed").with_label(debugger_span)
+fn no_debugger(debugger_span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::error("`debugger` statement is not allowed").with_label(debugger_span)
 }
 
 // This prints:
@@ -93,7 +93,7 @@ fn no_debugger(debugger_span: Span) -> OxcDiagnostic {
 //   ·     ─┬
 //   ·      ╰── Empty object binding pattern
 //   ╰────
-fn no_empty_pattern(binding_kind: &str, span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::error("empty destructuring pattern is not allowed")
-        .with_label(span.label(format!("Empty {binding_kind} binding pattern")))
+fn no_empty_pattern(binding_kind:&str, span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::error("empty destructuring pattern is not allowed")
+		.with_label(span.label(format!("Empty {binding_kind} binding pattern")))
 }

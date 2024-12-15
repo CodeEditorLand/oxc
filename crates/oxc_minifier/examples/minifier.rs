@@ -13,59 +13,59 @@ use pico_args::Arguments;
 // run `cargo run -p oxc_minifier --example minifier` or `just example minifier`
 
 fn main() -> std::io::Result<()> {
-    let mut args = Arguments::from_env();
+	let mut args = Arguments::from_env();
 
-    let name = args.subcommand().ok().flatten().unwrap_or_else(|| String::from("test.js"));
+	let name = args.subcommand().ok().flatten().unwrap_or_else(|| String::from("test.js"));
 
-    let mangle = args.contains("--mangle");
+	let mangle = args.contains("--mangle");
 
-    let nospace = args.contains("--nospace");
+	let nospace = args.contains("--nospace");
 
-    let twice = args.contains("--twice");
+	let twice = args.contains("--twice");
 
-    let path = Path::new(&name);
+	let path = Path::new(&name);
 
-    let source_text = std::fs::read_to_string(path)?;
+	let source_text = std::fs::read_to_string(path)?;
 
-    let source_type = SourceType::from_path(path).unwrap();
+	let source_type = SourceType::from_path(path).unwrap();
 
-    let mut allocator = Allocator::default();
+	let mut allocator = Allocator::default();
 
-    let printed = minify(&allocator, &source_text, source_type, mangle, nospace);
+	let printed = minify(&allocator, &source_text, source_type, mangle, nospace);
 
-    println!("{printed}");
+	println!("{printed}");
 
-    if twice {
-        allocator.reset();
+	if twice {
+		allocator.reset();
 
-        let printed2 = minify(&allocator, &printed, source_type, mangle, nospace);
+		let printed2 = minify(&allocator, &printed, source_type, mangle, nospace);
 
-        println!("{printed2}");
+		println!("{printed2}");
 
-        println!("same = {}", printed == printed2);
-    }
+		println!("same = {}", printed == printed2);
+	}
 
-    Ok(())
+	Ok(())
 }
 
 fn minify(
-    allocator: &Allocator,
-    source_text: &str,
-    source_type: SourceType,
-    mangle: bool,
-    nospace: bool,
+	allocator:&Allocator,
+	source_text:&str,
+	source_type:SourceType,
+	mangle:bool,
+	nospace:bool,
 ) -> String {
-    let ret = Parser::new(allocator, source_text, source_type).parse();
+	let ret = Parser::new(allocator, source_text, source_type).parse();
 
-    let mut program = ret.program;
+	let mut program = ret.program;
 
-    let options = MinifierOptions { mangle, compress: CompressOptions::default() };
+	let options = MinifierOptions { mangle, compress:CompressOptions::default() };
 
-    let ret = Minifier::new(options).build(allocator, &mut program);
+	let ret = Minifier::new(options).build(allocator, &mut program);
 
-    CodeGenerator::new()
-        .with_options(CodegenOptions { minify: nospace, ..CodegenOptions::default() })
-        .with_mangler(ret.mangler)
-        .build(&program)
-        .code
+	CodeGenerator::new()
+		.with_options(CodegenOptions { minify:nospace, ..CodegenOptions::default() })
+		.with_mangler(ret.mangler)
+		.build(&program)
+		.code
 }

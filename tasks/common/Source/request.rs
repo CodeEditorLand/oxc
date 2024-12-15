@@ -1,7 +1,7 @@
 /// detect proxy from environment variable in following order:
 /// ALL_PROXY | all_proxy | HTTPS_PROXY | https_proxy | HTTP_PROXY | http_proxy
 fn detect_proxy() -> Option<ureq::Proxy> {
-    macro_rules! try_env {
+	macro_rules! try_env {
       ($($env:literal),+) => {
           $(
               if let Ok(env) = std::env::var($env) {
@@ -13,18 +13,25 @@ fn detect_proxy() -> Option<ureq::Proxy> {
       };
   }
 
-    try_env!("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy");
+	try_env!(
+		"HTTPS_PROXY",
+		"https_proxy",
+		"HTTP_PROXY",
+		"http_proxy",
+		"ALL_PROXY",
+		"all_proxy"
+	);
 
-    None
+	None
 }
 
 /// build a agent with proxy automatically detected
 pub fn agent() -> ureq::Agent {
-    let builder = ureq::AgentBuilder::new();
+	let builder = ureq::AgentBuilder::new();
 
-    if let Some(proxy) = detect_proxy() {
-        builder.proxy(proxy).build()
-    } else {
-        builder.build()
-    }
+	if let Some(proxy) = detect_proxy() {
+		builder.proxy(proxy).build()
+	} else {
+		builder.build()
+	}
 }

@@ -13,17 +13,17 @@ export interface ArrowFunctionsOptions {
 }
 
 export interface CompilerAssumptions {
-  ignoreFunctionLength?: boolean
-  noDocumentAll?: boolean
-  objectRestNoSymbols?: boolean
-  pureGetters?: boolean
-  setPublicClassFields?: boolean
+	ignoreFunctionLength?: boolean;
+	noDocumentAll?: boolean;
+	objectRestNoSymbols?: boolean;
+	pureGetters?: boolean;
+	setPublicClassFields?: boolean;
 }
 
 export interface ErrorLabel {
-  message?: string
-  start: number
-  end: number
+	message?: string;
+	start: number;
+	end: number;
 }
 
 export interface Es2015Options {
@@ -32,31 +32,31 @@ export interface Es2015Options {
 }
 
 export declare const enum HelperMode {
-  /**
-   * Runtime mode (default): Helper functions are imported from a runtime package.
-   *
-   * Example:
-   *
-   * ```js
-   * import helperName from "@babel/runtime/helpers/helperName";
-   * helperName(...arguments);
-   * ```
-   */
-  Runtime = 'Runtime',
-  /**
-   * External mode: Helper functions are accessed from a global `babelHelpers` object.
-   *
-   * Example:
-   *
-   * ```js
-   * babelHelpers.helperName(...arguments);
-   * ```
-   */
-  External = 'External'
+	/**
+	 * Runtime mode (default): Helper functions are imported from a runtime package.
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * import helperName from "@babel/runtime/helpers/helperName";
+	 * helperName(...arguments);
+	 * ```
+	 */
+	Runtime = "Runtime",
+	/**
+	 * External mode: Helper functions are accessed from a global `babelHelpers` object.
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * babelHelpers.helperName(...arguments);
+	 * ```
+	 */
+	External = "External",
 }
 
 export interface Helpers {
-  mode?: HelperMode
+	mode?: HelperMode;
 }
 
 /** TypeScript Isolated Declarations for Standalone DTS Emit */
@@ -81,9 +81,9 @@ export interface IsolatedDeclarationsOptions {
 }
 
 export interface IsolatedDeclarationsResult {
-  code: string
-  map?: SourceMap
-  errors: Array<OxcError>
+	code: string;
+	map?: SourceMap;
+	errors: Array<OxcError>;
 }
 
 /**
@@ -182,10 +182,10 @@ export interface JsxOptions {
 }
 
 export interface OxcError {
-  severity: Severity
-  message: string
-  labels: Array<ErrorLabel>
-  helpMessage?: string
+	severity: Severity;
+	message: string;
+	labels: Array<ErrorLabel>;
+	helpMessage?: string;
 }
 
 export interface ReactRefreshOptions {
@@ -206,9 +206,9 @@ export interface ReactRefreshOptions {
 }
 
 export declare const enum Severity {
-  Error = 'Error',
-  Warning = 'Warning',
-  Advice = 'Advice'
+	Error = "Error",
+	Warning = "Warning",
+	Advice = "Advice",
 }
 
 export interface SourceMap {
@@ -253,103 +253,103 @@ export declare function transform(
  * @see {@link transform}
  */
 export interface TransformOptions {
-  sourceType?: 'script' | 'module' | 'unambiguous' | undefined
-  /** Treat the source text as `js`, `jsx`, `ts`, or `tsx`. */
-  lang?: 'js' | 'jsx' | 'ts' | 'tsx'
-  /**
-   * The current working directory. Used to resolve relative paths in other
-   * options.
-   */
-  cwd?: string
-  /**
-   * Enable source map generation.
-   *
-   * When `true`, the `sourceMap` field of transform result objects will be populated.
-   *
-   * @default false
-   *
-   * @see {@link SourceMap}
-   */
-  sourcemap?: boolean
-  /** Set assumptions in order to produce smaller output. */
-  assumptions?: CompilerAssumptions
-  /** Configure how TypeScript is transformed. */
-  typescript?: TypeScriptOptions
-  /** Configure how TSX and JSX are transformed. */
-  jsx?: JsxOptions
-  /**
-   * Sets the target environment for the generated JavaScript.
-   *
-   * The lowest target is `es2015`.
-   *
-   * Example:
-   *
-   * * 'es2015'
-   * * ['es2020', 'chrome58', 'edge16', 'firefox57', 'node12', 'safari11']
-   *
-   * @default `esnext` (No transformation)
-   *
-   * @see [esbuild#target](https://esbuild.github.io/api/#target)
-   */
-  target?: string | Array<string>
-  /** Behaviour for runtime helpers. */
-  helpers?: Helpers
-  /** Define Plugin */
-  define?: Record<string, string>
-  /** Inject Plugin */
-  inject?: Record<string, string | [string, string]>
+	sourceType?: "script" | "module" | "unambiguous" | undefined;
+	/** Treat the source text as `js`, `jsx`, `ts`, or `tsx`. */
+	lang?: "js" | "jsx" | "ts" | "tsx";
+	/**
+	 * The current working directory. Used to resolve relative paths in other
+	 * options.
+	 */
+	cwd?: string;
+	/**
+	 * Enable source map generation.
+	 *
+	 * When `true`, the `sourceMap` field of transform result objects will be populated.
+	 *
+	 * @default false
+	 *
+	 * @see {@link SourceMap}
+	 */
+	sourcemap?: boolean;
+	/** Set assumptions in order to produce smaller output. */
+	assumptions?: CompilerAssumptions;
+	/** Configure how TypeScript is transformed. */
+	typescript?: TypeScriptOptions;
+	/** Configure how TSX and JSX are transformed. */
+	jsx?: JsxOptions;
+	/**
+	 * Sets the target environment for the generated JavaScript.
+	 *
+	 * The lowest target is `es2015`.
+	 *
+	 * Example:
+	 *
+	 * * 'es2015'
+	 * * ['es2020', 'chrome58', 'edge16', 'firefox57', 'node12', 'safari11']
+	 *
+	 * @default `esnext` (No transformation)
+	 *
+	 * @see [esbuild#target](https://esbuild.github.io/api/#target)
+	 */
+	target?: string | Array<string>;
+	/** Behaviour for runtime helpers. */
+	helpers?: Helpers;
+	/** Define Plugin */
+	define?: Record<string, string>;
+	/** Inject Plugin */
+	inject?: Record<string, string | [string, string]>;
 }
 
 export interface TransformResult {
-  /**
-   * The transformed code.
-   *
-   * If parsing failed, this will be an empty string.
-   */
-  code: string
-  /**
-   * The source map for the transformed code.
-   *
-   * This will be set if {@link TransformOptions#sourcemap} is `true`.
-   */
-  map?: SourceMap
-  /**
-   * The `.d.ts` declaration file for the transformed code. Declarations are
-   * only generated if `declaration` is set to `true` and a TypeScript file
-   * is provided.
-   *
-   * If parsing failed and `declaration` is set, this will be an empty string.
-   *
-   * @see {@link TypeScriptOptions#declaration}
-   * @see [declaration tsconfig option](https://www.typescriptlang.org/tsconfig/#declaration)
-   */
-  declaration?: string
-  /**
-   * Declaration source map. Only generated if both
-   * {@link TypeScriptOptions#declaration declaration} and
-   * {@link TransformOptions#sourcemap sourcemap} are set to `true`.
-   */
-  declarationMap?: SourceMap
-  /**
-   * Helpers used.
-   *
-   * @internal
-   *
-   * Example:
-   *
-   * ```text
-   * { "_objectSpread": "@babel/runtime/helpers/objectSpread2" }
-   * ```
-   */
-  helpersUsed: Record<string, string>
-  /**
-   * Parse and transformation errors.
-   *
-   * Oxc's parser recovers from common syntax errors, meaning that
-   * transformed code may still be available even if there are errors in this
-   * list.
-   */
-  errors: Array<OxcError>
+	/**
+	 * The transformed code.
+	 *
+	 * If parsing failed, this will be an empty string.
+	 */
+	code: string;
+	/**
+	 * The source map for the transformed code.
+	 *
+	 * This will be set if {@link TransformOptions#sourcemap} is `true`.
+	 */
+	map?: SourceMap;
+	/**
+	 * The `.d.ts` declaration file for the transformed code. Declarations are
+	 * only generated if `declaration` is set to `true` and a TypeScript file
+	 * is provided.
+	 *
+	 * If parsing failed and `declaration` is set, this will be an empty string.
+	 *
+	 * @see {@link TypeScriptOptions#declaration}
+	 * @see [declaration tsconfig option](https://www.typescriptlang.org/tsconfig/#declaration)
+	 */
+	declaration?: string;
+	/**
+	 * Declaration source map. Only generated if both
+	 * {@link TypeScriptOptions#declaration declaration} and
+	 * {@link TransformOptions#sourcemap sourcemap} are set to `true`.
+	 */
+	declarationMap?: SourceMap;
+	/**
+	 * Helpers used.
+	 *
+	 * @internal
+	 *
+	 * Example:
+	 *
+	 * ```text
+	 * { "_objectSpread": "@babel/runtime/helpers/objectSpread2" }
+	 * ```
+	 */
+	helpersUsed: Record<string, string>;
+	/**
+	 * Parse and transformation errors.
+	 *
+	 * Oxc's parser recovers from common syntax errors, meaning that
+	 * transformed code may still be available even if there are errors in this
+	 * list.
+	 */
+	errors: Array<OxcError>;
 }
 
 export interface TypeScriptOptions {

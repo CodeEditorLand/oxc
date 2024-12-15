@@ -4,22 +4,26 @@
 //!
 //! ## Types
 //!
-//! AST types are similar to [estree] and [typescript-eslint]'s definition, with a few notable exceptions:
+//! AST types are similar to [estree] and [typescript-eslint]'s definition, with
+//! a few notable exceptions:
 //!
-//! * `Identifier` is replaced with explicit [`BindingIdentifier`], [`IdentifierReference`],
-//!   [`IdentifierName`], per ECMAScript Specification.
-//! * `AssignmentExpression`.`left` `Pattern` is replaced with [`AssignmentTarget`].
-//! * `Literal` is replaced with [`BooleanLiteral`], [`NumericLiteral`], [`StringLiteral`] etc.
+//! * `Identifier` is replaced with explicit [`BindingIdentifier`],
+//!   [`IdentifierReference`], [`IdentifierName`], per ECMAScript Specification.
+//! * `AssignmentExpression`.`left` `Pattern` is replaced with
+//!   [`AssignmentTarget`].
+//! * `Literal` is replaced with [`BooleanLiteral`], [`NumericLiteral`],
+//!   [`StringLiteral`] etc.
 //!
-//! Field order of types follows "Evaluation order" defined by [ECMAScript spec].
-//! For TypeScript types, we follow how field order is defined in [tsc].
+//! Field order of types follows "Evaluation order" defined by [ECMAScript
+//! spec]. For TypeScript types, we follow how field order is defined in [tsc].
 //!
-//! Oxc's visitors ([`Visit`], [`VisitMut`], [`Traverse`]) visit AST node fields in same order
-//! as they are defined in the types here.
+//! Oxc's visitors ([`Visit`], [`VisitMut`], [`Traverse`]) visit AST node fields
+//! in same order as they are defined in the types here.
 //!
 //! ## Parsing
 //!
-//! You can obtain an AST by parsing source code with a [`Parser`] from [`oxc_parser`].
+//! You can obtain an AST by parsing source code with a [`Parser`] from
+//! [`oxc_parser`].
 //!
 //! ## Cargo Features
 //! * `"serde"` enables support for serde serialization
@@ -55,50 +59,50 @@ pub mod precedence;
 mod trivia;
 
 mod generated {
-    #![allow(missing_docs)]
-    #[cfg(debug_assertions)]
-    pub mod assert_layouts;
+	#![allow(missing_docs)]
+	#[cfg(debug_assertions)]
+	pub mod assert_layouts;
 
-    pub mod ast_builder;
+	pub mod ast_builder;
 
-    pub mod ast_kind;
+	pub mod ast_kind;
 
-    pub mod derive_clone_in;
+	pub mod derive_clone_in;
 
-    pub mod derive_content_eq;
+	pub mod derive_content_eq;
 
-    pub mod derive_content_hash;
-    #[cfg(feature = "serialize")]
-    pub mod derive_estree;
+	pub mod derive_content_hash;
+	#[cfg(feature = "serialize")]
+	pub mod derive_estree;
 
-    pub mod derive_get_address;
+	pub mod derive_get_address;
 
-    pub mod derive_get_span;
+	pub mod derive_get_span;
 
-    pub mod derive_get_span_mut;
+	pub mod derive_get_span_mut;
 
-    pub mod get_id;
+	pub mod get_id;
 
-    pub mod visit;
+	pub mod visit;
 
-    pub mod visit_mut;
+	pub mod visit_mut;
 }
 
 pub mod visit {
-    #![allow(missing_docs)]
-    pub use crate::generated::{visit::*, visit_mut::*};
+	#![allow(missing_docs)]
+	pub use crate::generated::{visit::*, visit_mut::*};
 }
 
 pub use generated::{ast_builder, ast_kind};
 pub use num_bigint::BigUint;
 
 pub use crate::{
-    ast::comment::{Comment, CommentKind, CommentPosition},
-    ast_builder::AstBuilder,
-    ast_builder_impl::NONE,
-    ast_kind::{AstKind, AstType},
-    trivia::{comments_range, has_comments_between, CommentsRange},
-    visit::{Visit, VisitMut},
+	ast::comment::{Comment, CommentKind, CommentPosition},
+	ast_builder::AstBuilder,
+	ast_builder_impl::NONE,
+	ast_kind::{AstKind, AstType},
+	trivia::{CommentsRange, comments_range, has_comments_between},
+	visit::{Visit, VisitMut},
 };
 
 // After experimenting with two types of boxed enum variants:
@@ -120,46 +124,46 @@ pub use crate::{
 //          expression: Box<Expression>
 //      }
 //   ```
-//  I have concluded that the first options is more performant and more ergonomic to use.
-//  The following test make sure all enum variants are boxed, resulting 16 bytes for each enum.
-//  Read `https://nnethercote.github.io/perf-book/type-sizes.html` for more details.
+//  I have concluded that the first options is more performant and more
+// ergonomic to use.  The following test make sure all enum variants are boxed,
+// resulting 16 bytes for each enum.  Read `https://nnethercote.github.io/perf-book/type-sizes.html` for more details.
 #[cfg(target_pointer_width = "64")]
 #[test]
 fn size_asserts() {
-    use std::mem::size_of;
+	use std::mem::size_of;
 
-    use crate::ast;
+	use crate::ast;
 
-    assert!(size_of::<ast::Statement>() == 16);
+	assert!(size_of::<ast::Statement>() == 16);
 
-    assert!(size_of::<ast::Expression>() == 16);
+	assert!(size_of::<ast::Expression>() == 16);
 
-    assert!(size_of::<ast::Declaration>() == 16);
+	assert!(size_of::<ast::Declaration>() == 16);
 
-    assert!(size_of::<ast::BindingPatternKind>() == 16);
+	assert!(size_of::<ast::BindingPatternKind>() == 16);
 
-    assert!(size_of::<ast::ModuleDeclaration>() == 16);
+	assert!(size_of::<ast::ModuleDeclaration>() == 16);
 
-    assert!(size_of::<ast::ClassElement>() == 16);
+	assert!(size_of::<ast::ClassElement>() == 16);
 
-    assert!(size_of::<ast::ExportDefaultDeclarationKind>() == 16);
+	assert!(size_of::<ast::ExportDefaultDeclarationKind>() == 16);
 
-    assert!(size_of::<ast::AssignmentTargetPattern>() == 16);
+	assert!(size_of::<ast::AssignmentTargetPattern>() == 16);
 
-    assert!(size_of::<ast::AssignmentTargetMaybeDefault>() == 16);
+	assert!(size_of::<ast::AssignmentTargetMaybeDefault>() == 16);
 
-    assert!(size_of::<ast::AssignmentTargetProperty>() == 16);
+	assert!(size_of::<ast::AssignmentTargetProperty>() == 16);
 
-    assert!(size_of::<ast::TSLiteral>() == 16);
+	assert!(size_of::<ast::TSLiteral>() == 16);
 
-    assert!(size_of::<ast::TSType>() == 16);
+	assert!(size_of::<ast::TSType>() == 16);
 }
 
 #[test]
 fn lifetime_variance() {
-    use crate::ast;
+	use crate::ast;
 
-    fn _assert_program_variant_lifetime<'a: 'b, 'b>(program: ast::Program<'a>) -> ast::Program<'b> {
-        program
-    }
+	fn _assert_program_variant_lifetime<'a:'b, 'b>(program:ast::Program<'a>) -> ast::Program<'b> {
+		program
+	}
 }

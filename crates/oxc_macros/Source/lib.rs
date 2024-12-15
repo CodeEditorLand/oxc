@@ -44,7 +44,8 @@ mod declare_oxc_lint;
 /// ...meaning that these are also valid:
 /// - `suggestion_fix` (supports safe fixes and suggestions)
 /// - `conditional_dangerous_fix` (sometimes provides dangerous fixes)
-/// - `dangerous_fix_dangerous_suggestion` (provides dangerous fixes and suggestions in all cases)
+/// - `dangerous_fix_dangerous_suggestion` (provides dangerous fixes and
+///   suggestions in all cases)
 ///
 /// `pending` and `none` are special cases that do not follow this pattern.
 /// # Example
@@ -56,49 +57,49 @@ mod declare_oxc_lint;
 /// pub struct NoDebugger;
 ///
 /// declare_oxc_lint! {
-///     /// ### What it does
-///     /// Checks for usage of the `debugger` statement
-///     ///
-///     /// ### Why is this bad?
-///     /// `debugger` statements do not affect functionality when a debugger isn't attached.
-///     /// They're most commonly an accidental debugging leftover.
-///     ///
-///     ///
-///     /// ### Examples
-///     ///
-///     /// Examples of **incorrect** code for this rule:
-///     /// ```js
-///     /// const data = await getData();
-///     /// const result = complexCalculation(data);
-///     /// debugger;
-///     /// ```
-///     ///
-///     /// Examples of **correct** code for this rule:
-///     /// ```js
-///     /// // Not a debugger statement
-///     /// var debug = require('foo');
-///     /// ```
-///     NoDebugger,
-///     correctness,
-///     fix
+/// 	/// ### What it does
+/// 	/// Checks for usage of the `debugger` statement
+/// 	///
+/// 	/// ### Why is this bad?
+/// 	/// `debugger` statements do not affect functionality when a debugger isn't attached.
+/// 	/// They're most commonly an accidental debugging leftover.
+/// 	///
+/// 	///
+/// 	/// ### Examples
+/// 	///
+/// 	/// Examples of **incorrect** code for this rule:
+/// 	/// ```js
+/// 	/// const data = await getData();
+/// 	/// const result = complexCalculation(data);
+/// 	/// debugger;
+/// 	/// ```
+/// 	///
+/// 	/// Examples of **correct** code for this rule:
+/// 	/// ```js
+/// 	/// // Not a debugger statement
+/// 	/// var debug = require('foo');
+/// 	/// ```
+/// 	NoDebugger,
+/// 	correctness,
+/// 	fix
 /// }
 /// ```
 #[proc_macro]
-pub fn declare_oxc_lint(input: TokenStream) -> TokenStream {
-    let metadata = parse_macro_input!(input as declare_oxc_lint::LintRuleMeta);
+pub fn declare_oxc_lint(input:TokenStream) -> TokenStream {
+	let metadata = parse_macro_input!(input as declare_oxc_lint::LintRuleMeta);
 
-    declare_oxc_lint::declare_oxc_lint(metadata)
+	declare_oxc_lint::declare_oxc_lint(metadata)
 }
 
 /// Same as `declare_oxc_lint`, but doesn't do imports.
 /// Enables multiple usages in a single file.
 #[proc_macro]
-pub fn declare_oxc_lint_test(input: TokenStream) -> TokenStream {
-    let mut metadata = parse_macro_input!(input as declare_oxc_lint::LintRuleMeta);
+pub fn declare_oxc_lint_test(input:TokenStream) -> TokenStream {
+	let mut metadata = parse_macro_input!(input as declare_oxc_lint::LintRuleMeta);
 
-    metadata.used_in_test = true;
+	metadata.used_in_test = true;
 
-    declare_oxc_lint::declare_oxc_lint(metadata)
+	declare_oxc_lint::declare_oxc_lint(metadata)
 }
 
 /// Declare all lint rules in a single macro. This create the `RuleEnum` struct,
@@ -106,8 +107,8 @@ pub fn declare_oxc_lint_test(input: TokenStream) -> TokenStream {
 /// bypasses object-safety requirements and allows for compile-time dispatch
 /// over a heterogeneous set of known lint rules.
 #[proc_macro]
-pub fn declare_all_lint_rules(input: TokenStream) -> TokenStream {
-    let metadata = parse_macro_input!(input as declare_all_lint_rules::AllLintRulesMeta);
+pub fn declare_all_lint_rules(input:TokenStream) -> TokenStream {
+	let metadata = parse_macro_input!(input as declare_all_lint_rules::AllLintRulesMeta);
 
-    declare_all_lint_rules::declare_all_lint_rules(metadata)
+	declare_all_lint_rules::declare_all_lint_rules(metadata)
 }

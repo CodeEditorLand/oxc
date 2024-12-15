@@ -6,9 +6,9 @@ mod runner;
 mod walk;
 
 pub use crate::{
-    command::*,
-    format::FormatRunner,
-    lint::LintRunner,
-    result::{CliRunResult, LintResult},
-    runner::Runner,
+	command::*,
+	format::FormatRunner,
+	lint::LintRunner,
+	result::{CliRunResult, LintResult},
+	runner::Runner,
 };

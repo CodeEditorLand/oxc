@@ -11,48 +11,48 @@ use oxc_span::SourceType;
 // * `just example module_lexer
 
 fn main() -> Result<(), String> {
-    let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
+	let name = env::args().nth(1).unwrap_or_else(|| "test.js".to_string());
 
-    let path = Path::new(&name);
+	let path = Path::new(&name);
 
-    let source_text = std::fs::read_to_string(path).map_err(|_| format!("Missing '{name}'"))?;
+	let source_text = std::fs::read_to_string(path).map_err(|_| format!("Missing '{name}'"))?;
 
-    let allocator = Allocator::default();
+	let allocator = Allocator::default();
 
-    let source_type = SourceType::from_path(path).unwrap();
+	let source_type = SourceType::from_path(path).unwrap();
 
-    let ret = Parser::new(&allocator, &source_text, source_type).parse();
+	let ret = Parser::new(&allocator, &source_text, source_type).parse();
 
-    println!("source:");
+	println!("source:");
 
-    println!("{source_text}");
+	println!("{source_text}");
 
-    for error in ret.errors {
-        let error = error.with_source_code(source_text.clone());
+	for error in ret.errors {
+		let error = error.with_source_code(source_text.clone());
 
-        println!("{error:?}");
+		println!("{error:?}");
 
-        println!("Parsed with Errors.");
-    }
+		println!("Parsed with Errors.");
+	}
 
-    let ModuleLexer { imports, exports, facade, has_module_syntax } =
-        ModuleLexer::new().build(&ret.program);
+	let ModuleLexer { imports, exports, facade, has_module_syntax } =
+		ModuleLexer::new().build(&ret.program);
 
-    println!("\nimports:");
+	println!("\nimports:");
 
-    for import in imports {
-        println!("{import:?}");
-    }
+	for import in imports {
+		println!("{import:?}");
+	}
 
-    println!("\nexports:");
+	println!("\nexports:");
 
-    for export in exports {
-        println!("{export:?}");
-    }
+	for export in exports {
+		println!("{export:?}");
+	}
 
-    println!("\nfacade: {facade}");
+	println!("\nfacade: {facade}");
 
-    println!("has_module_syntax {has_module_syntax}");
+	println!("has_module_syntax {has_module_syntax}");
 
-    Ok(())
+	Ok(())
 }
