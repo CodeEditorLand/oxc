@@ -140,11 +140,11 @@
 	"dependencies": {},
 	"devDependencies": {
 		"@playform/build": "0.2.0",
-		"@types/node": "^22.0.0",
-		"cross-env": "^7.0.3",
-		"esbuild": "^0.24.0",
-		"ovsx": "^0.10.0",
-		"oxlint": "^0.15.0"
+		"@types/node": "22.0.0",
+		"cross-env": "7.0.3",
+		"esbuild": "0.24.0",
+		"ovsx": "0.10.0",
+		"oxlint": "0.15.0"
 	},
 	"publishConfig": {
 		"access": "public"
