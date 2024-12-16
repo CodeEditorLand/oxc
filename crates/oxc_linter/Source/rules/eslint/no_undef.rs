@@ -162,7 +162,7 @@ fn test() {
         "String;Array;Boolean;",
         "function resolve<T>(path: string): T { return { path } as T; }",
         "let xyz: NodeListOf<HTMLElement>",
-        "type Foo = Record<string, unknown>;"
+        "type Foo = Record<string, unknown>;",
     ];
 
     let fail = vec![

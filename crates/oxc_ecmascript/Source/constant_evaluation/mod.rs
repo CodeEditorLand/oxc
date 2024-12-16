@@ -1,7 +1,3 @@
-mod is_literal_value;
-mod value;
-mod value_type;
-
 use std::{borrow::Cow, cmp::Ordering};
 
 use num_bigint::BigInt;
@@ -11,7 +7,12 @@ use oxc_ast::ast::*;
 
 use crate::{side_effects::MayHaveSideEffects, ToBigInt, ToBoolean, ToInt32, ToJsString, ToNumber};
 
-pub use self::{is_literal_value::IsLiteralValue, value::ConstantValue, value_type::ValueType};
+mod is_literal_value;
+mod value;
+mod value_type;
+pub use is_literal_value::IsLiteralValue;
+pub use value::ConstantValue;
+pub use value_type::ValueType;
 
 pub trait ConstantEvaluation<'a> {
     fn is_global_reference(&self, ident: &IdentifierReference<'a>) -> bool {
@@ -222,11 +223,16 @@ pub trait ConstantEvaluation<'a> {
     }
 
     fn eval_binary_expression(&self, e: &BinaryExpression<'a>) -> Option<ConstantValue<'a>> {
-        let left = &e.left;
+        self.eval_binary_operation(e.operator, &e.left, &e.right)
+    }
 
-        let right = &e.right;
-
-        match e.operator {
+    fn eval_binary_operation(
+        &self,
+        operator: BinaryOperator,
+        left: &Expression<'a>,
+        right: &Expression<'a>,
+    ) -> Option<ConstantValue<'a>> {
+        match operator {
             BinaryOperator::Addition => {
                 if left.may_have_side_effects() || right.may_have_side_effects() {
                     return None;
@@ -271,8 +277,7 @@ pub trait ConstantEvaluation<'a> {
                 let lval = self.eval_to_number(left)?;
 
                 let rval = self.eval_to_number(right)?;
-
-                let val = match e.operator {
+                let val = match operator {
                     BinaryOperator::Subtraction => lval - rval,
                     BinaryOperator::Division => lval / rval,
                     BinaryOperator::Remainder => {
@@ -312,7 +317,7 @@ pub trait ConstantEvaluation<'a> {
 
                     let bits = left_val.to_int_32();
 
-                    let result_val: f64 = match e.operator {
+                    let result_val: f64 = match operator {
                         BinaryOperator::ShiftLeft => f64::from(bits.wrapping_shl(right_val_int)),
                         BinaryOperator::ShiftRight => f64::from(bits.wrapping_shr(right_val_int)),
                         BinaryOperator::ShiftRightZeroFill => {
@@ -369,7 +374,36 @@ pub trait ConstantEvaluation<'a> {
                     _ => unreachable!(),
                 })
             }
+            BinaryOperator::BitwiseAnd | BinaryOperator::BitwiseOR | BinaryOperator::BitwiseXOR => {
+                if left.is_big_int_literal() && right.is_big_int_literal() {
+                    let left_bigint = self.get_side_free_bigint_value(left);
+                    let right_bigint = self.get_side_free_bigint_value(right);
+                    if let (Some(left_val), Some(right_val)) = (left_bigint, right_bigint) {
+                        let result_val: BigInt = match operator {
+                            BinaryOperator::BitwiseAnd => left_val & right_val,
+                            BinaryOperator::BitwiseOR => left_val | right_val,
+                            BinaryOperator::BitwiseXOR => left_val ^ right_val,
+                            _ => unreachable!(),
+                        };
+                        return Some(ConstantValue::BigInt(result_val));
+                    }
+                }
+                let left_num = self.get_side_free_number_value(left);
+                let right_num = self.get_side_free_number_value(right);
+                if let (Some(left_val), Some(right_val)) = (left_num, right_num) {
+                    let left_val_int = left_val.to_int_32();
+                    let right_val_int = right_val.to_int_32();
 
+                    let result_val: f64 = match operator {
+                        BinaryOperator::BitwiseAnd => f64::from(left_val_int & right_val_int),
+                        BinaryOperator::BitwiseOR => f64::from(left_val_int | right_val_int),
+                        BinaryOperator::BitwiseXOR => f64::from(left_val_int ^ right_val_int),
+                        _ => unreachable!(),
+                    };
+                    return Some(ConstantValue::Number(result_val));
+                }
+                None
+            }
             _ => None,
         }
     }

@@ -1,6 +1,5 @@
 use std::{borrow::Cow, fmt};
 
-use oxc_diagnostics::{Error, OxcDiagnostic};
 use rustc_hash::{FxHashMap, FxHashSet};
 use schemars::{gen::SchemaGenerator, schema::Schema, JsonSchema};
 use serde::{
@@ -8,6 +7,8 @@ use serde::{
     ser::SerializeMap,
     Deserialize, Serialize,
 };
+
+use oxc_diagnostics::{Error, OxcDiagnostic};
 
 use crate::{
     rules::{RuleEnum, RULES},
@@ -360,14 +361,13 @@ impl ESLintRule {
 #[cfg(test)]
 #[allow(clippy::default_trait_access)]
 mod test {
+    use serde::Deserialize;
+    use serde_json::{json, Value};
+
     use crate::{
         rules::{RuleEnum, RULES},
         AllowWarnDeny, RuleWithSeverity,
     };
-
-    use serde::Deserialize;
-
-    use serde_json::{json, Value};
 
     use super::{OxlintRules, RuleSet};
 
@@ -472,13 +472,22 @@ mod test {
 
         r#override(&mut rules, &config);
 
-        assert_eq!(rules.len(), 1, "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}");
-
+        assert_eq!(
+            rules.len(),
+            1,
+            "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}"
+        );
         let rule = rules.iter().next().unwrap();
-
-        assert_eq!(rule.name(), "no-console", "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}");
-
-        assert_eq!(rule.severity, AllowWarnDeny::Deny, "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}");
+        assert_eq!(
+            rule.name(),
+            "no-console",
+            "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}"
+        );
+        assert_eq!(
+            rule.severity,
+            AllowWarnDeny::Deny,
+            "eslint rules should be configurable by their typescript-eslint reimplementations: {config:?}"
+        );
     }
 
     #[test]

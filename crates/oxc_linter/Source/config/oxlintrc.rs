@@ -1,15 +1,16 @@
 use std::path::{Path, PathBuf};
 
-use oxc_diagnostics::OxcDiagnostic;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use oxc_diagnostics::OxcDiagnostic;
+
+use crate::utils::read_to_string;
 
 use super::{
     categories::OxlintCategories, env::OxlintEnv, globals::OxlintGlobals,
     overrides::OxlintOverrides, plugins::LintPlugins, rules::OxlintRules, settings::OxlintSettings,
 };
-
-use crate::utils::read_to_string;
 
 /// Oxlint Configuration File
 ///
@@ -139,9 +140,9 @@ impl Oxlintrc {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_oxlintrc_de_empty() {

@@ -3,6 +3,7 @@ use std::path::Path;
 
 use oxc_allocator::Allocator;
 use oxc_codegen::{CodeGenerator, CodegenOptions};
+use oxc_mangler::MangleOptions;
 use oxc_minifier::{CompressOptions, Minifier, MinifierOptions};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
@@ -55,17 +56,16 @@ fn minify(
 	mangle:bool,
 	nospace:bool,
 ) -> String {
-	let ret = Parser::new(allocator, source_text, source_type).parse();
-
-	let mut program = ret.program;
-
-	let options = MinifierOptions { mangle, compress:CompressOptions::default() };
-
-	let ret = Minifier::new(options).build(allocator, &mut program);
-
-	CodeGenerator::new()
-		.with_options(CodegenOptions { minify:nospace, ..CodegenOptions::default() })
-		.with_mangler(ret.mangler)
-		.build(&program)
-		.code
+    let ret = Parser::new(allocator, source_text, source_type).parse();
+    let mut program = ret.program;
+    let options = MinifierOptions {
+        mangle: mangle.then(MangleOptions::default),
+        compress: CompressOptions::default(),
+    };
+    let ret = Minifier::new(options).build(allocator, &mut program);
+    CodeGenerator::new()
+        .with_options(CodegenOptions { minify: nospace, ..CodegenOptions::default() })
+        .with_mangler(ret.mangler)
+        .build(&program)
+        .code
 }

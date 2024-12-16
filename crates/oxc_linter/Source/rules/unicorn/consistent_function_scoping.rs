@@ -679,7 +679,7 @@ fn test() {
 
             function outer() {
                 inner = function inner() {}
-            }", 
+            }",
             None,
         ),
         // end of cases that eslint-plugin-unicorn passes, but we fail.

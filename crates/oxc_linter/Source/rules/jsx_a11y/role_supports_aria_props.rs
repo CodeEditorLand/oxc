@@ -69,9 +69,7 @@ impl Rule for RoleSupportsAriaProps {
             return;
         };
 
-        let Some(el_type) = get_element_type(ctx, jsx_el) else {
-            return;
-        };
+        let el_type = get_element_type(ctx, jsx_el);
 
         let role = has_jsx_prop_ignore_case(jsx_el, "role");
 

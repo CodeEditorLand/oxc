@@ -163,9 +163,9 @@ impl JsonSchema for GlobSet {
 mod test {
     #[test]
     fn test_globset() {
-        use super::*;
-
         use serde_json::{from_value, json};
+
+        use super::*;
 
         let config: OxlintOverride = from_value(json!({
             "files": ["*.tsx",],
@@ -188,9 +188,9 @@ mod test {
 
     #[test]
     fn test_parsing_plugins() {
-        use super::*;
-
         use serde_json::{from_value, json};
+
+        use super::*;
 
         let config: OxlintOverride = from_value(json!({
             "files": ["*.tsx"],

@@ -600,9 +600,9 @@ fn test() {
         // spellchecker:on
         // Carets
         r"/[^\^]/",
-        r"/[^\^]/u",          // { "ecmaVersion": 2015 },
+        r"/[^\^]/u", // { "ecmaVersion": 2015 },
         // ES2024
-        r"/[\$]/v",           // { "ecmaVersion": 2024 },
+        r"/[\$]/v",            // { "ecmaVersion": 2024 },
         r"/[\&\&]/v",          // { "ecmaVersion": 2024 },
         r"/[\!\!]/v",          // { "ecmaVersion": 2024 },
         r"/[\#\#]/v",          // { "ecmaVersion": 2024 },
@@ -618,17 +618,17 @@ fn test() {
         r"/[\>\>]/v",          // { "ecmaVersion": 2024 },
         r"/[\?\?]/v",          // { "ecmaVersion": 2024 },
         r"/[\@\@]/v",          // { "ecmaVersion": 2024 },
-        "/[\\`\\`]/v",       // { "ecmaVersion": 2024 },
+        "/[\\`\\`]/v",         // { "ecmaVersion": 2024 },
         r"/[\~\~]/v",          // { "ecmaVersion": 2024 },
         r"/[^\^\^]/v",         // { "ecmaVersion": 2024 },
         r"/[_\^\^]/v",         // { "ecmaVersion": 2024 },
-        r"/[\&\&&\&]/v",        // { "ecmaVersion": 2024 },
+        r"/[\&\&&\&]/v",       // { "ecmaVersion": 2024 },
         r"/[\p{ASCII}--\.]/v", // { "ecmaVersion": 2024 },
         r"/[\p{ASCII}&&\.]/v", // { "ecmaVersion": 2024 },
-        r"/[\.--[.&]]/v",     // { "ecmaVersion": 2024 },
-        r"/[\.&&[.&]]/v",     // { "ecmaVersion": 2024 },
-        r"/[\.--\.--\.]/v",     // { "ecmaVersion": 2024 },
-        r"/[\.&&\.&&\.]/v",     // { "ecmaVersion": 2024 },
+        r"/[\.--[.&]]/v",      // { "ecmaVersion": 2024 },
+        r"/[\.&&[.&]]/v",      // { "ecmaVersion": 2024 },
+        r"/[\.--\.--\.]/v",    // { "ecmaVersion": 2024 },
+        r"/[\.&&\.&&\.]/v",    // { "ecmaVersion": 2024 },
         r"/[[\.&]--[\.&]]/v",  // { "ecmaVersion": 2024 },
         r"/[[\.&]&&[\.&]]/v",  // { "ecmaVersion": 2024 }
     ];

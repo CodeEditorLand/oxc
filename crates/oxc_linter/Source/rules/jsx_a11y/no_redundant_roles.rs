@@ -62,9 +62,7 @@ impl Rule for NoRedundantRoles {
             return;
         };
 
-        let Some(component) = get_element_type(ctx, jsx_el) else {
-            return;
-        };
+        let component = get_element_type(ctx, jsx_el);
 
         if let Some(JSXAttributeItem::Attribute(attr)) = has_jsx_prop_ignore_case(jsx_el, "role") {
             if let Some(JSXAttributeValue::StringLiteral(role_values)) = &attr.value {

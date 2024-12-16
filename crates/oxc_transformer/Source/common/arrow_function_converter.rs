@@ -620,8 +620,8 @@ impl<'a> ArrowFunctionConverter<'a> {
 
     /// Transforms a `MemberExpression` whose object is a `super` expression.
     ///
-    /// In the [`AsyncToGenerator`](crate::es2017::async_to_generator::AsyncToGenerator) and
-    /// [`AsyncGeneratorFunctions`](crate::es2018::async_generator_functions::AsyncGeneratorFunctions) plugins,
+    /// In the [`AsyncToGenerator`](crate::es2017::AsyncToGenerator) and
+    /// [`AsyncGeneratorFunctions`](crate::es2018::AsyncGeneratorFunctions) plugins,
     /// we move the body of an async method to a new generator function. This can cause
     /// `super` expressions to appear in unexpected places, leading to syntax errors.
     ///
@@ -979,10 +979,7 @@ impl<'a> ArrowFunctionConverter<'a> {
     /// Rename the `arguments` symbol to a new name.
     fn rename_arguments_symbol(symbol_id: SymbolId, name: CompactStr, ctx: &mut TraverseCtx<'a>) {
         let scope_id = ctx.symbols().get_scope_id(symbol_id);
-
-        ctx.symbols_mut().rename(symbol_id, name.clone());
-
-        ctx.scopes_mut().rename_binding(scope_id, "arguments", name);
+        ctx.rename_symbol(symbol_id, scope_id, name);
     }
 
     /// Transform the identifier reference for `arguments` if it's affected after transformation.

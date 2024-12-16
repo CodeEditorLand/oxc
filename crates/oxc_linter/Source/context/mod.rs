@@ -1,5 +1,4 @@
 #![allow(rustdoc::private_intra_doc_links)] // useful for intellisense
-mod host;
 
 use std::{ops::Deref, path::Path, rc::Rc};
 
@@ -17,6 +16,7 @@ use crate::{
     AllowWarnDeny, FrameworkFlags, ModuleRecord, OxlintEnv, OxlintGlobals, OxlintSettings,
 };
 
+mod host;
 pub(crate) use host::ContextHost;
 
 #[derive(Clone)]

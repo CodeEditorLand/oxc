@@ -1,9 +1,8 @@
 use std::str::FromStr;
 
+pub use browserslist::Version;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
-
-pub use browserslist::Version;
 
 use crate::options::{BrowserslistQuery, Engine, EngineTargets};
 
@@ -76,7 +75,7 @@ impl TryFrom<BabelTargets> for EngineTargets {
                         }
 
                         Err(err) => {
-                            return Err(format!("Failed to parse `{v}` for `{key}`\n{err:?}"))
+                            return Err(format!("Failed to parse `{v}` for `{key}`\n{err:?}"));
                         }
                     }
                 }

@@ -38,6 +38,7 @@ impl EngineTargets {
     pub fn new(map: FxHashMap<Engine, Version>) -> Self {
         Self(map)
     }
+
     /// # Errors
     ///
     /// * Query is invalid.

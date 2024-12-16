@@ -804,6 +804,7 @@ impl<'a> Declaration<'a> {
             _ => true,
         }
     }
+
     /// Get the identifier bound by this declaration.
     ///
     /// ## Example

@@ -1,0 +1,37 @@
+---
+source: crates/oxc_minifier/tests/mangler/mod.rs
+---
+function foo(a) {a}
+function foo(b) {
+	b;
+}
+
+function foo(a) { let _ = { x } }
+function foo(b) {
+	let c = { x };
+}
+
+function foo(a) { let { x } = y }
+function foo(b) {
+	let { x: c } = y;
+}
+
+var x; function foo(a) { ({ x } = y) }
+var x;
+function foo(c) {
+	({x} = y);
+}
+
+import { x } from 's'; export { x }
+import { x } from "s";
+export { x };
+
+function _ (exports) { Object.defineProperty(exports, '__esModule', { value: true }) }
+function _(exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+}
+
+function foo(a) {a}
+function a(b) {
+	b;
+}

@@ -227,7 +227,7 @@ impl<'a, 'ctx> RegExp<'a, 'ctx> {
                 Term::UnicodePropertyEscape(_) => return self.unicode_property_escapes,
                 Term::CharacterClass(character_class) => {
                     return self.unicode_property_escapes
-                        && character_class_has_unicode_property_escape(character_class)
+                        && character_class_has_unicode_property_escape(character_class);
                 }
 
                 Term::LookAroundAssertion(assertion) => {
@@ -236,7 +236,7 @@ impl<'a, 'ctx> RegExp<'a, 'ctx> {
                             assertion.kind,
                             LookAroundAssertionKind::Lookbehind
                                 | LookAroundAssertionKind::NegativeLookbehind
-                        )
+                        );
                 }
 
                 Term::Quantifier(quantifier) => term = &quantifier.body,
