@@ -6,205 +6,211 @@ use oxc_span::Span;
 use rustc_hash::FxHashMap;
 
 use crate::{
-    context::LintContext,
-    rule::Rule,
-    utils::{
-        collect_possible_jest_call_node, parse_jest_fn_call, JestFnKind, JestGeneralFnKind,
-        ParsedJestFnCallNew, PossibleJestNode,
-    },
+	context::LintContext,
+	rule::Rule,
+	utils::{
+		JestFnKind,
+		JestGeneralFnKind,
+		ParsedJestFnCallNew,
+		PossibleJestNode,
+		collect_possible_jest_call_node,
+		parse_jest_fn_call,
+	},
 };
 
-fn no_duplicate_hooks_diagnostic(x0: &str, span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn(format!("Duplicate {x0:?} in describe block."))
-        .with_help("Describe blocks can only have one of each hook. Consider consolidating the duplicate hooks into a single call.")
-        .with_label(span)
+fn no_duplicate_hooks_diagnostic(x0:&str, span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::warn(format!("Duplicate {x0:?} in describe block."))
+		.with_help(
+			"Describe blocks can only have one of each hook. Consider consolidating the duplicate \
+			 hooks into a single call.",
+		)
+		.with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct NoDuplicateHooks;
 
 declare_oxc_lint!(
-    /// ### What it does
-    ///
-    /// Disallows duplicate hooks in describe blocks.
-    ///
-    /// ### Why is this bad?
-    ///
-    /// Having duplicate hooks in a describe block can lead to confusion and unexpected behavior.
-    ///
-    /// ### Example
-    ///
-    /// Examples of **incorrect** code for this rule:
-    /// ```javascript
-    /// describe('foo', () => {
-    ///     beforeEach(() => {
-    ///         // some setup
-    ///     });
-    ///     beforeEach(() => {
-    ///         // some setup
-    ///     });
-    ///     test('foo_test', () => {
-    ///         // some test
-    ///     });
-    /// });
-    ///
-    /// // Nested describe scenario
-    /// describe('foo', () => {
-    ///     beforeEach(() => {
-    ///         // some setup
-    ///     });
-    ///     test('foo_test', () => {
-    ///         // some test
-    ///     });
-    ///     describe('bar', () => {
-    ///         test('bar_test', () => {
-    ///             afterAll(() => {
-    ///                 // some teardown
-    ///             });
-    ///             afterAll(() => {
-    ///                 // some teardown
-    ///             });
-    ///         });
-    ///     });
-    /// });
-    /// ```
-    ///
-    /// Examples of **correct** code for this rule:
-    /// ```javascript
-    /// describe('foo', () => {
-    ///     beforeEach(() => {
-    ///         // some setup
-    ///     });
-    ///     test('foo_test', () => {
-    ///         // some test
-    ///     });
-    /// });
-    ///
-    /// // Nested describe scenario
-    /// describe('foo', () => {
-    ///     beforeEach(() => {
-    ///         // some setup
-    ///     });
-    ///     test('foo_test', () => {
-    ///         // some test
-    ///     });
-    ///     describe('bar', () => {
-    ///         test('bar_test', () => {
-    ///             beforeEach(() => {
-    ///                 // some setup
-    ///             });
-    ///         });
-    ///     });
-    /// });
-    /// ```
-    NoDuplicateHooks,
-    style,
+	/// ### What it does
+	///
+	/// Disallows duplicate hooks in describe blocks.
+	///
+	/// ### Why is this bad?
+	///
+	/// Having duplicate hooks in a describe block can lead to confusion and unexpected behavior.
+	///
+	/// ### Example
+	///
+	/// Examples of **incorrect** code for this rule:
+	/// ```javascript
+	/// describe('foo', () => {
+	///     beforeEach(() => {
+	///         // some setup
+	///     });
+	///     beforeEach(() => {
+	///         // some setup
+	///     });
+	///     test('foo_test', () => {
+	///         // some test
+	///     });
+	/// });
+	///
+	/// // Nested describe scenario
+	/// describe('foo', () => {
+	///     beforeEach(() => {
+	///         // some setup
+	///     });
+	///     test('foo_test', () => {
+	///         // some test
+	///     });
+	///     describe('bar', () => {
+	///         test('bar_test', () => {
+	///             afterAll(() => {
+	///                 // some teardown
+	///             });
+	///             afterAll(() => {
+	///                 // some teardown
+	///             });
+	///         });
+	///     });
+	/// });
+	/// ```
+	///
+	/// Examples of **correct** code for this rule:
+	/// ```javascript
+	/// describe('foo', () => {
+	///     beforeEach(() => {
+	///         // some setup
+	///     });
+	///     test('foo_test', () => {
+	///         // some test
+	///     });
+	/// });
+	///
+	/// // Nested describe scenario
+	/// describe('foo', () => {
+	///     beforeEach(() => {
+	///         // some setup
+	///     });
+	///     test('foo_test', () => {
+	///         // some test
+	///     });
+	///     describe('bar', () => {
+	///         test('bar_test', () => {
+	///             beforeEach(() => {
+	///                 // some setup
+	///             });
+	///         });
+	///     });
+	/// });
+	/// ```
+	NoDuplicateHooks,
+	style,
 );
 
 impl Rule for NoDuplicateHooks {
-    fn run_once(&self, ctx: &LintContext) {
-        let Some(root_node) = ctx.nodes().root_node() else {
-            return;
-        };
+	fn run_once(&self, ctx:&LintContext) {
+		let Some(root_node) = ctx.nodes().root_node() else {
+			return;
+		};
 
-        let mut hook_contexts: FxHashMap<NodeId, Vec<FxHashMap<String, i32>>> =
-            FxHashMap::default();
+		let mut hook_contexts:FxHashMap<NodeId, Vec<FxHashMap<String, i32>>> = FxHashMap::default();
 
-        hook_contexts.insert(root_node.id(), Vec::new());
+		hook_contexts.insert(root_node.id(), Vec::new());
 
-        let mut possibles_jest_nodes = collect_possible_jest_call_node(ctx);
+		let mut possibles_jest_nodes = collect_possible_jest_call_node(ctx);
 
-        possibles_jest_nodes.sort_by_key(|n| n.node.id());
+		possibles_jest_nodes.sort_by_key(|n| n.node.id());
 
-        for possible_jest_node in possibles_jest_nodes {
-            Self::run(&possible_jest_node, root_node.id(), &mut hook_contexts, ctx);
-        }
-    }
+		for possible_jest_node in possibles_jest_nodes {
+			Self::run(&possible_jest_node, root_node.id(), &mut hook_contexts, ctx);
+		}
+	}
 }
 
 impl NoDuplicateHooks {
-    fn run<'a>(
-        possible_jest_node: &PossibleJestNode<'a, '_>,
-        root_node_id: NodeId,
-        hook_contexts: &mut FxHashMap<NodeId, Vec<FxHashMap<String, i32>>>,
-        ctx: &LintContext<'a>,
-    ) {
-        let node = possible_jest_node.node;
+	fn run<'a>(
+		possible_jest_node:&PossibleJestNode<'a, '_>,
+		root_node_id:NodeId,
+		hook_contexts:&mut FxHashMap<NodeId, Vec<FxHashMap<String, i32>>>,
+		ctx:&LintContext<'a>,
+	) {
+		let node = possible_jest_node.node;
 
-        let AstKind::CallExpression(call_expr) = node.kind() else {
-            return;
-        };
+		let AstKind::CallExpression(call_expr) = node.kind() else {
+			return;
+		};
 
-        let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
-            parse_jest_fn_call(call_expr, possible_jest_node, ctx)
-        else {
-            return;
-        };
+		let Some(ParsedJestFnCallNew::GeneralJest(jest_fn_call)) =
+			parse_jest_fn_call(call_expr, possible_jest_node, ctx)
+		else {
+			return;
+		};
 
-        if matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Describe)) {
-            hook_contexts.insert(node.id(), Vec::default());
-        }
+		if matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Describe)) {
+			hook_contexts.insert(node.id(), Vec::default());
+		}
 
-        if !matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Hook)) {
-            return;
-        }
+		if !matches!(jest_fn_call.kind, JestFnKind::General(JestGeneralFnKind::Hook)) {
+			return;
+		}
 
-        let hook_name = jest_fn_call.name.to_string();
+		let hook_name = jest_fn_call.name.to_string();
 
-        let parent_node_id =
-            match ctx.nodes().ancestor_ids(node.id()).find(|n| hook_contexts.contains_key(n)) {
-                Some(n) => Some(n),
-                _ => Some(root_node_id),
-            };
+		let parent_node_id =
+			match ctx.nodes().ancestor_ids(node.id()).find(|n| hook_contexts.contains_key(n)) {
+				Some(n) => Some(n),
+				_ => Some(root_node_id),
+			};
 
-        let Some(parent_id) = parent_node_id else {
-            return;
-        };
+		let Some(parent_id) = parent_node_id else {
+			return;
+		};
 
-        let Some(contexts) = hook_contexts.get_mut(&parent_id) else {
-            return;
-        };
+		let Some(contexts) = hook_contexts.get_mut(&parent_id) else {
+			return;
+		};
 
-        let last_context = if let Some(val) = contexts.last_mut() {
-            Some(val)
-        } else {
-            let mut context = FxHashMap::default();
+		let last_context = if let Some(val) = contexts.last_mut() {
+			Some(val)
+		} else {
+			let mut context = FxHashMap::default();
 
-            context.insert(hook_name.clone(), 0);
+			context.insert(hook_name.clone(), 0);
 
-            contexts.push(context);
+			contexts.push(context);
 
-            contexts.last_mut()
-        };
+			contexts.last_mut()
+		};
 
-        let Some(last_context) = last_context else {
-            return;
-        };
+		let Some(last_context) = last_context else {
+			return;
+		};
 
-        let Some((_, count)) = last_context.get_key_value(&hook_name) else {
-            last_context.insert(hook_name, 1);
+		let Some((_, count)) = last_context.get_key_value(&hook_name) else {
+			last_context.insert(hook_name, 1);
 
-            return;
-        };
+			return;
+		};
 
-        if *count > 0 {
-            ctx.diagnostic(no_duplicate_hooks_diagnostic(
-                jest_fn_call.name.to_string().as_str(),
-                call_expr.span,
-            ));
-        } else {
-            last_context.insert(hook_name, 1);
-        }
-    }
+		if *count > 0 {
+			ctx.diagnostic(no_duplicate_hooks_diagnostic(
+				jest_fn_call.name.to_string().as_str(),
+				call_expr.span,
+			));
+		} else {
+			last_context.insert(hook_name, 1);
+		}
+	}
 }
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+	use crate::tester::Tester;
 
-    let pass = vec![
-        (
-            "
+	let pass = vec![
+		(
+			"
                 describe(\"foo\", () => {
                     beforeEach(() => {})
                     test(\"bar\", () => {
@@ -212,19 +218,19 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 beforeEach(() => {})
                 test(\"bar\", () => {
                     someFn();
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe(\"foo\", () => {
                     beforeAll(() => {}),
                     beforeEach(() => {})
@@ -236,10 +242,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.skip(\"foo\", () => {
                     beforeEach(() => {}),
                     beforeAll(() => {}),
@@ -255,10 +261,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe(\"foo\", () => {
                     beforeEach(() => {}),
                     test(\"bar\", () => {
@@ -272,20 +278,20 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.each(['hello'])('%s', () => {
                     beforeEach(() => {});
 
                     it(\"is fine\", () => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe(\"something\", () => {
                     describe.each(['hello'])('%s', () => {
                         beforeEach(() => {});
@@ -300,20 +306,20 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.each``('%s', () => {
                     beforeEach(() => {});
 
                     it(\"is fine\", () => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe(\"something\", () => {
                     describe.each``(\"%s\", () => {
                         beforeEach(() => {});
@@ -328,13 +334,13 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-    ];
+			None,
+		),
+	];
 
-    let fail = vec![
-        (
-            "
+	let fail = vec![
+		(
+			"
                 describe(\"foo\", () => {
                     beforeEach(() => {});
 
@@ -345,10 +351,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.skip(\"foo\", () => {
                     beforeEach(() => {}),
                     beforeAll(() => {}),
@@ -358,10 +364,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.skip(\"foo\", () => {
                     afterEach(() => {}),
                     afterEach(() => {}),
@@ -370,10 +376,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 import { afterEach } from '@jest/globals';
 
                 describe.skip(\"foo\", () => {
@@ -384,10 +390,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 import { afterEach, afterEach as somethingElse } from '@jest/globals';
 
                 describe.skip(\"foo\", () => {
@@ -398,10 +404,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.skip(\"foo\", () => {
                     afterAll(() => {}),
                     afterAll(() => {}),
@@ -410,20 +416,20 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 afterAll(() => {}),
                 afterAll(() => {}),
                 test(\"bar\", () => {
                     someFn();
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe(\"foo\", () => {
                     beforeEach(() => {}),
                     beforeEach(() => {}),
@@ -433,10 +439,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.skip(\"foo\", () => {
                     afterAll(() => {}),
                     afterAll(() => {}),
@@ -447,10 +453,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.skip(\"foo\", () => {
                     beforeEach(() => {}),
                     beforeAll(() => {}),
@@ -467,10 +473,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe(\"foo\", () => {
                     beforeAll(() => {}),
                     test(\"bar\", () => {
@@ -485,10 +491,10 @@ fn test() {
                     })
                 })
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.each(['hello'])('%s', () => {
                     beforeEach(() => {});
 
@@ -497,10 +503,10 @@ fn test() {
                     it(\"is not fine\", () => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('something', () => {
                     describe.each(['hello'])('%s', () => {
                         beforeEach(() => {});
@@ -517,10 +523,10 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('something', () => {
                     describe.each(['hello'])('%s', () => {
                         beforeEach(() => {});
@@ -539,10 +545,10 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe.each``('%s', () => {
                     beforeEach(() => {});
 
@@ -551,10 +557,10 @@ fn test() {
                     it('is fine', () => {});
                 });
             ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
                 describe('something', () => {
                     describe.each``('%s', () => {
                         beforeEach(() => {});
@@ -571,11 +577,11 @@ fn test() {
                     });
                 });
             ",
-            None,
-        ),
-    ];
+			None,
+		),
+	];
 
-    Tester::new(NoDuplicateHooks::NAME, NoDuplicateHooks::CATEGORY, pass, fail)
-        .with_jest_plugin(true)
-        .test_and_snapshot();
+	Tester::new(NoDuplicateHooks::NAME, NoDuplicateHooks::CATEGORY, pass, fail)
+		.with_jest_plugin(true)
+		.test_and_snapshot();
 }

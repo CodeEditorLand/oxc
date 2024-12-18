@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use cow_utils::CowUtils;
 use oxc_allocator::Allocator;
-use oxc_ast::{ast::*, AstBuilder, NONE};
+use oxc_ast::{AstBuilder, NONE, ast::*};
 use oxc_semantic::{ScopeTree, SymbolTable};
 use oxc_span::{CompactStr, SPAN};
-use oxc_traverse::{traverse_mut, Traverse, TraverseCtx};
+use oxc_traverse::{Traverse, TraverseCtx, traverse_mut};
 
 use super::replace_global_defines::{DotDefine, ReplaceGlobalDefines};
 

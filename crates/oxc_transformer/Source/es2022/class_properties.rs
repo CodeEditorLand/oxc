@@ -1,6 +1,7 @@
 //! ES2022: Class Properties
 //!
-//! This plugin transforms class properties to initializers inside class constructor.
+//! This plugin transforms class properties to initializers inside class
+//! constructor.
 //!
 //! > This plugin is included in `preset-env`, in ES2022
 //!
@@ -62,33 +63,32 @@
 //!   * <https://github.com/babel/babel/blob/v7.26.2/packages/babel-helper-create-class-features-plugin/src/fields.ts>
 //! * Class properties TC39 proposal: <https://github.com/tc39/proposal-class-fields>
 
-use serde::Deserialize;
-
 use oxc_ast::ast::*;
 use oxc_traverse::{Traverse, TraverseCtx};
+use serde::Deserialize;
 
 use crate::TransformCtx;
 
 #[derive(Debug, Default, Clone, Copy, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ClassPropertiesOptions {
-    #[serde(alias = "loose")]
-    pub(crate) set_public_class_fields: bool,
+	#[serde(alias = "loose")]
+	pub(crate) set_public_class_fields:bool,
 }
 
 pub struct ClassProperties<'a, 'ctx> {
-    #[expect(dead_code)]
-    options: ClassPropertiesOptions,
-    #[expect(dead_code)]
-    ctx: &'ctx TransformCtx<'a>,
+	#[expect(dead_code)]
+	options:ClassPropertiesOptions,
+	#[expect(dead_code)]
+	ctx:&'ctx TransformCtx<'a>,
 }
 
 impl<'a, 'ctx> ClassProperties<'a, 'ctx> {
-    pub fn new(options: ClassPropertiesOptions, ctx: &'ctx TransformCtx<'a>) -> Self {
-        Self { options, ctx }
-    }
+	pub fn new(options:ClassPropertiesOptions, ctx:&'ctx TransformCtx<'a>) -> Self {
+		Self { options, ctx }
+	}
 }
 
 impl<'a, 'ctx> Traverse<'a> for ClassProperties<'a, 'ctx> {
-    fn enter_class_body(&mut self, _body: &mut ClassBody<'a>, _ctx: &mut TraverseCtx<'a>) {}
+	fn enter_class_body(&mut self, _body:&mut ClassBody<'a>, _ctx:&mut TraverseCtx<'a>) {}
 }

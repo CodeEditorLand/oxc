@@ -1,4 +1,4 @@
-use petgraph::{visit::EdgeRef, Direction, Graph};
+use petgraph::{Direction, Graph, visit::EdgeRef};
 use rustc_hash::FxHashSet;
 
 use crate::BasicBlockId;

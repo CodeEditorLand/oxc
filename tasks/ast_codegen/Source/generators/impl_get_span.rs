@@ -4,14 +4,14 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_quote, Attribute, Variant};
+use syn::{Attribute, Variant, parse_quote};
 
 use super::generated_header;
 use crate::{
-	schema::{REnum, RStruct, RType},
 	CodegenCtx,
 	Generator,
 	GeneratorOutput,
+	schema::{REnum, RStruct, RType},
 };
 
 pub struct ImplGetSpanGenerator;

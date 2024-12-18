@@ -1,9 +1,9 @@
 use itertools::Itertools;
 use quote::quote;
-use syn::{parse_quote, Arm, Ident, Type, Variant};
+use syn::{Arm, Ident, Type, Variant, parse_quote};
 
 use super::generated_header;
-use crate::{schema::RType, util::TypeExt, CodegenCtx, Generator, GeneratorOutput, TypeRef};
+use crate::{CodegenCtx, Generator, GeneratorOutput, TypeRef, schema::RType, util::TypeExt};
 
 pub struct AstKindGenerator;
 

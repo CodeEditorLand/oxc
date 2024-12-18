@@ -4,8 +4,8 @@ use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-	parse::{Parse, ParseStream},
 	Result,
+	parse::{Parse, ParseStream},
 };
 use trie::RulePathTrieBuilder;
 

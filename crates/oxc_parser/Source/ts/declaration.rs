@@ -1,4 +1,4 @@
-use crate::{lexer::Kind, ParserImpl};
+use crate::{ParserImpl, lexer::Kind};
 
 impl<'a> ParserImpl<'a> {
 	/// Check if the parser is at a start of a declaration
@@ -83,11 +83,9 @@ impl<'a> ParserImpl<'a> {
 #[cfg(test)]
 mod test_is_declaration {
 	use oxc_allocator::Allocator;
-
 	use oxc_span::SourceType;
 
 	use super::*;
-
 	use crate::ParserOptions;
 
 	fn run_check(source:&str, expected:bool) {

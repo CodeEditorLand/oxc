@@ -2,7 +2,7 @@ use std::{cmp::Ordering, mem};
 
 use num_bigint::BigInt;
 use oxc_ast::ast::*;
-use oxc_span::{GetSpan, Span, SPAN};
+use oxc_span::{GetSpan, SPAN, Span};
 use oxc_syntax::{
 	number::NumberBase,
 	operator::{BinaryOperator, LogicalOperator, UnaryOperator},
@@ -10,17 +10,17 @@ use oxc_syntax::{
 use oxc_traverse::{Ancestor, Traverse, TraverseCtx};
 
 use crate::{
+	CompressorPass,
 	node_util::{
-		is_exact_int64,
 		IsLiteralValue,
 		MayHaveSideEffects,
 		NodeUtil,
 		NumberValue,
 		ValueType,
+		is_exact_int64,
 	},
 	tri::Tri,
 	ty::Ty,
-	CompressorPass,
 };
 
 /// Constant Folding

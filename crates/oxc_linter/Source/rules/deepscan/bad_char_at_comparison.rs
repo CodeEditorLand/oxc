@@ -1,4 +1,4 @@
-use oxc_ast::{ast::Expression, AstKind};
+use oxc_ast::{AstKind, ast::Expression};
 use oxc_diagnostics::{
 	miette::{self, Diagnostic},
 	thiserror::Error,
@@ -7,7 +7,7 @@ use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 use oxc_syntax::operator::BinaryOperator;
 
-use crate::{ast_util::is_method_call, context::LintContext, rule::Rule, AstNode};
+use crate::{AstNode, ast_util::is_method_call, context::LintContext, rule::Rule};
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("deepscan(bad-char-at-comparison): Invalid comparison with `charAt` method")]

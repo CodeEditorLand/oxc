@@ -56,16 +56,16 @@ fn minify(
 	mangle:bool,
 	nospace:bool,
 ) -> String {
-    let ret = Parser::new(allocator, source_text, source_type).parse();
-    let mut program = ret.program;
-    let options = MinifierOptions {
-        mangle: mangle.then(MangleOptions::default),
-        compress: CompressOptions::default(),
-    };
-    let ret = Minifier::new(options).build(allocator, &mut program);
-    CodeGenerator::new()
-        .with_options(CodegenOptions { minify: nospace, ..CodegenOptions::default() })
-        .with_mangler(ret.mangler)
-        .build(&program)
-        .code
+	let ret = Parser::new(allocator, source_text, source_type).parse();
+	let mut program = ret.program;
+	let options = MinifierOptions {
+		mangle:mangle.then(MangleOptions::default),
+		compress:CompressOptions::default(),
+	};
+	let ret = Minifier::new(options).build(allocator, &mut program);
+	CodeGenerator::new()
+		.with_options(CodegenOptions { minify:nospace, ..CodegenOptions::default() })
+		.with_mangler(ret.mangler)
+		.build(&program)
+		.code
 }

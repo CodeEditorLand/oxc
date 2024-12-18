@@ -6,7 +6,7 @@ use oxc_diagnostics::{
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 
-use crate::{context::LintContext, fixer::Fix, rule::Rule, AstNode};
+use crate::{AstNode, context::LintContext, fixer::Fix, rule::Rule};
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("eslint(no-return-await): Redundant use of `await` on a return value.")]

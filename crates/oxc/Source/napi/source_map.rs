@@ -18,32 +18,32 @@ use napi_derive::napi;
 // ```
 #[napi(object)]
 pub struct SourceMap {
-    pub file: Option<String>,
-    pub mappings: String,
-    pub names: Vec<String>,
-    pub source_root: Option<String>,
-    pub sources: Vec<String>,
-    pub sources_content: Option<Vec<String>>,
-    pub version: u8,
-    #[napi(js_name = "x_google_ignoreList")]
-    pub x_google_ignorelist: Option<Vec<u32>>,
+	pub file:Option<String>,
+	pub mappings:String,
+	pub names:Vec<String>,
+	pub source_root:Option<String>,
+	pub sources:Vec<String>,
+	pub sources_content:Option<Vec<String>>,
+	pub version:u8,
+	#[napi(js_name = "x_google_ignoreList")]
+	pub x_google_ignorelist:Option<Vec<u32>>,
 }
 
 impl From<oxc_sourcemap::SourceMap> for SourceMap {
-    fn from(source_map: oxc_sourcemap::SourceMap) -> Self {
-        let json = source_map.to_json();
+	fn from(source_map:oxc_sourcemap::SourceMap) -> Self {
+		let json = source_map.to_json();
 
-        Self {
-            file: json.file,
-            mappings: json.mappings,
-            names: json.names,
-            source_root: json.source_root,
-            sources: json.sources,
-            sources_content: json.sources_content.map(|content| {
-                content.into_iter().map(Option::unwrap_or_default).collect::<Vec<_>>()
-            }),
-            version: 3,
-            x_google_ignorelist: None,
-        }
-    }
+		Self {
+			file:json.file,
+			mappings:json.mappings,
+			names:json.names,
+			source_root:json.source_root,
+			sources:json.sources,
+			sources_content:json.sources_content.map(|content| {
+				content.into_iter().map(Option::unwrap_or_default).collect::<Vec<_>>()
+			}),
+			version:3,
+			x_google_ignorelist:None,
+		}
+	}
 }

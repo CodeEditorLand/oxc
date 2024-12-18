@@ -7,19 +7,19 @@ use oxc_linter::table::RuleTable;
 /// share in common.
 ///
 /// [`category`]: oxc_linter::RuleCategory
-pub fn render_rules_table(table: &RuleTable, docs_prefix: &str) -> String {
-    let total = table.total;
+pub fn render_rules_table(table:&RuleTable, docs_prefix:&str) -> String {
+	let total = table.total;
 
-    let turned_on_by_default_count = table.turned_on_by_default_count;
+	let turned_on_by_default_count = table.turned_on_by_default_count;
 
-    let body = table
-        .sections
-        .iter()
-        .map(|s| s.render_markdown_table(Some(docs_prefix)))
-        .collect::<Vec<_>>()
-        .join("\n");
+	let body = table
+		.sections
+		.iter()
+		.map(|s| s.render_markdown_table(Some(docs_prefix)))
+		.collect::<Vec<_>>()
+		.join("\n");
 
-    format!("
+	format!("
 # Rules
 
 The progress of all rule implementations is tracked [here](https://github.com/oxc-project/oxc/issues/481).

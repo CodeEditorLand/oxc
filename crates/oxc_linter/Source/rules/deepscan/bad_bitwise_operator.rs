@@ -1,6 +1,6 @@
 use oxc_ast::{
-	ast::{BinaryExpression, Expression},
 	AstKind,
+	ast::{BinaryExpression, Expression},
 };
 use oxc_diagnostics::{
 	miette::{self, Diagnostic},
@@ -10,7 +10,7 @@ use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 use oxc_syntax::operator::{AssignmentOperator, BinaryOperator, UnaryOperator};
 
-use crate::{context::LintContext, rule::Rule, AstNode};
+use crate::{AstNode, context::LintContext, rule::Rule};
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("deepscan(bad-bitwise-operator): Bad bitwise operator")]

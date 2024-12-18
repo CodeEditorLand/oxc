@@ -1,7 +1,7 @@
 use oxc_ast::ast::*;
 use oxc_traverse::{Ancestor, Traverse, TraverseCtx};
 
-use crate::{node_util::NodeUtil, tri::Tri, CompressorPass};
+use crate::{CompressorPass, node_util::NodeUtil, tri::Tri};
 
 /// Minimize Conditions
 ///

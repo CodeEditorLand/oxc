@@ -7,160 +7,165 @@ use crate::parser::reader::Reader;
 /// Even inside of this module, it is not changed after initialized.
 #[derive(Debug)]
 pub struct State<'a> {
-    // Mode flags
-    pub unicode_mode: bool,
-    pub unicode_sets_mode: bool,
-    pub named_capture_groups: bool,
-    // Other states
-    pub num_of_capturing_groups: u32,
-    pub capturing_group_names: FxHashSet<Atom<'a>>,
+	// Mode flags
+	pub unicode_mode:bool,
+	pub unicode_sets_mode:bool,
+	pub named_capture_groups:bool,
+	// Other states
+	pub num_of_capturing_groups:u32,
+	pub capturing_group_names:FxHashSet<Atom<'a>>,
 }
 
 impl<'a> State<'a> {
-    pub fn new(unicode_mode: bool, unicode_sets_mode: bool) -> Self {
-        Self {
-            unicode_mode,
-            unicode_sets_mode,
-            named_capture_groups: false,
-            num_of_capturing_groups: 0,
-            capturing_group_names: FxHashSet::default(),
-        }
-    }
+	pub fn new(unicode_mode:bool, unicode_sets_mode:bool) -> Self {
+		Self {
+			unicode_mode,
+			unicode_sets_mode,
+			named_capture_groups:false,
+			num_of_capturing_groups:0,
+			capturing_group_names:FxHashSet::default(),
+		}
+	}
 
-    pub fn initialize_with_parsing(&mut self, reader: &mut Reader<'a>) -> Vec<(u32, u32)> {
-        let (
-            num_of_left_capturing_parens,
-            capturing_group_names,
-            duplicated_named_capturing_groups,
-        ) = parse_capturing_groups(reader);
+	pub fn initialize_with_parsing(&mut self, reader:&mut Reader<'a>) -> Vec<(u32, u32)> {
+		let (
+			num_of_left_capturing_parens,
+			capturing_group_names,
+			duplicated_named_capturing_groups,
+		) = parse_capturing_groups(reader);
 
-        // In Annex B, this is `false` by default.
-        // It is `true`
-        // - if `u` or `v` flag is set
-        // - or if `GroupName` is found in pattern
-        self.named_capture_groups =
-            self.unicode_mode || self.unicode_sets_mode || !capturing_group_names.is_empty();
+		// In Annex B, this is `false` by default.
+		// It is `true`
+		// - if `u` or `v` flag is set
+		// - or if `GroupName` is found in pattern
+		self.named_capture_groups =
+			self.unicode_mode || self.unicode_sets_mode || !capturing_group_names.is_empty();
 
-        self.num_of_capturing_groups = num_of_left_capturing_parens;
+		self.num_of_capturing_groups = num_of_left_capturing_parens;
 
-        self.capturing_group_names = capturing_group_names;
+		self.capturing_group_names = capturing_group_names;
 
-        duplicated_named_capturing_groups
-    }
+		duplicated_named_capturing_groups
+	}
 }
 
-/// Returns: (num_of_left_parens, capturing_group_names, duplicated_named_capturing_groups)
+/// Returns: (num_of_left_parens, capturing_group_names,
+/// duplicated_named_capturing_groups)
 fn parse_capturing_groups<'a>(
-    reader: &mut Reader<'a>,
+	reader:&mut Reader<'a>,
 ) -> (u32, FxHashSet<Atom<'a>>, Vec<(u32, u32)>) {
-    let mut num_of_left_capturing_parens = 0;
+	let mut num_of_left_capturing_parens = 0;
 
-    let mut capturing_group_names = FxHashSet::default();
+	let mut capturing_group_names = FxHashSet::default();
 
-    let mut duplicated_named_capturing_groups = vec![];
+	let mut duplicated_named_capturing_groups = vec![];
 
-    let mut in_escape = false;
+	let mut in_escape = false;
 
-    let mut in_character_class = false;
+	let mut in_character_class = false;
 
-    // Count only normal CapturingGroup(named, unnamed)
-    //   (?<name>...), (...)
-    // IgnoreGroup, and LookaroundAssertions are ignored
-    //   (?:...)
-    //   (?=...), (?!...), (?<=...), (?<!...)
-    while let Some(cp) = reader.peek() {
-        if in_escape {
-            in_escape = false;
-        } else if cp == '\\' as u32 {
-            in_escape = true;
-        } else if cp == '[' as u32 {
-            in_character_class = true;
-        } else if cp == ']' as u32 {
-            in_character_class = false;
-        } else if !in_character_class && cp == '(' as u32 {
-            reader.advance();
+	// Count only normal CapturingGroup(named, unnamed)
+	//   (?<name>...), (...)
+	// IgnoreGroup, and LookaroundAssertions are ignored
+	//   (?:...)
+	//   (?=...), (?!...), (?<=...), (?<!...)
+	while let Some(cp) = reader.peek() {
+		if in_escape {
+			in_escape = false;
+		} else if cp == '\\' as u32 {
+			in_escape = true;
+		} else if cp == '[' as u32 {
+			in_character_class = true;
+		} else if cp == ']' as u32 {
+			in_character_class = false;
+		} else if !in_character_class && cp == '(' as u32 {
+			reader.advance();
 
-            // Skip IgnoreGroup
-            if reader.eat2('?', ':')
+			// Skip IgnoreGroup
+			if reader.eat2('?', ':')
             // Skip LookAroundAssertion
                 || reader.eat2('?', '=')
                 || reader.eat2('?', '!')
                 || reader.eat3('?', '<', '=')
                 || reader.eat3('?', '<', '!')
-            {
-                continue;
-            }
+			{
+				continue;
+			}
 
-            // Count named or unnamed capturing groups
-            num_of_left_capturing_parens += 1;
+			// Count named or unnamed capturing groups
+			num_of_left_capturing_parens += 1;
 
-            // Collect capturing group names
-            if reader.eat2('?', '<') {
-                let span_start = reader.offset();
+			// Collect capturing group names
+			if reader.eat2('?', '<') {
+				let span_start = reader.offset();
 
-                while let Some(ch) = reader.peek() {
-                    if ch == '>' as u32 {
-                        break;
-                    }
+				while let Some(ch) = reader.peek() {
+					if ch == '>' as u32 {
+						break;
+					}
 
-                    reader.advance();
-                }
+					reader.advance();
+				}
 
-                let span_end = reader.offset();
+				let span_end = reader.offset();
 
-                if reader.eat('>') {
-                    // May be duplicated
-                    if !capturing_group_names.insert(reader.atom(span_start, span_end)) {
-                        // Report them with `Span`
-                        duplicated_named_capturing_groups.push((span_start, span_end));
-                    }
+				if reader.eat('>') {
+					// May be duplicated
+					if !capturing_group_names.insert(reader.atom(span_start, span_end)) {
+						// Report them with `Span`
+						duplicated_named_capturing_groups.push((span_start, span_end));
+					}
 
-                    continue;
-                }
-            }
-        }
+					continue;
+				}
+			}
+		}
 
-        reader.advance();
-    }
+		reader.advance();
+	}
 
-    (num_of_left_capturing_parens, capturing_group_names, duplicated_named_capturing_groups)
+	(
+		num_of_left_capturing_parens,
+		capturing_group_names,
+		duplicated_named_capturing_groups,
+	)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+	use super::*;
 
-    #[test]
-    fn test_count_capturing_groups() {
-        for (source_text, expected) in [
-            ("()", (1, 0, false)),
-            (r"\1()", (1, 0, false)),
-            ("(foo)", (1, 0, false)),
-            ("(foo)(bar)", (2, 0, false)),
-            ("(foo(bar))", (2, 0, false)),
-            ("(foo)[(bar)]", (1, 0, false)),
-            (r"(foo)\(bar\)", (1, 0, false)),
-            ("(foo)(?<n>bar)", (2, 1, false)),
-            ("(foo)(?=...)(?!...)(?<=...)(?<!...)(?:...)", (1, 0, false)),
-            ("(foo)(?<n>bar)(?<nn>baz)", (3, 2, false)),
-            ("(?<n>.)(?<n>..)", (2, 1, true)),
-            ("(?<n>.(?<n>..))", (2, 1, true)),
-        ] {
-            let mut reader = Reader::initialize(source_text, true, false).unwrap();
+	#[test]
+	fn test_count_capturing_groups() {
+		for (source_text, expected) in [
+			("()", (1, 0, false)),
+			(r"\1()", (1, 0, false)),
+			("(foo)", (1, 0, false)),
+			("(foo)(bar)", (2, 0, false)),
+			("(foo(bar))", (2, 0, false)),
+			("(foo)[(bar)]", (1, 0, false)),
+			(r"(foo)\(bar\)", (1, 0, false)),
+			("(foo)(?<n>bar)", (2, 1, false)),
+			("(foo)(?=...)(?!...)(?<=...)(?<!...)(?:...)", (1, 0, false)),
+			("(foo)(?<n>bar)(?<nn>baz)", (3, 2, false)),
+			("(?<n>.)(?<n>..)", (2, 1, true)),
+			("(?<n>.(?<n>..))", (2, 1, true)),
+		] {
+			let mut reader = Reader::initialize(source_text, true, false).unwrap();
 
-            let (
-                num_of_left_capturing_parens,
-                capturing_group_names,
-                duplicated_named_capturing_groups,
-            ) = parse_capturing_groups(&mut reader);
+			let (
+				num_of_left_capturing_parens,
+				capturing_group_names,
+				duplicated_named_capturing_groups,
+			) = parse_capturing_groups(&mut reader);
 
-            let actual = (
-                num_of_left_capturing_parens,
-                capturing_group_names.len(),
-                !duplicated_named_capturing_groups.is_empty(),
-            );
+			let actual = (
+				num_of_left_capturing_parens,
+				capturing_group_names.len(),
+				!duplicated_named_capturing_groups.is_empty(),
+			);
 
-            assert_eq!(expected, actual, "{source_text}");
-        }
-    }
+			assert_eq!(expected, actual, "{source_text}");
+		}
+	}
 }

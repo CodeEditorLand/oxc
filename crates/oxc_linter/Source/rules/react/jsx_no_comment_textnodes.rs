@@ -4,86 +4,85 @@ use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
 use crate::{
-    context::{ContextHost, LintContext},
-    rule::Rule,
-    AstNode,
+	AstNode,
+	context::{ContextHost, LintContext},
+	rule::Rule,
 };
 
-fn jsx_no_comment_textnodes_diagnostic(span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Comments inside children section of tag should be placed inside braces")
-        .with_label(span)
+fn jsx_no_comment_textnodes_diagnostic(span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::warn("Comments inside children section of tag should be placed inside braces")
+		.with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct JsxNoCommentTextnodes;
 
 declare_oxc_lint!(
-    /// ### What it does
-    ///
-    /// This rule prevents comment strings (e.g. beginning with `//` or `/*`) from being accidentally injected as a text node in JSX statements.
-    ///
-    /// ### Why is this bad?
-    ///
-    /// In JSX, any text node that is not wrapped in curly braces is considered a literal string to be rendered. This can lead to unexpected behavior when the text contains a comment.
-    ///
-    /// ### Example
-    /// ```jsx
-    /// // Incorrect:
-    ///
-    /// const Hello = () => {
-    ///     return <div>// empty div</div>;
-    /// }
-    ///
-    /// const Hello = () => {
-    ///     return <div>/* empty div */</div>;
-    /// }
-    ///
-    /// // Correct:
-    ///
-    /// const Hello = () => {
-    ///     return <div>// empty div</div>;
-    /// }
-    ///
-    /// const Hello = () => {
-    ///     return <div>{/* empty div */}</div>;
-    /// }
-    /// ```
-    JsxNoCommentTextnodes,
-    suspicious
+	/// ### What it does
+	///
+	/// This rule prevents comment strings (e.g. beginning with `//` or `/*`) from being accidentally injected as a text node in JSX statements.
+	///
+	/// ### Why is this bad?
+	///
+	/// In JSX, any text node that is not wrapped in curly braces is considered a literal string to be rendered. This can lead to unexpected behavior when the text contains a comment.
+	///
+	/// ### Example
+	/// ```jsx
+	/// // Incorrect:
+	///
+	/// const Hello = () => {
+	///     return <div>// empty div</div>;
+	/// }
+	///
+	/// const Hello = () => {
+	///     return <div>/* empty div */</div>;
+	/// }
+	///
+	/// // Correct:
+	///
+	/// const Hello = () => {
+	///     return <div>// empty div</div>;
+	/// }
+	///
+	/// const Hello = () => {
+	///     return <div>{/* empty div */}</div>;
+	/// }
+	/// ```
+	JsxNoCommentTextnodes,
+	suspicious
 );
 
 impl Rule for JsxNoCommentTextnodes {
-    fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
-        let AstKind::JSXText(jsx_text) = node.kind() else {
-            return;
-        };
+	fn run<'a>(&self, node:&AstNode<'a>, ctx:&LintContext<'a>) {
+		let AstKind::JSXText(jsx_text) = node.kind() else {
+			return;
+		};
 
-        if has_comment_pattern(&jsx_text.value) {
-            ctx.diagnostic(jsx_no_comment_textnodes_diagnostic(jsx_text.span));
-        }
-    }
+		if has_comment_pattern(&jsx_text.value) {
+			ctx.diagnostic(jsx_no_comment_textnodes_diagnostic(jsx_text.span));
+		}
+	}
 
-    fn should_run(&self, ctx: &ContextHost) -> bool {
-        ctx.source_type().is_jsx()
-    }
+	fn should_run(&self, ctx:&ContextHost) -> bool { ctx.source_type().is_jsx() }
 }
 
-/// Returns true if the given text contains a comment pattern such as `//` or `/*`.
-fn has_comment_pattern(text: &str) -> bool {
-    text.lines().any(|line| {
-        let line = line.trim();
+/// Returns true if the given text contains a comment pattern such as `//` or
+/// `/*`.
+fn has_comment_pattern(text:&str) -> bool {
+	text.lines().any(|line| {
+		let line = line.trim();
 
-        line.starts_with("//") || line.starts_with("/*")
-    })
+		line.starts_with("//") || line.starts_with("/*")
+	})
 }
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+	use crate::tester::Tester;
 
-    let pass = vec![
-        (
-            "
+	let pass = vec![
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (
@@ -94,10 +93,10 @@ fn test() {
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (
@@ -108,20 +107,20 @@ fn test() {
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (<div>{/* valid */}</div>);
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            const bar = (<div>{/* valid */}</div>);
@@ -130,10 +129,10 @@ fn test() {
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        var Hello = createReactClass({
 			          foo: (<div>{/* valid */}</div>),
 			          render() {
@@ -141,10 +140,10 @@ fn test() {
 			          },
 			        });
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (
@@ -157,10 +156,10 @@ fn test() {
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (
@@ -170,99 +169,99 @@ fn test() {
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        var foo = require('foo');
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        <Foo bar='test'>
 			          {/* valid */}
 			        </Foo>
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        <strong>
 			          &nbsp;https://www.example.com/attachment/download/1
 			        </strong>
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        <Foo /* valid */ placeholder={'foo'}/>
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        </* valid */></>
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        <></* valid *//>
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        <Foo title={'foo' /* valid */}/>
 			      ",
-            None,
-        ),
-        ("<pre>&#x2F;&#x2F; TODO: Write perfect code</pre>", None),
-        ("<pre>&#x2F;&#42; TODO: Write perfect code &#42;&#x2F;</pre>", None),
-        (
-            "
+			None,
+		),
+		("<pre>&#x2F;&#x2F; TODO: Write perfect code</pre>", None),
+		("<pre>&#x2F;&#42; TODO: Write perfect code &#42;&#x2F;</pre>", None),
+		(
+			"
 			        <div>
 			          <span className=\"pl-c\"><span className=\"pl-c\">&#47;&#47;</span> ...</span><br />
 			        </div>
 			      ",
-            None,
-        ),
-    ];
+			None,
+		),
+	];
 
-    let fail = vec![
-        (
-            "
+	let fail = vec![
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (<div>// invalid</div>);
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (<>// invalid</>);
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (<div>/* invalid */</div>);
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (
@@ -273,10 +272,10 @@ fn test() {
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (
@@ -289,10 +288,10 @@ fn test() {
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        class Comp1 extends Component {
 			          render() {
 			            return (
@@ -305,18 +304,18 @@ fn test() {
 			          }
 			        }
 			      ",
-            None,
-        ),
-        (
-            "
+			None,
+		),
+		(
+			"
 			        const Component2 = () => {
 			          return <span>/*</span>;
 			        };
 			      ",
-            None,
-        ),
-    ];
+			None,
+		),
+	];
 
-    Tester::new(JsxNoCommentTextnodes::NAME, JsxNoCommentTextnodes::CATEGORY, pass, fail)
-        .test_and_snapshot();
+	Tester::new(JsxNoCommentTextnodes::NAME, JsxNoCommentTextnodes::CATEGORY, pass, fail)
+		.test_and_snapshot();
 }

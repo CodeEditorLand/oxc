@@ -14,44 +14,40 @@ use crate::options::babel::BabelModule;
 #[serde(try_from = "BabelModule")]
 #[non_exhaustive]
 pub enum Module {
-    #[default]
-    Preserve,
-    ESM,
-    CommonJS,
+	#[default]
+	Preserve,
+	ESM,
+	CommonJS,
 }
 
 impl Module {
-    /// Check if the module is ECMAScript Module(ESM).
-    pub fn is_esm(&self) -> bool {
-        matches!(self, Self::ESM)
-    }
+	/// Check if the module is ECMAScript Module(ESM).
+	pub fn is_esm(&self) -> bool { matches!(self, Self::ESM) }
 
-    /// Check if the module is CommonJS.
-    pub fn is_commonjs(&self) -> bool {
-        matches!(self, Self::CommonJS)
-    }
+	/// Check if the module is CommonJS.
+	pub fn is_commonjs(&self) -> bool { matches!(self, Self::CommonJS) }
 }
 
 impl TryFrom<BabelModule> for Module {
-    type Error = Error;
+	type Error = Error;
 
-    fn try_from(value: BabelModule) -> Result<Self, Self::Error> {
-        match value {
-            BabelModule::Commonjs => Ok(Self::CommonJS),
-            BabelModule::Auto | BabelModule::Boolean(false) => Ok(Self::Preserve),
-            _ => Err(Error::msg(format!("{value:?} module is not implemented."))),
-        }
-    }
+	fn try_from(value:BabelModule) -> Result<Self, Self::Error> {
+		match value {
+			BabelModule::Commonjs => Ok(Self::CommonJS),
+			BabelModule::Auto | BabelModule::Boolean(false) => Ok(Self::Preserve),
+			_ => Err(Error::msg(format!("{value:?} module is not implemented."))),
+		}
+	}
 }
 
 impl TryFrom<&BabelPlugins> for Module {
-    type Error = Error;
+	type Error = Error;
 
-    fn try_from(value: &BabelPlugins) -> Result<Self, Self::Error> {
-        if value.modules_commonjs {
-            Ok(Self::CommonJS)
-        } else {
-            Err(Error::msg("Doesn't find any transform-modules-* plugin."))
-        }
-    }
+	fn try_from(value:&BabelPlugins) -> Result<Self, Self::Error> {
+		if value.modules_commonjs {
+			Ok(Self::CommonJS)
+		} else {
+			Err(Error::msg("Doesn't find any transform-modules-* plugin."))
+		}
+	}
 }

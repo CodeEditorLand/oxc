@@ -2,53 +2,50 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
 
+use super::{Derive, define_derive};
 use crate::{
-    schema::{EnumDef, GetGenerics, Schema, StructDef, ToType, TypeDef},
-    util::{ToIdent, TypeWrapper},
+	schema::{EnumDef, GetGenerics, Schema, StructDef, ToType, TypeDef},
+	util::{ToIdent, TypeWrapper},
 };
-
-use super::{define_derive, Derive};
 
 pub struct DeriveGetSpan;
 
 define_derive!(DeriveGetSpan);
 
 impl Derive for DeriveGetSpan {
-    fn trait_name() -> &'static str {
-        "GetSpan"
-    }
+	fn trait_name() -> &'static str { "GetSpan" }
 
-    fn prelude() -> TokenStream {
-        quote! {
-            #![allow(clippy::match_same_arms)]
+	fn prelude() -> TokenStream {
+		quote! {
+			#![allow(clippy::match_same_arms)]
 
-            ///@@line_break
-            use oxc_span::{Span, GetSpan};
-        }
-    }
+			///@@line_break
+			use oxc_span::{Span, GetSpan};
+		}
+	}
 
-    fn derive(&mut self, def: &TypeDef, _: &Schema) -> TokenStream {
-        let self_type = quote!(&self);
+	fn derive(&mut self, def:&TypeDef, _:&Schema) -> TokenStream {
+		let self_type = quote!(&self);
 
-        let result_type = quote!(Span);
+		let result_type = quote!(Span);
 
-        let result_expr = quote!(self.span);
+		let result_expr = quote!(self.span);
 
-        let unbox = |it| quote!(#it.as_ref());
+		let unbox = |it| quote!(#it.as_ref());
 
-        let reference = |it| quote!(&#it);
+		let reference = |it| quote!(&#it);
 
-        derive(
-            Self::trait_name(),
-            "span",
-            &self_type,
-            &result_type,
-            &result_expr,
-            def,
-            unbox,
-            reference,
-        )
-    }
+		derive(
+			Self::trait_name(),
+			"span",
+			&self_type,
+			&result_type,
+			&result_expr,
+			def,
+			unbox,
+			reference,
+		)
+	}
 }
 
 pub struct DeriveGetSpanMut;
@@ -56,147 +53,148 @@ pub struct DeriveGetSpanMut;
 define_derive!(DeriveGetSpanMut);
 
 impl Derive for DeriveGetSpanMut {
-    fn trait_name() -> &'static str {
-        "GetSpanMut"
-    }
+	fn trait_name() -> &'static str { "GetSpanMut" }
 
-    fn prelude() -> TokenStream {
-        quote! {
-            #![allow(clippy::match_same_arms)]
+	fn prelude() -> TokenStream {
+		quote! {
+			#![allow(clippy::match_same_arms)]
 
-            ///@@line_break
-            use oxc_span::{Span, GetSpanMut};
-        }
-    }
+			///@@line_break
+			use oxc_span::{Span, GetSpanMut};
+		}
+	}
 
-    fn derive(&mut self, def: &TypeDef, _: &Schema) -> TokenStream {
-        let self_type = quote!(&mut self);
+	fn derive(&mut self, def:&TypeDef, _:&Schema) -> TokenStream {
+		let self_type = quote!(&mut self);
 
-        let result_type = quote!(&mut Span);
+		let result_type = quote!(&mut Span);
 
-        let result_expr = quote!(&mut self.span);
+		let result_expr = quote!(&mut self.span);
 
-        let unbox = |it| quote!(&mut **#it);
+		let unbox = |it| quote!(&mut **#it);
 
-        let reference = |it| quote!(&mut #it);
+		let reference = |it| quote!(&mut #it);
 
-        derive(
-            Self::trait_name(),
-            "span_mut",
-            &self_type,
-            &result_type,
-            &result_expr,
-            def,
-            unbox,
-            reference,
-        )
-    }
+		derive(
+			Self::trait_name(),
+			"span_mut",
+			&self_type,
+			&result_type,
+			&result_expr,
+			def,
+			unbox,
+			reference,
+		)
+	}
 }
 
 #[expect(clippy::too_many_arguments)]
 fn derive<U, R>(
-    trait_name: &str,
-    method_name: &str,
-    self_type: &TokenStream,
-    result_type: &TokenStream,
-    result_expr: &TokenStream,
-    def: &TypeDef,
-    unbox: U,
-    reference: R,
+	trait_name:&str,
+	method_name:&str,
+	self_type:&TokenStream,
+	result_type:&TokenStream,
+	result_expr:&TokenStream,
+	def:&TypeDef,
+	unbox:U,
+	reference:R,
 ) -> TokenStream
 where
-    U: Fn(TokenStream) -> TokenStream,
-    R: Fn(TokenStream) -> TokenStream,
-{
-    let trait_ident = trait_name.to_ident();
+	U: Fn(TokenStream) -> TokenStream,
+	R: Fn(TokenStream) -> TokenStream, {
+	let trait_ident = trait_name.to_ident();
 
-    let method_ident = method_name.to_ident();
+	let method_ident = method_name.to_ident();
 
-    match &def {
-        TypeDef::Enum(def) => {
-            derive_enum(def, &trait_ident, &method_ident, self_type, result_type, unbox)
-        }
+	match &def {
+		TypeDef::Enum(def) => {
+			derive_enum(def, &trait_ident, &method_ident, self_type, result_type, unbox)
+		},
 
-        TypeDef::Struct(def) => derive_struct(
-            def,
-            &trait_ident,
-            &method_ident,
-            self_type,
-            result_type,
-            result_expr,
-            reference,
-        ),
-    }
+		TypeDef::Struct(def) => {
+			derive_struct(
+				def,
+				&trait_ident,
+				&method_ident,
+				self_type,
+				result_type,
+				result_expr,
+				reference,
+			)
+		},
+	}
 }
 
 fn derive_enum<U>(
-    def: &EnumDef,
-    trait_name: &Ident,
-    method_name: &Ident,
-    self_type: &TokenStream,
-    result_type: &TokenStream,
-    unbox: U,
+	def:&EnumDef,
+	trait_name:&Ident,
+	method_name:&Ident,
+	self_type:&TokenStream,
+	result_type:&TokenStream,
+	unbox:U,
 ) -> TokenStream
 where
-    U: Fn(TokenStream) -> TokenStream,
-{
-    let target_type = if def.has_lifetime() { def.to_elided_type() } else { def.to_type_elide() };
+	U: Fn(TokenStream) -> TokenStream, {
+	let target_type = if def.has_lifetime() { def.to_elided_type() } else { def.to_type_elide() };
 
-    let matches = def.all_variants().map(|var| {
-        let ident = var.ident();
+	let matches = def.all_variants().map(|var| {
+		let ident = var.ident();
 
-        let mut it = quote!(it);
+		let mut it = quote!(it);
 
-        if var.fields.first().is_some_and(|it| it.typ.analysis().wrapper == TypeWrapper::Box) {
-            it = unbox(it);
-        }
+		if var
+			.fields
+			.first()
+			.is_some_and(|it| it.typ.analysis().wrapper == TypeWrapper::Box)
+		{
+			it = unbox(it);
+		}
 
-        quote!(Self :: #ident(it) => #trait_name :: #method_name(#it))
-    });
+		quote!(Self :: #ident(it) => #trait_name :: #method_name(#it))
+	});
 
-    quote! {
-        impl #trait_name for #target_type {
-            fn #method_name(#self_type) -> #result_type {
-                match self {
-                    #(#matches),*
-                }
-            }
-        }
-    }
+	quote! {
+		impl #trait_name for #target_type {
+			fn #method_name(#self_type) -> #result_type {
+				match self {
+					#(#matches),*
+				}
+			}
+		}
+	}
 }
 
 fn derive_struct<R>(
-    def: &StructDef,
-    trait_name: &Ident,
-    method_name: &Ident,
-    self_type: &TokenStream,
-    result_type: &TokenStream,
-    result_expr: &TokenStream,
-    reference: R,
+	def:&StructDef,
+	trait_name:&Ident,
+	method_name:&Ident,
+	self_type:&TokenStream,
+	result_type:&TokenStream,
+	result_expr:&TokenStream,
+	reference:R,
 ) -> TokenStream
 where
-    R: Fn(TokenStream) -> TokenStream,
-{
-    let target_type = if def.has_lifetime() { def.to_elided_type() } else { def.to_type_elide() };
+	R: Fn(TokenStream) -> TokenStream, {
+	let target_type = if def.has_lifetime() { def.to_elided_type() } else { def.to_type_elide() };
 
-    let span_field = def.fields.iter().find(|field| field.markers.span);
+	let span_field = def.fields.iter().find(|field| field.markers.span);
 
-    let result_expr = if let Some(span_field) = span_field {
-        let ident = span_field.name.as_ref().map(ToIdent::to_ident).unwrap();
+	let result_expr = if let Some(span_field) = span_field {
+		let ident = span_field.name.as_ref().map(ToIdent::to_ident).unwrap();
 
-        let reference = reference(quote!(self.#ident));
+		let reference = reference(quote!(self.#ident));
 
-        quote!(#trait_name :: #method_name (#reference))
-    } else {
-        result_expr.clone()
-    };
+		quote!(#trait_name :: #method_name (#reference))
+	} else {
+		result_expr.clone()
+	};
 
-    quote! {
-        impl #trait_name for #target_type {
-            #[inline]
-            fn #method_name(#self_type) -> #result_type {
-                #result_expr
-            }
-        }
-    }
+	quote! {
+		impl #trait_name for #target_type {
+			#[inline]
+			fn #method_name(#self_type) -> #result_type {
+				#result_expr
+			}
+		}
+	}
 }

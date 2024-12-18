@@ -12,22 +12,22 @@ fn bench_isolated_declarations(criterion:&mut Criterion) {
 		"https://raw.githubusercontent.com/oxc-project/benchmark-files/main/vue-id.ts",
 	);
 
-    let id = BenchmarkId::from_parameter(&file.file_name);
-    let source_text = file.source_text.as_str();
-    let source_type = SourceType::from_path(&file.file_name).unwrap();
+	let id = BenchmarkId::from_parameter(&file.file_name);
+	let source_text = file.source_text.as_str();
+	let source_type = SourceType::from_path(&file.file_name).unwrap();
 
-    group.bench_function(id, |b| {
-        b.iter_with_large_drop(|| {
-            let allocator = Allocator::default();
-            let ParserReturn { program, .. } =
-                Parser::new(&allocator, source_text, source_type).parse();
-            IsolatedDeclarations::new(
-                &allocator,
-                IsolatedDeclarationsOptions { strip_internal: true },
-            )
-            .build(&program);
-        });
-    });
+	group.bench_function(id, |b| {
+		b.iter_with_large_drop(|| {
+			let allocator = Allocator::default();
+			let ParserReturn { program, .. } =
+				Parser::new(&allocator, source_text, source_type).parse();
+			IsolatedDeclarations::new(
+				&allocator,
+				IsolatedDeclarationsOptions { strip_internal:true },
+			)
+			.build(&program);
+		});
+	});
 
 	group.bench_with_input(id, &file.source_text, |b, source_text| {
 		b.iter_with_large_drop(|| {

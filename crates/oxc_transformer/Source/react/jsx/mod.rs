@@ -3,8 +3,8 @@ mod diagnostics;
 use std::{cell::Cell, rc::Rc};
 
 use oxc_allocator::Vec;
-use oxc_ast::{ast::*, AstBuilder};
-use oxc_span::{Atom, GetSpan, Span, SPAN};
+use oxc_ast::{AstBuilder, ast::*};
+use oxc_span::{Atom, GetSpan, SPAN, Span};
 use oxc_syntax::{
 	identifier::{is_irregular_whitespace, is_line_terminator},
 	reference::{ReferenceFlag, ReferenceId},

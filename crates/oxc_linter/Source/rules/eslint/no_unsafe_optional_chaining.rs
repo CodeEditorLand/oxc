@@ -1,221 +1,226 @@
 use oxc_ast::{
-    ast::{match_assignment_target_pattern, Argument, AssignmentTarget, Expression},
-    AstKind,
+	AstKind,
+	ast::{Argument, AssignmentTarget, Expression, match_assignment_target_pattern},
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 use oxc_syntax::operator::LogicalOperator;
 
-use crate::{context::LintContext, rule::Rule, AstNode};
+use crate::{AstNode, context::LintContext, rule::Rule};
 
-fn no_unsafe_optional_chaining_diagnostic(span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Unsafe usage of optional chaining")
-        .with_help("If this short-circuits with 'undefined' the evaluation will throw TypeError")
-        .with_label(span)
+fn no_unsafe_optional_chaining_diagnostic(span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::warn("Unsafe usage of optional chaining")
+		.with_help("If this short-circuits with 'undefined' the evaluation will throw TypeError")
+		.with_label(span)
 }
 
-fn no_unsafe_arithmetic_diagnostic(span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Unsafe arithmetic operation on optional chaining")
-        .with_help("This can result in NaN.")
-        .with_label(span)
+fn no_unsafe_arithmetic_diagnostic(span:Span) -> OxcDiagnostic {
+	OxcDiagnostic::warn("Unsafe arithmetic operation on optional chaining")
+		.with_help("This can result in NaN.")
+		.with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct NoUnsafeOptionalChaining {
-    /// Disallow arithmetic operations on optional chaining expressions (Default false).
-    /// If this is true, this rule warns arithmetic operations on optional chaining expressions, which possibly result in NaN.
-    disallow_arithmetic_operators: bool,
+	/// Disallow arithmetic operations on optional chaining expressions (Default
+	/// false). If this is true, this rule warns arithmetic operations on
+	/// optional chaining expressions, which possibly result in NaN.
+	disallow_arithmetic_operators:bool,
 }
 
 declare_oxc_lint!(
-    /// ### What it does
-    ///
-    /// Disallow use of optional chaining in contexts where the undefined value is not allowed
-    ///
-    /// ### Why is this bad?
-    ///
-    /// The optional chaining (?.) expression can short-circuit with a return value of undefined.
-    /// Therefore, treating an evaluated optional chaining expression as a function, object, number, etc.,
-    /// can cause TypeError or unexpected results. For example:
-    ///
-    /// ### Example
-    /// ```javascript
-    /// var obj = undefined;
-    /// 1 in obj?.foo;  // TypeError
-    /// with (obj?.foo);  // TypeError
-    /// for (bar of obj?.foo);  // TypeError
-    /// bar instanceof obj?.foo;  // TypeError
-    /// const { bar } = obj?.foo;  // TypeError
-    /// ```
-    NoUnsafeOptionalChaining,
-    correctness
+	/// ### What it does
+	///
+	/// Disallow use of optional chaining in contexts where the undefined value is not allowed
+	///
+	/// ### Why is this bad?
+	///
+	/// The optional chaining (?.) expression can short-circuit with a return value of undefined.
+	/// Therefore, treating an evaluated optional chaining expression as a function, object, number, etc.,
+	/// can cause TypeError or unexpected results. For example:
+	///
+	/// ### Example
+	/// ```javascript
+	/// var obj = undefined;
+	/// 1 in obj?.foo;  // TypeError
+	/// with (obj?.foo);  // TypeError
+	/// for (bar of obj?.foo);  // TypeError
+	/// bar instanceof obj?.foo;  // TypeError
+	/// const { bar } = obj?.foo;  // TypeError
+	/// ```
+	NoUnsafeOptionalChaining,
+	correctness
 );
 
 impl Rule for NoUnsafeOptionalChaining {
-    fn from_configuration(value: serde_json::Value) -> Self {
-        Self {
-            disallow_arithmetic_operators: value
-                .get(0)
-                .and_then(|v| v.get("disallowArithmeticOperators"))
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or_default(),
-        }
-    }
+	fn from_configuration(value:serde_json::Value) -> Self {
+		Self {
+			disallow_arithmetic_operators:value
+				.get(0)
+				.and_then(|v| v.get("disallowArithmeticOperators"))
+				.and_then(serde_json::Value::as_bool)
+				.unwrap_or_default(),
+		}
+	}
 
-    fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
-        match node.kind() {
-            AstKind::CallExpression(expr) if !expr.optional => {
-                Self::check_unsafe_usage(&expr.callee, ctx);
-            }
+	fn run<'a>(&self, node:&AstNode<'a>, ctx:&LintContext<'a>) {
+		match node.kind() {
+			AstKind::CallExpression(expr) if !expr.optional => {
+				Self::check_unsafe_usage(&expr.callee, ctx);
+			},
 
-            AstKind::MemberExpression(expr) if !expr.optional() => {
-                Self::check_unsafe_usage(expr.object(), ctx);
-            }
+			AstKind::MemberExpression(expr) if !expr.optional() => {
+				Self::check_unsafe_usage(expr.object(), ctx);
+			},
 
-            AstKind::TaggedTemplateExpression(expr) => {
-                Self::check_unsafe_usage(&expr.tag, ctx);
-            }
+			AstKind::TaggedTemplateExpression(expr) => {
+				Self::check_unsafe_usage(&expr.tag, ctx);
+			},
 
-            AstKind::NewExpression(expr) => {
-                Self::check_unsafe_usage(&expr.callee, ctx);
-            }
+			AstKind::NewExpression(expr) => {
+				Self::check_unsafe_usage(&expr.callee, ctx);
+			},
 
-            AstKind::AssignmentExpression(expr) => {
-                if matches!(expr.left, match_assignment_target_pattern!(AssignmentTarget)) {
-                    Self::check_unsafe_usage(&expr.right, ctx);
-                }
+			AstKind::AssignmentExpression(expr) => {
+				if matches!(expr.left, match_assignment_target_pattern!(AssignmentTarget)) {
+					Self::check_unsafe_usage(&expr.right, ctx);
+				}
 
-                if expr.operator.is_arithmetic() {
-                    self.check_unsafe_arithmetic(&expr.right, ctx);
-                }
-            }
+				if expr.operator.is_arithmetic() {
+					self.check_unsafe_arithmetic(&expr.right, ctx);
+				}
+			},
 
-            AstKind::BinaryExpression(expr) => match expr.operator {
-                op if op.is_relational() => Self::check_unsafe_usage(&expr.right, ctx),
-                op if op.is_arithmetic() => {
-                    self.check_unsafe_arithmetic(&expr.left, ctx);
+			AstKind::BinaryExpression(expr) => {
+				match expr.operator {
+					op if op.is_relational() => Self::check_unsafe_usage(&expr.right, ctx),
+					op if op.is_arithmetic() => {
+						self.check_unsafe_arithmetic(&expr.left, ctx);
 
-                    self.check_unsafe_arithmetic(&expr.right, ctx);
-                }
+						self.check_unsafe_arithmetic(&expr.right, ctx);
+					},
 
-                _ => {}
-            },
-            AstKind::UnaryExpression(expr) if expr.operator.is_arithmetic() => {
-                self.check_unsafe_arithmetic(&expr.argument, ctx);
-            }
+					_ => {},
+				}
+			},
+			AstKind::UnaryExpression(expr) if expr.operator.is_arithmetic() => {
+				self.check_unsafe_arithmetic(&expr.argument, ctx);
+			},
 
-            AstKind::ForOfStatement(stmt) => {
-                Self::check_unsafe_usage(&stmt.right, ctx);
-            }
+			AstKind::ForOfStatement(stmt) => {
+				Self::check_unsafe_usage(&stmt.right, ctx);
+			},
 
-            AstKind::WithStatement(stmt) => {
-                Self::check_unsafe_usage(&stmt.object, ctx);
-            }
+			AstKind::WithStatement(stmt) => {
+				Self::check_unsafe_usage(&stmt.object, ctx);
+			},
 
-            AstKind::Class(class) => {
-                if let Some(expr) = &class.super_class {
-                    Self::check_unsafe_usage(expr, ctx);
-                }
-            }
+			AstKind::Class(class) => {
+				if let Some(expr) = &class.super_class {
+					Self::check_unsafe_usage(expr, ctx);
+				}
+			},
 
-            AstKind::AssignmentPattern(pat) if pat.left.kind.is_destructuring_pattern() => {
-                Self::check_unsafe_usage(&pat.right, ctx);
-            }
+			AstKind::AssignmentPattern(pat) if pat.left.kind.is_destructuring_pattern() => {
+				Self::check_unsafe_usage(&pat.right, ctx);
+			},
 
-            AstKind::Argument(Argument::SpreadElement(elem)) => {
-                Self::check_unsafe_usage(&elem.argument, ctx);
-            }
+			AstKind::Argument(Argument::SpreadElement(elem)) => {
+				Self::check_unsafe_usage(&elem.argument, ctx);
+			},
 
-            AstKind::VariableDeclarator(decl) if decl.id.kind.is_destructuring_pattern() => {
-                if let Some(expr) = &decl.init {
-                    Self::check_unsafe_usage(expr, ctx);
-                }
-            }
+			AstKind::VariableDeclarator(decl) if decl.id.kind.is_destructuring_pattern() => {
+				if let Some(expr) = &decl.init {
+					Self::check_unsafe_usage(expr, ctx);
+				}
+			},
 
-            AstKind::AssignmentTargetWithDefault(target) => {
-                if matches!(target.binding, match_assignment_target_pattern!(AssignmentTarget)) {
-                    Self::check_unsafe_usage(&target.init, ctx);
-                }
-            }
+			AstKind::AssignmentTargetWithDefault(target) => {
+				if matches!(target.binding, match_assignment_target_pattern!(AssignmentTarget)) {
+					Self::check_unsafe_usage(&target.init, ctx);
+				}
+			},
 
-            _ => {}
-        }
-    }
+			_ => {},
+		}
+	}
 }
 
 #[derive(Clone, Copy)]
 enum ErrorType {
-    Usage,
-    Arithmetic,
+	Usage,
+	Arithmetic,
 }
 
 impl NoUnsafeOptionalChaining {
-    fn check_unsafe_usage<'a>(expr: &Expression<'a>, ctx: &LintContext<'a>) {
-        Self::check_undefined_short_circuit(expr, ErrorType::Usage, ctx);
-    }
+	fn check_unsafe_usage<'a>(expr:&Expression<'a>, ctx:&LintContext<'a>) {
+		Self::check_undefined_short_circuit(expr, ErrorType::Usage, ctx);
+	}
 
-    fn check_unsafe_arithmetic<'a>(&self, expr: &Expression<'a>, ctx: &LintContext<'a>) {
-        if self.disallow_arithmetic_operators {
-            Self::check_undefined_short_circuit(expr, ErrorType::Arithmetic, ctx);
-        }
-    }
+	fn check_unsafe_arithmetic<'a>(&self, expr:&Expression<'a>, ctx:&LintContext<'a>) {
+		if self.disallow_arithmetic_operators {
+			Self::check_undefined_short_circuit(expr, ErrorType::Arithmetic, ctx);
+		}
+	}
 
-    fn check_undefined_short_circuit<'a>(
-        expr: &Expression<'a>,
-        error_type: ErrorType,
-        ctx: &LintContext<'a>,
-    ) {
-        match expr.get_inner_expression() {
-            Expression::LogicalExpression(expr) => match expr.operator {
-                LogicalOperator::Or | LogicalOperator::Coalesce => {
-                    Self::check_undefined_short_circuit(&expr.right, error_type, ctx);
-                }
+	fn check_undefined_short_circuit<'a>(
+		expr:&Expression<'a>,
+		error_type:ErrorType,
+		ctx:&LintContext<'a>,
+	) {
+		match expr.get_inner_expression() {
+			Expression::LogicalExpression(expr) => {
+				match expr.operator {
+					LogicalOperator::Or | LogicalOperator::Coalesce => {
+						Self::check_undefined_short_circuit(&expr.right, error_type, ctx);
+					},
 
-                LogicalOperator::And => {
-                    Self::check_undefined_short_circuit(&expr.left, error_type, ctx);
+					LogicalOperator::And => {
+						Self::check_undefined_short_circuit(&expr.left, error_type, ctx);
 
-                    Self::check_undefined_short_circuit(&expr.right, error_type, ctx);
-                }
-            },
-            Expression::AwaitExpression(expr) => {
-                Self::check_undefined_short_circuit(&expr.argument, error_type, ctx);
-            }
+						Self::check_undefined_short_circuit(&expr.right, error_type, ctx);
+					},
+				}
+			},
+			Expression::AwaitExpression(expr) => {
+				Self::check_undefined_short_circuit(&expr.argument, error_type, ctx);
+			},
 
-            Expression::ConditionalExpression(expr) => {
-                Self::check_undefined_short_circuit(&expr.consequent, error_type, ctx);
+			Expression::ConditionalExpression(expr) => {
+				Self::check_undefined_short_circuit(&expr.consequent, error_type, ctx);
 
-                Self::check_undefined_short_circuit(&expr.alternate, error_type, ctx);
-            }
+				Self::check_undefined_short_circuit(&expr.alternate, error_type, ctx);
+			},
 
-            Expression::SequenceExpression(expr) => {
-                if let Some(expr) = expr.expressions.iter().last() {
-                    Self::check_undefined_short_circuit(expr, error_type, ctx);
-                }
-            }
+			Expression::SequenceExpression(expr) => {
+				if let Some(expr) = expr.expressions.iter().last() {
+					Self::check_undefined_short_circuit(expr, error_type, ctx);
+				}
+			},
 
-            Expression::ChainExpression(expr) => {
-                match error_type {
-                    ErrorType::Usage => {
-                        ctx.diagnostic(no_unsafe_optional_chaining_diagnostic(expr.span));
-                    }
+			Expression::ChainExpression(expr) => {
+				match error_type {
+					ErrorType::Usage => {
+						ctx.diagnostic(no_unsafe_optional_chaining_diagnostic(expr.span));
+					},
 
-                    ErrorType::Arithmetic => {
-                        ctx.diagnostic(no_unsafe_arithmetic_diagnostic(expr.span));
-                    }
-                };
-            }
+					ErrorType::Arithmetic => {
+						ctx.diagnostic(no_unsafe_arithmetic_diagnostic(expr.span));
+					},
+				};
+			},
 
-            _ => {}
-        }
-    }
+			_ => {},
+		}
+	}
 }
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+	use crate::tester::Tester;
 
-    let pass = vec![
+	let pass = vec![
         ("var foo;", None),
         ("class Foo {}", None),
         ("!!obj?.foo", None),
@@ -291,13 +296,13 @@ fn test() {
         ("a?.c?.b<c>", None),
     ];
 
-    let fail = vec![
-        ("(obj?.foo && obj?.baz).bar", None),
-        ("with (obj?.foo) {};", None),
-        ("async function foo() { with ( await obj?.foo) {}; }", None),
-        ("(foo ? obj?.foo : obj?.bar).bar", None),
-    ];
+	let fail = vec![
+		("(obj?.foo && obj?.baz).bar", None),
+		("with (obj?.foo) {};", None),
+		("async function foo() { with ( await obj?.foo) {}; }", None),
+		("(foo ? obj?.foo : obj?.bar).bar", None),
+	];
 
-    Tester::new(NoUnsafeOptionalChaining::NAME, NoUnsafeOptionalChaining::CATEGORY, pass, fail)
-        .test_and_snapshot();
+	Tester::new(NoUnsafeOptionalChaining::NAME, NoUnsafeOptionalChaining::CATEGORY, pass, fail)
+		.test_and_snapshot();
 }

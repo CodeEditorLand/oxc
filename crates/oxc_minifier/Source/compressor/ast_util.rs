@@ -3,7 +3,6 @@ use std::borrow::Cow;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 use oxc_ast::ast::{
-	match_expression,
 	ArrayExpressionElement,
 	BinaryExpression,
 	Expression,
@@ -13,6 +12,7 @@ use oxc_ast::ast::{
 	PropertyKey,
 	SpreadElement,
 	UnaryExpression,
+	match_expression,
 };
 use oxc_semantic::ReferenceFlag;
 use oxc_syntax::operator::{AssignmentOperator, LogicalOperator, UnaryOperator};

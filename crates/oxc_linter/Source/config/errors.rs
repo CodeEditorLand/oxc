@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use oxc_diagnostics::{
+	Report,
 	miette::{self, Diagnostic},
 	thiserror::Error,
-	Report,
 };
 
 #[derive(Debug, Error, Diagnostic)]

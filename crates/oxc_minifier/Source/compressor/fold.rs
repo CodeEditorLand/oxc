@@ -14,7 +14,11 @@ use oxc_syntax::{
 };
 
 use super::{
+	Compressor,
 	ast_util::{
+		IsLiteralValue,
+		MayHaveSideEffects,
+		NumberValue,
 		get_boolean_value,
 		get_number_value,
 		get_side_free_bigint_value,
@@ -22,11 +26,7 @@ use super::{
 		get_side_free_string_value,
 		get_string_value,
 		is_exact_int64,
-		IsLiteralValue,
-		MayHaveSideEffects,
-		NumberValue,
 	},
-	Compressor,
 };
 
 /// Tri state

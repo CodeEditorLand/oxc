@@ -1,6 +1,6 @@
 use oxc_ast::{
-	ast::{Argument, CallExpression, Expression},
 	AstKind,
+	ast::{Argument, CallExpression, Expression},
 };
 use oxc_diagnostics::{
 	miette::{self, Diagnostic},
@@ -9,7 +9,7 @@ use oxc_diagnostics::{
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
-use crate::{context::LintContext, rule::Rule, AstNode};
+use crate::{AstNode, context::LintContext, rule::Rule};
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("deepscan(bad-min-max-func): Math.min and Math.max combination leads to constant result")]

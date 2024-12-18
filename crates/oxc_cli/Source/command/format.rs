@@ -3,14 +3,14 @@ use std::path::PathBuf;
 use bpaf::Bpaf;
 
 use super::{
-	expand_glob,
-	ignore::{ignore_options, IgnoreOptions},
-	misc_options,
-	validate_paths,
 	CliCommand,
 	MiscOptions,
 	PATHS_ERROR_MESSAGE,
 	VERSION,
+	expand_glob,
+	ignore::{IgnoreOptions, ignore_options},
+	misc_options,
+	validate_paths,
 };
 
 /// Formatter for the JavaScript Oxidation Compiler

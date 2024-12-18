@@ -1,5 +1,5 @@
 use oxc_allocator::{Allocator, Vec};
-use oxc_ast::{ast::*, visit::walk_mut, AstBuilder, VisitMut};
+use oxc_ast::{AstBuilder, VisitMut, ast::*, visit::walk_mut};
 
 /// Remove Parenthesized Expression from the AST.
 pub struct RemoveParens<'a> {

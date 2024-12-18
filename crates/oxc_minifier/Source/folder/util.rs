@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use num_bigint::BigInt;
 
 use super::tri::Tri;
-use crate::compressor::ast_util::{is_exact_int64, NumberValue};
+use crate::compressor::ast_util::{NumberValue, is_exact_int64};
 
 /// ported from [closure compiler](https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/PeepholeFoldConstants.java#L1250)
 #[allow(clippy::cast_possible_truncation)]

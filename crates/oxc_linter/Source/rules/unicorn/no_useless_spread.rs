@@ -1,7 +1,8 @@
 mod const_eval;
 
-use const_eval::{is_array_from, is_new_typed_array, ConstEval};
+use const_eval::{ConstEval, is_array_from, is_new_typed_array};
 use oxc_ast::{
+	AstKind,
 	ast::{
 		ArrayExpression,
 		ArrayExpressionElement,
@@ -12,13 +13,13 @@ use oxc_ast::{
 		ObjectPropertyKind,
 		SpreadElement,
 	},
-	AstKind,
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
 
 use crate::{
+	AstNode,
 	ast_util::{
 		get_new_expr_ident_name,
 		is_method_call,
@@ -28,7 +29,6 @@ use crate::{
 	context::LintContext,
 	fixer::{RuleFix, RuleFixer},
 	rule::Rule,
-	AstNode,
 };
 
 fn spread_in_list(span:Span, arr_or_obj:&str) -> OxcDiagnostic {

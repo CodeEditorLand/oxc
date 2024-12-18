@@ -5,8 +5,8 @@
 use std::{cmp::Ordering, mem};
 
 use num_bigint::BigInt;
-use oxc_ast::{ast::*, AstBuilder, Visit};
-use oxc_span::{GetSpan, Span, SPAN};
+use oxc_ast::{AstBuilder, Visit, ast::*};
+use oxc_span::{GetSpan, SPAN, Span};
 use oxc_syntax::{
 	number::NumberBase,
 	operator::{BinaryOperator, LogicalOperator, UnaryOperator},
@@ -14,11 +14,11 @@ use oxc_syntax::{
 use oxc_traverse::{Traverse, TraverseCtx};
 
 use crate::{
+	CompressorPass,
 	keep_var::KeepVar,
-	node_util::{is_exact_int64, MayHaveSideEffects, NodeUtil, NumberValue},
+	node_util::{MayHaveSideEffects, NodeUtil, NumberValue, is_exact_int64},
 	tri::Tri,
 	ty::Ty,
-	CompressorPass,
 };
 
 pub struct FoldConstants<'a> {

@@ -3,9 +3,9 @@ use oxc_ast::ast::*;
 use oxc_diagnostics::Result;
 
 use crate::{
+	ParserImpl,
 	lexer::Kind,
 	list::{NormalList, SeparatedList},
-	ParserImpl,
 };
 
 pub struct TSEnumMemberList<'a> {

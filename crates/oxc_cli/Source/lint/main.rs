@@ -31,7 +31,7 @@ fn init_miette() {
 }
 
 fn init_tracing() {
-	use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
+	use tracing_subscriber::{EnvFilter, fmt, prelude::*, registry};
 
 	registry().with(fmt::layer()).with(EnvFilter::from_env("OXC_LOG")).init();
 }

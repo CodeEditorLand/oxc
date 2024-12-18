@@ -1,6 +1,6 @@
 use oxc_ast::{
-	ast::{Expression, MemberExpression},
 	AstKind,
+	ast::{Expression, MemberExpression},
 };
 use oxc_diagnostics::{
 	miette::{self, Diagnostic},
@@ -9,7 +9,7 @@ use oxc_diagnostics::{
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{CompactStr, Span};
 
-use crate::{context::LintContext, rule::Rule, AstNode};
+use crate::{AstNode, context::LintContext, rule::Rule};
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("deepscan(bad-array-method-on-arguments): Bad array method on arguments")]

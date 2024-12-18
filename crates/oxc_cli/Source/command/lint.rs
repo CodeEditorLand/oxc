@@ -4,14 +4,14 @@ use bpaf::Bpaf;
 use oxc_linter::AllowWarnDeny;
 
 use super::{
-	expand_glob,
-	ignore::{ignore_options, IgnoreOptions},
-	misc_options,
-	validate_paths,
 	CliCommand,
 	MiscOptions,
 	PATHS_ERROR_MESSAGE,
 	VERSION,
+	expand_glob,
+	ignore::{IgnoreOptions, ignore_options},
+	misc_options,
+	validate_paths,
 };
 
 // To add a header or footer, see
@@ -243,7 +243,7 @@ pub struct EnablePlugins {
 
 #[cfg(test)]
 mod warning_options {
-	use super::{lint_command, WarningOptions};
+	use super::{WarningOptions, lint_command};
 
 	fn get_warning_options(arg:&str) -> WarningOptions {
 		let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();
@@ -281,7 +281,7 @@ mod lint_options {
 
 	use oxc_linter::AllowWarnDeny;
 
-	use super::{lint_command, LintOptions, OutputFormat};
+	use super::{LintOptions, OutputFormat, lint_command};
 
 	fn get_lint_options(arg:&str) -> LintOptions {
 		let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();

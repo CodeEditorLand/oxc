@@ -7,10 +7,10 @@ use oxc_span::SourceType;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
+	Runner,
 	command::FormatOptions,
 	result::{CliRunResult, FormatResult},
 	walk::Walk,
-	Runner,
 };
 
 pub struct FormatRunner {

@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use indexmap::IndexMap;
 use oxc_allocator::Vec;
-use oxc_ast::{ast::*, NONE};
+use oxc_ast::{NONE, ast::*};
 use oxc_semantic::ReferenceFlags;
 use oxc_span::{Atom, SPAN};
 use oxc_syntax::symbol::SymbolId;

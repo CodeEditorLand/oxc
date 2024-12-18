@@ -3,7 +3,7 @@ use oxc_ast::ast::*;
 use oxc_diagnostics::Result;
 use oxc_span::GetSpan;
 
-use crate::{diagnostics, lexer::Kind, list::SeparatedList, modifiers::ModifierFlags, ParserImpl};
+use crate::{ParserImpl, diagnostics, lexer::Kind, list::SeparatedList, modifiers::ModifierFlags};
 
 /// ObjectPattern.properties
 pub struct ObjectPatternProperties<'a> {

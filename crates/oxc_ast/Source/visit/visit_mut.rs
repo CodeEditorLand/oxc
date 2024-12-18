@@ -5,7 +5,7 @@ use oxc_syntax::scope::ScopeFlags;
 
 #[allow(clippy::wildcard_imports)]
 use self::walk_mut::*;
-use crate::{ast::*, AstType};
+use crate::{AstType, ast::*};
 
 /// Syntax tree traversal to mutate an exclusive borrow of a syntax tree in
 /// place.

@@ -1,6 +1,6 @@
 use oxc_ast::{
-	ast::{BreakStatement, ContinueStatement},
 	AstKind,
+	ast::{BreakStatement, ContinueStatement},
 };
 use oxc_syntax::node::AstNodeId;
 use petgraph::{

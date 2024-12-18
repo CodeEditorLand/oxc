@@ -1,6 +1,6 @@
 use oxc_ast::ast::*;
 use oxc_diagnostics::OxcDiagnostic;
-use oxc_span::{Span, SPAN};
+use oxc_span::{SPAN, Span};
 use oxc_syntax::number::NumberBase;
 
 use super::utils::get_line_column;

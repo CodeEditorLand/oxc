@@ -7,7 +7,7 @@ mod util;
 use oxc_allocator::{Allocator, Vec};
 use oxc_ast::visit::walk_mut;
 #[allow(clippy::wildcard_imports)]
-use oxc_ast::{ast::*, AstBuilder, VisitMut};
+use oxc_ast::{AstBuilder, VisitMut, ast::*};
 use oxc_span::Span;
 use oxc_syntax::{
 	number::NumberBase,

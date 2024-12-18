@@ -1,6 +1,6 @@
 use oxc_ast::ast::*;
 use oxc_diagnostics::OxcDiagnostic;
-use oxc_span::{Span, SPAN};
+use oxc_span::{SPAN, Span};
 use oxc_traverse::{Ancestor, FinderRet, TraverseCtx};
 
 use crate::context::Ctx;

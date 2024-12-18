@@ -1,5 +1,5 @@
 use oxc_ast::ast::{BindingIdentifier, IdentifierReference};
-use oxc_span::{Atom, Span, SPAN};
+use oxc_span::{Atom, SPAN, Span};
 use oxc_syntax::{
 	reference::ReferenceFlags,
 	scope::ScopeId,

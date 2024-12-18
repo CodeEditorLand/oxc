@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::Ident;
 
-use super::{define_derive, Derive, DeriveOutput};
+use super::{Derive, DeriveOutput, define_derive};
 use crate::{
 	codegen::LateCtx,
 	markers::CloneInAttribute,

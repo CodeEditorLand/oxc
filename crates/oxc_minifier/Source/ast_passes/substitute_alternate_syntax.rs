@@ -6,7 +6,7 @@ use oxc_syntax::{
 };
 use oxc_traverse::{Traverse, TraverseCtx};
 
-use crate::{node_util::NodeUtil, CompressOptions, CompressorPass};
+use crate::{CompressOptions, CompressorPass, node_util::NodeUtil};
 
 /// A peephole optimization that minimizes code by simplifying conditional
 /// expressions, replacing IFs with HOOKs, replacing object constructors

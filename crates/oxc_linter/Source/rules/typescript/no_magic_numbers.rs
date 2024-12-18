@@ -1,4 +1,5 @@
 use oxc_ast::{
+	AstKind,
 	ast::{
 		AssignmentTarget,
 		Expression,
@@ -6,7 +7,6 @@ use oxc_ast::{
 		UnaryExpression,
 		VariableDeclarationKind,
 	},
-	AstKind,
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
@@ -14,7 +14,7 @@ use oxc_semantic::AstNodes;
 use oxc_span::{GetSpan, Span};
 use oxc_syntax::operator::UnaryOperator;
 
-use crate::{context::LintContext, rule::Rule, AstNode};
+use crate::{AstNode, context::LintContext, rule::Rule};
 
 enum NoMagicNumberReportReason {
 	MustUseConst,
@@ -622,11 +622,11 @@ fn test() {
 		("f(-100n)", Some(serde_json::json!([{ "ignore": ["-100n"] }]))), /* { "ecmaVersion":
 		                                                                   * 2020 }, */
 		("const { param = 123 } = sourceObject;", ignore_default_values.clone()), /* { "ecmaVersion": 6 }, */
-		("const func = (param = 123) => {}", ignore_default_values.clone()), /* { "ecmaVersion":
-		                                                                      * 6 }, */
+		("const func = (param = 123) => {}", ignore_default_values.clone()),      /* { "ecmaVersion":
+		                                                                           * 6 }, */
 		("const func = ({ param = 123 }) => {}", ignore_default_values.clone()), /* { "ecmaVersion": 6 }, */
-		("const [one = 1, two = 2] = []", ignore_default_values.clone()), /* { "ecmaVersion": 6
-		                                                                   * }, */
+		("const [one = 1, two = 2] = []", ignore_default_values.clone()),        /* { "ecmaVersion": 6
+		                                                                          * }, */
 		("var one, two; [one = 1, two = 2] = []", ignore_default_values.clone()), /* { "ecmaVersion": 6 }, */
 		("var x = parseInt?.(y, 10);", None), // { "ecmaVersion": 2020 },
 		("var x = Number?.parseInt(y, 10);", None), // { "ecmaVersion": 2020 },
@@ -635,8 +635,8 @@ fn test() {
 		("class C { foo = 2; }", ignore_class_field_initial_values.clone()), // { "ecmaVersion": 2022 },
 		("class C { foo = -2; }", ignore_class_field_initial_values.clone()), // { "ecmaVersion": 2022 },
 		("class C { static foo = 2; }", ignore_class_field_initial_values.clone()), /* { "ecmaVersion": 2022 }, */
-		("class C { #foo = 2; }", ignore_class_field_initial_values.clone()), /* { "ecmaVersion"
-		                                                                       * : 2022 }, */
+		("class C { #foo = 2; }", ignore_class_field_initial_values.clone()),       /* { "ecmaVersion"
+		                                                                             * : 2022 }, */
 		("class C { static #foo = 2; }", ignore_class_field_initial_values.clone()), /* { "ecmaVersion": 2022 } */
 		("const FOO = 10;", ignore_numeric_literal_types.clone()),
 		("type Foo = 'bar';", None),
@@ -900,8 +900,8 @@ fn test() {
 			Some(serde_json::json!([{ "ignoreClassFieldInitialValues": false }])),
 		), // { "ecmaVersion": 2022 },
 		("class C { foo = 2 + 3; }", ignore_class_field_initial_values.clone()), /* { "ecmaVersion": 2022 }, */
-		("class C { 2; }", ignore_class_field_initial_values.clone()), /* { "ecmaVersion": 2022
-		                                                                * }, */
+		("class C { 2; }", ignore_class_field_initial_values.clone()),           /* { "ecmaVersion": 2022
+		                                                                          * }, */
 		("class C { [2]; }", ignore_class_field_initial_values.clone()), /* { "ecmaVersion":
 		                                                                  * 2022 } */
 		(

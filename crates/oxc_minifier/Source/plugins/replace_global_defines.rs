@@ -7,7 +7,7 @@ use oxc_parser::Parser;
 use oxc_semantic::{IsGlobalReference, ScopeTree, SymbolTable};
 use oxc_span::{CompactStr, SourceType};
 use oxc_syntax::identifier::is_identifier_name;
-use oxc_traverse::{traverse_mut, Traverse, TraverseCtx};
+use oxc_traverse::{Traverse, TraverseCtx, traverse_mut};
 
 /// Configuration for [ReplaceGlobalDefines].
 ///

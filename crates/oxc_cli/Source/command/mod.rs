@@ -8,9 +8,9 @@ use bpaf::Bpaf;
 
 use self::{format::format_options, lint::lint_options};
 pub use self::{
-	format::{format_command, FormatOptions},
+	format::{FormatOptions, format_command},
 	ignore::IgnoreOptions,
-	lint::{lint_command, LintOptions, OutputFormat, OutputOptions, WarningOptions},
+	lint::{LintOptions, OutputFormat, OutputOptions, WarningOptions, lint_command},
 };
 
 const VERSION:&str = match option_env!("OXC_VERSION") {
@@ -101,7 +101,7 @@ fn expand_glob(paths:Vec<PathBuf>) -> Vec<PathBuf> {
 
 #[cfg(test)]
 mod misc_options {
-	use super::{lint::lint_command, MiscOptions};
+	use super::{MiscOptions, lint::lint_command};
 
 	fn get_misc_options(arg:&str) -> MiscOptions {
 		let args = arg.split(' ').map(std::string::ToString::to_string).collect::<Vec<_>>();

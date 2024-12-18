@@ -41,28 +41,26 @@ use oxc_traverse::{Traverse, TraverseCtx};
 pub struct OptionalCatchBinding;
 
 impl OptionalCatchBinding {
-    pub fn new() -> Self {
-        Self
-    }
+	pub fn new() -> Self { Self }
 }
 
 impl<'a> Traverse<'a> for OptionalCatchBinding {
-    /// If CatchClause has no param, add a parameter called `unused`.
-    fn enter_catch_clause(&mut self, clause: &mut CatchClause<'a>, ctx: &mut TraverseCtx<'a>) {
-        if clause.param.is_some() {
-            return;
-        }
+	/// If CatchClause has no param, add a parameter called `unused`.
+	fn enter_catch_clause(&mut self, clause:&mut CatchClause<'a>, ctx:&mut TraverseCtx<'a>) {
+		if clause.param.is_some() {
+			return;
+		}
 
-        let binding = ctx.generate_uid(
-            "unused",
-            clause.body.scope_id(),
-            SymbolFlags::CatchVariable | SymbolFlags::FunctionScopedVariable,
-        );
+		let binding = ctx.generate_uid(
+			"unused",
+			clause.body.scope_id(),
+			SymbolFlags::CatchVariable | SymbolFlags::FunctionScopedVariable,
+		);
 
-        let binding_pattern = binding.create_binding_pattern(ctx);
+		let binding_pattern = binding.create_binding_pattern(ctx);
 
-        let param = ctx.ast.catch_parameter(SPAN, binding_pattern);
+		let param = ctx.ast.catch_parameter(SPAN, binding_pattern);
 
-        clause.param = Some(param);
-    }
+		clause.param = Some(param);
+	}
 }

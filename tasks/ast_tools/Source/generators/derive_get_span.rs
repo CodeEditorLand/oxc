@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
 
-use super::{define_derive, Derive, DeriveOutput};
+use super::{Derive, DeriveOutput, define_derive};
 use crate::{
 	codegen::LateCtx,
 	schema::{EnumDef, GetGenerics, StructDef, ToType, TypeDef},

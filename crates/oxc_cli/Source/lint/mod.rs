@@ -3,21 +3,21 @@ use std::{env, io::BufWriter, time::Instant};
 use ignore::gitignore::Gitignore;
 use oxc_diagnostics::{DiagnosticService, GraphicalReportHandler};
 use oxc_linter::{
-	partial_loader::LINT_PARTIAL_LOADER_EXT,
 	LintOptions,
 	LintService,
 	LintServiceOptions,
 	Linter,
+	partial_loader::LINT_PARTIAL_LOADER_EXT,
 };
 use oxc_span::VALID_EXTENSIONS;
 
 use crate::{
-	command::{LintOptions as CliLintOptions, OutputFormat, OutputOptions, WarningOptions},
-	walk::{Extensions, Walk},
 	CliRunResult,
 	LintResult,
 	MiscOptions,
 	Runner,
+	command::{LintOptions as CliLintOptions, OutputFormat, OutputOptions, WarningOptions},
+	walk::{Extensions, Walk},
 };
 
 pub struct LintRunner {
@@ -209,8 +209,7 @@ impl LintRunner {
 #[cfg(all(test, not(target_os = "windows")))]
 mod test {
 	use super::LintRunner;
-
-	use crate::{lint_command, CliRunResult, LintResult, Runner};
+	use crate::{CliRunResult, LintResult, Runner, lint_command};
 
 	fn test(args:&[&str]) -> LintResult {
 		let mut new_args = vec!["--silent"];

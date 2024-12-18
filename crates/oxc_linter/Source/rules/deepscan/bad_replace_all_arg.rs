@@ -1,6 +1,6 @@
 use oxc_ast::{
-	ast::{Expression, RegExpFlags},
 	AstKind,
+	ast::{Expression, RegExpFlags},
 };
 use oxc_diagnostics::{
 	miette::{self, Diagnostic},
@@ -10,10 +10,10 @@ use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 
 use crate::{
+	AstNode,
 	ast_util::{extract_regex_flags, get_declaration_of_variable, is_method_call},
 	context::LintContext,
 	rule::Rule,
-	AstNode,
 };
 
 #[derive(Debug, Error, Diagnostic)]

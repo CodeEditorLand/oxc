@@ -1,9 +1,9 @@
 use oxc_allocator::Vec;
-use oxc_ast::{ast::*, Visit};
+use oxc_ast::{Visit, ast::*};
 use oxc_span::SPAN;
 use oxc_traverse::{Traverse, TraverseCtx};
 
-use crate::{keep_var::KeepVar, node_util::NodeUtil, tri::Tri, CompressorPass};
+use crate::{CompressorPass, keep_var::KeepVar, node_util::NodeUtil, tri::Tri};
 
 /// Remove Dead Code from the AST.
 ///

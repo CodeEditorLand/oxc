@@ -1,4 +1,4 @@
-use crate::{output::Output, Result, Schema};
+use crate::{Result, Schema, output::Output};
 
 mod assert_layouts;
 mod ast_builder;
@@ -15,15 +15,13 @@ pub use typescript::TypescriptGenerator;
 pub use visit::{VisitGenerator, VisitMutGenerator};
 
 pub trait Generator {
-    // Methods defined by implementer
+	// Methods defined by implementer
 
-    fn generate(&mut self, schema: &Schema) -> Output;
+	fn generate(&mut self, schema:&Schema) -> Output;
 
-    // Standard methods
+	// Standard methods
 
-    fn output(&mut self, schema: &Schema) -> Result<Vec<Output>> {
-        Ok(vec![self.generate(schema)])
-    }
+	fn output(&mut self, schema:&Schema) -> Result<Vec<Output>> { Ok(vec![self.generate(schema)]) }
 }
 
 macro_rules! define_generator {
