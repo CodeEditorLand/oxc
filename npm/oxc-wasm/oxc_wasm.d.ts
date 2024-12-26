@@ -68,15 +68,15 @@ export interface OxcCompressOptions {
 export * from "@oxc-project/types";
 
 export interface Oxc {
-	ast: Program;
-	ir: string;
-	controlFlowGraph: string;
-	symbols: SymbolTable;
-	scopeText: string;
-	codegenText: string;
-	formattedText: string;
-	prettierFormattedText: string;
-	prettierIrText: string;
+    ast: Program;
+    ir: string;
+    controlFlowGraph: string;
+    symbols: any;
+    scopeText: string;
+    codegenText: string;
+    formattedText: string;
+    prettierFormattedText: string;
+    prettierIrText: string;
 }
 
 export interface Comment {
@@ -88,27 +88,6 @@ export interface Comment {
 
 export type CommentType = "Line" | "Block";
 
-export type IndexVec<I, T> = Array<T>;
-
-export type CompactStr = string;
-
-export interface SymbolTable {
-	spans: IndexVec<SymbolId, Span>;
-	names: IndexVec<SymbolId, CompactStr>;
-	flags: IndexVec<SymbolId, SymbolFlags>;
-	scopeIds: IndexVec<SymbolId, ScopeId>;
-	declarations: IndexVec<SymbolId, NodeId>;
-	resolvedReferences: IndexVec<SymbolId, ReferenceId[]>;
-	redeclarations: IndexVec<SymbolId, RedeclarationId | null>;
-	redeclarationSpans: IndexVec<RedeclarationId, Span[]>;
-	references: IndexVec<ReferenceId, Reference>;
-}
-
-export interface Reference {
-	nodeId: NodeId;
-	symbolId: SymbolId | null;
-	flags: ReferenceFlags;
-}
 
 export type NodeId = number;
 
@@ -119,22 +98,27 @@ export type NodeFlags = {
 	Parameter: 8;
 };
 
-export type ReferenceId = number;
-export type ReferenceFlags = {
-	None: 0;
-	Read: 0b1;
-	Write: 0b10;
-	Type: 0b100;
-	Value: 0b11;
-};
+
+
+export type SymbolId = number;
+export type SymbolFlags = unknown;
+export type RedeclarationId = unknown;
+
+
 
 export type ScopeId = number;
 
-export type SymbolId = number;
 
-export type SymbolFlags = unknown;
 
-export type RedeclarationId = unknown;
+export type ReferenceId = number;
+export type ReferenceFlags = {
+    None: 0,
+    Read: 0b1,
+    Write: 0b10,
+    Type: 0b100,
+    Value: 0b11
+}
+
 
 export class Oxc {
 	free(): void;

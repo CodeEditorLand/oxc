@@ -204,22 +204,23 @@ macro_rules! break_parent {
 /// ```
 #[macro_export]
 macro_rules! join {
-	($p:ident, $sep:expr, $vec:expr) => {{
-		let mut parts = oxc_allocator::Vec::new_in($p.allocator);
-		for (i, doc) in $vec.into_iter().enumerate() {
-			if i != 0 {
-				match $sep {
-					$crate::ir::JoinSeparator::Softline => parts.push($crate::softline!()),
-					$crate::ir::JoinSeparator::Hardline => parts.extend($crate::hardline!()),
-					$crate::ir::JoinSeparator::CommaLine => {
-						parts.extend([$crate::text!(","), $crate::line!()]);
-					},
-				}
-			}
-			parts.push(doc);
-		}
-		$crate::ir::Doc::Array(parts)
-	}};
+    ($p:ident, $sep:expr, $vec:expr) => {{
+        let mut parts = oxc_allocator::Vec::new_in($p.allocator);
+        for (i, doc) in $vec.into_iter().enumerate() {
+            if i != 0 {
+                match $sep {
+                    $crate::ir::JoinSeparator::Softline => parts.push($crate::softline!()),
+                    $crate::ir::JoinSeparator::Hardline => parts.extend($crate::hardline!()),
+                    $crate::ir::JoinSeparator::CommaLine => {
+                        parts.extend([$crate::text!(","), $crate::line!()]);
+                    }
+                    $crate::ir::JoinSeparator::Literalline => parts.extend($crate::literalline!()),
+                }
+            }
+            parts.push(doc);
+        }
+        $crate::ir::Doc::Array(parts)
+    }};
 }
 
 /// Specify a line break.
@@ -256,6 +257,25 @@ macro_rules! hardline {
 		let hardline = $crate::ir::Doc::Line($crate::ir::Line { hard:true, ..Default::default() });
 		[hardline, $crate::ir::Doc::BreakParent]
 	}};
+}
+
+/// Specify a line break that is always included in the output and doesn't indent the next line.
+/// Also, unlike hardline, this kind of line break preserves trailing whitespace on the line it ends.
+/// This is used for template literals.
+/// <https://github.com/prettier/prettier/blob/3.4.1/commands.md#literalline>
+/// ```
+/// literalline!();
+/// ```
+#[macro_export]
+macro_rules! literalline {
+    () => {{
+        let literalline = $crate::ir::Doc::Line($crate::ir::Line {
+            hard: true,
+            literal: true,
+            ..Default::default()
+        });
+        [literalline, $crate::ir::Doc::BreakParent]
+    }};
 }
 
 /// Increase the level of indentation.
