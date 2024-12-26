@@ -1,34 +1,27 @@
 #![allow(missing_docs)] // FIXME
 
-// NB: `#[span]`, `#[scope(...)]`,`#[visit(...)]` and `#[generate_derive(...)]`
-// do NOT do anything to the code. They are purely markers for codegen used in
-// `tasks/ast_tools` and `crates/oxc_traverse/scripts`. See docs in those
-// crates. Read [`macro@oxc_ast_macros::ast`] for more information.
+// NB: `#[span]`, `#[scope(...)]`,`#[visit(...)]` and `#[generate_derive(...)]` do NOT do anything to the code.
+// They are purely markers for codegen used in `tasks/ast_tools` and `crates/oxc_traverse/scripts`. See docs in those crates.
+// Read [`macro@oxc_ast_macros::ast`] for more information.
 
 use std::cell::Cell;
 
 use oxc_allocator::{Box, CloneIn, GetAddress, Vec};
 use oxc_ast_macros::ast;
 use oxc_estree::ESTree;
-use oxc_span::{Atom, GetSpan, GetSpanMut, SourceType, Span, cmp::ContentEq, hash::ContentHash};
+use oxc_span::{cmp::ContentEq, hash::ContentHash, Atom, GetSpan, GetSpanMut, SourceType, Span};
 use oxc_syntax::{
-	operator::{
-		AssignmentOperator,
-		BinaryOperator,
-		LogicalOperator,
-		UnaryOperator,
-		UpdateOperator,
-	},
-	reference::ReferenceId,
-	scope::ScopeId,
-	symbol::SymbolId,
+    operator::{
+        AssignmentOperator, BinaryOperator, LogicalOperator, UnaryOperator, UpdateOperator,
+    },
+    reference::ReferenceId,
+    scope::ScopeId,
+    symbol::SymbolId,
 };
 
 use super::{macros::inherit_variants, *};
 
-/// Represents the root of a JavaScript abstract syntax tree (AST), containing
-/// metadata about the source, directives, top-level statements, and scope
-/// information.
+/// Represents the root of a JavaScript abstract syntax tree (AST), containing metadata about the source, directives, top-level statements, and scope information.
 #[ast(visit)]
 #[scope(
     flags(ScopeFlags::Top),
@@ -37,19 +30,19 @@ use super::{macros::inherit_variants, *};
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct Program<'a> {
-	pub span:Span,
-	pub source_type:SourceType,
-	#[estree(skip)]
-	pub source_text:&'a str,
-	/// Sorted comments
-	#[estree(skip)]
-	pub comments:Vec<'a, Comment>,
-	pub hashbang:Option<Hashbang<'a>>,
-	pub directives:Vec<'a, Directive<'a>>,
-	pub body:Vec<'a, Statement<'a>>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub source_type: SourceType,
+    #[estree(skip)]
+    pub source_text: &'a str,
+    /// Sorted comments
+    #[estree(skip)]
+    pub comments: Vec<'a, Comment>,
+    pub hashbang: Option<Hashbang<'a>>,
+    pub directives: Vec<'a, Directive<'a>>,
+    pub body: Vec<'a, Statement<'a>>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 inherit_variants! {
@@ -62,93 +55,93 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum Expression<'a> {
-	/// See [`BooleanLiteral`] for AST node details.
-	BooleanLiteral(Box<'a, BooleanLiteral>) = 0,
-	/// See [`NullLiteral`] for AST node details.
-	NullLiteral(Box<'a, NullLiteral>) = 1,
-	/// See [`NumericLiteral`] for AST node details.
-	NumericLiteral(Box<'a, NumericLiteral<'a>>) = 2,
-	/// See [`BigIntLiteral`] for AST node details.
-	BigIntLiteral(Box<'a, BigIntLiteral<'a>>) = 3,
-	/// See [`RegExpLiteral`] for AST node details.
-	RegExpLiteral(Box<'a, RegExpLiteral<'a>>) = 4,
-	/// See [`StringLiteral`] for AST node details.
-	StringLiteral(Box<'a, StringLiteral<'a>>) = 5,
-	/// See [`TemplateLiteral`] for AST node details.
-	TemplateLiteral(Box<'a, TemplateLiteral<'a>>) = 6,
+    /// See [`BooleanLiteral`] for AST node details.
+    BooleanLiteral(Box<'a, BooleanLiteral>) = 0,
+    /// See [`NullLiteral`] for AST node details.
+    NullLiteral(Box<'a, NullLiteral>) = 1,
+    /// See [`NumericLiteral`] for AST node details.
+    NumericLiteral(Box<'a, NumericLiteral<'a>>) = 2,
+    /// See [`BigIntLiteral`] for AST node details.
+    BigIntLiteral(Box<'a, BigIntLiteral<'a>>) = 3,
+    /// See [`RegExpLiteral`] for AST node details.
+    RegExpLiteral(Box<'a, RegExpLiteral<'a>>) = 4,
+    /// See [`StringLiteral`] for AST node details.
+    StringLiteral(Box<'a, StringLiteral<'a>>) = 5,
+    /// See [`TemplateLiteral`] for AST node details.
+    TemplateLiteral(Box<'a, TemplateLiteral<'a>>) = 6,
 
-	/// See [`IdentifierReference`] for AST node details.
-	Identifier(Box<'a, IdentifierReference<'a>>) = 7,
+    /// See [`IdentifierReference`] for AST node details.
+    Identifier(Box<'a, IdentifierReference<'a>>) = 7,
 
-	/// See [`MetaProperty`] for AST node details.
-	MetaProperty(Box<'a, MetaProperty<'a>>) = 8,
-	/// See [`Super`] for AST node details.
-	Super(Box<'a, Super>) = 9,
+    /// See [`MetaProperty`] for AST node details.
+    MetaProperty(Box<'a, MetaProperty<'a>>) = 8,
+    /// See [`Super`] for AST node details.
+    Super(Box<'a, Super>) = 9,
 
-	/// See [`ArrayExpression`] for AST node details.
-	ArrayExpression(Box<'a, ArrayExpression<'a>>) = 10,
-	/// See [`ArrowFunctionExpression`] for AST node details.
-	ArrowFunctionExpression(Box<'a, ArrowFunctionExpression<'a>>) = 11,
-	/// See [`AssignmentExpression`] for AST node details.
-	AssignmentExpression(Box<'a, AssignmentExpression<'a>>) = 12,
-	/// See [`AwaitExpression`] for AST node details.
-	AwaitExpression(Box<'a, AwaitExpression<'a>>) = 13,
-	/// See [`BinaryExpression`] for AST node details.
-	BinaryExpression(Box<'a, BinaryExpression<'a>>) = 14,
-	/// See [`CallExpression`] for AST node details.
-	CallExpression(Box<'a, CallExpression<'a>>) = 15,
-	/// See [`ChainExpression`] for AST node details.
-	ChainExpression(Box<'a, ChainExpression<'a>>) = 16,
-	/// See [`Class`] for AST node details.
-	ClassExpression(Box<'a, Class<'a>>) = 17,
-	/// See [`ConditionalExpression`] for AST node details.
-	ConditionalExpression(Box<'a, ConditionalExpression<'a>>) = 18,
-	/// See [`Function`] for AST node details.
-	#[visit(args(flags = ScopeFlags::Function))]
-	FunctionExpression(Box<'a, Function<'a>>) = 19,
-	/// See [`ImportExpression`] for AST node details.
-	ImportExpression(Box<'a, ImportExpression<'a>>) = 20,
-	/// See [`LogicalExpression`] for AST node details.
-	LogicalExpression(Box<'a, LogicalExpression<'a>>) = 21,
-	/// See [`NewExpression`] for AST node details.
-	NewExpression(Box<'a, NewExpression<'a>>) = 22,
-	/// See [`ObjectExpression`] for AST node details.
-	ObjectExpression(Box<'a, ObjectExpression<'a>>) = 23,
-	/// See [`ParenthesizedExpression`] for AST node details.
-	ParenthesizedExpression(Box<'a, ParenthesizedExpression<'a>>) = 24,
-	/// See [`SequenceExpression`] for AST node details.
-	SequenceExpression(Box<'a, SequenceExpression<'a>>) = 25,
-	/// See [`TaggedTemplateExpression`] for AST node details.
-	TaggedTemplateExpression(Box<'a, TaggedTemplateExpression<'a>>) = 26,
-	/// See [`ThisExpression`] for AST node details.
-	ThisExpression(Box<'a, ThisExpression>) = 27,
-	/// See [`UnaryExpression`] for AST node details.
-	UnaryExpression(Box<'a, UnaryExpression<'a>>) = 28,
-	/// See [`UpdateExpression`] for AST node details.
-	UpdateExpression(Box<'a, UpdateExpression<'a>>) = 29,
-	/// See [`YieldExpression`] for AST node details.
-	YieldExpression(Box<'a, YieldExpression<'a>>) = 30,
-	/// See [`PrivateInExpression`] for AST node details.
-	PrivateInExpression(Box<'a, PrivateInExpression<'a>>) = 31,
+    /// See [`ArrayExpression`] for AST node details.
+    ArrayExpression(Box<'a, ArrayExpression<'a>>) = 10,
+    /// See [`ArrowFunctionExpression`] for AST node details.
+    ArrowFunctionExpression(Box<'a, ArrowFunctionExpression<'a>>) = 11,
+    /// See [`AssignmentExpression`] for AST node details.
+    AssignmentExpression(Box<'a, AssignmentExpression<'a>>) = 12,
+    /// See [`AwaitExpression`] for AST node details.
+    AwaitExpression(Box<'a, AwaitExpression<'a>>) = 13,
+    /// See [`BinaryExpression`] for AST node details.
+    BinaryExpression(Box<'a, BinaryExpression<'a>>) = 14,
+    /// See [`CallExpression`] for AST node details.
+    CallExpression(Box<'a, CallExpression<'a>>) = 15,
+    /// See [`ChainExpression`] for AST node details.
+    ChainExpression(Box<'a, ChainExpression<'a>>) = 16,
+    /// See [`Class`] for AST node details.
+    ClassExpression(Box<'a, Class<'a>>) = 17,
+    /// See [`ConditionalExpression`] for AST node details.
+    ConditionalExpression(Box<'a, ConditionalExpression<'a>>) = 18,
+    /// See [`Function`] for AST node details.
+    #[visit(args(flags = ScopeFlags::Function))]
+    FunctionExpression(Box<'a, Function<'a>>) = 19,
+    /// See [`ImportExpression`] for AST node details.
+    ImportExpression(Box<'a, ImportExpression<'a>>) = 20,
+    /// See [`LogicalExpression`] for AST node details.
+    LogicalExpression(Box<'a, LogicalExpression<'a>>) = 21,
+    /// See [`NewExpression`] for AST node details.
+    NewExpression(Box<'a, NewExpression<'a>>) = 22,
+    /// See [`ObjectExpression`] for AST node details.
+    ObjectExpression(Box<'a, ObjectExpression<'a>>) = 23,
+    /// See [`ParenthesizedExpression`] for AST node details.
+    ParenthesizedExpression(Box<'a, ParenthesizedExpression<'a>>) = 24,
+    /// See [`SequenceExpression`] for AST node details.
+    SequenceExpression(Box<'a, SequenceExpression<'a>>) = 25,
+    /// See [`TaggedTemplateExpression`] for AST node details.
+    TaggedTemplateExpression(Box<'a, TaggedTemplateExpression<'a>>) = 26,
+    /// See [`ThisExpression`] for AST node details.
+    ThisExpression(Box<'a, ThisExpression>) = 27,
+    /// See [`UnaryExpression`] for AST node details.
+    UnaryExpression(Box<'a, UnaryExpression<'a>>) = 28,
+    /// See [`UpdateExpression`] for AST node details.
+    UpdateExpression(Box<'a, UpdateExpression<'a>>) = 29,
+    /// See [`YieldExpression`] for AST node details.
+    YieldExpression(Box<'a, YieldExpression<'a>>) = 30,
+    /// See [`PrivateInExpression`] for AST node details.
+    PrivateInExpression(Box<'a, PrivateInExpression<'a>>) = 31,
 
-	/// See [`JSXElement`] for AST node details.
-	JSXElement(Box<'a, JSXElement<'a>>) = 32,
-	/// See [`JSXFragment`] for AST node details.
-	JSXFragment(Box<'a, JSXFragment<'a>>) = 33,
+    /// See [`JSXElement`] for AST node details.
+    JSXElement(Box<'a, JSXElement<'a>>) = 32,
+    /// See [`JSXFragment`] for AST node details.
+    JSXFragment(Box<'a, JSXFragment<'a>>) = 33,
 
-	/// See [`TSAsExpression`] for AST node details.
-	TSAsExpression(Box<'a, TSAsExpression<'a>>) = 34,
-	/// See [`TSSatisfiesExpression`] for AST node details.
-	TSSatisfiesExpression(Box<'a, TSSatisfiesExpression<'a>>) = 35,
-	/// See [`TSTypeAssertion`] for AST node details.
-	TSTypeAssertion(Box<'a, TSTypeAssertion<'a>>) = 36,
-	/// See [`TSNonNullExpression`] for AST node details.
-	TSNonNullExpression(Box<'a, TSNonNullExpression<'a>>) = 37,
-	/// See [`TSInstantiationExpression`] for AST node details.
-	TSInstantiationExpression(Box<'a, TSInstantiationExpression<'a>>) = 38,
+    /// See [`TSAsExpression`] for AST node details.
+    TSAsExpression(Box<'a, TSAsExpression<'a>>) = 34,
+    /// See [`TSSatisfiesExpression`] for AST node details.
+    TSSatisfiesExpression(Box<'a, TSSatisfiesExpression<'a>>) = 35,
+    /// See [`TSTypeAssertion`] for AST node details.
+    TSTypeAssertion(Box<'a, TSTypeAssertion<'a>>) = 36,
+    /// See [`TSNonNullExpression`] for AST node details.
+    TSNonNullExpression(Box<'a, TSNonNullExpression<'a>>) = 37,
+    /// See [`TSInstantiationExpression`] for AST node details.
+    TSInstantiationExpression(Box<'a, TSInstantiationExpression<'a>>) = 38,
 
-	// `MemberExpression` variants added here by `inherit_variants!` macro
-	@inherit MemberExpression
+    // `MemberExpression` variants added here by `inherit_variants!` macro
+    @inherit MemberExpression
 }
 }
 
@@ -156,71 +149,68 @@ pub enum Expression<'a> {
 /// Includes `MemberExpression`'s variants.
 #[macro_export]
 macro_rules! match_expression {
-	($ty:ident) => {
-		$ty::BooleanLiteral(_)
-			| $ty::NullLiteral(_)
-			| $ty::NumericLiteral(_)
-			| $ty::BigIntLiteral(_)
-			| $ty::RegExpLiteral(_)
-			| $ty::StringLiteral(_)
-			| $ty::TemplateLiteral(_)
-			| $ty::Identifier(_)
-			| $ty::MetaProperty(_)
-			| $ty::Super(_)
-			| $ty::ArrayExpression(_)
-			| $ty::ArrowFunctionExpression(_)
-			| $ty::AssignmentExpression(_)
-			| $ty::AwaitExpression(_)
-			| $ty::BinaryExpression(_)
-			| $ty::CallExpression(_)
-			| $ty::ChainExpression(_)
-			| $ty::ClassExpression(_)
-			| $ty::ConditionalExpression(_)
-			| $ty::FunctionExpression(_)
-			| $ty::ImportExpression(_)
-			| $ty::LogicalExpression(_)
-			| $ty::NewExpression(_)
-			| $ty::ObjectExpression(_)
-			| $ty::ParenthesizedExpression(_)
-			| $ty::SequenceExpression(_)
-			| $ty::TaggedTemplateExpression(_)
-			| $ty::ThisExpression(_)
-			| $ty::UnaryExpression(_)
-			| $ty::UpdateExpression(_)
-			| $ty::YieldExpression(_)
-			| $ty::PrivateInExpression(_)
-			| $ty::JSXElement(_)
-			| $ty::JSXFragment(_)
-			| $ty::TSAsExpression(_)
-			| $ty::TSSatisfiesExpression(_)
-			| $ty::TSTypeAssertion(_)
-			| $ty::TSNonNullExpression(_)
-			| $ty::TSInstantiationExpression(_)
-			| $ty::ComputedMemberExpression(_)
-			| $ty::StaticMemberExpression(_)
-			| $ty::PrivateFieldExpression(_)
-	};
+    ($ty:ident) => {
+        $ty::BooleanLiteral(_)
+            | $ty::NullLiteral(_)
+            | $ty::NumericLiteral(_)
+            | $ty::BigIntLiteral(_)
+            | $ty::RegExpLiteral(_)
+            | $ty::StringLiteral(_)
+            | $ty::TemplateLiteral(_)
+            | $ty::Identifier(_)
+            | $ty::MetaProperty(_)
+            | $ty::Super(_)
+            | $ty::ArrayExpression(_)
+            | $ty::ArrowFunctionExpression(_)
+            | $ty::AssignmentExpression(_)
+            | $ty::AwaitExpression(_)
+            | $ty::BinaryExpression(_)
+            | $ty::CallExpression(_)
+            | $ty::ChainExpression(_)
+            | $ty::ClassExpression(_)
+            | $ty::ConditionalExpression(_)
+            | $ty::FunctionExpression(_)
+            | $ty::ImportExpression(_)
+            | $ty::LogicalExpression(_)
+            | $ty::NewExpression(_)
+            | $ty::ObjectExpression(_)
+            | $ty::ParenthesizedExpression(_)
+            | $ty::SequenceExpression(_)
+            | $ty::TaggedTemplateExpression(_)
+            | $ty::ThisExpression(_)
+            | $ty::UnaryExpression(_)
+            | $ty::UpdateExpression(_)
+            | $ty::YieldExpression(_)
+            | $ty::PrivateInExpression(_)
+            | $ty::JSXElement(_)
+            | $ty::JSXFragment(_)
+            | $ty::TSAsExpression(_)
+            | $ty::TSSatisfiesExpression(_)
+            | $ty::TSTypeAssertion(_)
+            | $ty::TSNonNullExpression(_)
+            | $ty::TSInstantiationExpression(_)
+            | $ty::ComputedMemberExpression(_)
+            | $ty::StaticMemberExpression(_)
+            | $ty::PrivateFieldExpression(_)
+    };
 }
 pub use match_expression;
 
 /// `foo` in `let foo = 1;`
 ///
-/// Fundamental syntactic structure used for naming variables, functions, and
-/// properties. It must start with a Unicode letter (including $ and _) and can
-/// be followed by Unicode letters, digits, $, or _.
+/// Fundamental syntactic structure used for naming variables, functions, and properties. It must start with a Unicode letter (including $ and _) and can be followed by Unicode letters, digits, $, or _.
 #[ast(visit)]
 #[derive(Debug, Clone)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(type = "Identifier")]
 pub struct IdentifierName<'a> {
-	pub span:Span,
-	pub name:Atom<'a>,
+    pub span: Span,
+    pub name: Atom<'a>,
 }
 
 /// `x` inside `func` in `const x = 0; function func() { console.log(x); }`
 ///
-/// Represents an identifier reference, which is a reference to a variable,
-/// function, class, or object.
+/// Represents an identifier reference, which is a reference to a variable, function, class, or object.
 ///
 /// See: [13.1 Identifiers](https://tc39.es/ecma262/#sec-identifiers)
 #[ast(visit)]
@@ -228,23 +218,22 @@ pub struct IdentifierName<'a> {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(type = "Identifier")]
 pub struct IdentifierReference<'a> {
-	pub span:Span,
-	/// The name of the identifier being referenced.
-	pub name:Atom<'a>,
-	/// Reference ID
-	///
-	/// Identifies what identifier this refers to, and how it is used. This is
-	/// set in the bind step of semantic analysis, and will always be [`None`]
-	/// immediately after parsing.
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub reference_id:Cell<Option<ReferenceId>>,
+    pub span: Span,
+    /// The name of the identifier being referenced.
+    pub name: Atom<'a>,
+    /// Reference ID
+    ///
+    /// Identifies what identifier this refers to, and how it is used. This is
+    /// set in the bind step of semantic analysis, and will always be [`None`]
+    /// immediately after parsing.
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub reference_id: Cell<Option<ReferenceId>>,
 }
 
 /// `x` in `const x = 0;`
 ///
-/// Represents a binding identifier, which is an identifier that is used to
-/// declare a variable, function, class, or object.
+/// Represents a binding identifier, which is an identifier that is used to declare a variable, function, class, or object.
 ///
 /// See: [13.1 Identifiers](https://tc39.es/ecma262/#sec-identifiers)
 #[ast(visit)]
@@ -252,24 +241,23 @@ pub struct IdentifierReference<'a> {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(type = "Identifier")]
 pub struct BindingIdentifier<'a> {
-	pub span:Span,
-	/// The identifier name being bound.
-	pub name:Atom<'a>,
-	/// Unique identifier for this binding.
-	///
-	/// This gets initialized during [`semantic analysis`] in the bind step. If
-	/// you choose to skip semantic analysis, this will always be [`None`].
-	///
-	/// [`semantic analysis`]: <https://docs.rs/oxc_semantic/latest/oxc_semantic/struct.SemanticBuilder.html>
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub symbol_id:Cell<Option<SymbolId>>,
+    pub span: Span,
+    /// The identifier name being bound.
+    pub name: Atom<'a>,
+    /// Unique identifier for this binding.
+    ///
+    /// This gets initialized during [`semantic analysis`] in the bind step. If
+    /// you choose to skip semantic analysis, this will always be [`None`].
+    ///
+    /// [`semantic analysis`]: <https://docs.rs/oxc_semantic/latest/oxc_semantic/struct.SemanticBuilder.html>
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub symbol_id: Cell<Option<SymbolId>>,
 }
 
 /// `loop` in `loop: while (true) { break loop; }`
 ///
-/// Represents a label identifier, which is an identifier that is used to label
-/// a statement.
+/// Represents a label identifier, which is an identifier that is used to label a statement.
 ///
 /// See: [13.1 Identifiers](https://tc39.es/ecma262/#sec-identifiers)
 #[ast(visit)]
@@ -277,8 +265,8 @@ pub struct BindingIdentifier<'a> {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(type = "Identifier")]
 pub struct LabelIdentifier<'a> {
-	pub span:Span,
-	pub name:Atom<'a>,
+    pub span: Span,
+    pub name: Atom<'a>,
 }
 
 /// `this` in `return this.prop;`
@@ -288,24 +276,23 @@ pub struct LabelIdentifier<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ThisExpression {
-	pub span:Span,
+    pub span: Span,
 }
 
 /// `[1, 2, ...[3, 4], null]` in `const array = [1, 2, ...[3, 4], null];`
 ///
-/// Represents an array literal, which can include elements, spread elements, or
-/// null values.
+/// Represents an array literal, which can include elements, spread elements, or null values.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ArrayExpression<'a> {
-	pub span:Span,
-	#[estree(type = "Array<SpreadElement | Expression | null>")]
-	pub elements:Vec<'a, ArrayExpressionElement<'a>>,
-	/// Array trailing comma
-	/// <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Trailing_commas#arrays>
-	#[estree(skip)]
-	pub trailing_comma:Option<Span>,
+    pub span: Span,
+    #[estree(type = "Array<SpreadElement | Expression | null>")]
+    pub elements: Vec<'a, ArrayExpressionElement<'a>>,
+    /// Array trailing comma
+    /// <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Trailing_commas#arrays>
+    #[estree(skip)]
+    pub trailing_comma: Option<Span>,
 }
 
 inherit_variants! {
@@ -319,15 +306,15 @@ inherit_variants! {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(custom_ts_def)]
 pub enum ArrayExpressionElement<'a> {
-	/// `...[3, 4]` in `const array = [1, 2, ...[3, 4], null];`
-	SpreadElement(Box<'a, SpreadElement<'a>>) = 64,
-	/// `<empty>` in `const array = [1, , 2];`
-	///
-	/// Array hole for sparse arrays
-	/// <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Trailing_commas#arrays>
-	Elision(Elision) = 65,
-	// `Expression` variants added here by `inherit_variants!` macro
-	@inherit Expression
+    /// `...[3, 4]` in `const array = [1, 2, ...[3, 4], null];`
+    SpreadElement(Box<'a, SpreadElement<'a>>) = 64,
+    /// `<empty>` in `const array = [1, , 2];`
+    ///
+    /// Array hole for sparse arrays
+    /// <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Trailing_commas#arrays>
+    Elision(Elision) = 65,
+    // `Expression` variants added here by `inherit_variants!` macro
+    @inherit Expression
 }
 }
 
@@ -339,22 +326,21 @@ pub enum ArrayExpressionElement<'a> {
 #[derive(Debug, Clone)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash)]
 pub struct Elision {
-	pub span:Span,
+    pub span: Span,
 }
 
 /// `{ a: 1 }` in `const obj = { a: 1 };`
 ///
-/// Represents an object literal, which can include properties, spread
-/// properties, or computed properties and trailing comma.
+/// Represents an object literal, which can include properties, spread properties, or computed properties and trailing comma.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ObjectExpression<'a> {
-	pub span:Span,
-	/// Properties declared in the object
-	pub properties:Vec<'a, ObjectPropertyKind<'a>>,
-	#[estree(skip)]
-	pub trailing_comma:Option<Span>,
+    pub span: Span,
+    /// Properties declared in the object
+    pub properties: Vec<'a, ObjectPropertyKind<'a>>,
+    #[estree(skip)]
+    pub trailing_comma: Option<Span>,
 }
 
 /// Represents a property in an object literal.
@@ -362,10 +348,10 @@ pub struct ObjectExpression<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum ObjectPropertyKind<'a> {
-	/// `a: 1` in `const obj = { a: 1 };`
-	ObjectProperty(Box<'a, ObjectProperty<'a>>) = 0,
-	/// `...{ a: 1 }` in `const obj = { ...{ a: 1 } };`
-	SpreadProperty(Box<'a, SpreadElement<'a>>) = 1,
+    /// `a: 1` in `const obj = { a: 1 };`
+    ObjectProperty(Box<'a, ObjectProperty<'a>>) = 0,
+    /// `...{ a: 1 }` in `const obj = { ...{ a: 1 } };`
+    SpreadProperty(Box<'a, SpreadElement<'a>>) = 1,
 }
 
 /// `a: 1` in `const obj = { a: 1 };`
@@ -375,13 +361,13 @@ pub enum ObjectPropertyKind<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ObjectProperty<'a> {
-	pub span:Span,
-	pub kind:PropertyKind,
-	pub key:PropertyKey<'a>,
-	pub value:Expression<'a>,
-	pub method:bool,
-	pub shorthand:bool,
-	pub computed:bool,
+    pub span: Span,
+    pub kind: PropertyKind,
+    pub key: PropertyKey<'a>,
+    pub value: Expression<'a>,
+    pub method: bool,
+    pub shorthand: bool,
+    pub computed: bool,
 }
 
 inherit_variants! {
@@ -394,12 +380,12 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum PropertyKey<'a> {
-	/// `a` in `const obj = { a: 1 }; obj.a;`
-	StaticIdentifier(Box<'a, IdentifierName<'a>>) = 64,
-	/// `#a` in `class C { #a = 1; }; const c = new C(); c.#a;`
-	PrivateIdentifier(Box<'a, PrivateIdentifier<'a>>) = 65,
-	// `Expression` variants added here by `inherit_variants!` macro
-	@inherit Expression
+    /// `a` in `const obj = { a: 1 }; obj.a;`
+    StaticIdentifier(Box<'a, IdentifierName<'a>>) = 64,
+    /// `#a` in `class C { #a = 1; }; const c = new C(); c.#a;`
+    PrivateIdentifier(Box<'a, PrivateIdentifier<'a>>) = 65,
+    // `Expression` variants added here by `inherit_variants!` macro
+    @inherit Expression
 }
 }
 
@@ -408,41 +394,38 @@ pub enum PropertyKey<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 pub enum PropertyKind {
-	/// `a: 1` in `const obj = { a: 1 };`
-	Init = 0,
-	/// `get a() { return 1; }` in `const obj = { get a() { return 1; } };`
-	Get = 1,
-	/// `set a(value) { this._a = value; }` in `const obj = { set a(value) {
-	/// this._a = value; } };`
-	Set = 2,
+    /// `a: 1` in `const obj = { a: 1 };`
+    Init = 0,
+    /// `get a() { return 1; }` in `const obj = { get a() { return 1; } };`
+    Get = 1,
+    /// `set a(value) { this._a = value; }` in `const obj = { set a(value) { this._a = value; } };`
+    Set = 2,
 }
 
 /// `` `Hello, ${name}` `` in `` const foo = `Hello, ${name}` ``
 ///
-/// Represents a template literal, which can include quasi elements and
-/// expression elements.
+/// Represents a template literal, which can include quasi elements and expression elements.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct TemplateLiteral<'a> {
-	pub span:Span,
-	pub quasis:Vec<'a, TemplateElement<'a>>,
-	pub expressions:Vec<'a, Expression<'a>>,
+    pub span: Span,
+    pub quasis: Vec<'a, TemplateElement<'a>>,
+    pub expressions: Vec<'a, Expression<'a>>,
 }
 
 /// `` foo`Hello, ${name}` `` in `` const foo = foo`Hello, ${name}` ``
 ///
-/// Represents a tagged template expression, which can include a tag and a
-/// quasi.
+/// Represents a tagged template expression, which can include a tag and a quasi.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct TaggedTemplateExpression<'a> {
-	pub span:Span,
-	pub tag:Expression<'a>,
-	pub quasi:TemplateLiteral<'a>,
-	#[ts]
-	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+    pub span: Span,
+    pub tag: Expression<'a>,
+    pub quasi: TemplateLiteral<'a>,
+    #[ts]
+    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
 /// `Hello, ` in `` `Hello, ${name}` ``
@@ -452,9 +435,9 @@ pub struct TaggedTemplateExpression<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct TemplateElement<'a> {
-	pub span:Span,
-	pub tail:bool,
-	pub value:TemplateElementValue<'a>,
+    pub span: Span,
+    pub tail: bool,
+    pub value: TemplateElementValue<'a>,
 }
 
 /// See [template-strings-cooked-vs-raw](https://exploringjs.com/js/book/ch_template-literals.html#template-strings-cooked-vs-raw)
@@ -463,86 +446,80 @@ pub struct TemplateElement<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 #[estree(no_type)]
 pub struct TemplateElementValue<'a> {
-	/// A raw interpretation where backslashes do not have special meaning.
-	/// For example, \t produces two characters – a backslash and a t.
-	/// This interpretation of the template strings is stored in property .raw
-	/// of the first argument (an Array).
-	pub raw:Atom<'a>,
-	/// A cooked interpretation where backslashes have special meaning.
-	/// For example, \t produces a tab character.
-	/// This interpretation of the template strings is stored as an Array in the
-	/// first argument. cooked = None when template literal has invalid escape
-	/// sequence
-	pub cooked:Option<Atom<'a>>,
+    /// A raw interpretation where backslashes do not have special meaning.
+    /// For example, \t produces two characters – a backslash and a t.
+    /// This interpretation of the template strings is stored in property .raw of the first argument (an Array).
+    pub raw: Atom<'a>,
+    /// A cooked interpretation where backslashes have special meaning.
+    /// For example, \t produces a tab character.
+    /// This interpretation of the template strings is stored as an Array in the first argument.
+    /// cooked = None when template literal has invalid escape sequence
+    pub cooked: Option<Atom<'a>>,
 }
 
-/// Represents a member access expression, which can include computed member
-/// access, static member access, or private field access.
+/// Represents a member access expression, which can include computed member access, static member access, or private field access.
 ///
 /// <https://tc39.es/ecma262/#prod-MemberExpression>
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum MemberExpression<'a> {
-	/// `ar[0]` in `const ar = [1, 2]; ar[0];`
-	ComputedMemberExpression(Box<'a, ComputedMemberExpression<'a>>) = 48,
-	/// `console.log` in `console.log('Hello, World!');`
-	StaticMemberExpression(Box<'a, StaticMemberExpression<'a>>) = 49,
-	/// `c.#a` in `class C { #a = 1; }; const c = new C(); c.#a;`
-	PrivateFieldExpression(Box<'a, PrivateFieldExpression<'a>>) = 50,
+    /// `ar[0]` in `const ar = [1, 2]; ar[0];`
+    ComputedMemberExpression(Box<'a, ComputedMemberExpression<'a>>) = 48,
+    /// `console.log` in `console.log('Hello, World!');`
+    StaticMemberExpression(Box<'a, StaticMemberExpression<'a>>) = 49,
+    /// `c.#a` in `class C { #a = 1; }; const c = new C(); c.#a;`
+    PrivateFieldExpression(Box<'a, PrivateFieldExpression<'a>>) = 50,
 }
 
 /// Macro for matching `MemberExpression`'s variants.
 #[macro_export]
 macro_rules! match_member_expression {
-	($ty:ident) => {
-		$ty::ComputedMemberExpression(_)
-			| $ty::StaticMemberExpression(_)
-			| $ty::PrivateFieldExpression(_)
-	};
+    ($ty:ident) => {
+        $ty::ComputedMemberExpression(_)
+            | $ty::StaticMemberExpression(_)
+            | $ty::PrivateFieldExpression(_)
+    };
 }
 pub use match_member_expression;
 
 /// `ar[0]` in `const ar = [1, 2]; ar[0];`
 ///
-/// Represents a computed member access expression, which can include an object
-/// and an expression.
+/// Represents a computed member access expression, which can include an object and an expression.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ComputedMemberExpression<'a> {
-	pub span:Span,
-	pub object:Expression<'a>,
-	pub expression:Expression<'a>,
-	pub optional:bool, // for optional chaining
+    pub span: Span,
+    pub object: Expression<'a>,
+    pub expression: Expression<'a>,
+    pub optional: bool, // for optional chaining
 }
 
 /// `console.log` in `console.log('Hello, World!');`
 ///
-/// Represents a static member access expression, which can include an object
-/// and a property.
+/// Represents a static member access expression, which can include an object and a property.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct StaticMemberExpression<'a> {
-	pub span:Span,
-	pub object:Expression<'a>,
-	pub property:IdentifierName<'a>,
-	pub optional:bool, // for optional chaining
+    pub span: Span,
+    pub object: Expression<'a>,
+    pub property: IdentifierName<'a>,
+    pub optional: bool, // for optional chaining
 }
 
 /// `c.#a` in `class C { #a = 1; }; const c = new C(); c.#a;`
 ///
-/// Represents a private field access expression, which can include an object
-/// and a private identifier.
+/// Represents a private field access expression, which can include an object and a private identifier.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct PrivateFieldExpression<'a> {
-	pub span:Span,
-	pub object:Expression<'a>,
-	pub field:PrivateIdentifier<'a>,
-	pub optional:bool, // for optional chaining
+    pub span: Span,
+    pub object: Expression<'a>,
+    pub field: PrivateIdentifier<'a>,
+    pub optional: bool, // for optional chaining
 }
 
 /// `foo()` in `function foo() { return 1; }; foo();`
@@ -565,12 +542,12 @@ pub struct PrivateFieldExpression<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct CallExpression<'a> {
-	pub span:Span,
-	pub callee:Expression<'a>,
-	#[ts]
-	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
-	pub arguments:Vec<'a, Argument<'a>>,
-	pub optional:bool, // for optional chaining
+    pub span: Span,
+    pub callee: Expression<'a>,
+    #[ts]
+    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+    pub arguments: Vec<'a, Argument<'a>>,
+    pub optional: bool, // for optional chaining
 }
 
 /// `new C()` in `class C {}; new C();`
@@ -589,24 +566,23 @@ pub struct CallExpression<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct NewExpression<'a> {
-	pub span:Span,
-	pub callee:Expression<'a>,
-	pub arguments:Vec<'a, Argument<'a>>,
-	#[ts]
-	pub type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+    pub span: Span,
+    pub callee: Expression<'a>,
+    pub arguments: Vec<'a, Argument<'a>>,
+    #[ts]
+    pub type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
 }
 
 /// `import.meta` in `console.log(import.meta);`
 ///
-/// Represents a meta property. The following syntaxes are supported.
-/// `import.meta`, `new.target`.
+/// Represents a meta property. The following syntaxes are supported. `import.meta`, `new.target`.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct MetaProperty<'a> {
-	pub span:Span,
-	pub meta:IdentifierName<'a>,
-	pub property:IdentifierName<'a>,
+    pub span: Span,
+    pub meta: IdentifierName<'a>,
+    pub property: IdentifierName<'a>,
 }
 
 /// `...[1, 2]` in `const arr = [...[1, 2]];`
@@ -616,9 +592,9 @@ pub struct MetaProperty<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct SpreadElement<'a> {
-	pub span:Span,
-	/// The expression being spread.
-	pub argument:Expression<'a>,
+    pub span: Span,
+    /// The expression being spread.
+    pub argument: Expression<'a>,
 }
 
 inherit_variants! {
@@ -631,111 +607,101 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum Argument<'a> {
-	/// `...[1, 2]` in `const arr = [...[1, 2]];`
-	SpreadElement(Box<'a, SpreadElement<'a>>) = 64,
-	// `Expression` variants added here by `inherit_variants!` macro
-	@inherit Expression
+    /// `...[1, 2]` in `const arr = [...[1, 2]];`
+    SpreadElement(Box<'a, SpreadElement<'a>>) = 64,
+    // `Expression` variants added here by `inherit_variants!` macro
+    @inherit Expression
 }
 }
 
 /// `++i` in `let i = 0; ++i;`
 ///
-/// Represents an update expression, which can include an operator and an
-/// argument. The following syntaxes are supported. `++a`, `a++`, `--a`, `a--`
+/// Represents an update expression, which can include an operator and an argument. The following syntaxes are supported. `++a`, `a++`, `--a`, `a--`
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct UpdateExpression<'a> {
-	pub span:Span,
-	pub operator:UpdateOperator,
-	pub prefix:bool,
-	pub argument:SimpleAssignmentTarget<'a>,
+    pub span: Span,
+    pub operator: UpdateOperator,
+    pub prefix: bool,
+    pub argument: SimpleAssignmentTarget<'a>,
 }
 
 /// `typeof` in `typeof a === "string"`
 ///
-/// Represents a unary expression, which can include an operator and an
-/// argument. The following syntaxes are supported. `+a`, `-a`, `~a`, `!a`,
-/// `delete a`, `void a`, `typeof a`
+/// Represents a unary expression, which can include an operator and an argument. The following syntaxes are supported. `+a`, `-a`, `~a`, `!a`, `delete a`, `void a`, `typeof a`
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct UnaryExpression<'a> {
-	pub span:Span,
-	pub operator:UnaryOperator,
-	pub argument:Expression<'a>,
+    pub span: Span,
+    pub operator: UnaryOperator,
+    pub argument: Expression<'a>,
 }
 
 /// `1 + 1` in `const two = 1 + 1;`
 ///
-/// Represents a binary expression, which can include a left expression, an
-/// operator, and a right expression.
+/// Represents a binary expression, which can include a left expression, an operator, and a right expression.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct BinaryExpression<'a> {
-	pub span:Span,
-	pub left:Expression<'a>,
-	pub operator:BinaryOperator,
-	pub right:Expression<'a>,
+    pub span: Span,
+    pub left: Expression<'a>,
+    pub operator: BinaryOperator,
+    pub right: Expression<'a>,
 }
 
-/// `#brand in obj` in `class Foo { #brand; static isFoo(obj) { return #brand in
-/// obj; } }`
+/// `#brand in obj` in `class Foo { #brand; static isFoo(obj) { return #brand in obj; } }`
 ///
-/// Represents a private in expression, which can include a private identifier,
-/// an operator, and a expression.
+/// Represents a private in expression, which can include a private identifier, an operator, and a expression.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct PrivateInExpression<'a> {
-	pub span:Span,
-	pub left:PrivateIdentifier<'a>,
-	pub operator:BinaryOperator, // BinaryOperator::In
-	pub right:Expression<'a>,
+    pub span: Span,
+    pub left: PrivateIdentifier<'a>,
+    pub operator: BinaryOperator, // BinaryOperator::In
+    pub right: Expression<'a>,
 }
 
 /// `||` in `const foo = bar || 2;`
 ///
-/// Represents a logical expression, which can include a left expression, an
-/// operator, and a right expression. The following syntaxes are supported.
-/// `||`, `&&` and `??`
+/// Represents a logical expression, which can include a left expression, an operator, and a right expression. The following syntaxes are supported. `||`, `&&` and `??`
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct LogicalExpression<'a> {
-	pub span:Span,
-	pub left:Expression<'a>,
-	pub operator:LogicalOperator,
-	pub right:Expression<'a>,
+    pub span: Span,
+    pub left: Expression<'a>,
+    pub operator: LogicalOperator,
+    pub right: Expression<'a>,
 }
 
 /// `bar ? 1 : 2` in `const foo = bar ? 1 : 2;`
 ///
-/// Represents a conditional expression, which can include a test, a consequent,
-/// and an alternate.
+/// Represents a conditional expression, which can include a test, a consequent, and an alternate.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ConditionalExpression<'a> {
-	pub span:Span,
-	pub test:Expression<'a>,
-	pub consequent:Expression<'a>,
-	pub alternate:Expression<'a>,
+    pub span: Span,
+    pub test: Expression<'a>,
+    pub consequent: Expression<'a>,
+    pub alternate: Expression<'a>,
 }
 
 /// `foo = 1` in `let foo; foo = 1;`
 ///
-/// Represents an assignment expression, which can include an operator, a
-/// target, and a expression.
+/// Represents an assignment expression, which can include an operator, a target, and a expression.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct AssignmentExpression<'a> {
-	pub span:Span,
-	pub operator:AssignmentOperator,
-	pub left:AssignmentTarget<'a>,
-	pub right:Expression<'a>,
+    pub span: Span,
+    pub operator: AssignmentOperator,
+    pub left: AssignmentTarget<'a>,
+    pub right: Expression<'a>,
 }
 
 inherit_variants! {
@@ -749,10 +715,10 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum AssignmentTarget<'a> {
-	// `SimpleAssignmentTarget` variants added here by `inherit_variants!` macro
-	@inherit SimpleAssignmentTarget
-	// `AssignmentTargetPattern` variants added here by `inherit_variants!` macro
-	@inherit AssignmentTargetPattern
+    // `SimpleAssignmentTarget` variants added here by `inherit_variants!` macro
+    @inherit SimpleAssignmentTarget
+    // `AssignmentTargetPattern` variants added here by `inherit_variants!` macro
+    @inherit AssignmentTargetPattern
 }
 }
 
@@ -766,35 +732,34 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum SimpleAssignmentTarget<'a> {
-	AssignmentTargetIdentifier(Box<'a, IdentifierReference<'a>>) = 0,
-	TSAsExpression(Box<'a, TSAsExpression<'a>>) = 1,
-	TSSatisfiesExpression(Box<'a, TSSatisfiesExpression<'a>>) = 2,
-	TSNonNullExpression(Box<'a, TSNonNullExpression<'a>>) = 3,
-	TSTypeAssertion(Box<'a, TSTypeAssertion<'a>>) = 4,
-	TSInstantiationExpression(Box<'a, TSInstantiationExpression<'a>>) = 5,
-	// `MemberExpression` variants added here by `inherit_variants!` macro
-	@inherit MemberExpression
+    AssignmentTargetIdentifier(Box<'a, IdentifierReference<'a>>) = 0,
+    TSAsExpression(Box<'a, TSAsExpression<'a>>) = 1,
+    TSSatisfiesExpression(Box<'a, TSSatisfiesExpression<'a>>) = 2,
+    TSNonNullExpression(Box<'a, TSNonNullExpression<'a>>) = 3,
+    TSTypeAssertion(Box<'a, TSTypeAssertion<'a>>) = 4,
+    TSInstantiationExpression(Box<'a, TSInstantiationExpression<'a>>) = 5,
+    // `MemberExpression` variants added here by `inherit_variants!` macro
+    @inherit MemberExpression
 }
 }
 
 /// Macro for matching `AssignmentTarget`'s variants.
-/// Includes `SimpleAssignmentTarget`'s and `AssignmentTargetPattern`'s
-/// variants.
+/// Includes `SimpleAssignmentTarget`'s and `AssignmentTargetPattern`'s variants.
 #[macro_export]
 macro_rules! match_assignment_target {
-	($ty:ident) => {
-		$ty::AssignmentTargetIdentifier(_)
-			| $ty::ComputedMemberExpression(_)
-			| $ty::StaticMemberExpression(_)
-			| $ty::PrivateFieldExpression(_)
-			| $ty::TSAsExpression(_)
-			| $ty::TSSatisfiesExpression(_)
-			| $ty::TSNonNullExpression(_)
-			| $ty::TSTypeAssertion(_)
-			| $ty::TSInstantiationExpression(_)
-			| $ty::ArrayAssignmentTarget(_)
-			| $ty::ObjectAssignmentTarget(_)
-	};
+    ($ty:ident) => {
+        $ty::AssignmentTargetIdentifier(_)
+            | $ty::ComputedMemberExpression(_)
+            | $ty::StaticMemberExpression(_)
+            | $ty::PrivateFieldExpression(_)
+            | $ty::TSAsExpression(_)
+            | $ty::TSSatisfiesExpression(_)
+            | $ty::TSNonNullExpression(_)
+            | $ty::TSTypeAssertion(_)
+            | $ty::TSInstantiationExpression(_)
+            | $ty::ArrayAssignmentTarget(_)
+            | $ty::ObjectAssignmentTarget(_)
+    };
 }
 pub use match_assignment_target;
 
@@ -802,17 +767,17 @@ pub use match_assignment_target;
 /// Includes `MemberExpression`'s variants
 #[macro_export]
 macro_rules! match_simple_assignment_target {
-	($ty:ident) => {
-		$ty::AssignmentTargetIdentifier(_)
-			| $ty::ComputedMemberExpression(_)
-			| $ty::StaticMemberExpression(_)
-			| $ty::PrivateFieldExpression(_)
-			| $ty::TSAsExpression(_)
-			| $ty::TSSatisfiesExpression(_)
-			| $ty::TSNonNullExpression(_)
-			| $ty::TSTypeAssertion(_)
-			| $ty::TSInstantiationExpression(_)
-	};
+    ($ty:ident) => {
+        $ty::AssignmentTargetIdentifier(_)
+            | $ty::ComputedMemberExpression(_)
+            | $ty::StaticMemberExpression(_)
+            | $ty::PrivateFieldExpression(_)
+            | $ty::TSAsExpression(_)
+            | $ty::TSSatisfiesExpression(_)
+            | $ty::TSNonNullExpression(_)
+            | $ty::TSTypeAssertion(_)
+            | $ty::TSInstantiationExpression(_)
+    };
 }
 pub use match_simple_assignment_target;
 
@@ -820,61 +785,58 @@ pub use match_simple_assignment_target;
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum AssignmentTargetPattern<'a> {
-	ArrayAssignmentTarget(Box<'a, ArrayAssignmentTarget<'a>>) = 8,
-	ObjectAssignmentTarget(Box<'a, ObjectAssignmentTarget<'a>>) = 9,
+    ArrayAssignmentTarget(Box<'a, ArrayAssignmentTarget<'a>>) = 8,
+    ObjectAssignmentTarget(Box<'a, ObjectAssignmentTarget<'a>>) = 9,
 }
 
 /// Macro for matching `AssignmentTargetPattern`'s variants.
 #[macro_export]
 macro_rules! match_assignment_target_pattern {
-	($ty:ident) => {
-		$ty::ArrayAssignmentTarget(_) | $ty::ObjectAssignmentTarget(_)
-	};
+    ($ty:ident) => {
+        $ty::ArrayAssignmentTarget(_) | $ty::ObjectAssignmentTarget(_)
+    };
 }
 pub use match_assignment_target_pattern;
 
 /// `[a, b]` in `[a, b] = arr;`
 ///
-/// Represents an array assignment target, which can include elements and a rest
-/// element.
+/// Represents an array assignment target, which can include elements and a rest element.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ArrayAssignmentTarget<'a> {
-	pub span:Span,
-	pub elements:Vec<'a, Option<AssignmentTargetMaybeDefault<'a>>>,
-	#[estree(append_to = "elements")]
-	pub rest:Option<AssignmentTargetRest<'a>>,
-	#[estree(skip)]
-	pub trailing_comma:Option<Span>,
+    pub span: Span,
+    pub elements: Vec<'a, Option<AssignmentTargetMaybeDefault<'a>>>,
+    #[estree(append_to = "elements")]
+    pub rest: Option<AssignmentTargetRest<'a>>,
+    #[estree(skip)]
+    pub trailing_comma: Option<Span>,
 }
 
 /// `{ foo }` in `({ foo } = obj);`
 ///
-/// Represents an object assignment target, which can include properties and a
-/// rest element.
+/// Represents an object assignment target, which can include properties and a rest element.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ObjectAssignmentTarget<'a> {
-	pub span:Span,
-	pub properties:Vec<'a, AssignmentTargetProperty<'a>>,
-	#[estree(append_to = "properties")]
-	pub rest:Option<AssignmentTargetRest<'a>>,
+    pub span: Span,
+    pub properties: Vec<'a, AssignmentTargetProperty<'a>>,
+    #[estree(append_to = "properties")]
+    pub rest: Option<AssignmentTargetRest<'a>>,
 }
 
 /// `rest` in `[foo, ...rest] = arr;`
 ///
-/// Represents a rest element in an array assignment target, which can include a
-/// target.
+/// Represents a rest element in an array assignment target, which can include a target.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(type = "RestElement")]
 pub struct AssignmentTargetRest<'a> {
-	pub span:Span,
-	#[estree(rename = "argument")]
-	pub target:AssignmentTarget<'a>,
+    pub span: Span,
+    #[estree(rename = "argument")]
+    pub target: AssignmentTarget<'a>,
 }
 
 inherit_variants! {
@@ -887,9 +849,9 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum AssignmentTargetMaybeDefault<'a> {
-	AssignmentTargetWithDefault(Box<'a, AssignmentTargetWithDefault<'a>>) = 16,
-	// `AssignmentTarget` variants added here by `inherit_variants!` macro
-	@inherit AssignmentTarget
+    AssignmentTargetWithDefault(Box<'a, AssignmentTargetWithDefault<'a>>) = 16,
+    // `AssignmentTarget` variants added here by `inherit_variants!` macro
+    @inherit AssignmentTarget
 }
 }
 
@@ -897,43 +859,43 @@ pub enum AssignmentTargetMaybeDefault<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct AssignmentTargetWithDefault<'a> {
-	pub span:Span,
-	pub binding:AssignmentTarget<'a>,
-	pub init:Expression<'a>,
+    pub span: Span,
+    pub binding: AssignmentTarget<'a>,
+    pub init: Expression<'a>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum AssignmentTargetProperty<'a> {
-	AssignmentTargetPropertyIdentifier(Box<'a, AssignmentTargetPropertyIdentifier<'a>>) = 0,
-	AssignmentTargetPropertyProperty(Box<'a, AssignmentTargetPropertyProperty<'a>>) = 1,
+    AssignmentTargetPropertyIdentifier(Box<'a, AssignmentTargetPropertyIdentifier<'a>>) = 0,
+    AssignmentTargetPropertyProperty(Box<'a, AssignmentTargetPropertyProperty<'a>>) = 1,
 }
 
 /// `foo` in `({ foo } = obj);`
 ///
-/// Represents an assignment target property identifier, which can include a
-/// binding and an init expression.
+/// Represents an assignment target property identifier, which can include a binding and an init expression.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct AssignmentTargetPropertyIdentifier<'a> {
-	pub span:Span,
-	pub binding:IdentifierReference<'a>,
-	pub init:Option<Expression<'a>>,
+    pub span: Span,
+    pub binding: IdentifierReference<'a>,
+    pub init: Option<Expression<'a>>,
 }
 
 /// `foo: bar` in `({ foo: bar } = obj);`
 ///
-/// Represents an assignment target property property, which can include a name
-/// and a binding.
+/// Represents an assignment target property property, which can include a name and a binding.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct AssignmentTargetPropertyProperty<'a> {
-	pub span:Span,
-	pub name:PropertyKey<'a>,
-	pub binding:AssignmentTargetMaybeDefault<'a>,
+    pub span: Span,
+    pub name: PropertyKey<'a>,
+    pub binding: AssignmentTargetMaybeDefault<'a>,
+    /// Property was declared with a computed key
+    pub computed: bool,
 }
 
 /// `a++, b++` in `let a = 1, b = 2; let result = (a++, b++);`
@@ -943,8 +905,8 @@ pub struct AssignmentTargetPropertyProperty<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct SequenceExpression<'a> {
-	pub span:Span,
-	pub expressions:Vec<'a, Expression<'a>>,
+    pub span: Span,
+    pub expressions: Vec<'a, Expression<'a>>,
 }
 
 /// `super` in `class C extends B { constructor() { super(); } }`
@@ -954,7 +916,7 @@ pub struct SequenceExpression<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct Super {
-	pub span:Span,
+    pub span: Span,
 }
 
 /// `await` in `await foo();`
@@ -964,8 +926,8 @@ pub struct Super {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct AwaitExpression<'a> {
-	pub span:Span,
-	pub argument:Expression<'a>,
+    pub span: Span,
+    pub argument: Expression<'a>,
 }
 
 /// `foo?.bar` in `foo?.bar;`
@@ -975,8 +937,8 @@ pub struct AwaitExpression<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ChainExpression<'a> {
-	pub span:Span,
-	pub expression:ChainElement<'a>,
+    pub span: Span,
+    pub expression: ChainElement<'a>,
 }
 
 inherit_variants! {
@@ -989,11 +951,11 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum ChainElement<'a> {
-	CallExpression(Box<'a, CallExpression<'a>>) = 0,
-	/// `foo?.baz!` or `foo?.[bar]!`
-	TSNonNullExpression(Box<'a, TSNonNullExpression<'a>>) = 1,
-	// `MemberExpression` variants added here by `inherit_variants!` macro
-	@inherit MemberExpression
+    CallExpression(Box<'a, CallExpression<'a>>) = 0,
+    /// `foo?.baz!` or `foo?.[bar]!`
+    TSNonNullExpression(Box<'a, TSNonNullExpression<'a>>) = 1,
+    // `MemberExpression` variants added here by `inherit_variants!` macro
+    @inherit MemberExpression
 }
 }
 
@@ -1004,8 +966,8 @@ pub enum ChainElement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ParenthesizedExpression<'a> {
-	pub span:Span,
-	pub expression:Expression<'a>,
+    pub span: Span,
+    pub expression: Expression<'a>,
 }
 
 inherit_variants! {
@@ -1019,29 +981,29 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum Statement<'a> {
-	// Statements
-	BlockStatement(Box<'a, BlockStatement<'a>>) = 0,
-	BreakStatement(Box<'a, BreakStatement<'a>>) = 1,
-	ContinueStatement(Box<'a, ContinueStatement<'a>>) = 2,
-	DebuggerStatement(Box<'a, DebuggerStatement>) = 3,
-	DoWhileStatement(Box<'a, DoWhileStatement<'a>>) = 4,
-	EmptyStatement(Box<'a, EmptyStatement>) = 5,
-	ExpressionStatement(Box<'a, ExpressionStatement<'a>>) = 6,
-	ForInStatement(Box<'a, ForInStatement<'a>>) = 7,
-	ForOfStatement(Box<'a, ForOfStatement<'a>>) = 8,
-	ForStatement(Box<'a, ForStatement<'a>>) = 9,
-	IfStatement(Box<'a, IfStatement<'a>>) = 10,
-	LabeledStatement(Box<'a, LabeledStatement<'a>>) = 11,
-	ReturnStatement(Box<'a, ReturnStatement<'a>>) = 12,
-	SwitchStatement(Box<'a, SwitchStatement<'a>>) = 13,
-	ThrowStatement(Box<'a, ThrowStatement<'a>>) = 14,
-	TryStatement(Box<'a, TryStatement<'a>>) = 15,
-	WhileStatement(Box<'a, WhileStatement<'a>>) = 16,
-	WithStatement(Box<'a, WithStatement<'a>>) = 17,
-	// `Declaration` variants added here by `inherit_variants!` macro
-	@inherit Declaration
-	// `ModuleDeclaration` variants added here by `inherit_variants!` macro
-	@inherit ModuleDeclaration
+    // Statements
+    BlockStatement(Box<'a, BlockStatement<'a>>) = 0,
+    BreakStatement(Box<'a, BreakStatement<'a>>) = 1,
+    ContinueStatement(Box<'a, ContinueStatement<'a>>) = 2,
+    DebuggerStatement(Box<'a, DebuggerStatement>) = 3,
+    DoWhileStatement(Box<'a, DoWhileStatement<'a>>) = 4,
+    EmptyStatement(Box<'a, EmptyStatement>) = 5,
+    ExpressionStatement(Box<'a, ExpressionStatement<'a>>) = 6,
+    ForInStatement(Box<'a, ForInStatement<'a>>) = 7,
+    ForOfStatement(Box<'a, ForOfStatement<'a>>) = 8,
+    ForStatement(Box<'a, ForStatement<'a>>) = 9,
+    IfStatement(Box<'a, IfStatement<'a>>) = 10,
+    LabeledStatement(Box<'a, LabeledStatement<'a>>) = 11,
+    ReturnStatement(Box<'a, ReturnStatement<'a>>) = 12,
+    SwitchStatement(Box<'a, SwitchStatement<'a>>) = 13,
+    ThrowStatement(Box<'a, ThrowStatement<'a>>) = 14,
+    TryStatement(Box<'a, TryStatement<'a>>) = 15,
+    WhileStatement(Box<'a, WhileStatement<'a>>) = 16,
+    WithStatement(Box<'a, WithStatement<'a>>) = 17,
+    // `Declaration` variants added here by `inherit_variants!` macro
+    @inherit Declaration
+    // `ModuleDeclaration` variants added here by `inherit_variants!` macro
+    @inherit ModuleDeclaration
 }
 }
 
@@ -1052,11 +1014,11 @@ pub enum Statement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct Directive<'a> {
-	pub span:Span,
-	/// Directive with any escapes unescaped
-	pub expression:StringLiteral<'a>,
-	/// Raw content of directive as it appears in source, any escapes left as is
-	pub directive:Atom<'a>,
+    pub span: Span,
+    /// Directive with any escapes unescaped
+    pub expression: StringLiteral<'a>,
+    /// Raw content of directive as it appears in source, any escapes left as is
+    pub directive: Atom<'a>,
 }
 
 /// `#! /usr/bin/env node` in `#! /usr/bin/env node`
@@ -1066,8 +1028,8 @@ pub struct Directive<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct Hashbang<'a> {
-	pub span:Span,
-	pub value:Atom<'a>,
+    pub span: Span,
+    pub value: Atom<'a>,
 }
 
 /// `{ let foo = 1; }` in `if(true) { let foo = 1; }`
@@ -1078,11 +1040,11 @@ pub struct Hashbang<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct BlockStatement<'a> {
-	pub span:Span,
-	pub body:Vec<'a, Statement<'a>>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub body: Vec<'a, Statement<'a>>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 /// Declarations and the Variable Statement
@@ -1090,63 +1052,61 @@ pub struct BlockStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum Declaration<'a> {
-	VariableDeclaration(Box<'a, VariableDeclaration<'a>>) = 32,
-	#[visit(args(flags = ScopeFlags::Function))]
-	FunctionDeclaration(Box<'a, Function<'a>>) = 33,
-	ClassDeclaration(Box<'a, Class<'a>>) = 34,
+    VariableDeclaration(Box<'a, VariableDeclaration<'a>>) = 32,
+    #[visit(args(flags = ScopeFlags::Function))]
+    FunctionDeclaration(Box<'a, Function<'a>>) = 33,
+    ClassDeclaration(Box<'a, Class<'a>>) = 34,
 
-	TSTypeAliasDeclaration(Box<'a, TSTypeAliasDeclaration<'a>>) = 35,
-	TSInterfaceDeclaration(Box<'a, TSInterfaceDeclaration<'a>>) = 36,
-	TSEnumDeclaration(Box<'a, TSEnumDeclaration<'a>>) = 37,
-	TSModuleDeclaration(Box<'a, TSModuleDeclaration<'a>>) = 38,
-	TSImportEqualsDeclaration(Box<'a, TSImportEqualsDeclaration<'a>>) = 39,
+    TSTypeAliasDeclaration(Box<'a, TSTypeAliasDeclaration<'a>>) = 35,
+    TSInterfaceDeclaration(Box<'a, TSInterfaceDeclaration<'a>>) = 36,
+    TSEnumDeclaration(Box<'a, TSEnumDeclaration<'a>>) = 37,
+    TSModuleDeclaration(Box<'a, TSModuleDeclaration<'a>>) = 38,
+    TSImportEqualsDeclaration(Box<'a, TSImportEqualsDeclaration<'a>>) = 39,
 }
 
 /// Macro for matching `Declaration`'s variants.
 #[macro_export]
 macro_rules! match_declaration {
-	($ty:ident) => {
-		$ty::VariableDeclaration(_)
-			| $ty::FunctionDeclaration(_)
-			| $ty::ClassDeclaration(_)
-			| $ty::TSTypeAliasDeclaration(_)
-			| $ty::TSInterfaceDeclaration(_)
-			| $ty::TSEnumDeclaration(_)
-			| $ty::TSModuleDeclaration(_)
-			| $ty::TSImportEqualsDeclaration(_)
-	};
+    ($ty:ident) => {
+        $ty::VariableDeclaration(_)
+            | $ty::FunctionDeclaration(_)
+            | $ty::ClassDeclaration(_)
+            | $ty::TSTypeAliasDeclaration(_)
+            | $ty::TSInterfaceDeclaration(_)
+            | $ty::TSEnumDeclaration(_)
+            | $ty::TSModuleDeclaration(_)
+            | $ty::TSImportEqualsDeclaration(_)
+    };
 }
 pub use match_declaration;
 
 /// `let a;` in `let a; a = 1;`
 ///
-/// Represents a variable declaration, which can include a kind, declarations,
-/// and modifiers.
+/// Represents a variable declaration, which can include a kind, declarations, and modifiers.
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct VariableDeclaration<'a> {
-	pub span:Span,
-	pub kind:VariableDeclarationKind,
-	pub declarations:Vec<'a, VariableDeclarator<'a>>,
-	#[ts]
-	pub declare:bool,
+    pub span: Span,
+    pub kind: VariableDeclarationKind,
+    pub declarations: Vec<'a, VariableDeclarator<'a>>,
+    #[ts]
+    pub declare: bool,
 }
 
 #[ast]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 pub enum VariableDeclarationKind {
-	Var = 0,
-	Const = 1,
-	Let = 2,
-	Using = 3,
-	#[estree(rename = "await using")]
-	AwaitUsing = 4,
+    Var = 0,
+    Const = 1,
+    Let = 2,
+    Using = 3,
+    #[estree(rename = "await using")]
+    AwaitUsing = 4,
 }
 
-/// A single variable declaration in a list of [variable
-/// declarations](VariableDeclaration).
+/// A single variable declaration in a list of [variable declarations](VariableDeclaration).
 ///
 /// ## Examples
 /// ```ts
@@ -1158,13 +1118,13 @@ pub enum VariableDeclarationKind {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct VariableDeclarator<'a> {
-	pub span:Span,
-	#[estree(skip)]
-	pub kind:VariableDeclarationKind,
-	pub id:BindingPattern<'a>,
-	pub init:Option<Expression<'a>>,
-	#[ts]
-	pub definite:bool,
+    pub span: Span,
+    #[estree(skip)]
+    pub kind: VariableDeclarationKind,
+    pub id: BindingPattern<'a>,
+    pub init: Option<Expression<'a>>,
+    #[ts]
+    pub definite: bool,
 }
 
 /// Empty Statement
@@ -1172,7 +1132,7 @@ pub struct VariableDeclarator<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct EmptyStatement {
-	pub span:Span,
+    pub span: Span,
 }
 
 /// Expression Statement
@@ -1180,8 +1140,8 @@ pub struct EmptyStatement {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ExpressionStatement<'a> {
-	pub span:Span,
-	pub expression:Expression<'a>,
+    pub span: Span,
+    pub expression: Expression<'a>,
 }
 
 /// If Statement
@@ -1189,10 +1149,10 @@ pub struct ExpressionStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct IfStatement<'a> {
-	pub span:Span,
-	pub test:Expression<'a>,
-	pub consequent:Statement<'a>,
-	pub alternate:Option<Statement<'a>>,
+    pub span: Span,
+    pub test: Expression<'a>,
+    pub consequent: Statement<'a>,
+    pub alternate: Option<Statement<'a>>,
 }
 
 /// Do-While Statement
@@ -1200,9 +1160,9 @@ pub struct IfStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct DoWhileStatement<'a> {
-	pub span:Span,
-	pub body:Statement<'a>,
-	pub test:Expression<'a>,
+    pub span: Span,
+    pub body: Statement<'a>,
+    pub test: Expression<'a>,
 }
 
 /// While Statement
@@ -1210,9 +1170,9 @@ pub struct DoWhileStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct WhileStatement<'a> {
-	pub span:Span,
-	pub test:Expression<'a>,
-	pub body:Statement<'a>,
+    pub span: Span,
+    pub test: Expression<'a>,
+    pub body: Statement<'a>,
 }
 
 /// For Statement
@@ -1221,14 +1181,14 @@ pub struct WhileStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ForStatement<'a> {
-	pub span:Span,
-	pub init:Option<ForStatementInit<'a>>,
-	pub test:Option<Expression<'a>>,
-	pub update:Option<Expression<'a>>,
-	pub body:Statement<'a>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub init: Option<ForStatementInit<'a>>,
+    pub test: Option<Expression<'a>>,
+    pub update: Option<Expression<'a>>,
+    pub body: Statement<'a>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 inherit_variants! {
@@ -1241,9 +1201,9 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum ForStatementInit<'a> {
-	VariableDeclaration(Box<'a, VariableDeclaration<'a>>) = 64,
-	// `Expression` variants added here by `inherit_variants!` macro
-	@inherit Expression
+    VariableDeclaration(Box<'a, VariableDeclaration<'a>>) = 64,
+    // `Expression` variants added here by `inherit_variants!` macro
+    @inherit Expression
 }
 }
 
@@ -1253,13 +1213,13 @@ pub enum ForStatementInit<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ForInStatement<'a> {
-	pub span:Span,
-	pub left:ForStatementLeft<'a>,
-	pub right:Expression<'a>,
-	pub body:Statement<'a>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub left: ForStatementLeft<'a>,
+    pub right: Expression<'a>,
+    pub body: Statement<'a>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 inherit_variants! {
@@ -1272,9 +1232,9 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum ForStatementLeft<'a> {
-	VariableDeclaration(Box<'a, VariableDeclaration<'a>>) = 16,
-	// `AssignmentTarget` variants added here by `inherit_variants!` macro
-	@inherit AssignmentTarget
+    VariableDeclaration(Box<'a, VariableDeclaration<'a>>) = 16,
+    // `AssignmentTarget` variants added here by `inherit_variants!` macro
+    @inherit AssignmentTarget
 }
 }
 /// For-Of Statement
@@ -1283,14 +1243,14 @@ pub enum ForStatementLeft<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ForOfStatement<'a> {
-	pub span:Span,
-	pub r#await:bool,
-	pub left:ForStatementLeft<'a>,
-	pub right:Expression<'a>,
-	pub body:Statement<'a>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub r#await: bool,
+    pub left: ForStatementLeft<'a>,
+    pub right: Expression<'a>,
+    pub body: Statement<'a>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 /// Continue Statement
@@ -1298,8 +1258,8 @@ pub struct ForOfStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ContinueStatement<'a> {
-	pub span:Span,
-	pub label:Option<LabelIdentifier<'a>>,
+    pub span: Span,
+    pub label: Option<LabelIdentifier<'a>>,
 }
 
 /// Break Statement
@@ -1307,8 +1267,8 @@ pub struct ContinueStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct BreakStatement<'a> {
-	pub span:Span,
-	pub label:Option<LabelIdentifier<'a>>,
+    pub span: Span,
+    pub label: Option<LabelIdentifier<'a>>,
 }
 
 /// Return Statement
@@ -1316,8 +1276,8 @@ pub struct BreakStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ReturnStatement<'a> {
-	pub span:Span,
-	pub argument:Option<Expression<'a>>,
+    pub span: Span,
+    pub argument: Option<Expression<'a>>,
 }
 
 /// With Statement
@@ -1325,9 +1285,9 @@ pub struct ReturnStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct WithStatement<'a> {
-	pub span:Span,
-	pub object:Expression<'a>,
-	pub body:Statement<'a>,
+    pub span: Span,
+    pub object: Expression<'a>,
+    pub body: Statement<'a>,
 }
 
 /// Switch Statement
@@ -1336,22 +1296,22 @@ pub struct WithStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct SwitchStatement<'a> {
-	pub span:Span,
-	pub discriminant:Expression<'a>,
-	#[scope(enter_before)]
-	pub cases:Vec<'a, SwitchCase<'a>>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub discriminant: Expression<'a>,
+    #[scope(enter_before)]
+    pub cases: Vec<'a, SwitchCase<'a>>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct SwitchCase<'a> {
-	pub span:Span,
-	pub test:Option<Expression<'a>>,
-	pub consequent:Vec<'a, Statement<'a>>,
+    pub span: Span,
+    pub test: Option<Expression<'a>>,
+    pub consequent: Vec<'a, Statement<'a>>,
 }
 
 /// Labelled Statement
@@ -1359,9 +1319,9 @@ pub struct SwitchCase<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct LabeledStatement<'a> {
-	pub span:Span,
-	pub label:LabelIdentifier<'a>,
-	pub body:Statement<'a>,
+    pub span: Span,
+    pub label: LabelIdentifier<'a>,
+    pub body: Statement<'a>,
 }
 
 /// Throw Statement
@@ -1375,9 +1335,9 @@ pub struct LabeledStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ThrowStatement<'a> {
-	pub span:Span,
-	/// The expression being thrown, e.g. `err` in `throw err;`
-	pub argument:Expression<'a>,
+    pub span: Span,
+    /// The expression being thrown, e.g. `err` in `throw err;`
+    pub argument: Expression<'a>,
 }
 
 /// Try Statement
@@ -1399,13 +1359,13 @@ pub struct ThrowStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct TryStatement<'a> {
-	pub span:Span,
-	/// Statements in the `try` block
-	pub block:Box<'a, BlockStatement<'a>>,
-	/// The `catch` clause, including the parameter and the block statement
-	pub handler:Option<Box<'a, CatchClause<'a>>>,
-	/// The `finally` clause
-	pub finalizer:Option<Box<'a, BlockStatement<'a>>>,
+    pub span: Span,
+    /// Statements in the `try` block
+    pub block: Box<'a, BlockStatement<'a>>,
+    /// The `catch` clause, including the parameter and the block statement
+    pub handler: Option<Box<'a, CatchClause<'a>>>,
+    /// The `finally` clause
+    pub finalizer: Option<Box<'a, BlockStatement<'a>>>,
 }
 
 /// Catch Clause in a [`try/catch` statement](TryStatement).
@@ -1425,14 +1385,14 @@ pub struct TryStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct CatchClause<'a> {
-	pub span:Span,
-	/// The caught error parameter, e.g. `e` in `catch (e) {}`
-	pub param:Option<CatchParameter<'a>>,
-	/// The statements run when an error is caught
-	pub body:Box<'a, BlockStatement<'a>>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    /// The caught error parameter, e.g. `e` in `catch (e) {}`
+    pub param: Option<CatchParameter<'a>>,
+    /// The statements run when an error is caught
+    pub body: Box<'a, BlockStatement<'a>>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 /// A caught error parameter in a [catch clause](CatchClause).
@@ -1452,9 +1412,9 @@ pub struct CatchClause<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct CatchParameter<'a> {
-	pub span:Span,
-	/// The bound error
-	pub pattern:BindingPattern<'a>,
+    pub span: Span,
+    /// The bound error
+    pub pattern: BindingPattern<'a>,
 }
 
 /// Debugger Statement
@@ -1468,7 +1428,7 @@ pub struct CatchParameter<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct DebuggerStatement {
-	pub span:Span,
+    pub span: Span,
 }
 
 /// Destructuring Binding Patterns
@@ -1478,43 +1438,43 @@ pub struct DebuggerStatement {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(no_type)]
 pub struct BindingPattern<'a> {
-	// estree(flatten) the attributes because estree has no `BindingPattern`
-	#[estree(
-		flatten,
-		type = "(BindingIdentifier | ObjectPattern | ArrayPattern | AssignmentPattern)"
-	)]
-	#[span]
-	pub kind:BindingPatternKind<'a>,
-	#[ts]
-	pub type_annotation:Option<Box<'a, TSTypeAnnotation<'a>>>,
-	#[ts]
-	pub optional:bool,
+    // estree(flatten) the attributes because estree has no `BindingPattern`
+    #[estree(
+        flatten,
+        type = "(BindingIdentifier | ObjectPattern | ArrayPattern | AssignmentPattern)"
+    )]
+    #[span]
+    pub kind: BindingPatternKind<'a>,
+    #[ts]
+    pub type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+    #[ts]
+    pub optional: bool,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum BindingPatternKind<'a> {
-	/// `const a = 1`
-	BindingIdentifier(Box<'a, BindingIdentifier<'a>>) = 0,
-	/// `const {a} = 1`
-	ObjectPattern(Box<'a, ObjectPattern<'a>>) = 1,
-	/// `const [a] = 1`
-	ArrayPattern(Box<'a, ArrayPattern<'a>>) = 2,
-	/// A defaulted binding pattern, i.e.:
-	/// `const {a = 1} = 1`
-	/// the assignment pattern is `a = 1`
-	/// it has an inner left that has a BindingIdentifier
-	AssignmentPattern(Box<'a, AssignmentPattern<'a>>) = 3,
+    /// `const a = 1`
+    BindingIdentifier(Box<'a, BindingIdentifier<'a>>) = 0,
+    /// `const {a} = 1`
+    ObjectPattern(Box<'a, ObjectPattern<'a>>) = 1,
+    /// `const [a] = 1`
+    ArrayPattern(Box<'a, ArrayPattern<'a>>) = 2,
+    /// A defaulted binding pattern, i.e.:
+    /// `const {a = 1} = 1`
+    /// the assignment pattern is `a = 1`
+    /// it has an inner left that has a BindingIdentifier
+    AssignmentPattern(Box<'a, AssignmentPattern<'a>>) = 3,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct AssignmentPattern<'a> {
-	pub span:Span,
-	pub left:BindingPattern<'a>,
-	pub right:Expression<'a>,
+    pub span: Span,
+    pub left: BindingPattern<'a>,
+    pub right: Expression<'a>,
 }
 
 // See serializer in serialize.rs
@@ -1522,21 +1482,21 @@ pub struct AssignmentPattern<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ObjectPattern<'a> {
-	pub span:Span,
-	pub properties:Vec<'a, BindingProperty<'a>>,
-	#[estree(append_to = "properties")]
-	pub rest:Option<Box<'a, BindingRestElement<'a>>>,
+    pub span: Span,
+    pub properties: Vec<'a, BindingProperty<'a>>,
+    #[estree(append_to = "properties")]
+    pub rest: Option<Box<'a, BindingRestElement<'a>>>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct BindingProperty<'a> {
-	pub span:Span,
-	pub key:PropertyKey<'a>,
-	pub value:BindingPattern<'a>,
-	pub shorthand:bool,
-	pub computed:bool,
+    pub span: Span,
+    pub key: PropertyKey<'a>,
+    pub value: BindingPattern<'a>,
+    pub shorthand: bool,
+    pub computed: bool,
 }
 
 // See serializer in serialize.rs
@@ -1544,14 +1504,13 @@ pub struct BindingProperty<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ArrayPattern<'a> {
-	pub span:Span,
-	pub elements:Vec<'a, Option<BindingPattern<'a>>>,
-	#[estree(append_to = "elements")]
-	pub rest:Option<Box<'a, BindingRestElement<'a>>>,
+    pub span: Span,
+    pub elements: Vec<'a, Option<BindingPattern<'a>>>,
+    #[estree(append_to = "elements")]
+    pub rest: Option<Box<'a, BindingRestElement<'a>>>,
 }
 
-/// A `...rest` binding in an [array](ArrayPattern) or [object](ObjectPattern)
-/// destructure.
+/// A `...rest` binding in an [array](ArrayPattern) or [object](ObjectPattern) destructure.
 ///
 /// ## Examples
 /// ```ts
@@ -1565,8 +1524,8 @@ pub struct ArrayPattern<'a> {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(type = "RestElement")]
 pub struct BindingRestElement<'a> {
-	pub span:Span,
-	pub argument:BindingPattern<'a>,
+    pub span: Span,
+    pub argument: BindingPattern<'a>,
 }
 
 /// Function Statement or Expression
@@ -1613,64 +1572,63 @@ pub struct BindingRestElement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct Function<'a> {
-	pub span:Span,
-	pub r#type:FunctionType,
-	/// The function identifier. [`None`] for anonymous function expressions.
-	pub id:Option<BindingIdentifier<'a>>,
-	/// Is this a generator function?
-	///
-	/// ```ts
-	/// function* foo() { } // <- generator: true
-	/// function bar() { }  // <- generator: false
-	/// ```
-	pub generator:bool,
-	pub r#async:bool,
-	#[ts]
-	pub declare:bool,
-	#[ts]
-	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
-	/// Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
-	///
-	/// The JavaScript specification states that you cannot have a parameter
-	/// called `this`, and so TypeScript uses that syntax space to let you
-	/// declare the type for `this` in the function body.
-	///
-	/// ```ts
-	/// interface DB {
-	///     filterUsers(filter: (this: User) => boolean): User[];
-	///     //                   ^^^^
-	/// }
-	///
-	/// const db = getDB();
-	/// const admins = db.filterUsers(function (this: User) {
-	///     return this.admin;
-	/// });
-	/// ```
-	#[ts]
-	pub this_param:Option<Box<'a, TSThisParameter<'a>>>,
-	/// Function parameters.
-	///
-	/// Does not include `this` parameters used by some TypeScript functions.
-	pub params:Box<'a, FormalParameters<'a>>,
-	/// The TypeScript return type annotation.
-	#[ts]
-	pub return_type:Option<Box<'a, TSTypeAnnotation<'a>>>,
-	/// The function body.
-	///
-	/// [`None`] for function declarations, e.g.
-	/// ```ts
-	/// // TypeScript function declarations have no body
-	/// declare function foo(a: number): number;
-	///
-	/// function bar(a: number): number; // <- overloads have no body
-	/// function bar(a: number): number {
-	///     return a;
-	/// }
-	/// ```
-	pub body:Option<Box<'a, FunctionBody<'a>>>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub r#type: FunctionType,
+    /// The function identifier. [`None`] for anonymous function expressions.
+    pub id: Option<BindingIdentifier<'a>>,
+    /// Is this a generator function?
+    ///
+    /// ```ts
+    /// function* foo() { } // <- generator: true
+    /// function bar() { }  // <- generator: false
+    /// ```
+    pub generator: bool,
+    pub r#async: bool,
+    #[ts]
+    pub declare: bool,
+    #[ts]
+    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+    /// Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    ///
+    /// The JavaScript specification states that you cannot have a parameter called `this`,
+    /// and so TypeScript uses that syntax space to let you declare the type for `this` in the function body.
+    ///
+    /// ```ts
+    /// interface DB {
+    ///     filterUsers(filter: (this: User) => boolean): User[];
+    ///     //                   ^^^^
+    /// }
+    ///
+    /// const db = getDB();
+    /// const admins = db.filterUsers(function (this: User) {
+    ///     return this.admin;
+    /// });
+    /// ```
+    #[ts]
+    pub this_param: Option<Box<'a, TSThisParameter<'a>>>,
+    /// Function parameters.
+    ///
+    /// Does not include `this` parameters used by some TypeScript functions.
+    pub params: Box<'a, FormalParameters<'a>>,
+    /// The TypeScript return type annotation.
+    #[ts]
+    pub return_type: Option<Box<'a, TSTypeAnnotation<'a>>>,
+    /// The function body.
+    ///
+    /// [`None`] for function declarations, e.g.
+    /// ```ts
+    /// // TypeScript function declarations have no body
+    /// declare function foo(a: number): number;
+    ///
+    /// function bar(a: number): number; // <- overloads have no body
+    /// function bar(a: number): number {
+    ///     return a;
+    /// }
+    /// ```
+    pub body: Option<Box<'a, FunctionBody<'a>>>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 #[ast]
@@ -1678,11 +1636,11 @@ pub struct Function<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 #[estree(no_rename_variants)]
 pub enum FunctionType {
-	FunctionDeclaration = 0,
-	FunctionExpression = 1,
-	TSDeclareFunction = 2,
-	/// <https://github.com/typescript-eslint/typescript-eslint/pull/1289>
-	TSEmptyBodyFunctionExpression = 3,
+    FunctionDeclaration = 0,
+    FunctionExpression = 1,
+    TSDeclareFunction = 2,
+    /// <https://github.com/typescript-eslint/typescript-eslint/pull/1289>
+    TSEmptyBodyFunctionExpression = 3,
 }
 
 /// <https://tc39.es/ecma262/#prod-FormalParameters>
@@ -1692,28 +1650,28 @@ pub enum FunctionType {
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 #[estree(custom_serialize)]
 pub struct FormalParameters<'a> {
-	pub span:Span,
-	pub kind:FormalParameterKind,
-	#[estree(type = "Array<FormalParameter | FormalParameterRest>")]
-	pub items:Vec<'a, FormalParameter<'a>>,
-	#[estree(skip)]
-	pub rest:Option<Box<'a, BindingRestElement<'a>>>,
+    pub span: Span,
+    pub kind: FormalParameterKind,
+    #[estree(type = "Array<FormalParameter | FormalParameterRest>")]
+    pub items: Vec<'a, FormalParameter<'a>>,
+    #[estree(skip)]
+    pub rest: Option<Box<'a, BindingRestElement<'a>>>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct FormalParameter<'a> {
-	pub span:Span,
-	#[ts]
-	pub decorators:Vec<'a, Decorator<'a>>,
-	pub pattern:BindingPattern<'a>,
-	#[ts]
-	pub accessibility:Option<TSAccessibility>,
-	#[ts]
-	pub readonly:bool,
-	#[ts]
-	pub r#override:bool,
+    pub span: Span,
+    #[ts]
+    pub decorators: Vec<'a, Decorator<'a>>,
+    pub pattern: BindingPattern<'a>,
+    #[ts]
+    pub accessibility: Option<TSAccessibility>,
+    #[ts]
+    pub readonly: bool,
+    #[ts]
+    pub r#override: bool,
 }
 
 #[ast]
@@ -1721,14 +1679,14 @@ pub struct FormalParameter<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 #[estree(no_rename_variants)]
 pub enum FormalParameterKind {
-	/// <https://tc39.es/ecma262/#prod-FormalParameters>
-	FormalParameter = 0,
-	/// <https://tc39.es/ecma262/#prod-UniqueFormalParameters>
-	UniqueFormalParameters = 1,
-	/// <https://tc39.es/ecma262/#prod-ArrowFormalParameters>
-	ArrowFormalParameters = 2,
-	/// Part of TypeScript type signatures
-	Signature = 3,
+    /// <https://tc39.es/ecma262/#prod-FormalParameters>
+    FormalParameter = 0,
+    /// <https://tc39.es/ecma262/#prod-UniqueFormalParameters>
+    UniqueFormalParameters = 1,
+    /// <https://tc39.es/ecma262/#prod-ArrowFormalParameters>
+    ArrowFormalParameters = 2,
+    /// Part of TypeScript type signatures
+    Signature = 3,
 }
 
 /// <https://tc39.es/ecma262/#prod-FunctionBody>
@@ -1736,9 +1694,9 @@ pub enum FormalParameterKind {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct FunctionBody<'a> {
-	pub span:Span,
-	pub directives:Vec<'a, Directive<'a>>,
-	pub statements:Vec<'a, Statement<'a>>,
+    pub span: Span,
+    pub directives: Vec<'a, Directive<'a>>,
+    pub statements: Vec<'a, Statement<'a>>,
 }
 
 /// Arrow Function Definitions
@@ -1750,22 +1708,20 @@ pub struct FunctionBody<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ArrowFunctionExpression<'a> {
-	pub span:Span,
-	/// Is the function body an arrow expression? i.e. `() => expr` instead of
-	/// `() => {}`
-	pub expression:bool,
-	pub r#async:bool,
-	#[ts]
-	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
-	pub params:Box<'a, FormalParameters<'a>>,
-	#[ts]
-	pub return_type:Option<Box<'a, TSTypeAnnotation<'a>>>,
-	/// See `expression` for whether this arrow expression returns an
-	/// expression.
-	pub body:Box<'a, FunctionBody<'a>>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    /// Is the function body an arrow expression? i.e. `() => expr` instead of `() => {}`
+    pub expression: bool,
+    pub r#async: bool,
+    #[ts]
+    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+    pub params: Box<'a, FormalParameters<'a>>,
+    #[ts]
+    pub return_type: Option<Box<'a, TSTypeAnnotation<'a>>>,
+    /// See `expression` for whether this arrow expression returns an expression.
+    pub body: Box<'a, FunctionBody<'a>>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 /// Generator Function Definitions
@@ -1773,9 +1729,9 @@ pub struct ArrowFunctionExpression<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct YieldExpression<'a> {
-	pub span:Span,
-	pub delegate:bool,
-	pub argument:Option<Expression<'a>>,
+    pub span: Span,
+    pub delegate: bool,
+    pub argument: Option<Expression<'a>>,
 }
 
 /// Class Definitions
@@ -1784,76 +1740,75 @@ pub struct YieldExpression<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct Class<'a> {
-	pub span:Span,
-	pub r#type:ClassType,
-	/// Decorators applied to the class.
-	///
-	/// Decorators are currently a stage 3 proposal. Oxc handles both TC39 and
-	/// legacy TypeScript decorators.
-	///
-	/// ## Example
-	/// ```ts
-	/// @Bar() // <-- Decorator
-	/// class Foo {}
-	/// ```
-	#[ts]
-	pub decorators:Vec<'a, Decorator<'a>>,
-	/// Class identifier, AKA the name
-	pub id:Option<BindingIdentifier<'a>>,
-	#[scope(enter_before)]
-	#[ts]
-	pub type_parameters:Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
-	/// Super class. When present, this will usually be an
-	/// [`IdentifierReference`].
-	///
-	/// ## Example
-	/// ```ts
-	/// class Foo extends Bar {}
-	/// //                ^^^
-	/// ```
-	pub super_class:Option<Expression<'a>>,
-	/// Type parameters passed to super class.
-	///
-	/// ## Example
-	/// ```ts
-	/// class Foo<T> extends Bar<T> {}
-	/// //                       ^
-	/// ```
-	#[ts]
-	pub super_type_parameters:Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
-	/// Interface implementation clause for TypeScript classes.
-	///
-	/// ## Example
-	/// ```ts
-	/// interface Bar {}
-	/// class Foo implements Bar {}
-	/// //                   ^^^
-	/// ```
-	#[ts]
-	pub implements:Option<Vec<'a, TSClassImplements<'a>>>,
-	pub body:Box<'a, ClassBody<'a>>,
-	/// Whether the class is abstract
-	///
-	/// ## Example
-	/// ```ts
-	/// class Foo {}          // true
-	/// abstract class Bar {} // false
-	/// ```
-	#[ts]
-	pub r#abstract:bool,
-	/// Whether the class was `declare`ed
-	///
-	/// ## Example
-	/// ```ts
-	/// declare class Foo {}
-	/// ```
-	#[ts]
-	pub declare:bool,
-	/// Id of the scope created by the [`Class`], including type parameters and
-	/// statements within the [`ClassBody`].
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub r#type: ClassType,
+    /// Decorators applied to the class.
+    ///
+    /// Decorators are currently a stage 3 proposal. Oxc handles both TC39 and
+    /// legacy TypeScript decorators.
+    ///
+    /// ## Example
+    /// ```ts
+    /// @Bar() // <-- Decorator
+    /// class Foo {}
+    /// ```
+    #[ts]
+    pub decorators: Vec<'a, Decorator<'a>>,
+    /// Class identifier, AKA the name
+    pub id: Option<BindingIdentifier<'a>>,
+    #[scope(enter_before)]
+    #[ts]
+    pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+    /// Super class. When present, this will usually be an [`IdentifierReference`].
+    ///
+    /// ## Example
+    /// ```ts
+    /// class Foo extends Bar {}
+    /// //                ^^^
+    /// ```
+    pub super_class: Option<Expression<'a>>,
+    /// Type parameters passed to super class.
+    ///
+    /// ## Example
+    /// ```ts
+    /// class Foo<T> extends Bar<T> {}
+    /// //                       ^
+    /// ```
+    #[ts]
+    pub super_type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+    /// Interface implementation clause for TypeScript classes.
+    ///
+    /// ## Example
+    /// ```ts
+    /// interface Bar {}
+    /// class Foo implements Bar {}
+    /// //                   ^^^
+    /// ```
+    #[ts]
+    pub implements: Option<Vec<'a, TSClassImplements<'a>>>,
+    pub body: Box<'a, ClassBody<'a>>,
+    /// Whether the class is abstract
+    ///
+    /// ## Example
+    /// ```ts
+    /// class Foo {}          // true
+    /// abstract class Bar {} // false
+    /// ```
+    #[ts]
+    pub r#abstract: bool,
+    /// Whether the class was `declare`ed
+    ///
+    /// ## Example
+    /// ```ts
+    /// declare class Foo {}
+    /// ```
+    #[ts]
+    pub declare: bool,
+    /// Id of the scope created by the [`Class`], including type parameters and
+    /// statements within the [`ClassBody`].
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 #[ast]
@@ -1861,25 +1816,25 @@ pub struct Class<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 #[estree(no_rename_variants)]
 pub enum ClassType {
-	/// Class declaration statement
-	/// ```ts
-	/// class Foo { }
-	/// ```
-	ClassDeclaration = 0,
-	/// Class expression
-	///
-	/// ```ts
-	/// const Foo = class {}
-	/// ```
-	ClassExpression = 1,
+    /// Class declaration statement
+    /// ```ts
+    /// class Foo { }
+    /// ```
+    ClassDeclaration = 0,
+    /// Class expression
+    ///
+    /// ```ts
+    /// const Foo = class {}
+    /// ```
+    ClassExpression = 1,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ClassBody<'a> {
-	pub span:Span,
-	pub body:Vec<'a, ClassElement<'a>>,
+    pub span: Span,
+    pub body: Vec<'a, ClassElement<'a>>,
 }
 
 /// Class Body Element
@@ -1904,54 +1859,52 @@ pub struct ClassBody<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum ClassElement<'a> {
-	StaticBlock(Box<'a, StaticBlock<'a>>) = 0,
-	/// Class Methods
-	///
-	/// Includes static and non-static methods, constructors, getters, and
-	/// setters.
-	MethodDefinition(Box<'a, MethodDefinition<'a>>) = 1,
-	PropertyDefinition(Box<'a, PropertyDefinition<'a>>) = 2,
-	AccessorProperty(Box<'a, AccessorProperty<'a>>) = 3,
-	/// Index Signature
-	///
-	/// ## Example
-	/// ```ts
-	/// class Foo {
-	///   [keys: string]: string
-	/// }
-	/// ```
-	TSIndexSignature(Box<'a, TSIndexSignature<'a>>) = 4,
+    StaticBlock(Box<'a, StaticBlock<'a>>) = 0,
+    /// Class Methods
+    ///
+    /// Includes static and non-static methods, constructors, getters, and setters.
+    MethodDefinition(Box<'a, MethodDefinition<'a>>) = 1,
+    PropertyDefinition(Box<'a, PropertyDefinition<'a>>) = 2,
+    AccessorProperty(Box<'a, AccessorProperty<'a>>) = 3,
+    /// Index Signature
+    ///
+    /// ## Example
+    /// ```ts
+    /// class Foo {
+    ///   [keys: string]: string
+    /// }
+    /// ```
+    TSIndexSignature(Box<'a, TSIndexSignature<'a>>) = 4,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct MethodDefinition<'a> {
-	pub span:Span,
-	/// Method definition type
-	///
-	/// This will always be true when an `abstract` modifier is used on the
-	/// method.
-	pub r#type:MethodDefinitionType,
-	#[ts]
-	pub decorators:Vec<'a, Decorator<'a>>,
-	pub key:PropertyKey<'a>,
-	#[visit(args(flags = match self.kind {
+    pub span: Span,
+    /// Method definition type
+    ///
+    /// This will always be true when an `abstract` modifier is used on the method.
+    pub r#type: MethodDefinitionType,
+    #[ts]
+    pub decorators: Vec<'a, Decorator<'a>>,
+    pub key: PropertyKey<'a>,
+    #[visit(args(flags = match self.kind {
         MethodDefinitionKind::Get => ScopeFlags::Function | ScopeFlags::GetAccessor,
         MethodDefinitionKind::Set => ScopeFlags::Function | ScopeFlags::SetAccessor,
         MethodDefinitionKind::Constructor => ScopeFlags::Function | ScopeFlags::Constructor,
         MethodDefinitionKind::Method => ScopeFlags::Function,
     }))]
-	pub value:Box<'a, Function<'a>>, // FunctionExpression
-	pub kind:MethodDefinitionKind,
-	pub computed:bool,
-	pub r#static:bool,
-	#[ts]
-	pub r#override:bool,
-	#[ts]
-	pub optional:bool,
-	#[ts]
-	pub accessibility:Option<TSAccessibility>,
+    pub value: Box<'a, Function<'a>>, // FunctionExpression
+    pub kind: MethodDefinitionKind,
+    pub computed: bool,
+    pub r#static: bool,
+    #[ts]
+    pub r#override: bool,
+    #[ts]
+    pub optional: bool,
+    #[ts]
+    pub accessibility: Option<TSAccessibility>,
 }
 
 #[ast]
@@ -1959,96 +1912,96 @@ pub struct MethodDefinition<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 #[estree(no_rename_variants)]
 pub enum MethodDefinitionType {
-	MethodDefinition = 0,
-	TSAbstractMethodDefinition = 1,
+    MethodDefinition = 0,
+    TSAbstractMethodDefinition = 1,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct PropertyDefinition<'a> {
-	pub span:Span,
-	pub r#type:PropertyDefinitionType,
-	/// Decorators applied to the property.
-	///
-	/// See [`Decorator`] for more information.
-	#[ts]
-	pub decorators:Vec<'a, Decorator<'a>>,
-	/// The expression used to declare the property.
-	pub key:PropertyKey<'a>,
-	/// Initialized value in the declaration.
-	///
-	/// ## Example
-	/// ```ts
-	/// class Foo {
-	///   x = 5;     // Some(NumericLiteral)
-	///   y;         // None
-	///   z: string; // None
-	///
-	///   constructor() {
-	///     this.z = "hello";
-	///   }
-	/// }
-	/// ```
-	pub value:Option<Expression<'a>>,
-	/// Property was declared with a computed key
-	///
-	/// ## Example
-	/// ```js
-	/// class Foo {
-	///   ["a"]: 1; // true
-	///   b: 2;     // false
-	/// }
-	/// ```
-	pub computed:bool,
-	/// Property was declared with a `static` modifier
-	pub r#static:bool,
-	/// Property is declared with a `declare` modifier.
-	///
-	/// ## Example
-	/// ```ts
-	/// class Foo {
-	///   x: number;         // false
-	///   declare y: string; // true
-	/// }
-	///
-	/// declare class Bar {
-	///   x: number;         // false
-	/// }
-	/// ```
-	#[ts]
-	pub declare:bool,
-	#[ts]
-	pub r#override:bool,
-	/// `true` when created with an optional modifier (`?`)
-	#[ts]
-	pub optional:bool,
-	#[ts]
-	pub definite:bool,
-	/// `true` when declared with a `readonly` modifier
-	#[ts]
-	pub readonly:bool,
-	/// Type annotation on the property.
-	///
-	/// Will only ever be [`Some`] for TypeScript files.
-	#[ts]
-	pub type_annotation:Option<Box<'a, TSTypeAnnotation<'a>>>,
-	/// Accessibility modifier.
-	///
-	/// Only ever [`Some`] for TypeScript files.
-	///
-	/// ## Example
-	///
-	/// ```ts
-	/// class Foo {
-	///   public w: number;     // Some(TSAccessibility::Public)
-	///   private x: string;    // Some(TSAccessibility::Private)
-	///   protected y: boolean; // Some(TSAccessibility::Protected)
-	///   readonly z;           // None
-	/// }
-	/// ```
-	#[ts]
-	pub accessibility:Option<TSAccessibility>,
+    pub span: Span,
+    pub r#type: PropertyDefinitionType,
+    /// Decorators applied to the property.
+    ///
+    /// See [`Decorator`] for more information.
+    #[ts]
+    pub decorators: Vec<'a, Decorator<'a>>,
+    /// The expression used to declare the property.
+    pub key: PropertyKey<'a>,
+    /// Initialized value in the declaration.
+    ///
+    /// ## Example
+    /// ```ts
+    /// class Foo {
+    ///   x = 5;     // Some(NumericLiteral)
+    ///   y;         // None
+    ///   z: string; // None
+    ///
+    ///   constructor() {
+    ///     this.z = "hello";
+    ///   }
+    /// }
+    /// ```
+    pub value: Option<Expression<'a>>,
+    /// Property was declared with a computed key
+    ///
+    /// ## Example
+    /// ```js
+    /// class Foo {
+    ///   ["a"]: 1; // true
+    ///   b: 2;     // false
+    /// }
+    /// ```
+    pub computed: bool,
+    /// Property was declared with a `static` modifier
+    pub r#static: bool,
+    /// Property is declared with a `declare` modifier.
+    ///
+    /// ## Example
+    /// ```ts
+    /// class Foo {
+    ///   x: number;         // false
+    ///   declare y: string; // true
+    /// }
+    ///
+    /// declare class Bar {
+    ///   x: number;         // false
+    /// }
+    /// ```
+    #[ts]
+    pub declare: bool,
+    #[ts]
+    pub r#override: bool,
+    /// `true` when created with an optional modifier (`?`)
+    #[ts]
+    pub optional: bool,
+    #[ts]
+    pub definite: bool,
+    /// `true` when declared with a `readonly` modifier
+    #[ts]
+    pub readonly: bool,
+    /// Type annotation on the property.
+    ///
+    /// Will only ever be [`Some`] for TypeScript files.
+    #[ts]
+    pub type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+    /// Accessibility modifier.
+    ///
+    /// Only ever [`Some`] for TypeScript files.
+    ///
+    /// ## Example
+    ///
+    /// ```ts
+    /// class Foo {
+    ///   public w: number;     // Some(TSAccessibility::Public)
+    ///   private x: string;    // Some(TSAccessibility::Private)
+    ///   protected y: boolean; // Some(TSAccessibility::Protected)
+    ///   readonly z;           // None
+    /// }
+    /// ```
+    #[ts]
+    pub accessibility: Option<TSAccessibility>,
 }
 
 #[ast]
@@ -2056,22 +2009,22 @@ pub struct PropertyDefinition<'a> {
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 #[estree(no_rename_variants)]
 pub enum PropertyDefinitionType {
-	PropertyDefinition = 0,
-	TSAbstractPropertyDefinition = 1,
+    PropertyDefinition = 0,
+    TSAbstractPropertyDefinition = 1,
 }
 
 #[ast]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 pub enum MethodDefinitionKind {
-	/// Class constructor
-	Constructor = 0,
-	/// Static or instance method
-	Method = 1,
-	/// Getter method
-	Get = 2,
-	/// Setter method
-	Set = 3,
+    /// Class constructor
+    Constructor = 0,
+    /// Static or instance method
+    Method = 1,
+    /// Getter method
+    Get = 2,
+    /// Setter method
+    Set = 3,
 }
 
 /// An identifier for a private class member.
@@ -2081,8 +2034,8 @@ pub enum MethodDefinitionKind {
 #[derive(Debug, Clone)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct PrivateIdentifier<'a> {
-	pub span:Span,
-	pub name:Atom<'a>,
+    pub span: Span,
+    pub name: Atom<'a>,
 }
 
 /// Class Static Block
@@ -2103,11 +2056,11 @@ pub struct PrivateIdentifier<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct StaticBlock<'a> {
-	pub span:Span,
-	pub body:Vec<'a, Statement<'a>>,
-	#[estree(skip)]
-	#[clone_in(default)]
-	pub scope_id:Cell<Option<ScopeId>>,
+    pub span: Span,
+    pub body: Vec<'a, Statement<'a>>,
+    #[estree(skip)]
+    #[clone_in(default)]
+    pub scope_id: Cell<Option<ScopeId>>,
 }
 
 /// ES6 Module Declaration
@@ -2137,34 +2090,34 @@ pub struct StaticBlock<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum ModuleDeclaration<'a> {
-	/// `import hello from './world.js';`
-	/// `import * as t from './world.js';`
-	ImportDeclaration(Box<'a, ImportDeclaration<'a>>) = 64,
-	/// `export * as numbers from '../numbers.js'`
-	ExportAllDeclaration(Box<'a, ExportAllDeclaration<'a>>) = 65,
-	/// `export default 5;`
-	ExportDefaultDeclaration(Box<'a, ExportDefaultDeclaration<'a>>) = 66,
-	/// `export {five} from './numbers.js';`
-	/// `export {six, seven};`
-	ExportNamedDeclaration(Box<'a, ExportNamedDeclaration<'a>>) = 67,
+    /// `import hello from './world.js';`
+    /// `import * as t from './world.js';`
+    ImportDeclaration(Box<'a, ImportDeclaration<'a>>) = 64,
+    /// `export * as numbers from '../numbers.js'`
+    ExportAllDeclaration(Box<'a, ExportAllDeclaration<'a>>) = 65,
+    /// `export default 5;`
+    ExportDefaultDeclaration(Box<'a, ExportDefaultDeclaration<'a>>) = 66,
+    /// `export {five} from './numbers.js';`
+    /// `export {six, seven};`
+    ExportNamedDeclaration(Box<'a, ExportNamedDeclaration<'a>>) = 67,
 
-	/// `export = 5;`
-	TSExportAssignment(Box<'a, TSExportAssignment<'a>>) = 68,
-	/// `export as namespace React;`
-	TSNamespaceExportDeclaration(Box<'a, TSNamespaceExportDeclaration<'a>>) = 69,
+    /// `export = 5;`
+    TSExportAssignment(Box<'a, TSExportAssignment<'a>>) = 68,
+    /// `export as namespace React;`
+    TSNamespaceExportDeclaration(Box<'a, TSNamespaceExportDeclaration<'a>>) = 69,
 }
 
 /// Macro for matching `ModuleDeclaration`'s variants.
 #[macro_export]
 macro_rules! match_module_declaration {
-	($ty:ident) => {
-		$ty::ImportDeclaration(_)
-			| $ty::ExportAllDeclaration(_)
-			| $ty::ExportDefaultDeclaration(_)
-			| $ty::ExportNamedDeclaration(_)
-			| $ty::TSExportAssignment(_)
-			| $ty::TSNamespaceExportDeclaration(_)
-	};
+    ($ty:ident) => {
+        $ty::ImportDeclaration(_)
+            | $ty::ExportAllDeclaration(_)
+            | $ty::ExportDefaultDeclaration(_)
+            | $ty::ExportNamedDeclaration(_)
+            | $ty::TSExportAssignment(_)
+            | $ty::TSNamespaceExportDeclaration(_)
+    };
 }
 pub use match_module_declaration;
 
@@ -2173,8 +2126,8 @@ pub use match_module_declaration;
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 #[estree(no_rename_variants)]
 pub enum AccessorPropertyType {
-	AccessorProperty = 0,
-	TSAbstractAccessorProperty = 1,
+    AccessorProperty = 0,
+    TSAbstractAccessorProperty = 1,
 }
 
 /// Class Accessor Property
@@ -2189,72 +2142,72 @@ pub enum AccessorPropertyType {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct AccessorProperty<'a> {
-	pub span:Span,
-	pub r#type:AccessorPropertyType,
-	/// Decorators applied to the accessor property.
-	///
-	/// See [`Decorator`] for more information.
-	#[ts]
-	pub decorators:Vec<'a, Decorator<'a>>,
-	/// The expression used to declare the property.
-	pub key:PropertyKey<'a>,
-	/// Initialized value in the declaration, if present.
-	pub value:Option<Expression<'a>>,
-	/// Property was declared with a computed key
-	pub computed:bool,
-	/// Property was declared with a `static` modifier
-	pub r#static:bool,
-	/// Property has a `!` after its key.
-	#[ts]
-	pub definite:bool,
-	/// Type annotation on the property.
-	///
-	/// Will only ever be [`Some`] for TypeScript files.
-	#[ts]
-	pub type_annotation:Option<Box<'a, TSTypeAnnotation<'a>>>,
-	/// Accessibility modifier.
-	///
-	/// Only ever [`Some`] for TypeScript files.
-	///
-	/// ## Example
-	///
-	/// ```ts
-	/// class Foo {
-	///   public accessor w: number     // Some(TSAccessibility::Public)
-	///   private accessor x: string    // Some(TSAccessibility::Private)
-	///   protected accessor y: boolean // Some(TSAccessibility::Protected)
-	///   accessor z           // None
-	/// }
-	/// ```
-	#[ts]
-	pub accessibility:Option<TSAccessibility>,
+    pub span: Span,
+    pub r#type: AccessorPropertyType,
+    /// Decorators applied to the accessor property.
+    ///
+    /// See [`Decorator`] for more information.
+    #[ts]
+    pub decorators: Vec<'a, Decorator<'a>>,
+    /// The expression used to declare the property.
+    pub key: PropertyKey<'a>,
+    /// Initialized value in the declaration, if present.
+    pub value: Option<Expression<'a>>,
+    /// Property was declared with a computed key
+    pub computed: bool,
+    /// Property was declared with a `static` modifier
+    pub r#static: bool,
+    /// Property has a `!` after its key.
+    #[ts]
+    pub definite: bool,
+    /// Type annotation on the property.
+    ///
+    /// Will only ever be [`Some`] for TypeScript files.
+    #[ts]
+    pub type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+    /// Accessibility modifier.
+    ///
+    /// Only ever [`Some`] for TypeScript files.
+    ///
+    /// ## Example
+    ///
+    /// ```ts
+    /// class Foo {
+    ///   public accessor w: number     // Some(TSAccessibility::Public)
+    ///   private accessor x: string    // Some(TSAccessibility::Private)
+    ///   protected accessor y: boolean // Some(TSAccessibility::Protected)
+    ///   accessor z           // None
+    /// }
+    /// ```
+    #[ts]
+    pub accessibility: Option<TSAccessibility>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ImportExpression<'a> {
-	pub span:Span,
-	pub source:Expression<'a>,
-	pub arguments:Vec<'a, Expression<'a>>,
-	pub phase:Option<ImportPhase>,
+    pub span: Span,
+    pub source: Expression<'a>,
+    pub arguments: Vec<'a, Expression<'a>>,
+    pub phase: Option<ImportPhase>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ImportDeclaration<'a> {
-	pub span:Span,
-	/// `None` for `import 'foo'`, `Some([])` for `import {} from 'foo'`
-	pub specifiers:Option<Vec<'a, ImportDeclarationSpecifier<'a>>>,
-	pub source:StringLiteral<'a>,
-	pub phase:Option<ImportPhase>,
-	/// Some(vec![]) for empty assertion
-	#[ts]
-	pub with_clause:Option<Box<'a, WithClause<'a>>>,
-	/// `import type { foo } from 'bar'`
-	#[ts]
-	pub import_kind:ImportOrExportKind,
+    pub span: Span,
+    /// `None` for `import 'foo'`, `Some([])` for `import {} from 'foo'`
+    pub specifiers: Option<Vec<'a, ImportDeclarationSpecifier<'a>>>,
+    pub source: StringLiteral<'a>,
+    pub phase: Option<ImportPhase>,
+    /// Some(vec![]) for empty assertion
+    #[ts]
+    pub with_clause: Option<Box<'a, WithClause<'a>>>,
+    /// `import type { foo } from 'bar'`
+    #[ts]
+    pub import_kind: ImportOrExportKind,
 }
 
 /// Import Phase
@@ -2266,21 +2219,21 @@ pub struct ImportDeclaration<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[generate_derive(CloneIn, ContentEq, ContentHash, ESTree)]
 pub enum ImportPhase {
-	Source = 0,
-	Defer = 1,
+    Source = 0,
+    Defer = 1,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum ImportDeclarationSpecifier<'a> {
-	/// import {imported} from "source"
-	/// import {imported as local} from "source"
-	ImportSpecifier(Box<'a, ImportSpecifier<'a>>) = 0,
-	/// import local from "source"
-	ImportDefaultSpecifier(Box<'a, ImportDefaultSpecifier<'a>>) = 1,
-	/// import * as local from "source"
-	ImportNamespaceSpecifier(Box<'a, ImportNamespaceSpecifier<'a>>) = 2,
+    /// import {imported} from "source"
+    /// import {imported as local} from "source"
+    ImportSpecifier(Box<'a, ImportSpecifier<'a>>) = 0,
+    /// import local from "source"
+    ImportDefaultSpecifier(Box<'a, ImportDefaultSpecifier<'a>>) = 1,
+    /// import * as local from "source"
+    ImportNamespaceSpecifier(Box<'a, ImportNamespaceSpecifier<'a>>) = 2,
 }
 
 // import {imported} from "source"
@@ -2289,22 +2242,22 @@ pub enum ImportDeclarationSpecifier<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ImportSpecifier<'a> {
-	pub span:Span,
-	pub imported:ModuleExportName<'a>,
-	/// The name of the imported symbol.
-	///
-	/// ## Example
-	/// ```ts
-	/// // local and imported name are the same
-	/// import { Foo } from 'foo';
-	/// //       ^^^
-	/// // imports can be renamed, changing the local name
-	/// import { Foo as Bar } from 'foo';
-	/// //              ^^^
-	/// ```
-	pub local:BindingIdentifier<'a>,
-	#[ts]
-	pub import_kind:ImportOrExportKind,
+    pub span: Span,
+    pub imported: ModuleExportName<'a>,
+    /// The name of the imported symbol.
+    ///
+    /// ## Example
+    /// ```ts
+    /// // local and imported name are the same
+    /// import { Foo } from 'foo';
+    /// //       ^^^
+    /// // imports can be renamed, changing the local name
+    /// import { Foo as Bar } from 'foo';
+    /// //              ^^^
+    /// ```
+    pub local: BindingIdentifier<'a>,
+    #[ts]
+    pub import_kind: ImportOrExportKind,
 }
 
 /// Default Import Specifier
@@ -2313,13 +2266,14 @@ pub struct ImportSpecifier<'a> {
 /// ```ts
 /// import local from "source";
 /// ```
+///
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ImportDefaultSpecifier<'a> {
-	pub span:Span,
-	/// The name of the imported symbol.
-	pub local:BindingIdentifier<'a>,
+    pub span: Span,
+    /// The name of the imported symbol.
+    pub local: BindingIdentifier<'a>,
 }
 
 /// Namespace import specifier
@@ -2332,34 +2286,34 @@ pub struct ImportDefaultSpecifier<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ImportNamespaceSpecifier<'a> {
-	pub span:Span,
-	pub local:BindingIdentifier<'a>,
+    pub span: Span,
+    pub local: BindingIdentifier<'a>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct WithClause<'a> {
-	pub span:Span,
-	pub attributes_keyword:IdentifierName<'a>, // `with` or `assert`
-	pub with_entries:Vec<'a, ImportAttribute<'a>>,
+    pub span: Span,
+    pub attributes_keyword: IdentifierName<'a>, // `with` or `assert`
+    pub with_entries: Vec<'a, ImportAttribute<'a>>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ImportAttribute<'a> {
-	pub span:Span,
-	pub key:ImportAttributeKey<'a>,
-	pub value:StringLiteral<'a>,
+    pub span: Span,
+    pub key: ImportAttributeKey<'a>,
+    pub value: StringLiteral<'a>,
 }
 
 #[ast(visit)]
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub enum ImportAttributeKey<'a> {
-	Identifier(IdentifierName<'a>) = 0,
-	StringLiteral(StringLiteral<'a>) = 1,
+    Identifier(IdentifierName<'a>) = 0,
+    StringLiteral(StringLiteral<'a>) = 1,
 }
 
 /// Named Export Declaration
@@ -2377,16 +2331,16 @@ pub enum ImportAttributeKey<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ExportNamedDeclaration<'a> {
-	pub span:Span,
-	pub declaration:Option<Declaration<'a>>,
-	pub specifiers:Vec<'a, ExportSpecifier<'a>>,
-	pub source:Option<StringLiteral<'a>>,
-	/// `export type { foo }`
-	#[ts]
-	pub export_kind:ImportOrExportKind,
-	/// Some(vec![]) for empty assertion
-	#[ts]
-	pub with_clause:Option<Box<'a, WithClause<'a>>>,
+    pub span: Span,
+    pub declaration: Option<Declaration<'a>>,
+    pub specifiers: Vec<'a, ExportSpecifier<'a>>,
+    pub source: Option<StringLiteral<'a>>,
+    /// `export type { foo }`
+    #[ts]
+    pub export_kind: ImportOrExportKind,
+    /// Some(vec![]) for empty assertion
+    #[ts]
+    pub with_clause: Option<Box<'a, WithClause<'a>>>,
 }
 
 /// Export Default Declaration
@@ -2402,9 +2356,9 @@ pub struct ExportNamedDeclaration<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ExportDefaultDeclaration<'a> {
-	pub span:Span,
-	pub declaration:ExportDefaultDeclarationKind<'a>,
-	pub exported:ModuleExportName<'a>, // the `default` Keyword
+    pub span: Span,
+    pub declaration: ExportDefaultDeclarationKind<'a>,
+    pub exported: ModuleExportName<'a>, // the `default` Keyword
 }
 
 /// Export All Declaration
@@ -2420,21 +2374,20 @@ pub struct ExportDefaultDeclaration<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ExportAllDeclaration<'a> {
-	pub span:Span,
-	/// If this declaration is re-named
-	pub exported:Option<ModuleExportName<'a>>,
-	pub source:StringLiteral<'a>,
-	/// Will be `Some(vec![])` for empty assertion
-	#[ts]
-	pub with_clause:Option<Box<'a, WithClause<'a>>>, // Some(vec![]) for empty assertion
-	#[ts]
-	pub export_kind:ImportOrExportKind, // `export type *`
+    pub span: Span,
+    /// If this declaration is re-named
+    pub exported: Option<ModuleExportName<'a>>,
+    pub source: StringLiteral<'a>,
+    /// Will be `Some(vec![])` for empty assertion
+    #[ts]
+    pub with_clause: Option<Box<'a, WithClause<'a>>>, // Some(vec![]) for empty assertion
+    #[ts]
+    pub export_kind: ImportOrExportKind, // `export type *`
 }
 
 /// Export Specifier
 ///
-/// Each [`ExportSpecifier`] is one of the named exports in an
-/// [`ExportNamedDeclaration`].
+/// Each [`ExportSpecifier`] is one of the named exports in an [`ExportNamedDeclaration`].
 ///
 /// ## Example
 ///
@@ -2447,11 +2400,11 @@ pub struct ExportAllDeclaration<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub struct ExportSpecifier<'a> {
-	pub span:Span,
-	pub local:ModuleExportName<'a>,
-	pub exported:ModuleExportName<'a>,
-	#[ts]
-	pub export_kind:ImportOrExportKind, // `export type *`
+    pub span: Span,
+    pub local: ModuleExportName<'a>,
+    pub exported: ModuleExportName<'a>,
+    #[ts]
+    pub export_kind: ImportOrExportKind, // `export type *`
 }
 
 inherit_variants! {
@@ -2464,14 +2417,14 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ContentHash, ESTree)]
 pub enum ExportDefaultDeclarationKind<'a> {
-	#[visit(args(flags = ScopeFlags::Function))]
-	FunctionDeclaration(Box<'a, Function<'a>>) = 64,
-	ClassDeclaration(Box<'a, Class<'a>>) = 65,
+    #[visit(args(flags = ScopeFlags::Function))]
+    FunctionDeclaration(Box<'a, Function<'a>>) = 64,
+    ClassDeclaration(Box<'a, Class<'a>>) = 65,
 
-	TSInterfaceDeclaration(Box<'a, TSInterfaceDeclaration<'a>>) = 66,
+    TSInterfaceDeclaration(Box<'a, TSInterfaceDeclaration<'a>>) = 66,
 
-	// `Expression` variants added here by `inherit_variants!` macro
-	@inherit Expression
+    // `Expression` variants added here by `inherit_variants!` macro
+    @inherit Expression
 }
 }
 
@@ -2486,8 +2439,8 @@ pub enum ExportDefaultDeclarationKind<'a> {
 #[derive(Debug, Clone)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ContentHash, ESTree)]
 pub enum ModuleExportName<'a> {
-	IdentifierName(IdentifierName<'a>) = 0,
-	/// For `local` in `ExportSpecifier`: `foo` in `export { foo }`
-	IdentifierReference(IdentifierReference<'a>) = 1,
-	StringLiteral(StringLiteral<'a>) = 2,
+    IdentifierName(IdentifierName<'a>) = 0,
+    /// For `local` in `ExportSpecifier`: `foo` in `export { foo }`
+    IdentifierReference(IdentifierReference<'a>) = 1,
+    StringLiteral(StringLiteral<'a>) = 2,
 }
