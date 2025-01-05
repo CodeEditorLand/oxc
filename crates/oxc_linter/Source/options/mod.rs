@@ -9,7 +9,7 @@ use crate::{FrameworkFlags, fixer::FixKind};
 /// Subset of options used directly by the linter.
 #[derive(Debug, Default, Clone, Copy)]
 #[cfg_attr(test, derive(PartialEq))]
-pub(crate) struct LintOptions {
-	pub fix:FixKind,
-	pub framework_hints:FrameworkFlags,
+pub struct LintOptions {
+    pub fix: FixKind,
+    pub framework_hints: FrameworkFlags,
 }
