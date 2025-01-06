@@ -46,7 +46,7 @@
 		"@codeeditorland-project/types": "workspace:^"
 	},
 	"devDependencies": {
-		"@playform/build": "0.2.0"
+		"@playform/build": "0.2.1"
 	},
 	"publishConfig": {
 		"access": "public"
