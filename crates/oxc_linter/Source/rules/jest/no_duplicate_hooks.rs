@@ -31,81 +31,82 @@ fn no_duplicate_hooks_diagnostic(x0:&str, span:Span) -> OxcDiagnostic {
 pub struct NoDuplicateHooks;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Disallows duplicate hooks in describe blocks.
-	///
-	/// ### Why is this bad?
-	///
-	/// Having duplicate hooks in a describe block can lead to confusion and unexpected behavior.
-	///
-	/// ### Example
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```javascript
-	/// describe('foo', () => {
-	///     beforeEach(() => {
-	///         // some setup
-	///     });
-	///     beforeEach(() => {
-	///         // some setup
-	///     });
-	///     test('foo_test', () => {
-	///         // some test
-	///     });
-	/// });
-	///
-	/// // Nested describe scenario
-	/// describe('foo', () => {
-	///     beforeEach(() => {
-	///         // some setup
-	///     });
-	///     test('foo_test', () => {
-	///         // some test
-	///     });
-	///     describe('bar', () => {
-	///         test('bar_test', () => {
-	///             afterAll(() => {
-	///                 // some teardown
-	///             });
-	///             afterAll(() => {
-	///                 // some teardown
-	///             });
-	///         });
-	///     });
-	/// });
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```javascript
-	/// describe('foo', () => {
-	///     beforeEach(() => {
-	///         // some setup
-	///     });
-	///     test('foo_test', () => {
-	///         // some test
-	///     });
-	/// });
-	///
-	/// // Nested describe scenario
-	/// describe('foo', () => {
-	///     beforeEach(() => {
-	///         // some setup
-	///     });
-	///     test('foo_test', () => {
-	///         // some test
-	///     });
-	///     describe('bar', () => {
-	///         test('bar_test', () => {
-	///             beforeEach(() => {
-	///                 // some setup
-	///             });
-	///         });
-	///     });
-	/// });
-	/// ```
-	NoDuplicateHooks,
-	style,
+    /// ### What it does
+    ///
+    /// Disallows duplicate hooks in describe blocks.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// Having duplicate hooks in a describe block can lead to confusion and unexpected behavior.
+    ///
+    /// ### Example
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```javascript
+    /// describe('foo', () => {
+    ///     beforeEach(() => {
+    ///         // some setup
+    ///     });
+    ///     beforeEach(() => {
+    ///         // some setup
+    ///     });
+    ///     test('foo_test', () => {
+    ///         // some test
+    ///     });
+    /// });
+    ///
+    /// // Nested describe scenario
+    /// describe('foo', () => {
+    ///     beforeEach(() => {
+    ///         // some setup
+    ///     });
+    ///     test('foo_test', () => {
+    ///         // some test
+    ///     });
+    ///     describe('bar', () => {
+    ///         test('bar_test', () => {
+    ///             afterAll(() => {
+    ///                 // some teardown
+    ///             });
+    ///             afterAll(() => {
+    ///                 // some teardown
+    ///             });
+    ///         });
+    ///     });
+    /// });
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
+    /// describe('foo', () => {
+    ///     beforeEach(() => {
+    ///         // some setup
+    ///     });
+    ///     test('foo_test', () => {
+    ///         // some test
+    ///     });
+    /// });
+    ///
+    /// // Nested describe scenario
+    /// describe('foo', () => {
+    ///     beforeEach(() => {
+    ///         // some setup
+    ///     });
+    ///     test('foo_test', () => {
+    ///         // some test
+    ///     });
+    ///     describe('bar', () => {
+    ///         test('bar_test', () => {
+    ///             beforeEach(() => {
+    ///                 // some setup
+    ///             });
+    ///         });
+    ///     });
+    /// });
+    /// ```
+    NoDuplicateHooks,
+    jest,
+    style,
 );
 
 impl Rule for NoDuplicateHooks {
@@ -581,7 +582,7 @@ fn test() {
 		),
 	];
 
-	Tester::new(NoDuplicateHooks::NAME, NoDuplicateHooks::CATEGORY, pass, fail)
-		.with_jest_plugin(true)
-		.test_and_snapshot();
+    Tester::new(NoDuplicateHooks::NAME, NoDuplicateHooks::PLUGIN, pass, fail)
+        .with_jest_plugin(true)
+        .test_and_snapshot();
 }

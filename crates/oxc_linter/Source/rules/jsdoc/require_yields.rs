@@ -24,10 +24,10 @@ fn missing_yields(span:Span) -> OxcDiagnostic {
 		.with_label(span)
 }
 
-fn duplicate_yields(span:Span) -> OxcDiagnostic {
-	OxcDiagnostic::warn("Duplicate `@yields` tags.")
-		.with_help("Remove redundunt `@yields` tag.")
-		.with_label(span)
+fn duplicate_yields(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::warn("Duplicate `@yields` tags.")
+        .with_help("Remove redundant `@yields` tag.")
+        .with_label(span)
 }
 
 fn missing_yields_with_generator(span:Span) -> OxcDiagnostic {
@@ -40,35 +40,36 @@ fn missing_yields_with_generator(span:Span) -> OxcDiagnostic {
 pub struct RequireYields(Box<RequireYieldsConfig>);
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Requires that yields are documented.
-	/// Will also report if multiple `@yields` tags are present.
-	///
-	/// ### Why is this bad?
-	///
-	/// The rule is intended to prevent the omission of `@yields` tags when they are necessary.
-	///
-	/// ### Examples
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```javascript
-	/// function * quux (foo) { yield foo; }
-	///
-	/// /**
-	///  * @yields {undefined}
-	///  * @yields {void}
-	///  */
-	/// function * quux (foo) {}
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```javascript
-	/// /** * @yields Foo */
-	/// function * quux (foo) { yield foo; }
-	/// ```
-	RequireYields,
-	correctness
+    /// ### What it does
+    ///
+    /// Requires that yields are documented.
+    /// Will also report if multiple `@yields` tags are present.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// The rule is intended to prevent the omission of `@yields` tags when they are necessary.
+    ///
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```javascript
+    /// function * quux (foo) { yield foo; }
+    ///
+    /// /**
+    ///  * @yields {undefined}
+    ///  * @yields {void}
+    ///  */
+    /// function * quux (foo) {}
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
+    /// /** * @yields Foo */
+    /// function * quux (foo) { yield foo; }
+    /// ```
+    RequireYields,
+    jsdoc,
+    correctness
 );
 
 #[derive(Debug, Clone, Deserialize)]
@@ -1469,5 +1470,5 @@ fn test() {
 		),
 	];
 
-	Tester::new(RequireYields::NAME, RequireYields::CATEGORY, pass, fail).test_and_snapshot();
+    Tester::new(RequireYields::NAME, RequireYields::PLUGIN, pass, fail).test_and_snapshot();
 }

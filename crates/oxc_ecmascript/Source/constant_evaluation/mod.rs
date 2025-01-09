@@ -1,4 +1,3 @@
-use core::f64;
 use std::{borrow::Cow, cmp::Ordering};
 
 use num_bigint::BigInt;
@@ -267,20 +266,18 @@ pub trait ConstantEvaluation<'a> {
                     _ => unreachable!(),
                 }))
             }
-            BinaryOperator::LessThan => {
-                self.is_less_than(left, right, true).map(|value| match value {
-                    ConstantValue::Undefined => ConstantValue::Boolean(false),
-                    _ => value,
-                })
-            }
+            BinaryOperator::LessThan => self.is_less_than(left, right).map(|value| match value {
+                ConstantValue::Undefined => ConstantValue::Boolean(false),
+                _ => value,
+            }),
             BinaryOperator::GreaterThan => {
-                self.is_less_than(right, left, false).map(|value| match value {
+                self.is_less_than(right, left).map(|value| match value {
                     ConstantValue::Undefined => ConstantValue::Boolean(false),
                     _ => value,
                 })
             }
             BinaryOperator::LessEqualThan => {
-                self.is_less_than(right, left, false).map(|value| match value {
+                self.is_less_than(right, left).map(|value| match value {
                     ConstantValue::Boolean(true) | ConstantValue::Undefined => {
                         ConstantValue::Boolean(false)
                     }
@@ -289,7 +286,7 @@ pub trait ConstantEvaluation<'a> {
                 })
             }
             BinaryOperator::GreaterEqualThan => {
-                self.is_less_than(left, right, true).map(|value| match value {
+                self.is_less_than(left, right).map(|value| match value {
                     ConstantValue::Boolean(true) | ConstantValue::Undefined => {
                         ConstantValue::Boolean(false)
                     }
@@ -299,17 +296,15 @@ pub trait ConstantEvaluation<'a> {
             }
             BinaryOperator::BitwiseAnd | BinaryOperator::BitwiseOR | BinaryOperator::BitwiseXOR => {
                 if left.is_big_int_literal() && right.is_big_int_literal() {
-                    let left_bigint = self.get_side_free_bigint_value(left);
-                    let right_bigint = self.get_side_free_bigint_value(right);
-                    if let (Some(left_val), Some(right_val)) = (left_bigint, right_bigint) {
-                        let result_val: BigInt = match operator {
-                            BinaryOperator::BitwiseAnd => left_val & right_val,
-                            BinaryOperator::BitwiseOR => left_val | right_val,
-                            BinaryOperator::BitwiseXOR => left_val ^ right_val,
-                            _ => unreachable!(),
-                        };
-                        return Some(ConstantValue::BigInt(result_val));
-                    }
+                    let left_val = self.get_side_free_bigint_value(left)?;
+                    let right_val = self.get_side_free_bigint_value(right)?;
+                    let result_val: BigInt = match operator {
+                        BinaryOperator::BitwiseAnd => left_val & right_val,
+                        BinaryOperator::BitwiseOR => left_val | right_val,
+                        BinaryOperator::BitwiseXOR => left_val ^ right_val,
+                        _ => unreachable!(),
+                    };
+                    return Some(ConstantValue::BigInt(result_val));
                 }
                 let left_num = self.get_side_free_number_value(left);
                 let right_num = self.get_side_free_number_value(right);
@@ -331,7 +326,7 @@ pub trait ConstantEvaluation<'a> {
                 if left.may_have_side_effects() {
                     return None;
                 }
-                if let Some(right_ident) = right.get_identifier_reference() {
+                if let Expression::Identifier(right_ident) = right {
                     let name = right_ident.name.as_str();
                     if matches!(name, "Object" | "Number" | "Boolean" | "String")
                         && self.is_global_reference(right_ident)
@@ -447,42 +442,37 @@ pub trait ConstantEvaluation<'a> {
     }
 
     /// <https://tc39.es/ecma262/#sec-abstract-relational-comparison>
-    fn is_less_than(
-        &self,
-        left_expr: &Expression<'a>,
-        right_expr: &Expression<'a>,
-        _left_first: bool,
-    ) -> Option<ConstantValue<'a>> {
-        let left = ValueType::from(left_expr);
-        let right = ValueType::from(right_expr);
+    fn is_less_than(&self, x: &Expression<'a>, y: &Expression<'a>) -> Option<ConstantValue<'a>> {
+        // a. Let px be ? ToPrimitive(x, number).
+        // b. Let py be ? ToPrimitive(y, number).
+        let px = ValueType::from(x);
 
-        if left.is_string() && right.is_string() {
-            let left_string = self.get_side_free_string_value(left_expr);
-            let right_string = self.get_side_free_string_value(right_expr);
-            if let (Some(left_string), Some(right_string)) = (left_string, right_string) {
-                // In JS, browsers parse \v differently. So do not compare strings if one contains \v.
-                if left_string.contains('\u{000B}') || right_string.contains('\u{000B}') {
-                    return None;
-                }
-                return Some(ConstantValue::Boolean(
-                    left_string.cmp(&right_string) == Ordering::Less,
-                ));
-            }
-        }
-
+        // `.toString()` method is called and compared.
         // TODO: bigint is handled very differently in the spec
-        // See <https://tc39.es/ecma262/#sec-islessthan>
-        if left.is_bigint() || right.is_bigint() {
+        if px.is_object() || px.is_undetermined() || px.is_bigint() {
             return None;
         }
 
-        let left_num = self.get_side_free_number_value(left_expr)?;
-        let right_num = self.get_side_free_number_value(right_expr)?;
+        let py = ValueType::from(y);
 
-        if left_num.is_nan() || right_num.is_nan() {
-            return Some(ConstantValue::Undefined);
+        if py.is_object() || py.is_undetermined() || py.is_bigint() {
+            return None;
         }
 
+        if px.is_string() && py.is_string() {
+            let left_string = self.get_side_free_string_value(x)?;
+            let right_string = self.get_side_free_string_value(y)?;
+            return Some(ConstantValue::Boolean(left_string.cmp(&right_string) == Ordering::Less));
+        }
+
+        let left_num = self.get_side_free_number_value(x)?;
+        if left_num.is_nan() {
+            return Some(ConstantValue::Undefined);
+        }
+        let right_num = self.get_side_free_number_value(y)?;
+        if right_num.is_nan() {
+            return Some(ConstantValue::Undefined);
+        }
         Some(ConstantValue::Boolean(left_num < right_num))
     }
 }

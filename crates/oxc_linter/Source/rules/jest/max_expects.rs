@@ -27,39 +27,40 @@ impl Default for MaxExpects {
 }
 
 declare_oxc_lint!(
-	/// ### What it does
-	/// As more assertions are made, there is a possible tendency for the test to be
-	/// more likely to mix multiple objectives. To avoid this, this rule reports when
-	/// the maximum number of assertions is exceeded.
-	///
-	/// ### Why is this bad?
-	///
-	/// This rule enforces a maximum number of `expect()` calls.
-	/// The following patterns are considered warnings (with the default option of `{ "max": 5 } `):
-	///
-	/// ### Example
-	///
-	/// ```javascript
-	/// test('should not pass', () => {
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	/// });
-	///
-	/// it('should not pass', () => {
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	///     expect(true).toBeDefined();
-	/// });
-	/// ```
-	MaxExpects,
-	style,
+    /// ### What it does
+    /// As more assertions are made, there is a possible tendency for the test to be
+    /// more likely to mix multiple objectives. To avoid this, this rule reports when
+    /// the maximum number of assertions is exceeded.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// This rule enforces a maximum number of `expect()` calls.
+    /// The following patterns are considered warnings (with the default option of `{ "max": 5 } `):
+    ///
+    /// ### Example
+    ///
+    /// ```javascript
+    /// test('should not pass', () => {
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    /// });
+    ///
+    /// it('should not pass', () => {
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    ///     expect(true).toBeDefined();
+    /// });
+    /// ```
+    MaxExpects,
+    jest,
+    style,
 );
 
 impl Rule for MaxExpects {
@@ -582,7 +583,7 @@ fn test() {
 		),
 	];
 
-	Tester::new(MaxExpects::NAME, MaxExpects::CATEGORY, pass, fail)
-		.with_jest_plugin(true)
-		.test_and_snapshot();
+    Tester::new(MaxExpects::NAME, MaxExpects::PLUGIN, pass, fail)
+        .with_jest_plugin(true)
+        .test_and_snapshot();
 }

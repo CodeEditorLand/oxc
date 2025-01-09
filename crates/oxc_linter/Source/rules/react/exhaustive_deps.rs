@@ -191,38 +191,38 @@ fn ref_accessed_directly_in_effect_cleanup_diagnostic(span:Span) -> OxcDiagnosti
 pub struct ExhaustiveDeps;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Verifies the list of dependencies for Hooks like `useEffect` and similar.
-	///
-	/// ### Why is this bad?
-	///
-	/// React Hooks like `useEffect` and similar require a list of dependencies to be passed as an argument. This list is used to determine when the effect should be re-run. If the list is missing or incomplete, the effect may run more often than necessary, or not at all.
-	///
-	/// ### Examples
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```javascript
-	/// function MyComponent(props) {
-	///     useEffect(() => {
-	///         console.log(props.foo);
-	///     }, []);
-	///     // `props` is missing from the dependencies array
-	///     return <div />;
-	/// }
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```javascript
-	/// function MyComponent(props) {
-	///     useEffect(() => {
-	///         console.log(props.foo);
-	///     }, [props]);
-	///     return <div />;
-	/// }
-
-	ExhaustiveDeps,
-	nursery
+    /// ### What it does
+    ///
+    /// Verifies the list of dependencies for Hooks like `useEffect` and similar.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// React Hooks like `useEffect` and similar require a list of dependencies to be passed as an argument. This list is used to determine when the effect should be re-run. If the list is missing or incomplete, the effect may run more often than necessary, or not at all.
+    ///
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```javascript
+    /// function MyComponent(props) {
+    ///     useEffect(() => {
+    ///         console.log(props.foo);
+    ///     }, []);
+    ///     // `props` is missing from the dependencies array
+    ///     return <div />;
+    /// }
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
+    /// function MyComponent(props) {
+    ///     useEffect(() => {
+    ///         console.log(props.foo);
+    ///     }, [props]);
+    ///     return <div />;
+    /// }
+    ExhaustiveDeps,
+    react,
+    nursery
 );
 
 const HOOKS_USELESS_WITHOUT_DEPENDENCIES:phf::Set<&'static str> =
@@ -3870,5 +3870,5 @@ fn test() {
         }",
 	];
 
-	Tester::new(ExhaustiveDeps::NAME, ExhaustiveDeps::CATEGORY, pass, fail).test_and_snapshot();
+    Tester::new(ExhaustiveDeps::NAME, ExhaustiveDeps::PLUGIN, pass, fail).test_and_snapshot();
 }

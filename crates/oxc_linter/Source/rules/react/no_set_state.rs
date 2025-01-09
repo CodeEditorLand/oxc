@@ -18,37 +18,38 @@ fn no_set_state_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct NoSetState;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Disallow the usage of `this.setState` in React components.
-	///
-	/// ### Why is this bad?
-	///
-	/// When using an architecture that separates your application state from your UI components
-	/// (e.g. Flux), it may be desirable to forbid the use of local component state. This rule is
-	/// especially helpful in read-only applications (that don't use forms), since local component
-	/// state should rarely be necessary in such cases.
-	///
-	/// ### Example
-	/// ```jsx
-	/// var Hello = createReactClass({
-	///   getInitialState: function() {
-	///     return {
-	///       name: this.props.name
-	///     };
-	///   },
-	///   handleClick: function() {
-	///     this.setState({
-	///       name: this.props.name.toUpperCase()
-	///     });
-	///   },
-	///   render: function() {
-	///     return <div onClick={this.handleClick.bind(this)}>Hello {this.state.name}</div>;
-	///   }
-	/// });
-	/// ```
-	NoSetState,
-	style,
+    /// ### What it does
+    ///
+    /// Disallow the usage of `this.setState` in React components.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// When using an architecture that separates your application state from your UI components
+    /// (e.g. Flux), it may be desirable to forbid the use of local component state. This rule is
+    /// especially helpful in read-only applications (that don't use forms), since local component
+    /// state should rarely be necessary in such cases.
+    ///
+    /// ### Example
+    /// ```jsx
+    /// var Hello = createReactClass({
+    ///   getInitialState: function() {
+    ///     return {
+    ///       name: this.props.name
+    ///     };
+    ///   },
+    ///   handleClick: function() {
+    ///     this.setState({
+    ///       name: this.props.name.toUpperCase()
+    ///     });
+    ///   },
+    ///   render: function() {
+    ///     return <div onClick={this.handleClick.bind(this)}>Hello {this.state.name}</div>;
+    ///   }
+    /// });
+    /// ```
+    NoSetState,
+    react,
+    style,
 );
 
 impl Rule for NoSetState {
@@ -185,5 +186,5 @@ fn test() {
 			      ",
 	];
 
-	Tester::new(NoSetState::NAME, NoSetState::CATEGORY, pass, fail).test_and_snapshot();
+    Tester::new(NoSetState::NAME, NoSetState::PLUGIN, pass, fail).test_and_snapshot();
 }

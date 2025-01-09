@@ -35,17 +35,18 @@ fn next_script_for_ga_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct NextScriptForGa;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	///
-	/// ### Why is this bad?
-	///
-	///
-	/// ### Example
-	/// ```javascript
-	/// ```
-	NextScriptForGa,
-	correctness
+    /// ### What it does
+    ///
+    ///
+    /// ### Why is this bad?
+    ///
+    ///
+    /// ### Example
+    /// ```javascript
+    /// ```
+    NextScriptForGa,
+    nextjs,
+    correctness
 );
 
 impl Rule for NextScriptForGa {
@@ -329,7 +330,7 @@ fn test() {
 			      }",
 	];
 
-	Tester::new(NextScriptForGa::NAME, NextScriptForGa::CATEGORY, pass, fail)
-		.with_nextjs_plugin(true)
-		.test_and_snapshot();
+    Tester::new(NextScriptForGa::NAME, NextScriptForGa::PLUGIN, pass, fail)
+        .with_nextjs_plugin(true)
+        .test_and_snapshot();
 }

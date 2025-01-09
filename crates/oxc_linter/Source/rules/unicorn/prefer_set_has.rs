@@ -39,34 +39,35 @@ fn prefer_set_has_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct PreferSetHas;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Prefer `Set#has()` over `Array#includes()` when checking for existence or non-existence.
-	///
-	/// ### Why is this bad?
-	///
-	/// Set#has() is faster than Array#includes().
-	///
-	/// ### Examples
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```js
-	/// const array = [1, 2, 3];
-	/// const hasValue = value => array.includes(value);
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```js
-	/// const set = new Set([1, 2, 3]);
-	/// const hasValue = value => set.has(value);
-	/// ```
-	/// ```js
-	/// const array = [1, 2, 3];
-	/// const hasOne = array.includes(1);
-	/// ```
-	PreferSetHas,
-	perf,
-	dangerous_fix
+    /// ### What it does
+    ///
+    /// Prefer `Set#has()` over `Array#includes()` when checking for existence or non-existence.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// Set#has() is faster than Array#includes().
+    ///
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```js
+    /// const array = [1, 2, 3];
+    /// const hasValue = value => array.includes(value);
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```js
+    /// const set = new Set([1, 2, 3]);
+    /// const hasValue = value => set.has(value);
+    /// ```
+    /// ```js
+    /// const array = [1, 2, 3];
+    /// const hasOne = array.includes(1);
+    /// ```
+    PreferSetHas,
+    unicorn,
+    perf,
+    dangerous_fix
 );
 
 fn is_array_of_or_from(callee:&MemberExpression) -> bool {
@@ -74,14 +75,15 @@ fn is_array_of_or_from(callee:&MemberExpression) -> bool {
 		|| callee.is_specific_member_access("Array", "from")
 }
 
-fn is_kind_of_array_expr(expr:&Expression) -> bool {
-	match expr {
-		Expression::NewExpression(new_expr) => {
-			new_expr
-				.callee
-				.get_identifier_reference()
-				.map_or(false, |ident| ident.name == "Array")
-		},
+fn is_kind_of_array_expr(expr: &Expression) -> bool {
+    match expr {
+        Expression::NewExpression(new_expr) => {
+            new_expr.callee.get_identifier_reference().is_some_and(|ident| ident.name == "Array")
+        }
+        Expression::CallExpression(call_expr) => {
+            let Some(callee) = call_expr.callee.get_member_expr() else {
+                return call_expr.callee_name().is_some_and(|name| name == "Array");
+            };
 
 		Expression::CallExpression(call_expr) => {
 			let Some(callee) = call_expr.callee.get_member_expr() else {
@@ -1073,7 +1075,7 @@ fn test() {
 		),
 	];
 
-	Tester::new(PreferSetHas::NAME, PreferSetHas::CATEGORY, pass, fail)
-		.expect_fix(fix)
-		.test_and_snapshot();
+    Tester::new(PreferSetHas::NAME, PreferSetHas::PLUGIN, pass, fail)
+        .expect_fix(fix)
+        .test_and_snapshot();
 }

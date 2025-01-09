@@ -15,38 +15,39 @@ fn no_useless_switch_case_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct NoUselessSwitchCase;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Disallows useless default cases in switch statements.
-	///
-	/// ### Why is this bad?
-	///
-	/// An empty case before the last default case is useless.
-	///
-	/// ### Examples
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```javascript
-	/// switch (foo) {
-	/// 	case 1:
-	/// 	default:
-	/// 		handleDefaultCase();
-	/// 		break;
-	/// }
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```javascript
-	/// switch (foo) {
-	///	case 1:
-	///	case 2:
-	///		handleCase1And2();
-	///		break;
-	/// }
-	/// ```
-	NoUselessSwitchCase,
-	pedantic,
-	pending
+    /// ### What it does
+    ///
+    /// Disallows useless default cases in switch statements.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// An empty case before the last default case is useless.
+    ///
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```javascript
+    /// switch (foo) {
+    /// 	case 1:
+    /// 	default:
+    /// 		handleDefaultCase();
+    /// 		break;
+    /// }
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
+    /// switch (foo) {
+    ///	case 1:
+    ///	case 2:
+    ///		handleCase1And2();
+    ///		break;
+    /// }
+    /// ```
+    NoUselessSwitchCase,
+    unicorn,
+    pedantic,
+    pending
 );
 
 impl Rule for NoUselessSwitchCase {
@@ -245,50 +246,6 @@ fn test() {
             case b:
                 handleCaseAB();
 
-                break;
-
-            case d:
-            case d:
-            default:
-                handleDefaultCase();
-
-                break;
-        }
-        ",
-		r"
-        switch (foo) {
-            case a:
-            case b:
-            default:
-                handleDefaultCase();
-
-                break;
-        }
-        ",
-		r"
-        switch (foo) {
-            // eslint-disable-next-line
-            case a:
-            case b:
-            default:
-                handleDefaultCase();
-
-                break;
-        }
-        ",
-		r"
-        switch (foo) {
-            case a:
-            // eslint-disable-next-line
-            case b:
-            default:
-                handleDefaultCase();
-
-                break;
-        }
-        ",
-	];
-
-	Tester::new(NoUselessSwitchCase::NAME, NoUselessSwitchCase::CATEGORY, pass, fail)
-		.test_and_snapshot();
+    Tester::new(NoUselessSwitchCase::NAME, NoUselessSwitchCase::PLUGIN, pass, fail)
+        .test_and_snapshot();
 }

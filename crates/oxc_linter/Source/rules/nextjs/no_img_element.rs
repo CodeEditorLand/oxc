@@ -15,17 +15,18 @@ fn no_img_element_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct NoImgElement;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	///
-	/// ### Why is this bad?
-	///
-	///
-	/// ### Example
-	/// ```javascript
-	/// ```
-	NoImgElement,
-	correctness
+    /// ### What it does
+    ///
+    ///
+    /// ### Why is this bad?
+    ///
+    ///
+    /// ### Example
+    /// ```javascript
+    /// ```
+    NoImgElement,
+    nextjs,
+    correctness
 );
 
 impl Rule for NoImgElement {
@@ -151,5 +152,5 @@ fn test() {
 			      }"#,
 	];
 
-	Tester::new(NoImgElement::NAME, NoImgElement::CATEGORY, pass, fail).test_and_snapshot();
+    Tester::new(NoImgElement::NAME, NoImgElement::PLUGIN, pass, fail).test_and_snapshot();
 }

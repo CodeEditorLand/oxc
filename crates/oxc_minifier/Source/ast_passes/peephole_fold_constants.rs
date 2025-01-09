@@ -2,7 +2,6 @@ use oxc_ast::ast::*;
 use oxc_ecmascript::{
     constant_evaluation::{ConstantEvaluation, ConstantValue, ValueType},
     side_effects::MayHaveSideEffects,
-    ToJsString,
 };
 use oxc_span::{GetSpan, SPAN};
 use oxc_syntax::{
@@ -11,7 +10,7 @@ use oxc_syntax::{
 };
 use oxc_traverse::{traverse_mut_with_ctx, Ancestor, ReusableTraverseCtx, Traverse, TraverseCtx};
 
-use crate::{node_util::Ctx, CompressorPass};
+use crate::{ctx::Ctx, CompressorPass};
 
 /// Constant Folding
 ///
@@ -31,13 +30,14 @@ impl<'a> Traverse<'a> for PeepholeFoldConstants {
     fn exit_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         let ctx = Ctx(ctx);
         if let Some(folded_expr) = match expr {
-            Expression::BinaryExpression(e) => Self::try_fold_binary_expr(e, ctx),
+            Expression::BinaryExpression(e) => Self::try_fold_binary_expr(e, ctx)
+                .or_else(|| Self::try_fold_binary_typeof_comparison(e, ctx)),
             Expression::UnaryExpression(e) => Self::try_fold_unary_expr(e, ctx),
             Expression::StaticMemberExpression(e) => Self::try_fold_static_member_expr(e, ctx),
             Expression::LogicalExpression(e) => Self::try_fold_logical_expr(e, ctx),
             Expression::ChainExpression(e) => Self::try_fold_optional_chain(e, ctx),
-            Expression::CallExpression(e) => Self::try_fold_number_constructor(e, ctx)
-                .or_else(|| Self::try_fold_to_string(e, ctx)),
+            Expression::CallExpression(e) => Self::try_fold_number_constructor(e, ctx),
+            Expression::ObjectExpression(e) => self.fold_object_spread(e, ctx),
             _ => None,
         } {
             *expr = folded_expr;
@@ -60,6 +60,8 @@ impl<'a, 'b> PeepholeFoldConstants {
             UnaryOperator::LogicalNot if matches!(&e.argument, Expression::NumericLiteral(lit) if lit.value == 0.0 || lit.value == 1.0) => {
                 None
             }
+            // Do not fold big int.
+            UnaryOperator::UnaryNegation if e.argument.is_big_int_literal() => None,
             _ => ctx.eval_unary_expression(e).map(|v| ctx.value_to_expr(e.span, v)),
         }
     }
@@ -334,6 +336,18 @@ impl<'a, 'b> PeepholeFoldConstants {
                 }
             }
         }
+
+        // typeof foo + ""
+        if let Expression::UnaryExpression(left) = &e.left {
+            if left.operator.is_typeof() {
+                if let Expression::StringLiteral(right) = &e.right {
+                    if right.value.is_empty() {
+                        return Some(ctx.ast.move_expression(&mut e.left));
+                    }
+                }
+            }
+        }
+
         None
     }
 
@@ -593,24 +607,85 @@ impl<'a, 'b> PeepholeFoldConstants {
         ))
     }
 
-    fn try_fold_to_string(e: &CallExpression<'a>, ctx: Ctx<'a, 'b>) -> Option<Expression<'a>> {
-        let Expression::StaticMemberExpression(member_expr) = &e.callee else { return None };
-        if member_expr.property.name != "toString" {
-            return None;
+    // `typeof a === typeof b` -> `typeof a == typeof b`, `typeof a != typeof b` -> `typeof a != typeof b`,
+    // `typeof a == typeof a` -> `true`, `typeof a != typeof a` -> `false`
+    fn try_fold_binary_typeof_comparison(
+        bin_expr: &mut BinaryExpression<'a>,
+        ctx: Ctx<'a, 'b>,
+    ) -> Option<Expression<'a>> {
+        if bin_expr.operator.is_equality() {
+            if let (Expression::UnaryExpression(left), Expression::UnaryExpression(right)) =
+                (&bin_expr.left, &bin_expr.right)
+            {
+                if left.operator.is_typeof() && right.operator.is_typeof() {
+                    if let (
+                        Expression::Identifier(left_ident),
+                        Expression::Identifier(right_ident),
+                    ) = (&left.argument, &right.argument)
+                    {
+                        if left_ident.name == right_ident.name {
+                            return Some(ctx.ast.expression_boolean_literal(
+                                bin_expr.span,
+                                matches!(
+                                    bin_expr.operator,
+                                    BinaryOperator::StrictEquality | BinaryOperator::Equality
+                                ),
+                            ));
+                        }
+                    }
+
+                    if matches!(
+                        bin_expr.operator,
+                        BinaryOperator::StrictEquality | BinaryOperator::StrictInequality
+                    ) {
+                        return Some(ctx.ast.expression_binary(
+                            bin_expr.span,
+                            ctx.ast.move_expression(&mut bin_expr.left),
+                            if bin_expr.operator == BinaryOperator::StrictEquality {
+                                BinaryOperator::Equality
+                            } else {
+                                BinaryOperator::Inequality
+                            },
+                            ctx.ast.move_expression(&mut bin_expr.right),
+                        ));
+                    }
+                }
+            }
         }
-        if !e.arguments.is_empty() {
-            return None;
+
+        None
+    }
+
+    fn fold_object_spread(
+        &mut self,
+        e: &mut ObjectExpression<'a>,
+        ctx: Ctx<'a, 'b>,
+    ) -> Option<Expression<'a>> {
+        let len = e.properties.len();
+        e.properties.retain(|p| {
+            if let ObjectPropertyKind::SpreadProperty(spread_element) = p {
+                let e = &spread_element.argument;
+                if e.is_literal() || ctx.is_expression_undefined(e) {
+                    return false;
+                }
+                if let Expression::ObjectExpression(o) = e {
+                    if o.properties.is_empty() {
+                        return false;
+                    }
+                }
+                if let Expression::ArrayExpression(o) = e {
+                    if o.elements.is_empty() {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            true
+        });
+        if e.properties.len() != len {
+            self.changed = true;
         }
-        let object = &member_expr.object;
-        if !matches!(
-            ValueType::from(object),
-            ValueType::String | ValueType::Boolean | ValueType::Number
-        ) {
-            return None;
-        }
-        object
-            .to_js_string()
-            .map(|value| ctx.ast.expression_string_literal(object.span(), value, None))
+        None
     }
 }
 
@@ -640,6 +715,14 @@ mod test {
     #[test]
     fn test_comparison() {
         test("(1, 2) !== 2", "false");
+        test_same("({} <= {})");
+        test_same("({} >= {})");
+        test_same("({} > {})");
+        test_same("({} < {})");
+        test_same("([] <= [])");
+        test_same("([] >= [])");
+        test_same("([] > [])");
+        test_same("([] < [])");
     }
 
     #[test]
@@ -919,11 +1002,8 @@ mod test {
         test("'a' == 'a'", "true");
         test("'b' != 'a'", "true");
         test_same("typeof a != 'number'");
-        test_same("typeof a == typeof a");
         test("'a' === 'a'", "true");
         test("'b' !== 'a'", "true");
-        test_same("typeof a === typeof a");
-        test_same("typeof a !== typeof a");
         test_same("'' + x <= '' + y");
         test_same("'' + x != '' + y");
         test_same("'' + x === '' + y");
@@ -965,79 +1045,6 @@ mod test {
         test_same("''+x<+y");
         test_same("''+x==+y");
         test_same("'' + x === +y");
-    }
-
-    #[test]
-    #[ignore]
-    fn test_bigint_number_comparison() {
-        test("1n < 2", "true");
-        test("1n > 2", "false");
-        test("1n == 1", "true");
-        test("1n == 2", "false");
-
-        // comparing with decimals is allowed
-        test("1n < 1.1", "true");
-        test("1n < 1.9", "true");
-        test("1n < 0.9", "false");
-        test("-1n < -1.1", "false");
-        test("-1n < -1.9", "false");
-        test("-1n < -0.9", "true");
-        test("1n > 1.1", "false");
-        test("1n > 0.9", "true");
-        test("-1n > -1.1", "true");
-        test("-1n > -0.9", "false");
-
-        // Don't fold unsafely large numbers because there might be floating-point error
-        test(&format!("0n > {MAX_SAFE_INT}"), "false");
-        test(&format!("0n < {MAX_SAFE_INT}"), "true");
-        test(&format!("0n > {NEG_MAX_SAFE_INT}"), "true");
-        test(&format!("0n < {NEG_MAX_SAFE_INT}"), "false");
-        test(&format!("0n > {MAX_SAFE_FLOAT}"), "false");
-        test(&format!("0n < {MAX_SAFE_FLOAT}"), "true");
-        test(&format!("0n > {NEG_MAX_SAFE_FLOAT}"), "true");
-        test(&format!("0n < {NEG_MAX_SAFE_FLOAT}"), "false");
-
-        // comparing with Infinity is allowed
-        test("1n < Infinity", "true");
-        test("1n > Infinity", "false");
-        test("1n < -Infinity", "false");
-        test("1n > -Infinity", "true");
-
-        // null is interpreted as 0 when comparing with bigint
-        // test("1n < null", "false");
-        // test("1n > null", "true");
-    }
-
-    #[test]
-    #[ignore]
-    fn test_bigint_string_comparison() {
-        test("1n < '2'", "true");
-        test("2n > '1'", "true");
-        test("123n > '34'", "true");
-        test("1n == '1'", "true");
-        test("1n == '2'", "false");
-        test("1n != '1'", "false");
-        test("1n === '1'", "false");
-        test("1n !== '1'", "true");
-    }
-
-    #[test]
-    #[ignore]
-    fn test_string_bigint_comparison() {
-        test("'1' < 2n", "true");
-        test("'2' > 1n", "true");
-        test("'123' > 34n", "true");
-        test("'1' == 1n", "true");
-        test("'1' == 2n", "false");
-        test("'1' != 1n", "false");
-        test("'1' === 1n", "false");
-        test("'1' !== 1n", "true");
-    }
-
-    #[test]
-    fn test_object_bigint_comparison() {
-        test_same("{ valueOf: function() { return 0n; } } != 0n");
-        test_same("{ toString: function() { return '0'; } } != 0n");
     }
 
     #[test]
@@ -1368,64 +1375,6 @@ mod test {
 
         test("x = Infinity | NaN", "x=0");
         test("x = 12 | NaN", "x=12");
-    }
-
-    #[test]
-    fn test_fold_bitwise_op_with_big_int() {
-        test("x = 1n & 1n", "x = 1n");
-        test("x = 1n & 2n", "x = 0n");
-        test("x = 3n & 1n", "x = 1n");
-        test("x = 3n & 3n", "x = 3n");
-
-        test("x = 1n | 1n", "x = 1n");
-        test("x = 1n | 2n", "x = 3n");
-        test("x = 1n | 3n", "x = 3n");
-        test("x = 3n | 1n", "x = 3n");
-        test("x = 3n | 3n", "x = 3n");
-        test("x = 1n | 4n", "x = 5n");
-
-        test("x = 1n ^ 1n", "x = 0n");
-        test("x = 1n ^ 2n", "x = 3n");
-        test("x = 3n ^ 1n", "x = 2n");
-        test("x = 3n ^ 3n", "x = 0n");
-
-        test("x = -1n & 0n", "x = 0n");
-        test("x = 0n & -1n", "x = 0n");
-        test("x = 1n & 4n", "x = 0n");
-        test("x = 2n & 3n", "x = 2n");
-
-        test("x = 1n & 3000000000n", "x = 0n");
-        test("x = 3000000000n & 1n", "x = 0n");
-
-        // bitwise OR does not affect the sign of a bigint
-        test("x = 1n | 3000000001n", "x = 3000000001n");
-        test("x = 4294967295n | 0n", "x = 4294967295n");
-
-        test("x = y & 1n & 1n", "x = y & 1n");
-        test("x = y & 1n & 2n", "x = y & 0n");
-        test("x = y & 3n & 1n", "x = y & 1n");
-        test("x = 3n & y & 1n", "x = y & 1n");
-        test("x = y & 3n & 3n", "x = y & 3n");
-        test("x = 3n & y & 3n", "x = y & 3n");
-
-        test("x = y | 1n | 1n", "x = y | 1n");
-        test("x = y | 1n | 2n", "x = y | 3n");
-        test("x = y | 3n | 1n", "x = y | 3n");
-        test("x = 3n | y | 1n", "x = y | 3n");
-        test("x = y | 3n | 3n", "x = y | 3n");
-        test("x = 3n | y | 3n", "x = y | 3n");
-
-        test("x = y ^ 1n ^ 1n", "x = y ^ 0n");
-        test("x = y ^ 1n ^ 2n", "x = y ^ 3n");
-        test("x = y ^ 3n ^ 1n", "x = y ^ 2n");
-        test("x = 3n ^ y ^ 1n", "x = y ^ 2n");
-        test("x = y ^ 3n ^ 3n", "x = y ^ 0n");
-        test("x = 3n ^ y ^ 3n", "x = y ^ 0n");
-
-        // TypeError: Cannot mix BigInt and other types
-        test_same("1n & 1");
-        test_same("1n | 1");
-        test_same("1n ^ 1");
     }
 
     #[test]
@@ -1771,10 +1720,171 @@ mod test {
     }
 
     #[test]
-    fn test_fold_to_string() {
-        test("'x'.toString()", "'x'");
-        test("1 .toString()", "'1'");
-        test("true.toString()", "'true'");
-        test("false.toString()", "'false'");
+    fn test_fold_typeof_addition_string() {
+        test_same("typeof foo");
+        test_same("typeof foo + '123'");
+        test("typeof foo + ''", "typeof foo");
+        test_same("typeof foo - ''");
+    }
+
+    #[test]
+    fn test_fold_same_typeof() {
+        test("typeof foo === typeof bar", "typeof foo == typeof bar");
+        test("typeof foo !== typeof bar", "typeof foo != typeof bar");
+        test("typeof foo.bar === typeof foo.bar", "typeof foo.bar == typeof foo.bar");
+        test("typeof foo.bar !== typeof foo.bar", "typeof foo.bar != typeof foo.bar");
+    }
+
+    // TODO: All big ints are rare and difficult to handle.
+    mod bigint {
+        use super::{
+            test, test_same, MAX_SAFE_FLOAT, MAX_SAFE_INT, NEG_MAX_SAFE_FLOAT, NEG_MAX_SAFE_INT,
+        };
+
+        #[test]
+        fn test_fold_bitwise_op_with_big_int() {
+            test("x = 1n & 1n", "x = 1n");
+            test("x = 1n & 2n", "x = 0n");
+            test("x = 3n & 1n", "x = 1n");
+            test("x = 3n & 3n", "x = 3n");
+
+            test("x = 1n | 1n", "x = 1n");
+            test("x = 1n | 2n", "x = 3n");
+            test("x = 1n | 3n", "x = 3n");
+            test("x = 3n | 1n", "x = 3n");
+            test("x = 3n | 3n", "x = 3n");
+            test("x = 1n | 4n", "x = 5n");
+
+            test("x = 1n ^ 1n", "x = 0n");
+            test("x = 1n ^ 2n", "x = 3n");
+            test("x = 3n ^ 1n", "x = 2n");
+            test("x = 3n ^ 3n", "x = 0n");
+
+            // test("x = -1n & 0n", "x = 0n");
+            // test("x = 0n & -1n", "x = 0n");
+            test("x = 1n & 4n", "x = 0n");
+            test("x = 2n & 3n", "x = 2n");
+
+            test("x = 1n & 3000000000n", "x = 0n");
+            test("x = 3000000000n & 1n", "x = 0n");
+
+            // bitwise OR does not affect the sign of a bigint
+            test("x = 1n | 3000000001n", "x = 3000000001n");
+            test("x = 4294967295n | 0n", "x = 4294967295n");
+
+            test("x = y & 1n & 1n", "x = y & 1n");
+            test("x = y & 1n & 2n", "x = y & 0n");
+            test("x = y & 3n & 1n", "x = y & 1n");
+            test("x = 3n & y & 1n", "x = y & 1n");
+            test("x = y & 3n & 3n", "x = y & 3n");
+            test("x = 3n & y & 3n", "x = y & 3n");
+
+            test("x = y | 1n | 1n", "x = y | 1n");
+            test("x = y | 1n | 2n", "x = y | 3n");
+            test("x = y | 3n | 1n", "x = y | 3n");
+            test("x = 3n | y | 1n", "x = y | 3n");
+            test("x = y | 3n | 3n", "x = y | 3n");
+            test("x = 3n | y | 3n", "x = y | 3n");
+
+            test("x = y ^ 1n ^ 1n", "x = y ^ 0n");
+            test("x = y ^ 1n ^ 2n", "x = y ^ 3n");
+            test("x = y ^ 3n ^ 1n", "x = y ^ 2n");
+            test("x = 3n ^ y ^ 1n", "x = y ^ 2n");
+            test("x = y ^ 3n ^ 3n", "x = y ^ 0n");
+            test("x = 3n ^ y ^ 3n", "x = y ^ 0n");
+
+            // TypeError: Cannot mix BigInt and other types
+            test_same("1n & 1");
+            test_same("1n | 1");
+            test_same("1n ^ 1");
+        }
+
+        #[test]
+        #[ignore]
+        fn test_bigint_number_comparison() {
+            test("1n < 2", "true");
+            test("1n > 2", "false");
+            test("1n == 1", "true");
+            test("1n == 2", "false");
+
+            // comparing with decimals is allowed
+            test("1n < 1.1", "true");
+            test("1n < 1.9", "true");
+            test("1n < 0.9", "false");
+            test("-1n < -1.1", "false");
+            test("-1n < -1.9", "false");
+            test("-1n < -0.9", "true");
+            test("1n > 1.1", "false");
+            test("1n > 0.9", "true");
+            test("-1n > -1.1", "true");
+            test("-1n > -0.9", "false");
+
+            // Don't fold unsafely large numbers because there might be floating-point error
+            test(&format!("0n > {MAX_SAFE_INT}"), "false");
+            test(&format!("0n < {MAX_SAFE_INT}"), "true");
+            test(&format!("0n > {NEG_MAX_SAFE_INT}"), "true");
+            test(&format!("0n < {NEG_MAX_SAFE_INT}"), "false");
+            test(&format!("0n > {MAX_SAFE_FLOAT}"), "false");
+            test(&format!("0n < {MAX_SAFE_FLOAT}"), "true");
+            test(&format!("0n > {NEG_MAX_SAFE_FLOAT}"), "true");
+            test(&format!("0n < {NEG_MAX_SAFE_FLOAT}"), "false");
+
+            // comparing with Infinity is allowed
+            test("1n < Infinity", "true");
+            test("1n > Infinity", "false");
+            test("1n < -Infinity", "false");
+            test("1n > -Infinity", "true");
+
+            // null is interpreted as 0 when comparing with bigint
+            // test("1n < null", "false");
+            // test("1n > null", "true");
+        }
+
+        #[test]
+        #[ignore]
+        fn test_bigint_string_comparison() {
+            test("1n < '2'", "true");
+            test("2n > '1'", "true");
+            test("123n > '34'", "true");
+            test("1n == '1'", "true");
+            test("1n == '2'", "false");
+            test("1n != '1'", "false");
+            test("1n === '1'", "false");
+            test("1n !== '1'", "true");
+        }
+
+        #[test]
+        #[ignore]
+        fn test_string_bigint_comparison() {
+            test("'1' < 2n", "true");
+            test("'2' > 1n", "true");
+            test("'123' > 34n", "true");
+            test("'1' == 1n", "true");
+            test("'1' == 2n", "false");
+            test("'1' != 1n", "false");
+            test("'1' === 1n", "false");
+            test("'1' !== 1n", "true");
+        }
+
+        #[test]
+        fn test_object_bigint_comparison() {
+            test_same("{ valueOf: function() { return 0n; } } != 0n");
+            test_same("{ toString: function() { return '0'; } } != 0n");
+        }
+
+        #[test]
+        fn test_fold_object_spread() {
+            test_same("({ z, ...a })");
+            let result = "({ z })";
+            test("({ z, ...[] })", result);
+            test("({ z, ...{} })", result);
+            test("({ z, ...undefined })", result);
+            test("({ z, ...void 0 })", result);
+            test("({ z, ...null })", result);
+            test("({ z, ...true })", result);
+            test("({ z, ...1 })", result);
+            test("({ z, ...1n })", result);
+            test("({ z, .../asdf/ })", result);
+        }
     }
 }

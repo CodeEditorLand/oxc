@@ -27,46 +27,47 @@ fn missing_returns_diagnostic(span:Span) -> OxcDiagnostic {
 		.with_help("Add `@returns` tag to the JSDoc comment.")
 		.with_label(span)
 }
-fn duplicate_returns_diagnostic(span:Span) -> OxcDiagnostic {
-	OxcDiagnostic::warn("Duplicate `@returns` tags.")
-		.with_help("Remove redundunt `@returns` tag.")
-		.with_label(span)
+fn duplicate_returns_diagnostic(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::warn("Duplicate `@returns` tags.")
+        .with_help("Remove redundant `@returns` tag.")
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct RequireReturns(Box<RequireReturnsConfig>);
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Requires that return statements are documented.
-	/// Will also report if multiple `@returns` tags are present.
-	///
-	/// ### Why is this bad?
-	///
-	/// The rule is intended to prevent the omission of `@returns` tag when necessary.
-	///
-	/// ### Examples
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```javascript
-	/// /** Foo. */
-	/// function quux () { return foo; }
-	///
-	/// /**
-	///  * @returns Foo!
-	///  * @returns Foo?
-	///  */
-	/// function quux () { return foo; }
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```javascript
-	/// /** @returns Foo. */
-	/// function quux () { return foo; }
-	/// ```
-	RequireReturns,
-	pedantic,
+    /// ### What it does
+    ///
+    /// Requires that return statements are documented.
+    /// Will also report if multiple `@returns` tags are present.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// The rule is intended to prevent the omission of `@returns` tag when necessary.
+    ///
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```javascript
+    /// /** Foo. */
+    /// function quux () { return foo; }
+    ///
+    /// /**
+    ///  * @returns Foo!
+    ///  * @returns Foo?
+    ///  */
+    /// function quux () { return foo; }
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
+    /// /** @returns Foo. */
+    /// function quux () { return foo; }
+    /// ```
+    RequireReturns,
+    jsdoc,
+    pedantic,
 );
 
 #[derive(Debug, Clone, Deserialize)]
@@ -2260,5 +2261,5 @@ fn test() {
 		),
 	];
 
-	Tester::new(RequireReturns::NAME, RequireReturns::CATEGORY, pass, fail).test_and_snapshot();
+    Tester::new(RequireReturns::NAME, RequireReturns::PLUGIN, pass, fail).test_and_snapshot();
 }

@@ -18,19 +18,20 @@ fn no_styled_jsx_in_document_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct NoStyledJsxInDocument;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Prevent usage of styled-jsx in pages/_document.js.
-	///
-	/// ### Why is this bad?
-	///
-	/// Custom CSS like styled-jsx is not allowed in a [Custom Document](https://nextjs.org/docs/pages/building-your-application/routing/custom-document).
-	///
-	/// ### Example
-	/// ```javascript
-	/// ```
-	NoStyledJsxInDocument,
-	correctness,
+    /// ### What it does
+    ///
+    /// Prevent usage of styled-jsx in pages/_document.js.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// Custom CSS like styled-jsx is not allowed in a [Custom Document](https://nextjs.org/docs/pages/building-your-application/routing/custom-document).
+    ///
+    /// ### Example
+    /// ```javascript
+    /// ```
+    NoStyledJsxInDocument,
+    nextjs,
+    correctness,
 );
 
 impl Rule for NoStyledJsxInDocument {
@@ -174,6 +175,6 @@ fn test() {
 		Some(PathBuf::from("pages/_document.jsx")),
 	)];
 
-	Tester::new(NoStyledJsxInDocument::NAME, NoStyledJsxInDocument::CATEGORY, pass, fail)
-		.test_and_snapshot();
+    Tester::new(NoStyledJsxInDocument::NAME, NoStyledJsxInDocument::PLUGIN, pass, fail)
+        .test_and_snapshot();
 }

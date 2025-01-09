@@ -26,17 +26,18 @@ fn no_before_interactive_script_outside_document_diagnostic(span:Span) -> OxcDia
 pub struct NoBeforeInteractiveScriptOutsideDocument;
 
 declare_oxc_lint!(
-	/// ### What it does
-	/// Prevent usage of `next/script`'s `beforeInteractive` strategy outside of `pages/_document.js`.
-	///
-	/// ### Why is this bad?
-	///
-	///
-	/// ### Example
-	/// ```javascript
-	/// ```
-	NoBeforeInteractiveScriptOutsideDocument,
-	correctness
+    /// ### What it does
+    /// Prevent usage of `next/script`'s `beforeInteractive` strategy outside of `pages/_document.js`.
+    ///
+    /// ### Why is this bad?
+    ///
+    ///
+    /// ### Example
+    /// ```javascript
+    /// ```
+    NoBeforeInteractiveScriptOutsideDocument,
+    nextjs,
+    correctness
 );
 
 impl Rule for NoBeforeInteractiveScriptOutsideDocument {
@@ -390,11 +391,11 @@ fn test() {
 		),
 	];
 
-	Tester::new(
-		NoBeforeInteractiveScriptOutsideDocument::NAME,
-		NoBeforeInteractiveScriptOutsideDocument::CATEGORY,
-		pass,
-		fail,
-	)
-	.test_and_snapshot();
+    Tester::new(
+        NoBeforeInteractiveScriptOutsideDocument::NAME,
+        NoBeforeInteractiveScriptOutsideDocument::PLUGIN,
+        pass,
+        fail,
+    )
+    .test_and_snapshot();
 }

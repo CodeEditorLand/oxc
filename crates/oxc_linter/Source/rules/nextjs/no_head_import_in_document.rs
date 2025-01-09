@@ -15,17 +15,18 @@ fn no_head_import_in_document_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct NoHeadImportInDocument;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	///
-	/// ### Why is this bad?
-	///
-	///
-	/// ### Example
-	/// ```javascript
-	/// ```
-	NoHeadImportInDocument,
-	correctness
+    /// ### What it does
+    ///
+    ///
+    /// ### Why is this bad?
+    ///
+    ///
+    /// ### Example
+    /// ```javascript
+    /// ```
+    NoHeadImportInDocument,
+    nextjs,
+    correctness
 );
 
 impl Rule for NoHeadImportInDocument {
@@ -244,6 +245,6 @@ fn test() {
 		),
 	];
 
-	Tester::new(NoHeadImportInDocument::NAME, NoHeadImportInDocument::CATEGORY, pass, fail)
-		.test_and_snapshot();
+    Tester::new(NoHeadImportInDocument::NAME, NoHeadImportInDocument::PLUGIN, pass, fail)
+        .test_and_snapshot();
 }

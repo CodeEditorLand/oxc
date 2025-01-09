@@ -19,27 +19,28 @@ fn no_find_dom_node_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct NoFindDomNode;
 
 declare_oxc_lint!(
-	/// ### What it does
-	/// This rule disallows the use of `findDOMNode`.
-	///
-	/// ### Why is this bad?
-	/// `findDOMNode` is an escape hatch used to access the underlying DOM node.
-	/// In most cases, use of this escape hatch is discouraged because it pierces the component abstraction.
-	/// [It has been deprecated in `StrictMode`.](https://legacy.reactjs.org/docs/strict-mode.html#warning-about-deprecated-finddomnode-usage)
-	///
-	/// ### Example
-	/// ```jsx
-	/// class MyComponent extends Component {
-	///   componentDidMount() {
-	///     findDOMNode(this).scrollIntoView();
-	///   }
-	///   render() {
-	///     return <div />;
-	///   }
-	/// }
-	/// ```
-	NoFindDomNode,
-	correctness
+    /// ### What it does
+    /// This rule disallows the use of `findDOMNode`.
+    ///
+    /// ### Why is this bad?
+    /// `findDOMNode` is an escape hatch used to access the underlying DOM node.
+    /// In most cases, use of this escape hatch is discouraged because it pierces the component abstraction.
+    /// [It has been deprecated in `StrictMode`.](https://legacy.reactjs.org/docs/strict-mode.html#warning-about-deprecated-finddomnode-usage)
+    ///
+    /// ### Example
+    /// ```jsx
+    /// class MyComponent extends Component {
+    ///   componentDidMount() {
+    ///     findDOMNode(this).scrollIntoView();
+    ///   }
+    ///   render() {
+    ///     return <div />;
+    ///   }
+    /// }
+    /// ```
+    NoFindDomNode,
+    react,
+    correctness
 );
 
 impl Rule for NoFindDomNode {
@@ -206,5 +207,5 @@ fn test() {
 		),
 	];
 
-	Tester::new(NoFindDomNode::NAME, NoFindDomNode::CATEGORY, pass, fail).test_and_snapshot();
+    Tester::new(NoFindDomNode::NAME, NoFindDomNode::PLUGIN, pass, fail).test_and_snapshot();
 }

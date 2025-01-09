@@ -18,38 +18,39 @@ fn jsx_no_comment_textnodes_diagnostic(span:Span) -> OxcDiagnostic {
 pub struct JsxNoCommentTextnodes;
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// This rule prevents comment strings (e.g. beginning with `//` or `/*`) from being accidentally injected as a text node in JSX statements.
-	///
-	/// ### Why is this bad?
-	///
-	/// In JSX, any text node that is not wrapped in curly braces is considered a literal string to be rendered. This can lead to unexpected behavior when the text contains a comment.
-	///
-	/// ### Example
-	/// ```jsx
-	/// // Incorrect:
-	///
-	/// const Hello = () => {
-	///     return <div>// empty div</div>;
-	/// }
-	///
-	/// const Hello = () => {
-	///     return <div>/* empty div */</div>;
-	/// }
-	///
-	/// // Correct:
-	///
-	/// const Hello = () => {
-	///     return <div>// empty div</div>;
-	/// }
-	///
-	/// const Hello = () => {
-	///     return <div>{/* empty div */}</div>;
-	/// }
-	/// ```
-	JsxNoCommentTextnodes,
-	suspicious
+    /// ### What it does
+    ///
+    /// This rule prevents comment strings (e.g. beginning with `//` or `/*`) from being accidentally injected as a text node in JSX statements.
+    ///
+    /// ### Why is this bad?
+    ///
+    /// In JSX, any text node that is not wrapped in curly braces is considered a literal string to be rendered. This can lead to unexpected behavior when the text contains a comment.
+    ///
+    /// ### Example
+    /// ```jsx
+    /// // Incorrect:
+    ///
+    /// const Hello = () => {
+    ///     return <div>// empty div</div>;
+    /// }
+    ///
+    /// const Hello = () => {
+    ///     return <div>/* empty div */</div>;
+    /// }
+    ///
+    /// // Correct:
+    ///
+    /// const Hello = () => {
+    ///     return <div>// empty div</div>;
+    /// }
+    ///
+    /// const Hello = () => {
+    ///     return <div>{/* empty div */}</div>;
+    /// }
+    /// ```
+    JsxNoCommentTextnodes,
+    react,
+    suspicious
 );
 
 impl Rule for JsxNoCommentTextnodes {
@@ -316,6 +317,6 @@ fn test() {
 		),
 	];
 
-	Tester::new(JsxNoCommentTextnodes::NAME, JsxNoCommentTextnodes::CATEGORY, pass, fail)
-		.test_and_snapshot();
+    Tester::new(JsxNoCommentTextnodes::NAME, JsxNoCommentTextnodes::PLUGIN, pass, fail)
+        .test_and_snapshot();
 }

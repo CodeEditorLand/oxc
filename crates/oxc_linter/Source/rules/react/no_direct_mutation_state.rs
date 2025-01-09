@@ -27,58 +27,59 @@ pub struct NoDirectMutationState;
 // test: https://github.com/jsx-eslint/eslint-plugin-react/blob/v7.37.2/tests/lib/rules/no-direct-mutation-state.js
 
 declare_oxc_lint!(
-	/// ### What it does
-	/// The restriction coder cannot directly change the value of this.state
-	///
-	/// ### Why is this bad?
-	/// calling setState() afterwards may replace the mutation you made
-	///
-	/// ### Example
-	/// ```jsx
-	///  // error
-	///  var Hello = createReactClass({
-	///    componentDidMount: function() {
-	///      this.state.name = this.props.name.toUpperCase();
-	///    },
-	///    render: function() {
-	///      return <div>Hello {this.state.name}</div>;
-	///    }
-	///  });
-	///
-	///  class Hello extends React.Component {
-	///    constructor(props) {
-	///      super(props)
-	///
-	///      doSomethingAsync(() => {
-	///        this.state = 'bad';
-	///      });
-	///    }
-	///  }
-	///
-	///  // success
-	///  var Hello = createReactClass({
-	///    componentDidMount: function() {
-	///      this.setState({
-	///        name: this.props.name.toUpperCase();
-	///      });
-	///    },
-	///    render: function() {
-	///      return <div>Hello {this.state.name}</div>;
-	///    }
-	///  });
-	///
-	///  class Hello extends React.Component {
-	///    constructor(props) {
-	///      super(props)
-	///
-	///      this.state = {
-	///        foo: 'bar',
-	///      }
-	///    }
-	///  }
-	/// ```
-	NoDirectMutationState,
-	correctness
+    /// ### What it does
+    /// The restriction coder cannot directly change the value of this.state
+    ///
+    /// ### Why is this bad?
+    /// calling setState() afterwards may replace the mutation you made
+    ///
+    /// ### Example
+    /// ```jsx
+    ///  // error
+    ///  var Hello = createReactClass({
+    ///    componentDidMount: function() {
+    ///      this.state.name = this.props.name.toUpperCase();
+    ///    },
+    ///    render: function() {
+    ///      return <div>Hello {this.state.name}</div>;
+    ///    }
+    ///  });
+    ///
+    ///  class Hello extends React.Component {
+    ///    constructor(props) {
+    ///      super(props)
+    ///
+    ///      doSomethingAsync(() => {
+    ///        this.state = 'bad';
+    ///      });
+    ///    }
+    ///  }
+    ///
+    ///  // success
+    ///  var Hello = createReactClass({
+    ///    componentDidMount: function() {
+    ///      this.setState({
+    ///        name: this.props.name.toUpperCase();
+    ///      });
+    ///    },
+    ///    render: function() {
+    ///      return <div>Hello {this.state.name}</div>;
+    ///    }
+    ///  });
+    ///
+    ///  class Hello extends React.Component {
+    ///    constructor(props) {
+    ///      super(props)
+    ///
+    ///      this.state = {
+    ///        foo: 'bar',
+    ///      }
+    ///    }
+    ///  }
+    /// ```
+    NoDirectMutationState,
+    react,
+    correctness
 );
 
 impl Rule for NoDirectMutationState {
@@ -399,6 +400,6 @@ fn test() {
         "#,
 	];
 
-	Tester::new(NoDirectMutationState::NAME, NoDirectMutationState::CATEGORY, pass, fail)
-		.test_and_snapshot();
+    Tester::new(NoDirectMutationState::NAME, NoDirectMutationState::PLUGIN, pass, fail)
+        .test_and_snapshot();
 }
