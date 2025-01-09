@@ -6,144 +6,142 @@ use serde::Deserialize;
 
 use crate::{context::LintContext, rule::Rule, utils::should_ignore_as_private};
 
-fn empty_tags_diagnostic(span:Span, x1:&str) -> OxcDiagnostic {
-	OxcDiagnostic::warn("Expects the void tags to be empty of any content.")
-		.with_help(format!("`@{x1}` tag should not have body."))
-		.with_label(span)
+fn empty_tags_diagnostic(span: Span, x1: &str) -> OxcDiagnostic {
+    OxcDiagnostic::warn("Expects the void tags to be empty of any content.")
+        .with_help(format!("`@{x1}` tag should not have body."))
+        .with_label(span)
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct EmptyTags(Box<EmptyTagsConfig>);
 
 declare_oxc_lint!(
-	/// ### What it does
-	///
-	/// Expects the following tags to be empty of any content:
-	/// - `@abstract`
-	/// - `@async`
-	/// - `@generator`
-	/// - `@global`
-	/// - `@hideconstructor`
-	/// - `@ignore`
-	/// - `@inner`
-	/// - `@instance`
-	/// - `@override`
-	/// - `@readonly`
-	/// - `@inheritDoc`
-	/// - `@internal`
-	/// - `@overload`
-	/// - `@package`
-	/// - `@private`
-	/// - `@protected`
-	/// - `@public`
-	/// - `@static`
-	///
-	/// ### Why is this bad?
-	///
-	/// The void tags should be empty.
-	///
-	/// ### Examples
-	///
-	/// Examples of **incorrect** code for this rule:
-	/// ```javascript
-	/// /** @async foo */
-	///
-	/// /** @private bar */
-	/// ```
-	///
-	/// Examples of **correct** code for this rule:
-	/// ```javascript
-	/// /** @async */
-	///
-	/// /** @private */
-	/// ```
-	EmptyTags,
-	restriction
+    /// ### What it does
+    ///
+    /// Expects the following tags to be empty of any content:
+    /// - `@abstract`
+    /// - `@async`
+    /// - `@generator`
+    /// - `@global`
+    /// - `@hideconstructor`
+    /// - `@ignore`
+    /// - `@inner`
+    /// - `@instance`
+    /// - `@override`
+    /// - `@readonly`
+    /// - `@inheritDoc`
+    /// - `@internal`
+    /// - `@overload`
+    /// - `@package`
+    /// - `@private`
+    /// - `@protected`
+    /// - `@public`
+    /// - `@static`
+    ///
+    /// ### Why is this bad?
+    ///
+    /// The void tags should be empty.
+    ///
+    /// ### Examples
+    ///
+    /// Examples of **incorrect** code for this rule:
+    /// ```javascript
+    /// /** @async foo */
+    ///
+    /// /** @private bar */
+    /// ```
+    ///
+    /// Examples of **correct** code for this rule:
+    /// ```javascript
+    /// /** @async */
+    ///
+    /// /** @private */
+    /// ```
+    EmptyTags,
+    jsdoc,
+    restriction
 );
 
-const EMPTY_TAGS:phf::Set<&'static str> = phf_set! {
-	"abstract",
-	"async",
-	"generator",
-	"global",
-	"hideconstructor",
-	"ignore",
-	"inner",
-	"instance",
-	"override",
-	"readonly",
-	"inheritDoc",
-	"internal",
-	"overload",
-	"package",
-	"private",
-	"protected",
-	"public",
-	"static",
+const EMPTY_TAGS: phf::Set<&'static str> = phf_set! {
+    "abstract",
+    "async",
+    "generator",
+    "global",
+    "hideconstructor",
+    "ignore",
+    "inner",
+    "instance",
+    "override",
+    "readonly",
+    "inheritDoc",
+    "internal",
+    "overload",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "static",
 };
 
 #[derive(Debug, Default, Clone, Deserialize)]
 struct EmptyTagsConfig {
-	#[serde(default)]
-	tags:Vec<String>,
+    #[serde(default)]
+    tags: Vec<String>,
 }
 
 impl Rule for EmptyTags {
-	fn from_configuration(value:serde_json::Value) -> Self {
-		value
-			.as_array()
-			.and_then(|arr| arr.first())
-			.and_then(|value| serde_json::from_value(value.clone()).ok())
-			.map_or_else(Self::default, |value| Self(Box::new(value)))
-	}
+    fn from_configuration(value: serde_json::Value) -> Self {
+        value
+            .as_array()
+            .and_then(|arr| arr.first())
+            .and_then(|value| serde_json::from_value(value.clone()).ok())
+            .map_or_else(Self::default, |value| Self(Box::new(value)))
+    }
 
-	fn run_once(&self, ctx:&LintContext) {
-		let settings = &ctx.settings().jsdoc;
+    fn run_once(&self, ctx: &LintContext) {
+        let settings = &ctx.settings().jsdoc;
 
-		let is_empty_tag_kind = |tag_name:&str| {
-			if EMPTY_TAGS.contains(tag_name) {
-				return true;
-			}
+        let is_empty_tag_kind = |tag_name: &str| {
+            if EMPTY_TAGS.contains(tag_name) {
+                return true;
+            }
+            if !self.0.tags.is_empty() && self.0.tags.contains(&tag_name.to_string()) {
+                return true;
+            }
+            false
+        };
 
-			if !self.0.tags.is_empty() && self.0.tags.contains(&tag_name.to_string()) {
-				return true;
-			}
+        for jsdoc in ctx
+            .semantic()
+            .jsdoc()
+            .iter_all()
+            .filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
+        {
+            for tag in jsdoc.tags() {
+                let tag_name = tag.kind.parsed();
 
-			false
-		};
+                if !is_empty_tag_kind(tag_name) {
+                    continue;
+                }
 
-		for jsdoc in ctx
-			.semantic()
-			.jsdoc()
-			.iter_all()
-			.filter(|jsdoc| !should_ignore_as_private(jsdoc, settings))
-		{
-			for tag in jsdoc.tags() {
-				let tag_name = tag.kind.parsed();
+                let comment = tag.comment();
+                if comment.parsed().is_empty() {
+                    continue;
+                }
 
-				if !is_empty_tag_kind(tag_name) {
-					continue;
-				}
-
-				let comment = tag.comment();
-
-				if comment.parsed().is_empty() {
-					continue;
-				}
-
-				ctx.diagnostic(empty_tags_diagnostic(comment.span_trimmed_first_line(), tag_name));
-			}
-		}
-	}
+                ctx.diagnostic(empty_tags_diagnostic(comment.span_trimmed_first_line(), tag_name));
+            }
+        }
+    }
 }
 
 #[test]
 fn test() {
-	use crate::tester::Tester;
+    use crate::tester::Tester;
 
-	let pass = vec![
-		(
-			"
+    let pass = vec![
+        (
+            "
 			          /**
 			           * @abstract
 			           */
@@ -151,11 +149,11 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           *
 			           */
@@ -163,11 +161,11 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @param aName
 			           */
@@ -175,11 +173,11 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @abstract
 			           * @inheritdoc
@@ -189,27 +187,27 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		// (
-		//     "
-		// 			      /**
-		// 			       * @private {someType}
-		// 			       */
-		// 			      function quux () {
+            None,
+            None,
+        ),
+        // (
+        //     "
+        // 			      /**
+        // 			       * @private {someType}
+        // 			       */
+        // 			      function quux () {
 
-		// 			      }
-		// 			      ",
-		//     None,
-		//     Some(serde_json::json!({
-		//       "jsdoc": {
-		//         "mode": "closure",
-		//       },
-		//     })),
-		// ),
-		(
-			"
+        // 			      }
+        // 			      ",
+        //     None,
+        //     Some(serde_json::json!({
+        //       "jsdoc": {
+        //         "mode": "closure",
+        //       },
+        //     })),
+        // ),
+        (
+            "
 			      /**
 			       * @private
 			       */
@@ -217,11 +215,11 @@ fn test() {
 
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /**
 			       * @internal
 			       */
@@ -229,11 +227,11 @@ fn test() {
 
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /**
 			       * Create an array.
 			       *
@@ -245,14 +243,14 @@ fn test() {
 			       */
 			      function quux () {}
 			      ",
-			None,
-			None,
-		),
-	];
+            None,
+            None,
+        ),
+    ];
 
-	let fail = vec![
-		(
-			"
+    let fail = vec![
+        (
+            "
 			          /**
 			           * @abstract extra text
 			           */
@@ -260,24 +258,24 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		// (
-		//     "
-		// 			          /**
-		// 			           * @interface extra text
-		// 			           */
-		// 			      ",
-		//     None,
-		//     Some(serde_json::json!({
-		//       "jsdoc": {
-		//         "mode": "closure",
-		//       },
-		//     })),
-		// ),
-		(
-			"
+            None,
+            None,
+        ),
+        // (
+        //     "
+        // 			          /**
+        // 			           * @interface extra text
+        // 			           */
+        // 			      ",
+        //     None,
+        //     Some(serde_json::json!({
+        //       "jsdoc": {
+        //         "mode": "closure",
+        //       },
+        //     })),
+        // ),
+        (
+            "
 			      class Test {
 			          /**
 			           * @abstract extra text
@@ -287,11 +285,11 @@ fn test() {
 			          }
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @abstract extra text
 			           * @inheritdoc
@@ -301,11 +299,11 @@ fn test() {
 
 			          }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			          /**
 			           * @event anEvent
 			           */
@@ -313,17 +311,17 @@ fn test() {
 
 			          }
 			      ",
-			Some(serde_json::json!([
-			  {
-				"tags": [
-				  "event",
-				],
-			  },
-			])),
-			None,
-		),
-		(
-			"
+            Some(serde_json::json!([
+              {
+                "tags": [
+                  "event",
+                ],
+              },
+            ])),
+            None,
+        ),
+        (
+            "
 			      /**
 			       * @private foo
 			       * bar
@@ -332,11 +330,11 @@ fn test() {
 
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /**
 			       * @internal
                    * foo
@@ -345,11 +343,11 @@ fn test() {
 
 			      }
 			      ",
-			None,
-			None,
-		),
-		(
-			"
+            None,
+            None,
+        ),
+        (
+            "
 			      /**
 			       * @private {someType}
 			       */
@@ -357,14 +355,14 @@ fn test() {
 
 			      }
 			      ",
-			None,
-			Some(serde_json::json!({
-			  "jsdoc": {
-				"ignorePrivate": true,
-			  },
-			})),
-		),
-	];
+            None,
+            Some(serde_json::json!({
+              "jsdoc": {
+                "ignorePrivate": true,
+              },
+            })),
+        ),
+    ];
 
-	Tester::new(EmptyTags::NAME, EmptyTags::CATEGORY, pass, fail).test_and_snapshot();
+    Tester::new(EmptyTags::NAME, EmptyTags::PLUGIN, pass, fail).test_and_snapshot();
 }

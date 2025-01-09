@@ -30,105 +30,93 @@
 
 use oxc_ast::ast::*;
 use oxc_diagnostics::OxcDiagnostic;
-use oxc_span::{SPAN, Span};
+use oxc_span::{Span, SPAN};
 use oxc_traverse::{Ancestor, Traverse, TraverseCtx};
 
 use crate::TransformCtx;
 
-const SELF:&str = "__self";
+const SELF: &str = "__self";
 
 pub struct JsxSelf<'a, 'ctx> {
-	ctx:&'ctx TransformCtx<'a>,
+    ctx: &'ctx TransformCtx<'a>,
 }
 
 impl<'a, 'ctx> JsxSelf<'a, 'ctx> {
-	pub fn new(ctx:&'ctx TransformCtx<'a>) -> Self { Self { ctx } }
+    pub fn new(ctx: &'ctx TransformCtx<'a>) -> Self {
+        Self { ctx }
+    }
 }
 
-impl<'a, 'ctx> Traverse<'a> for JsxSelf<'a, 'ctx> {
-	fn enter_jsx_opening_element(
-		&mut self,
-		elem:&mut JSXOpeningElement<'a>,
-		ctx:&mut TraverseCtx<'a>,
-	) {
-		self.add_self_this_attribute(elem, ctx);
-	}
+impl<'a> Traverse<'a> for JsxSelf<'a, '_> {
+    fn enter_jsx_opening_element(
+        &mut self,
+        elem: &mut JSXOpeningElement<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+        self.add_self_this_attribute(elem, ctx);
+    }
 }
 
-impl<'a, 'ctx> JsxSelf<'a, 'ctx> {
-	pub fn report_error(&self, span:Span) {
-		let error = OxcDiagnostic::warn("Duplicate __self prop found.").with_label(span);
+impl<'a> JsxSelf<'a, '_> {
+    pub fn report_error(&self, span: Span) {
+        let error = OxcDiagnostic::warn("Duplicate __self prop found.").with_label(span);
+        self.ctx.error(error);
+    }
 
-		self.ctx.error(error);
-	}
+    fn is_inside_constructor(ctx: &TraverseCtx<'a>) -> bool {
+        for scope_id in ctx.ancestor_scopes() {
+            let flags = ctx.scopes().get_flags(scope_id);
+            if flags.is_block() || flags.is_arrow() {
+                continue;
+            }
+            return flags.is_constructor();
+        }
+        unreachable!(); // Always hit `Program` and exit before loop ends
+    }
 
-	fn is_inside_constructor(ctx:&TraverseCtx<'a>) -> bool {
-		for scope_id in ctx.ancestor_scopes() {
-			let flags = ctx.scopes().get_flags(scope_id);
+    fn has_no_super_class(ctx: &TraverseCtx<'a>) -> bool {
+        for ancestor in ctx.ancestors() {
+            if let Ancestor::ClassBody(class) = ancestor {
+                return class.super_class().is_none();
+            }
+        }
+        true
+    }
 
-			if flags.is_block() || flags.is_arrow() {
-				continue;
-			}
+    pub fn get_object_property_kind_for_jsx_plugin(
+        ctx: &mut TraverseCtx<'a>,
+    ) -> ObjectPropertyKind<'a> {
+        let kind = PropertyKind::Init;
+        let key = ctx.ast.property_key_identifier_name(SPAN, SELF);
+        let value = ctx.ast.expression_this(SPAN);
+        ctx.ast.object_property_kind_object_property(SPAN, kind, key, value, false, false, false)
+    }
 
-			return flags.is_constructor();
-		}
+    pub fn can_add_self_attribute(ctx: &TraverseCtx<'a>) -> bool {
+        !Self::is_inside_constructor(ctx) || Self::has_no_super_class(ctx)
+    }
 
-		unreachable!(); // Always hit `Program` and exit before loop ends
-	}
+    /// `<div __self={this} />`
+    ///       ^^^^^^^^^^^^^
+    fn add_self_this_attribute(&self, elem: &mut JSXOpeningElement<'a>, ctx: &TraverseCtx<'a>) {
+        // Check if `__self` attribute already exists
+        for item in &elem.attributes {
+            if let JSXAttributeItem::Attribute(attribute) = item {
+                if let JSXAttributeName::Identifier(ident) = &attribute.name {
+                    if ident.name == SELF {
+                        self.report_error(ident.span);
+                        return;
+                    }
+                }
+            }
+        }
 
-	fn has_no_super_class(ctx:&TraverseCtx<'a>) -> bool {
-		for ancestor in ctx.ancestors() {
-			if let Ancestor::ClassBody(class) = ancestor {
-				return class.super_class().is_none();
-			}
-		}
-
-		true
-	}
-
-	pub fn get_object_property_kind_for_jsx_plugin(
-		ctx:&mut TraverseCtx<'a>,
-	) -> ObjectPropertyKind<'a> {
-		let kind = PropertyKind::Init;
-
-		let key = ctx.ast.property_key_identifier_name(SPAN, SELF);
-
-		let value = ctx.ast.expression_this(SPAN);
-
-		ctx.ast
-			.object_property_kind_object_property(SPAN, kind, key, value, false, false, false)
-	}
-
-	pub fn can_add_self_attribute(ctx:&TraverseCtx<'a>) -> bool {
-		!Self::is_inside_constructor(ctx) || Self::has_no_super_class(ctx)
-	}
-
-	/// `<div __self={this} />`
-	///       ^^^^^^^^^^^^^
-	fn add_self_this_attribute(&self, elem:&mut JSXOpeningElement<'a>, ctx:&TraverseCtx<'a>) {
-		// Check if `__self` attribute already exists
-		for item in &elem.attributes {
-			if let JSXAttributeItem::Attribute(attribute) = item {
-				if let JSXAttributeName::Identifier(ident) = &attribute.name {
-					if ident.name == SELF {
-						self.report_error(ident.span);
-
-						return;
-					}
-				}
-			}
-		}
-
-		let name = ctx.ast.jsx_attribute_name_jsx_identifier(SPAN, SELF);
-
-		let value = {
-			let jsx_expr = JSXExpression::from(ctx.ast.expression_this(SPAN));
-
-			ctx.ast.jsx_attribute_value_jsx_expression_container(SPAN, jsx_expr)
-		};
-
-		let attribute = ctx.ast.jsx_attribute_item_jsx_attribute(SPAN, name, Some(value));
-
-		elem.attributes.push(attribute);
-	}
+        let name = ctx.ast.jsx_attribute_name_jsx_identifier(SPAN, SELF);
+        let value = {
+            let jsx_expr = JSXExpression::from(ctx.ast.expression_this(SPAN));
+            ctx.ast.jsx_attribute_value_jsx_expression_container(SPAN, jsx_expr)
+        };
+        let attribute = ctx.ast.jsx_attribute_item_jsx_attribute(SPAN, name, Some(value));
+        elem.attributes.push(attribute);
+    }
 }
