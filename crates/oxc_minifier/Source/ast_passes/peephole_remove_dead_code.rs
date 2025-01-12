@@ -33,15 +33,20 @@ impl<'a> Traverse<'a> for PeepholeRemoveDeadCode {
             Statement::BlockStatement(s) => Self::try_optimize_block(s, ctx),
             Statement::IfStatement(s) => self.try_fold_if(s, ctx),
             Statement::ForStatement(s) => self.try_fold_for(s, ctx),
-            Statement::ExpressionStatement(s) => {
-                Self::try_fold_iife(s, ctx).or_else(|| Self::try_fold_expression_stmt(s, ctx))
-            }
+            Statement::ExpressionStatement(s) => Self::try_fold_iife(s, ctx),
             Statement::TryStatement(s) => Self::try_fold_try(s, ctx),
             Statement::LabeledStatement(s) => Self::try_fold_labeled(s, ctx),
             _ => None,
         } {
             *stmt = new_stmt;
             self.changed = true;
+        }
+
+        if let Statement::ExpressionStatement(s) = stmt {
+            if let Some(new_stmt) = Self::try_fold_expression_stmt(s, ctx) {
+                *stmt = new_stmt;
+                self.changed = true;
+            }
         }
     }
 
@@ -199,22 +204,33 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
             return Some(ctx.ast.statement_expression(if_stmt.span, expr));
         }
 
-        match ctx.get_boolean_value(&if_stmt.test) {
-            Some(true) => Some(ctx.ast.move_statement(&mut if_stmt.consequent)),
-            Some(false) => {
-                Some(if let Some(alternate) = &mut if_stmt.alternate {
-                    ctx.ast.move_statement(alternate)
+        if let Some(boolean) = ctx.get_side_free_boolean_value(&if_stmt.test) {
+            let mut keep_var = KeepVar::new(ctx.ast);
+            if boolean {
+                if let Some(alternate) = &if_stmt.alternate {
+                    keep_var.visit_statement(alternate);
+                }
+            } else {
+                keep_var.visit_statement(&if_stmt.consequent);
+            };
+            if let Some(var_stmt) = keep_var.get_variable_declaration_statement() {
+                if boolean {
+                    if_stmt.alternate = Some(var_stmt);
                 } else {
-                    // Keep hoisted `vars` from the consequent block.
-                    let mut keep_var = KeepVar::new(ctx.ast);
-                    keep_var.visit_statement(&if_stmt.consequent);
-                    keep_var
-                        .get_variable_declaration_statement()
-                        .unwrap_or_else(|| ctx.ast.statement_empty(SPAN))
-                })
+                    if_stmt.consequent = var_stmt;
+                }
+                return None;
             }
-            None => None,
+            return Some(if boolean {
+                ctx.ast.move_statement(&mut if_stmt.consequent)
+            } else {
+                if_stmt.alternate.as_mut().map_or_else(
+                    || ctx.ast.statement_empty(SPAN),
+                    |alternate| ctx.ast.move_statement(alternate),
+                )
+            });
         }
+        None
     }
 
     fn try_fold_for(
@@ -314,9 +330,7 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
                     if !template_lit.expressions.is_empty() {
                         return None;
                     }
-
                     let mut expressions = ctx.ast.move_vec(&mut template_lit.expressions);
-
                     if expressions.len() == 0 {
                         return Some(ctx.ast.statement_empty(SPAN));
                     } else if expressions.len() == 1 {
@@ -327,7 +341,6 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
                             ),
                         );
                     }
-
                     Some(ctx.ast.statement_expression(
                         template_lit.span,
                         ctx.ast.expression_sequence(template_lit.span, expressions),
@@ -344,8 +357,14 @@ impl<'a, 'b> PeepholeRemoveDeadCode {
                 {
                     Some(ctx.ast.statement_empty(SPAN))
                 }
-                // `typeof x.y` -> `x`, `!x` -> `x`, `void x` -> `x`...
-                Expression::UnaryExpression(unary_expr) if !unary_expr.operator.is_delete() => {
+                // `typeof x.y` -> `x.y`, `void x` -> `x`
+                // `+0n` -> `Uncaught TypeError: Cannot convert a BigInt value to a number`
+                Expression::UnaryExpression(unary_expr)
+                    if matches!(
+                        unary_expr.operator,
+                        UnaryOperator::Typeof | UnaryOperator::Void
+                    ) =>
+                {
                     Some(ctx.ast.statement_expression(
                         unary_expr.span,
                         ctx.ast.move_expression(&mut unary_expr.argument),
@@ -697,15 +716,18 @@ mod test {
         fold("void x?.y", "x?.y");
         fold("void x.y", "x.y");
         fold("void x.y.z()", "x.y.z()");
-        fold("!x", "x");
-        fold("!x?.y", "x?.y");
-        fold("!x.y", "x.y");
-        fold("!x.y.z()", "x.y.z()");
-        fold("-x.y.z()", "x.y.z()");
+
+        // Removed in `MinimizeConditions`, to keep this pass idempotent for DCE.
+        fold_same("!x");
+        fold_same("!x?.y");
+        fold_same("!x.y");
+        fold_same("!x.y.z()");
+        fold_same("-x.y.z()");
 
         fold_same("delete x");
         fold_same("delete x.y");
         fold_same("delete x.y.z()");
+        fold_same("+0n"); // Uncaught TypeError: Cannot convert a BigInt value to a number
     }
 
     #[test]
@@ -718,6 +740,7 @@ mod test {
         fold_same("(0, o.f)();");
         fold("var obj = Object((null, 2, 3), 1, 2);", "var obj = Object(3, 1, 2);");
         fold_same("(0 instanceof 0, foo)");
+        fold_same("(0 in 0, foo)");
     }
 
     #[test]
@@ -739,6 +762,8 @@ mod test {
     fn test_fold_if_statement() {
         test("if (foo) {}", "foo");
         test("if (foo) {} else {}", "foo");
+        test("if (false) {}", "");
+        test("if (true) {}", "");
     }
 
     #[test]

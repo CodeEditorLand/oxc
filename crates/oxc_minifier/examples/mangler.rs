@@ -15,7 +15,9 @@ use pico_args::Arguments;
 fn main() -> std::io::Result<()> {
 	let mut args = Arguments::from_env();
 
-	let name = args.subcommand().ok().flatten().unwrap_or_else(|| String::from("test.js"));
+    let debug = args.contains("--debug");
+    let twice = args.contains("--twice");
+    let name = args.free_from_str().unwrap_or_else(|_| "test.js".to_string());
 
 	let debug = args.contains("--debug");
 

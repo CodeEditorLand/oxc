@@ -2,6 +2,7 @@ use oxc_allocator::Vec;
 use oxc_ast::{ast::*, NONE};
 use oxc_ecmascript::{
     constant_evaluation::{ConstantEvaluation, ValueType},
+    side_effects::MayHaveSideEffects,
     ToInt32, ToJsString, ToNumber,
 };
 use oxc_span::cmp::ContentEq;
@@ -108,15 +109,20 @@ impl<'a> Traverse<'a> for PeepholeSubstituteAlternateSyntax {
         call_expr: &mut CallExpression<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) {
-        if ctx.parent().is_expression_statement()
-            && Self::is_object_define_property_exports(call_expr)
-        {
-            self.in_define_export = true;
+        if !self.in_fixed_loop {
+            let parent = ctx.parent();
+            if (parent.is_expression_statement() || parent.is_sequence_expression())
+                && Self::is_object_define_property_exports(call_expr)
+            {
+                self.in_define_export = true;
+            }
         }
     }
 
     fn exit_call_expression(&mut self, expr: &mut CallExpression<'a>, ctx: &mut TraverseCtx<'a>) {
-        self.in_define_export = false;
+        if !self.in_fixed_loop {
+            self.in_define_export = false;
+        }
         self.try_compress_call_expression_arguments(expr, ctx);
     }
 
@@ -135,6 +141,9 @@ impl<'a> Traverse<'a> for PeepholeSubstituteAlternateSyntax {
                 self.try_compress_normal_assignment_to_combined_assignment(e, ctx);
                 self.try_compress_normal_assignment_to_combined_logical_assignment(e, ctx);
             }
+            Expression::NewExpression(e) => {
+                self.try_compress_typed_array_constructor(e, ctx);
+            }
             _ => {}
         }
 
@@ -144,7 +153,8 @@ impl<'a> Traverse<'a> for PeepholeSubstituteAlternateSyntax {
                 Self::try_compress_assignment_to_update_expression(e, ctx)
             }
             Expression::LogicalExpression(e) => Self::try_compress_is_null_or_undefined(e, ctx)
-                .or_else(|| self.try_compress_logical_expression_to_assignment_expression(e, ctx)),
+                .or_else(|| self.try_compress_logical_expression_to_assignment_expression(e, ctx))
+                .or_else(|| Self::try_rotate_logical_expression(e, ctx)),
             Expression::TemplateLiteral(t) => Self::try_fold_template_literal(t, ctx),
             Expression::BinaryExpression(e) => Self::try_fold_loose_equals_undefined(e, ctx)
                 .or_else(|| Self::try_compress_typeof_undefined(e, ctx)),
@@ -498,6 +508,38 @@ impl<'a, 'b> PeepholeSubstituteAlternateSyntax {
         Some(ctx.ast.move_expression(&mut expr.right))
     }
 
+    /// `a || (b || c);` -> `(a || b) || c;`
+    fn try_rotate_logical_expression(
+        expr: &mut LogicalExpression<'a>,
+        ctx: Ctx<'a, 'b>,
+    ) -> Option<Expression<'a>> {
+        let Expression::LogicalExpression(right) = &mut expr.right else { return None };
+        if right.operator != expr.operator {
+            return None;
+        }
+
+        let mut new_left = ctx.ast.expression_logical(
+            expr.span,
+            ctx.ast.move_expression(&mut expr.left),
+            expr.operator,
+            ctx.ast.move_expression(&mut right.left),
+        );
+
+        {
+            let Expression::LogicalExpression(new_left2) = &mut new_left else { unreachable!() };
+            if let Some(expr) = Self::try_rotate_logical_expression(new_left2, ctx) {
+                new_left = expr;
+            }
+        }
+
+        Some(ctx.ast.expression_logical(
+            expr.span,
+            new_left,
+            expr.operator,
+            ctx.ast.move_expression(&mut right.right),
+        ))
+    }
+
     /// Returns `true` if the assignment target and expression have no side effect for *evaluation* and points to the same reference.
     ///
     /// Evaluation here means `Evaluation` in the spec.
@@ -595,10 +637,24 @@ impl<'a, 'b> PeepholeSubstituteAlternateSyntax {
         stmt: &mut ReturnStatement<'a>,
         ctx: &mut TraverseCtx<'a>,
     ) {
-        if stmt.argument.as_ref().is_some_and(|expr| Ctx(ctx).is_expression_undefined(expr)) {
-            stmt.argument = None;
-            self.changed = true;
+        let Some(argument) = &stmt.argument else { return };
+        if !match argument {
+            Expression::Identifier(ident) => Ctx(ctx).is_identifier_undefined(ident),
+            Expression::UnaryExpression(e) => e.operator.is_void() && !e.may_have_side_effects(),
+            _ => false,
+        } {
+            return;
         }
+        // `return undefined` has a different semantic in async generator function.
+        for ancestor in ctx.ancestors() {
+            if let Ancestor::FunctionBody(func) = ancestor {
+                if *func.r#async() && *func.generator() {
+                    return;
+                }
+            }
+        }
+        stmt.argument = None;
+        self.changed = true;
     }
 
     fn compress_variable_declarator(
@@ -889,17 +945,24 @@ impl<'a, 'b> PeepholeSubstituteAlternateSyntax {
                         // new Array(2) -> `[,,]`
                         // this does not work with IE8 and below
                         // learned from https://github.com/babel/minify/pull/45
-                        #[expect(clippy::cast_possible_truncation)]
+                        #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                         if n.value.fract() == 0.0 {
-                            let n_int = n.value as i64;
+                            let n_int = n.value as usize;
                             if (1..=6).contains(&n_int) {
-                                return Some(ctx.ast.expression_array(
-                                    span,
-                                    ctx.ast.vec_from_iter((0..n_int).map(|_| {
-                                        ArrayExpressionElement::Elision(Elision { span: SPAN })
-                                    })),
-                                    None,
-                                ));
+                                return Some(
+                                    ctx.ast.expression_array(
+                                        span,
+                                        ctx.ast.vec_from_iter(
+                                            std::iter::from_fn(|| {
+                                                Some(ArrayExpressionElement::Elision(
+                                                    ctx.ast.elision(SPAN),
+                                                ))
+                                            })
+                                            .take(n_int),
+                                        ),
+                                        None,
+                                    ),
+                                );
                             }
                         }
 
@@ -934,7 +997,8 @@ impl<'a, 'b> PeepholeSubstituteAlternateSyntax {
         }
     }
 
-    /// `new Error()` -> `Error()`
+    /// `new Error()` -> `Error()` (also for NativeErrors)
+    /// `new AggregateError()` -> `AggregateError()`
     /// `new Function()` -> `Function()`
     /// `new RegExp()` -> `RegExp()`
     fn try_fold_new_expression(
@@ -943,14 +1007,17 @@ impl<'a, 'b> PeepholeSubstituteAlternateSyntax {
     ) -> Option<Expression<'a>> {
         let Expression::Identifier(ident) = &e.callee else { return None };
         let name = ident.name.as_str();
-        if !matches!(name, "Error" | "Function" | "RegExp") {
+        if !matches!(name, "Error" | "AggregateError" | "Function" | "RegExp")
+            && !Self::is_native_error_name(name)
+        {
             return None;
         }
         if !ctx.is_global_reference(ident) {
             return None;
         }
         if match name {
-            "Error" | "Function" => true,
+            "Error" | "AggregateError" | "Function" => true,
+            _ if Self::is_native_error_name(name) => true,
             "RegExp" => {
                 let arguments_len = e.arguments.len();
                 arguments_len == 0
@@ -972,6 +1039,61 @@ impl<'a, 'b> PeepholeSubstituteAlternateSyntax {
         } else {
             None
         }
+    }
+
+    /// Whether the name matches any native error name.
+    ///
+    /// See <https://tc39.es/ecma262/multipage/fundamental-objects.html#sec-native-error-types-used-in-this-standard> for the list of native errors.
+    fn is_native_error_name(name: &str) -> bool {
+        matches!(
+            name,
+            "EvalError"
+                | "RangeError"
+                | "ReferenceError"
+                | "SyntaxError"
+                | "TypeError"
+                | "URIError"
+        )
+    }
+
+    /// `new Int8Array(0)` -> `new Int8Array()` (also for other TypedArrays)
+    fn try_compress_typed_array_constructor(
+        &mut self,
+        e: &mut NewExpression<'a>,
+        ctx: Ctx<'a, 'b>,
+    ) {
+        let Expression::Identifier(ident) = &e.callee else { return };
+        let name = ident.name.as_str();
+        if !Self::is_typed_array_name(name) || !ctx.is_global_reference(ident) {
+            return;
+        }
+
+        if e.arguments.len() == 1
+            && e.arguments[0].as_expression().is_some_and(Expression::is_number_0)
+        {
+            e.arguments.clear();
+            self.changed = true;
+        }
+    }
+
+    /// Whether the name matches any TypedArray name.
+    ///
+    /// See <https://tc39.es/ecma262/multipage/indexed-collections.html#sec-typedarray-objects> for the list of TypedArrays.
+    fn is_typed_array_name(name: &str) -> bool {
+        matches!(
+            name,
+            "Int8Array"
+                | "Uint8Array"
+                | "Uint8ClampedArray"
+                | "Int16Array"
+                | "Uint16Array"
+                | "Int32Array"
+                | "Uint32Array"
+                | "Float32Array"
+                | "Float64Array"
+                | "BigInt64Array"
+                | "BigUint64Array"
+        )
     }
 
     /// `typeof foo === 'number'` -> `typeof foo == 'number'`
@@ -1032,7 +1154,9 @@ impl<'a, 'b> PeepholeSubstituteAlternateSyntax {
         };
         let PropertyKey::StringLiteral(s) = key else { return };
         let value = s.value.as_str();
-        if matches!(value, "__proto__" | "constructor" | "prototype") {
+        // Uncaught SyntaxError: Classes may not have a field named 'constructor'
+        // Uncaught SyntaxError: Class constructor may not be a private method
+        if matches!(value, "__proto__" | "prototype" | "constructor" | "#constructor") {
             return;
         }
         if *computed {
@@ -1143,9 +1267,16 @@ mod test {
         test("function f(){return void 0;}", "function f(){return}");
         test("function f(){return void foo();}", "function f(){return void foo()}");
         test("function f(){return undefined;}", "function f(){return}");
-        // Here we handle the block in dce.
         test("function f(){if(a()){return undefined;}}", "function f(){if(a()){return}}");
         test_same("function a(undefined) { return undefined; }");
+        test_same("function f(){return foo()");
+
+        // `return undefined` has a different semantic in async generator function.
+        test("function foo() { return undefined }", "function foo() { return }");
+        test("function* foo() { return undefined }", "function* foo() { return }");
+        test("async function foo() { return undefined }", "async function foo() { return }");
+        test_same("async function* foo() { return void 0 }");
+        test_same("class Foo { async * foo() { return void 0 } }");
     }
 
     #[test]
@@ -1372,6 +1503,13 @@ mod test {
         test("new Error('a')", "Error('a')");
         test("new Error('a', { cause: b })", "Error('a', { cause: b })");
         test_same("var Error; new Error()");
+        test("new EvalError()", "EvalError()");
+        test("new RangeError()", "RangeError()");
+        test("new ReferenceError()", "ReferenceError()");
+        test("new SyntaxError()", "SyntaxError()");
+        test("new TypeError()", "TypeError()");
+        test("new URIError()", "URIError()");
+        test("new AggregateError()", "AggregateError()");
 
         test("new Function()", "Function()");
         test(
@@ -1387,6 +1525,26 @@ mod test {
         test("new RegExp('a', 'g')", "RegExp('a', 'g')");
         test_same("new RegExp(foo)");
         test_same("new RegExp(/foo/)");
+    }
+
+    #[test]
+    fn test_compress_typed_array_constructor() {
+        test("new Int8Array(0)", "new Int8Array()");
+        test("new Uint8Array(0)", "new Uint8Array()");
+        test("new Uint8ClampedArray(0)", "new Uint8ClampedArray()");
+        test("new Int16Array(0)", "new Int16Array()");
+        test("new Uint16Array(0)", "new Uint16Array()");
+        test("new Int32Array(0)", "new Int32Array()");
+        test("new Uint32Array(0)", "new Uint32Array()");
+        test("new Float32Array(0)", "new Float32Array()");
+        test("new Float64Array(0)", "new Float64Array()");
+        test("new BigInt64Array(0)", "new BigInt64Array()");
+        test("new BigUint64Array(0)", "new BigUint64Array()");
+
+        test_same("var Int8Array; new Int8Array(0)");
+        test_same("new Int8Array(1)");
+        test_same("new Int8Array(a)");
+        test_same("new Int8Array(0, a)");
     }
 
     #[test]
@@ -1785,6 +1943,7 @@ mod test {
         test_same("class C { ['prototype']() {} }");
         test_same("class C { ['__proto__']() {} }");
         test_same("class C { ['constructor']() {} }");
+        test_same("class C { ['#constructor']() {} }");
     }
 
     #[test]
