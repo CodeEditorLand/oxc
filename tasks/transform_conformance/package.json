@@ -27,7 +27,7 @@
 		"vitest": "vitest"
 	},
 	"dependencies": {
-		"@babel/plugin-transform-typescript": "7.26.3"
+		"@babel/plugin-transform-typescript": "7.26.5"
 	},
 	"devDependencies": {
 		"@babel/plugin-external-helpers": "7.25.9",
