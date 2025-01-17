@@ -140,7 +140,7 @@
 	"dependencies": {},
 	"devDependencies": {
 		"@playform/build": "0.2.1",
-		"@types/node": "22.10.6",
+		"@types/node": "22.10.7",
 		"cross-env": "7.0.3",
 		"esbuild": "0.24.2",
 		"ovsx": "0.10.1",
