@@ -144,7 +144,7 @@
 		"cross-env": "7.0.3",
 		"esbuild": "0.24.2",
 		"ovsx": "0.10.1",
-		"oxlint": "0.15.7"
+		"oxlint": "0.15.8"
 	},
 	"publishConfig": {
 		"access": "public"
