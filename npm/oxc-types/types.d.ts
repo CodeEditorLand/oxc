@@ -1140,12 +1140,12 @@ export interface ImportExpression extends Span {
 }
 
 export interface ImportDeclaration extends Span {
-	type: "ImportDeclaration";
-	specifiers: Array<ImportDeclarationSpecifier> | null;
-	source: StringLiteral;
-	phase: ImportPhase | null;
-	withClause: WithClause | null;
-	importKind: ImportOrExportKind;
+  type: 'ImportDeclaration';
+  specifiers: Array<ImportDeclarationSpecifier>;
+  source: StringLiteral;
+  phase: ImportPhase | null;
+  withClause: WithClause | null;
+  importKind: ImportOrExportKind;
 }
 
 export type ImportPhase = "source" | "defer";

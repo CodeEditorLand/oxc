@@ -3,23 +3,38 @@
 
 export * from "@oxc-project/types";
 export declare class MagicString {
-	/** Get source text from utf8 offset. */
-	getSourceText(start: number, end: number): string;
-	/** Get 0-based line and column number from utf8 offset. */
-	getLineColumnNumber(offset: number): LineColumn;
-	/** Get UTF16 byte offset from UTF8 byte offset. */
-	getUtf16ByteOffset(offset: number): number;
-	length(): number;
-	toString(): string;
-	append(input: string): this;
-	appendLeft(index: number, input: string): this;
-	appendRight(index: number, input: string): this;
-	indent(): this;
-	prepend(input: string): this;
-	prependLeft(index: number, input: string): this;
-	prependRight(index: number, input: string): this;
-	relocate(start: number, end: number, to: number): this;
-	remove(start: number, end: number): this;
+  /** Get source text from utf8 offset. */
+  getSourceText(start: number, end: number): string
+  /** Get 0-based line and column number from utf8 offset. */
+  getLineColumnNumber(offset: number): LineColumn
+  /** Get UTF16 byte offset from UTF8 byte offset. */
+  getUtf16ByteOffset(offset: number): number
+  length(): number
+  toString(): string
+  hasChanged(): boolean
+  append(input: string): this
+  appendLeft(index: number, input: string): this
+  appendRight(index: number, input: string): this
+  indent(): this
+  prepend(input: string): this
+  prependLeft(index: number, input: string): this
+  prependRight(index: number, input: string): this
+  relocate(start: number, end: number, to: number): this
+  remove(start: number, end: number): this
+  generateMap(options?: Partial<GenerateDecodedMapOptions>): {
+    toString: () => string;
+    toUrl: () => string;
+    toMap: () => {
+      file?: string
+      mappings: string
+      names: Array<string>
+      sourceRoot?: string
+      sources: Array<string>
+      sourcesContent?: Array<string>
+      version: number
+      x_google_ignoreList?: Array<number>
+    }
+  }
 }
 
 export declare class ParseResult {
@@ -40,21 +55,29 @@ export interface Comment {
 	end: number;
 }
 
+export interface DynamicImport {
+  start: number
+  end: number
+  moduleRequest: Span
+}
+
 export interface EcmaScriptModule {
-	/**
-	 * Has ESM syntax.
-	 *
-	 * i.e. `import` and `export` statements, and `import.meta`.
-	 *
-	 * Dynamic imports `import('foo')` are ignored since they can be used in non-ESM files.
-	 */
-	hasModuleSyntax: boolean;
-	/** Import Statements. */
-	staticImports: Array<StaticImport>;
-	/** Export Statements. */
-	staticExports: Array<StaticExport>;
-	/** Span positions` of `import.meta` */
-	importMetas: Array<Span>;
+  /**
+   * Has ESM syntax.
+   *
+   * i.e. `import` and `export` statements, and `import.meta`.
+   *
+   * Dynamic imports `import('foo')` are ignored since they can be used in non-ESM files.
+   */
+  hasModuleSyntax: boolean
+  /** Import statements. */
+  staticImports: Array<StaticImport>
+  /** Export statements. */
+  staticExports: Array<StaticExport>
+  /** Dynamic import expressions. */
+  dynamicImports: Array<DynamicImport>
+  /** Span positions` of `import.meta` */
+  importMetas: Array<Span>
 }
 
 export interface ErrorLabel {
@@ -114,6 +137,15 @@ export declare const enum ExportLocalNameKind {
 	 * `export default function () {}`
 	 */
 	None = "None",
+}
+
+export interface GenerateDecodedMapOptions {
+  /** The filename of the file containing the original source. */
+  source?: string
+  /** Whether to include the original content in the map's `sourcesContent` array. */
+  includeContent: boolean
+  /** Whether the mapping should be high-resolution. */
+  hires: boolean | 'boundary'
 }
 
 export interface ImportName {
@@ -197,6 +229,17 @@ export declare const enum Severity {
 	Error = "Error",
 	Warning = "Warning",
 	Advice = "Advice",
+}
+
+export interface SourceMap {
+  file?: string
+  mappings: string
+  names: Array<string>
+  sourceRoot?: string
+  sources: Array<string>
+  sourcesContent?: Array<string>
+  version: number
+  x_google_ignoreList?: Array<number>
 }
 
 export interface SourceMapOptions {

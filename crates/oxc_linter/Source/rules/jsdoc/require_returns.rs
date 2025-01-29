@@ -111,13 +111,48 @@ impl Rule for RequireReturns {
 		// Search `ReturnStatement` when visiting `Function` requires a lot of work.
 		// Instead, we collect all functions and their attributes first.
 
-		// Value of map: (AstNode, Span, Attrs: (isAsync, hasReturnValue))
-		let mut functions_to_check = FxHashMap::default();
-		'visit_node: for node in ctx.nodes() {
-			match node.kind() {
-				AstKind::Function(func) => {
-					functions_to_check.insert(node.id(), (node, func.span, (func.r#async, false)));
-				},
+        // Value of map: (AstNode, Span, Attrs: (isAsync, hasReturnValue))
+        let mut functions_to_check = FxHashMap::default();
+        'visit_node: for node in ctx.nodes() {
+            match node.kind() {
+                AstKind::Function(func) => {
+                    functions_to_check.insert(node.id(), (node, func.span, (func.r#async, false)));
+                }
+                AstKind::ArrowFunctionExpression(arrow_func) => {
+                    functions_to_check.insert(
+                        node.id(),
+                        (
+                            node,
+                            arrow_func.span,
+                            if let Some(expr) = arrow_func.get_expression() {
+                                is_promise_resolve_with_value(expr, ctx)
+                                    .map_or((arrow_func.r#async, true), |v| (true, v))
+                            } else {
+                                (arrow_func.r#async, false)
+                            },
+                        ),
+                    );
+                }
+                // Update function attrs entry with checking `return` value.
+                // If syntax is valid, parent function node should be found by looking up the tree.
+                //
+                // It may not be accurate if there are multiple `return` in a function like:
+                // ```js
+                // function foo(x) {
+                //   if (x) return Promise.resolve(1);
+                //   return 2;
+                // }
+                // ```
+                // IMO: This is a fault of the original rule design...
+                AstKind::ReturnStatement(return_stmt) => {
+                    let mut current_node = node;
+                    while let Some(parent_node) = ctx.nodes().parent_node(current_node.id()) {
+                        match parent_node.kind() {
+                            AstKind::Function(_) | AstKind::ArrowFunctionExpression(_) => {
+                                // Ignore `return;`
+                                let Some(argument) = &return_stmt.argument else {
+                                    continue 'visit_node;
+                                };
 
 				AstKind::ArrowFunctionExpression(arrow_func) => {
 					functions_to_check.insert(

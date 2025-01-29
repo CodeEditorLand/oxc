@@ -61,56 +61,60 @@ impl Rule for NoLoneBlocks {
             return;
         };
 
-        let body = &stmt.body;
-        if body.is_empty() {
-            report(ctx, node, parent_node);
+        if stmt.body.is_empty() {
+            let is_comment_in_stmt =
+                ctx.semantic().comments_range(stmt.span.start..stmt.span.end).last().is_some();
+
+            if !is_comment_in_stmt
+                && !matches!(parent_node.kind(), AstKind::TryStatement(_) | AstKind::CatchClause(_))
+            {
+                report(ctx, node, parent_node);
+            }
             return;
         }
 
-        if body.len() == 1
-            && matches!(parent_node.kind(), AstKind::FunctionBody(parent) if parent.statements.len() == 1)
-        {
-            report(ctx, node, parent_node);
-        }
+        let mut is_lone_blocks = is_lone_block(node, parent_node);
 
-        let mut lone_blocks = Vec::new();
-        if is_lone_block(node, parent_node) {
-            lone_blocks.push(node);
-        }
-
-        for child in &stmt.body {
-            match child.as_declaration() {
-                Some(Declaration::VariableDeclaration(decl))
-                    if decl.kind != VariableDeclarationKind::Var =>
-                {
-                    mark_lone_block(node, &mut lone_blocks);
+        if is_lone_blocks {
+            for child in &stmt.body {
+                match child.as_declaration() {
+                    Some(Declaration::VariableDeclaration(decl))
+                        if decl.kind != VariableDeclarationKind::Var =>
+                    {
+                        is_lone_blocks = false;
+                    }
+                    Some(
+                        Declaration::ClassDeclaration(_) | Declaration::FunctionDeclaration(_),
+                    ) => {
+                        is_lone_blocks = false;
+                    }
+                    _ => {}
                 }
-                Some(Declaration::ClassDeclaration(_) | Declaration::FunctionDeclaration(_)) => {
-                    mark_lone_block(node, &mut lone_blocks);
-                }
-                _ => {}
             }
-        }
 
-        if let Some(last) = lone_blocks.last() {
-            if last.id() == node.id() {
-                lone_blocks.pop();
+            if is_lone_blocks {
                 report(ctx, node, parent_node);
+                return;
             }
-        } else {
-            match parent_node.kind() {
-                AstKind::BlockStatement(parent_statement) => {
-                    if parent_statement.body.len() == 1 {
-                        report(ctx, node, parent_node);
-                    }
+        }
+
+        match parent_node.kind() {
+            AstKind::FunctionBody(parent) => {
+                if parent.statements.len() == 1 && stmt.body.len() == 1 {
+                    report(ctx, node, parent_node);
                 }
-                AstKind::StaticBlock(parent_statement) => {
-                    if parent_statement.body.len() == 1 {
-                        report(ctx, node, parent_node);
-                    }
-                }
-                _ => {}
             }
+            AstKind::BlockStatement(parent_statement) => {
+                if parent_statement.body.len() == 1 {
+                    report(ctx, node, parent_node);
+                }
+            }
+            AstKind::StaticBlock(parent_statement) => {
+                if parent_statement.body.len() == 1 {
+                    report(ctx, node, parent_node);
+                }
+            }
+            _ => {}
         }
     }
 }
@@ -140,16 +144,6 @@ fn is_lone_block(node: &AstNode, parent_node: &AstNode) -> bool {
     }
 }
 
-fn mark_lone_block(parent_node: &AstNode, lone_blocks: &mut Vec<&AstNode>) {
-    if lone_blocks.is_empty() {
-        return;
-    }
-
-    if lone_blocks.last().is_some_and(|last| last.id() == parent_node.id()) {
-        lone_blocks.pop();
-    }
-}
-
 #[test]
 fn test() {
     use crate::tester::Tester;
@@ -158,6 +152,7 @@ fn test() {
         "if (foo) { if (bar) { baz(); } }",
         "do { bar(); } while (foo)",
         "function foo() { while (bar) { baz() } }",
+        "function test() { { console.log(6); console.log(6) } }",
         "{ let x = 1; }",                      // { "ecmaVersion": 6 },
         "{ const x = 1; }",                    // { "ecmaVersion": 6 },
         "'use strict'; { function bar() {} }", // { "ecmaVersion": 6 },
@@ -165,30 +160,30 @@ fn test() {
         "{ class Bar {} }",      // { "ecmaVersion": 6 },
         "{ {let y = 1;} let x = 1; }", // { "ecmaVersion": 6 },
         "
-			          switch (foo) {
-			            case bar: {
-			              baz;
-			            }
-			          }
-			        ",
+            switch (foo) {
+            case bar: {
+                baz;
+            }
+            }
+        ",
         "
-			          switch (foo) {
-			            case bar: {
-			              baz;
-			            }
-			            case qux: {
-			              boop;
-			            }
-			          }
-			        ",
+            switch (foo) {
+            case bar: {
+                baz;
+            }
+            case qux: {
+                boop;
+            }
+            }
+        ",
         "
-			          switch (foo) {
-			            case bar:
-			            {
-			              baz;
-			            }
-			          }
-			        ",
+            switch (foo) {
+            case bar:
+            {
+                baz;
+            }
+            }
+        ",
         "function foo() { { const x = 4 } const x = 3 }", // { "ecmaVersion": 6 },
         "class C { static {} }",                          // { "ecmaVersion": 2022 },
         "class C { static { foo; } }",                    // { "ecmaVersion": 2022 },
@@ -199,177 +194,194 @@ fn test() {
         "class C { static { { function block(){} } something; } }", // { "ecmaVersion": 2022 },
         "class C { static { something; { class block {}  } } }", // { "ecmaVersion": 2022 },
         "
-			{
-			  using x = makeDisposable();
-			}", // {                "parser": require(parser("typescript-parsers/no-lone-blocks/using")),                "ecmaVersion": 2022            },
+            {
+            using x = makeDisposable();
+            }
+        ", // {                "parser": require(parser("typescript-parsers/no-lone-blocks/using")),                "ecmaVersion": 2022            },
         "
-			{
-			  await using x = makeDisposable();
-			}", // {                "parser": require(parser("typescript-parsers/no-lone-blocks/await-using")),                "ecmaVersion": 2022            }
+            {
+            await using x = makeDisposable();
+            }
+        ", // {                "parser": require(parser("typescript-parsers/no-lone-blocks/await-using")),                "ecmaVersion": 2022            }
+        // Issue: <https://github.com/oxc-project/oxc/issues/8515>
+        "try {} catch {}",
+        // Issue: https://github.com/oxc-project/oxc/issues/8697
+        "
+            if (foo) {
+                // do nothing
+            }
+            else if (bar) {
+                // do nothing again
+            }
+            else {
+                // do nothing
+            }
+        ",
     ];
 
     let fail = vec![
         "{}",
         "{var x = 1;}",
         "foo(); {} bar();",
+        "function test() { { console.log(6); } }",
         "if (foo) { bar(); {} baz(); }",
-        "{ 
+        "{
 			{ } }",
         "function foo() { bar(); {} baz(); }",
         "while (foo) { {} }",
         // MEMO: Currently, this rule always analyzes in strict mode (as it cannot retrieve ecmaFeatures).
         // "{ function bar() {} }", // { "ecmaVersion": 6 },
         "{var x = 1;}", // { "ecmaVersion": 6 },
-        "{ 
+        "{
 			{var x = 1;}
-			 let y = 2; } {let z = 1;}", // { "ecmaVersion": 6 },
-        "{ 
+			let y = 2; } {let z = 1;}", // { "ecmaVersion": 6 },
+        "{
 			{let x = 1;}
-			 var y = 2; } {let z = 1;}", // { "ecmaVersion": 6 },
-        "{ 
+			var y = 2; } {let z = 1;}", // { "ecmaVersion": 6 },
+        "{
 			{var x = 1;}
-			 var y = 2; }
-			 {var z = 1;}", // { "ecmaVersion": 6 },
+			var y = 2; }
+			{var z = 1;}", // { "ecmaVersion": 6 },
         "
-			              switch (foo) {
-			                case 1:
-			                    foo();
-			                    {
-			                        bar;
-			                    }
-			              }
-			            ",
+            switch (foo) {
+            case 1:
+                foo();
+                {
+                    bar;
+                }
+            }
+        ",
         "
-			              switch (foo) {
-			                case 1:
-			                {
-			                    bar;
-			                }
-			                foo();
-			              }
-			            ",
+            switch (foo) {
+                case 1:
+                    {
+                        bar;
+                    }
+                    foo();
+            }
+        ",
         "
-			              function foo () {
-			                {
-			                  const x = 4;
-			                }
-			              }
-			            ", // { "ecmaVersion": 6 },
+            function foo () {
+                {
+                    const x = 4;
+                }
+            }
+        ", // { "ecmaVersion": 6 },
         "
-			              function foo () {
-			                {
-			                  var x = 4;
-			                }
-			              }
-			            ",
+            function foo () {
+                {
+                    var x = 4;
+                }
+            }
+        ",
         "
-			              class C {
-			                static {
-			                  if (foo) {
-			                    {
-			                        let block;
-			                    }
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    if (foo) {
+                        {
+                            let block;
+                        }
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  if (foo) {
-			                    {
-			                        block;
-			                    }
-			                    something;
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    if (foo) {
+                        {
+                            block;
+                        }
+                        something;
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  {
-			                    block;
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    {
+                        block;
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  {
-			                    let block;
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    {
+                        let block;
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  {
-			                    const block = 1;
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    {
+                        const block = 1;
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  {
-			                    function block() {}
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    {
+                        function block() {}
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  {
-			                    class block {}
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    {
+                        class block {}
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  {
-			                    var block;
-			                  }
-			                  something;
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    {
+                        var block;
+                    }
+                    something;
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  something;
-			                  {
-			                    var block;
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    something;
+                    {
+                        var block;
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  {
-			                    block;
-			                  }
-			                  something;
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 },
+            class C {
+                static {
+                    {
+                        block;
+                    }
+                    something;
+                }
+            }
+        ", // { "ecmaVersion": 2022 },
         "
-			              class C {
-			                static {
-			                  something;
-			                  {
-			                    block;
-			                  }
-			                }
-			              }
-			            ", // { "ecmaVersion": 2022 }
+            class C {
+                static {
+                    something;
+                    {
+                        block;
+                    }
+                }
+            }
+        ", // { "ecmaVersion": 2022 }
     ];
 
     Tester::new(NoLoneBlocks::NAME, NoLoneBlocks::PLUGIN, pass, fail).test_and_snapshot();

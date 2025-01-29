@@ -47,10 +47,10 @@ macro_rules! text {
 /// ```
 #[macro_export]
 macro_rules! dynamic_text {
-	($p:ident, $str:expr) => {{
-		let s = oxc_allocator::String::from_str_in($str, $p.allocator).into_bump_str();
-		$crate::ir::Doc::Str(s)
-	}};
+    ($p:ident, $str:expr) => {{
+        let s = $p.allocator.alloc_str($str);
+        $crate::ir::Doc::Str(s)
+    }};
 }
 
 /// Mark a group of items which the printer should try to fit on one line.
@@ -212,6 +212,7 @@ macro_rules! join {
                     $crate::ir::JoinSeparator::CommaLine => {
                         parts.extend([$crate::text!(","), $crate::line!()]);
                     }
+                    $crate::ir::JoinSeparator::CommaSpace => parts.push($crate::text!(", ")),
                     $crate::ir::JoinSeparator::Literalline => parts.push($crate::literalline!($p)),
                 }
             }

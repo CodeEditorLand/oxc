@@ -1,283 +1,151 @@
-use std::{
-	borrow::Cow,
-	collections::HashMap,
-	io::{BufWriter, Stdout, Write},
-};
+//! [Reporters](DiagnosticReporter) for rendering and writing diagnostics.
 
-use crate::{
-	GraphicalReportHandler,
-	Severity,
-	miette::{Error, JSONReportHandler},
-};
+use miette::SourceSpan;
 
-/// stdio is blocked by LineWriter, use a BufWriter to reduce syscalls.
-/// See `https://github.com/rust-lang/rust/issues/60673`.
-fn writer() -> BufWriter<Stdout> { BufWriter::new(std::io::stdout()) }
+use crate::{Error, Severity};
 
-#[allow(clippy::large_enum_variant)] // Lerge size is fine because this is a singleton
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum DiagnosticReporter {
-	Graphical { handler:GraphicalReportHandler, writer:BufWriter<Stdout> },
-	Json { diagnostics:Vec<Error> },
-	Unix { total:usize, writer:BufWriter<Stdout> },
-	Checkstyle { diagnostics:Vec<Error> },
+/// Reporters are responsible for rendering diagnostics to some format and writing them to some
+/// form of output stream.
+///
+/// Reporters get used by [`DiagnosticService`](crate::service::DiagnosticService) when they
+/// receive diagnostics.
+///
+/// ## Example
+/// ```
+/// use oxc_diagnostics::{DiagnosticReporter, Error, Severity};
+///
+/// #[derive(Default)]
+/// pub struct BufferedReporter;
+///
+/// impl DiagnosticReporter for BufferedReporter {
+///     // render the finished output, some reporters will store the errors in memory
+///     // to output all diagnostics at the end
+///     fn finish(&mut self) -> Option<String> {
+///         None
+///     }
+///
+///     // render diagnostics to a simple Apache-like log format
+///     fn render_error(&mut self, error: Error) -> Option<String> {
+///         let level = match error.severity().unwrap_or_default() {
+///             Severity::Error => "ERROR",
+///             Severity::Warning => "WARN",
+///             Severity::Advice => "INFO",
+///         };
+///         let rendered = format!("[{level}]: {error}");
+///
+///         Some(rendered)
+///     }
+/// }
+/// ```
+pub trait DiagnosticReporter {
+    /// Lifecycle hook that gets called when no more diagnostics will be reported.
+    ///
+    /// Some reporters (e.g. `JSONReporter`) store all diagnostics in memory, then write them
+    /// all at once.
+    ///
+    /// While this method _should_ only ever be called a single time, this is not a guarantee
+    /// upheld in Oxc's API. Do not rely on this behavior.
+    fn finish(&mut self, result: &DiagnosticResult) -> Option<String>;
+
+    /// Render a diagnostic into this reporter's desired format. For example, a JSONLinesReporter
+    /// might return a stringified JSON object on a single line. Returns [`None`] to skip reporting
+    /// of this diagnostic.
+    ///
+    /// Reporters should use this method to write diagnostics to their output stream.
+    fn render_error(&mut self, error: Error) -> Option<String>;
 }
 
-impl DiagnosticReporter {
-	pub fn new_graphical() -> Self {
-		Self::Graphical { handler:GraphicalReportHandler::new(), writer:writer() }
-	}
+/// DiagnosticResult will be submitted to the Reporter when the [`DiagnosticService`](crate::service::DiagnosticService)
+/// is finished receiving all files
+#[derive(Default)]
+pub struct DiagnosticResult {
+    /// Total number of warnings received
+    warnings_count: usize,
 
-	pub fn new_json() -> Self { Self::Json { diagnostics:vec![] } }
+    /// Total number of errors received
+    errors_count: usize,
 
-	pub fn new_unix() -> Self { Self::Unix { total:0, writer:writer() } }
-
-	pub fn new_checkstyle() -> Self { Self::Checkstyle { diagnostics:vec![] } }
-
-	pub fn finish(&mut self) {
-		match self {
-			Self::Graphical { writer, .. } => {
-				writer.flush().unwrap();
-			},
-			// NOTE: this output does not conform to eslint json format yet
-			// https://eslint.org/docs/latest/use/formatters/#json
-			Self::Json { diagnostics } => {
-				format_json(diagnostics);
-			},
-
-			Self::Unix { total, writer } => {
-				if *total > 0 {
-					let line = format!("\n{total} problem{}\n", if *total > 1 { "s" } else { "" });
-
-					writer.write_all(line.as_bytes()).unwrap();
-				}
-
-				writer.flush().unwrap();
-			},
-
-			Self::Checkstyle { diagnostics } => {
-				format_checkstyle(diagnostics);
-			},
-		}
-	}
-
-	pub fn render_diagnostics(&mut self, s:&[u8]) {
-		match self {
-			Self::Graphical { writer, .. } | Self::Unix { writer, .. } => {
-				writer.write_all(s).unwrap();
-			},
-
-			Self::Json { .. } | Self::Checkstyle { .. } => {},
-		}
-	}
-
-	pub fn render_error(&mut self, error:Error) -> Option<String> {
-		match self {
-			Self::Graphical { handler, .. } => {
-				let mut output = String::new();
-
-				handler.render_report(&mut output, error.as_ref()).unwrap();
-
-				Some(output)
-			},
-
-			Self::Json { diagnostics } | Self::Checkstyle { diagnostics } => {
-				diagnostics.push(error);
-
-				None
-			},
-
-			Self::Unix { total: count, .. } => {
-				*count += 1;
-
-				Some(format_unix(&error))
-			},
-		}
-	}
+    /// Did the threshold for warnings exceeded the max_warnings?
+    /// ToDo: We giving the input from outside, let the owner calculate the result
+    max_warnings_exceeded: bool,
 }
 
-struct Info {
-	line:usize,
-	column:usize,
-	filename:String,
-	message:String,
-	severity:Severity,
-	rule_id:Option<String>,
+impl DiagnosticResult {
+    pub fn new(warnings_count: usize, errors_count: usize, max_warnings_exceeded: bool) -> Self {
+        Self { warnings_count, errors_count, max_warnings_exceeded }
+    }
+
+    /// Get the number of warning-level diagnostics received.
+    pub fn warnings_count(&self) -> usize {
+        self.warnings_count
+    }
+
+    /// Get the number of error-level diagnostics received.
+    pub fn errors_count(&self) -> usize {
+        self.errors_count
+    }
+
+    /// Did the threshold for warnings exceeded the max_warnings?
+    pub fn max_warnings_exceeded(&self) -> bool {
+        self.max_warnings_exceeded
+    }
+}
+
+pub struct Info {
+    pub start: InfoPosition,
+    pub end: InfoPosition,
+    pub filename: String,
+    pub message: String,
+    pub severity: Severity,
+    pub rule_id: Option<String>,
+}
+
+pub struct InfoPosition {
+    pub line: usize,
+    pub column: usize,
 }
 
 impl Info {
-	fn new(diagnostic:&Error) -> Self {
-		let mut line = 0;
+    pub fn new(diagnostic: &Error) -> Self {
+        let mut start = InfoPosition { line: 0, column: 0 };
+        let mut end = InfoPosition { line: 0, column: 0 };
+        let mut filename = String::new();
+        let mut message = String::new();
+        let mut severity = Severity::Warning;
+        let mut rule_id = None;
+        if let Some(mut labels) = diagnostic.labels() {
+            if let Some(source) = diagnostic.source_code() {
+                if let Some(label) = labels.next() {
+                    if let Ok(span_content) = source.read_span(label.inner(), 0, 0) {
+                        start.line = span_content.line() + 1;
+                        start.column = span_content.column() + 1;
 
-		let mut column = 0;
+                        let end_offset = label.inner().offset() + label.inner().len();
 
-		let mut filename = String::new();
+                        if let Ok(span_content) =
+                            source.read_span(&SourceSpan::from((end_offset, 0)), 0, 0)
+                        {
+                            end.line = span_content.line() + 1;
+                            end.column = span_content.column() + 1;
+                        }
 
-		let mut message = String::new();
+                        if let Some(name) = span_content.name() {
+                            filename = name.to_string();
+                        };
+                        if matches!(diagnostic.severity(), Some(Severity::Error)) {
+                            severity = Severity::Error;
+                        }
+                        let msg = diagnostic.to_string();
+                        // Our messages usually comes with `eslint(rule): message`
+                        (rule_id, message) = msg.split_once(':').map_or_else(
+                            || (None, msg.to_string()),
+                            |(id, msg)| (Some(id.to_string()), msg.trim().to_string()),
+                        );
+                    }
+                }
+            }
+        }
 
-		let mut severity = Severity::Warning;
-
-		let mut rule_id = None;
-
-		if let Some(mut labels) = diagnostic.labels() {
-			if let Some(source) = diagnostic.source_code() {
-				if let Some(label) = labels.next() {
-					if let Ok(span_content) = source.read_span(label.inner(), 0, 0) {
-						line = span_content.line() + 1;
-
-						column = span_content.column() + 1;
-
-						if let Some(name) = span_content.name() {
-							filename = name.to_string();
-						};
-
-						if matches!(diagnostic.severity(), Some(Severity::Error)) {
-							severity = Severity::Error;
-						}
-
-						let msg = diagnostic.to_string();
-						// Our messages usually comes with `eslint(rule):
-						// message`
-						(rule_id, message) = msg.split_once(':').map_or_else(
-							|| (None, msg.to_string()),
-							|(id, msg)| (Some(id.to_string()), msg.trim().to_string()),
-						);
-					}
-				}
-			}
-		}
-
-		Self { line, column, filename, message, severity, rule_id }
-	}
-}
-
-/// <https://github.com/fregante/eslint-formatters/tree/main/packages/eslint-formatter-json>
-fn format_json(diagnostics:&mut Vec<Error>) {
-	let handler = JSONReportHandler::new();
-
-	let messages = diagnostics
-		.drain(..)
-		.map(|error| {
-			let mut output = String::from("\t");
-
-			handler.render_report(&mut output, error.as_ref()).unwrap();
-
-			output
-		})
-		.collect::<Vec<_>>()
-		.join(",\n");
-
-	println!("[\n{messages}\n]");
-}
-
-/// <https://github.com/fregante/eslint-formatters/tree/main/packages/eslint-formatter-unix>
-fn format_unix(diagnostic:&Error) -> String {
-	let Info { line, column, filename, message, severity, rule_id } = Info::new(diagnostic);
-
-	let severity = match severity {
-		Severity::Error => "Error",
-		_ => "Warning",
-	};
-
-	let rule_id =
-		rule_id.map_or_else(|| Cow::Borrowed(""), |rule_id| Cow::Owned(format!("/{rule_id}")));
-
-	format!("{filename}:{line}:{column}: {message} [{severity}{rule_id}]\n")
-}
-
-fn format_checkstyle(diagnostics:&[Error]) {
-	let infos = diagnostics.iter().map(Info::new).collect::<Vec<_>>();
-
-	let mut grouped:HashMap<String, Vec<Info>> = HashMap::new();
-
-	for info in infos {
-		grouped.entry(info.filename.clone()).or_default().push(info);
-	}
-
-	let messages = grouped.into_values().map(|infos| {
-         let messages = infos
-             .iter()
-             .fold(String::new(), |mut acc, info| {
-                 let Info { line, column, message, severity, rule_id, .. } = info;
-                 let severity = match severity {
-                     Severity::Error => "error",
-                     _ => "warning",
-                 };
-                 let message = rule_id.as_ref().map_or_else(|| xml_escape(message), |rule_id| Cow::Owned(format!("{} ({rule_id})", xml_escape(message))));
-                 let source = rule_id.as_ref().map_or_else(|| Cow::Borrowed(""), |rule_id| Cow::Owned(format!("eslint.rules.{rule_id}")));
-                 let line = format!(r#"<error line="{line}" column="{column}" severity="{severity}" message="{message}" source="{source}" />"#);
-                 acc.push_str(&line);
-                 acc
-             });
-         let filename = &infos[0].filename;
-         format!(r#"<file name="{filename}">{messages}</file>"#)
-     }).collect::<Vec<_>>().join(" ");
-
-	println!(
-		r#"<?xml version="1.0" encoding="utf-8"?><checkstyle version="4.3">{messages}</checkstyle>"#
-	);
-}
-
-/// <https://github.com/tafia/quick-xml/blob/6e34a730853fe295d68dc28460153f08a5a12955/src/escapei.rs#L84-L86>
-fn xml_escape(raw:&str) -> Cow<str> {
-	xml_escape_impl(raw, |ch| matches!(ch, b'<' | b'>' | b'&' | b'\'' | b'\"'))
-}
-
-fn xml_escape_impl<F:Fn(u8) -> bool>(raw:&str, escape_chars:F) -> Cow<str> {
-	let bytes = raw.as_bytes();
-
-	let mut escaped = None;
-
-	let mut iter = bytes.iter();
-
-	let mut pos = 0;
-
-	while let Some(i) = iter.position(|&b| escape_chars(b)) {
-		if escaped.is_none() {
-			escaped = Some(Vec::with_capacity(raw.len()));
-		}
-
-		let escaped = escaped.as_mut().expect("initialized");
-
-		let new_pos = pos + i;
-
-		escaped.extend_from_slice(&bytes[pos..new_pos]);
-
-		match bytes[new_pos] {
-			b'<' => escaped.extend_from_slice(b"&lt;"),
-			b'>' => escaped.extend_from_slice(b"&gt;"),
-			b'\'' => escaped.extend_from_slice(b"&apos;"),
-			b'&' => escaped.extend_from_slice(b"&amp;"),
-			b'"' => escaped.extend_from_slice(b"&quot;"),
-
-			// This set of escapes handles characters that should be escaped
-			// in elements of xs:lists, because those characters works as
-			// delimiters of list elements
-			b'\t' => escaped.extend_from_slice(b"&#9;"),
-			b'\n' => escaped.extend_from_slice(b"&#10;"),
-			b'\r' => escaped.extend_from_slice(b"&#13;"),
-			b' ' => escaped.extend_from_slice(b"&#32;"),
-			_ => {
-				unreachable!(
-					"Only '<', '>','\', '&', '\"', '\\t', '\\r', '\\n', and ' ' are escaped"
-				)
-			},
-		}
-
-		pos = new_pos + 1;
-	}
-
-	if let Some(mut escaped) = escaped {
-		if let Some(raw) = bytes.get(pos..) {
-			escaped.extend_from_slice(raw);
-		}
-		#[allow(unsafe_code)]
-		// SAFETY: we operate on UTF-8 input and search for an one byte chars
-		// only, so all slices that was put to the `escaped` is a valid UTF-8
-		// encoded strings
-		Cow::Owned(unsafe { String::from_utf8_unchecked(escaped) })
-	} else {
-		Cow::Borrowed(raw)
-	}
+        Self { start, end, filename, message, severity, rule_id }
+    }
 }

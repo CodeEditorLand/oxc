@@ -1,53 +1,26 @@
 {
-	"name": "@codeeditorland-parser/binding",
-	"version": "0.0.1",
-	"private": false,
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "Source 🖋️ Open 👐🏻",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"type": "module",
-	"scripts": {
-		"build": "napi build --platform --js bindings.js --release",
-		"build-dev": "napi build --platform --js bindings.js",
-		"prepublishOnly": "Build 'Source/**/*.ts'"
-	},
-	"dependencies": {
-		"@codeeditorland-project/types": "workspace:^"
-	},
-	"devDependencies": {
-		"@playform/build": "0.2.1"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"napi": {
-		"binaryName": "parser",
-		"dtsHeaderFile": "header.js",
-		"targets": [
-			"x86_64-pc-windows-msvc",
-			"aarch64-pc-windows-msvc",
-			"x86_64-unknown-linux-gnu",
-			"aarch64-unknown-linux-gnu",
-			"x86_64-unknown-linux-musl",
-			"aarch64-unknown-linux-musl",
-			"x86_64-apple-darwin",
-			"aarch64-apple-darwin"
-		]
-	}
+  "name": "@oxc-parser/binding",
+  "private": true,
+  "scripts": {
+    "build-dev": "napi build --no-dts-cache --platform --js bindings.js",
+    "build": "napi build --no-dts-cache --platform --js bindings.js --release",
+    "test": "vitest --typecheck run ./test"
+  },
+  "napi": {
+    "binaryName": "parser",
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-musl",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin"
+    ],
+    "dtsHeaderFile": "header.js"
+  },
+  "dependencies": {
+    "@oxc-project/types": "workspace:^"
+  }
 }

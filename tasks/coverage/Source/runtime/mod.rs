@@ -1,7 +1,4 @@
-use std::{
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::path::{Path, PathBuf};
 
 use serde_json::json;
 
@@ -80,6 +77,13 @@ static SKIP_TEST_CASES: &[&str] = &[
     "language/expressions/prefix-decrement/operator-prefix-decrement-x-calls-putvalue-lhs-newvalue",
 ];
 
+static SKIP_ESID: &[&str] = &[
+    // Always fail because they need to perform `eval`
+    "sec-performeval-rules-in-initializer",
+    "sec-privatefieldget",
+    "sec-privatefieldset",
+];
+
 pub struct Test262RuntimeCase {
     base: Test262Case,
     test_root: PathBuf,
@@ -109,6 +113,13 @@ impl Case for Test262RuntimeCase {
         let features = &self.base.meta().features;
         self.base.should_fail()
             || self.base.skip_test_case()
+            || (self
+                .base
+                .meta()
+                .esid
+                .as_ref()
+                .is_some_and(|esid| SKIP_ESID.contains(&esid.as_ref()))
+                && test262_path.contains("direct-eval"))
             || base_path.contains("built-ins")
             || base_path.contains("staging")
             || base_path.contains("intl402")
@@ -260,10 +271,9 @@ async fn request_run_code(json: impl serde::Serialize + Send + 'static) -> Resul
     tokio::spawn(async move {
         agent()
             .post("http://localhost:32055/run")
-            .timeout(Duration::from_secs(4))
             .send_json(json)
             .map_err(|err| err.to_string())
-            .and_then(|res| res.into_string().map_err(|err| err.to_string()))
+            .and_then(|mut res| res.body_mut().read_to_string().map_err(|err| err.to_string()))
     })
     .await
     .map_err(|err| err.to_string())?

@@ -71,6 +71,10 @@ pub struct BasicOptions {
     /// TypeScript `tsconfig.json` path for reading path alias and project references for import plugin
     #[bpaf(argument("./tsconfig.json"), hide_usage)]
     pub tsconfig: Option<PathBuf>,
+
+    /// Initialize oxlint configuration with default values
+    #[bpaf(switch, hide_usage)]
+    pub init: bool,
 }
 
 // This is formatted according to
@@ -181,7 +185,7 @@ pub struct WarningOptions {
 /// Output
 #[derive(Debug, Clone, Bpaf)]
 pub struct OutputOptions {
-    /// Use a specific output format (default, json, unix, checkstyle, github)
+    /// Use a specific output format (default, json, unix, checkstyle, github, stylish)
     #[bpaf(long, short, fallback(OutputFormat::Default), hide_usage)]
     pub format: OutputFormat,
 }

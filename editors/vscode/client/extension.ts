@@ -1,58 +1,26 @@
-import { promises as fsPromises } from "node:fs";
-import { join } from "node:path";
-import {
-	commands,
-	ExtensionContext,
-	StatusBarAlignment,
-	StatusBarItem,
-	ThemeColor,
-	window,
-	workspace,
-} from "vscode";
-import { MessageType, ShowMessageNotification } from "vscode-languageclient";
-import {
-	Executable,
-	LanguageClient,
-	LanguageClientOptions,
-	ServerOptions,
-} from "vscode-languageclient/node";
+import { ExtensionContext, StatusBarAlignment, StatusBarItem, ThemeColor, window, workspace } from 'vscode';
 
 import {
-  CodeAction,
-  Command,
-  commands,
-  ExtensionContext,
-  StatusBarAlignment,
-  StatusBarItem,
-  ThemeColor,
-  window,
-  workspace,
-} from 'vscode';
-
-import {
-  CodeActionRequest,
-  CodeActionTriggerKind,
+  Executable,
+  LanguageClient,
+  LanguageClientOptions,
   MessageType,
-  Position,
-  Range,
+  ServerOptions,
   ShowMessageNotification,
-} from 'vscode-languageclient';
+} from 'vscode-languageclient/node';
 
-const outputChannelName = "Oxc";
-
-import { join } from 'node:path';
+import {
+  applyAllFixesFileCommand,
+  OxcCommands,
+  restartServerCommand,
+  showOutputChannelCommand,
+  toggleEnabledCommand,
+} from './commands';
 import { ConfigService } from './ConfigService';
+import findBinary from './findBinary';
 
 const languageClientName = 'oxc';
 const outputChannelName = 'Oxc';
-const commandPrefix = 'oxc';
-
-const enum OxcCommands {
-  RestartServer = `${commandPrefix}.restartServer`,
-  ApplyAllFixesFile = `${commandPrefix}.applyAllFixesFile`,
-  ShowOutputChannel = `${commandPrefix}.showOutputChannel`,
-  ToggleEnable = `${commandPrefix}.toggleEnable`,
-}
 
 let client: LanguageClient;
 
@@ -60,99 +28,12 @@ let myStatusBarItem: StatusBarItem;
 
 export async function activate(context: ExtensionContext) {
   const configService = new ConfigService();
-  const restartCommand = commands.registerCommand(
-    OxcCommands.RestartServer,
-    async () => {
-      if (!client) {
-        window.showErrorMessage('oxc client not found');
-
-        return;
-      }
-
-				return;
-			}
-
-			try {
-				if (client.isRunning()) {
-					await client.restart();
-
-					window.showInformationMessage("oxc server restarted.");
-				} else {
-					await client.start();
-				}
-			} catch (err) {
-				client.error("Restarting client failed", err, "force");
-			}
-		},
-	);
-
-  const toggleEnable = commands.registerCommand(
-    OxcCommands.ToggleEnable,
-    () => {
-      configService.config.updateEnable(!configService.config.enable);
-    },
-  );
-
-  const applyAllFixesFile = commands.registerCommand(
-    OxcCommands.ApplyAllFixesFile,
-    async () => {
-      if (!client) {
-        window.showErrorMessage('oxc client not found');
-        return;
-      }
-      const textEditor = window.activeTextEditor;
-      if (!textEditor) {
-        window.showErrorMessage('active text editor not found');
-        return;
-      }
-
-      const lastLine = textEditor.document.lineAt(textEditor.document.lineCount - 1);
-      const codeActionResult = await client.sendRequest(CodeActionRequest.type, {
-        textDocument: {
-          uri: textEditor.document.uri.toString(),
-        },
-        range: Range.create(Position.create(0, 0), lastLine.range.end),
-        context: {
-          diagnostics: [],
-          only: [],
-          triggerKind: CodeActionTriggerKind.Invoked,
-        },
-      });
-      const commandsOrCodeActions = await client.protocol2CodeConverter.asCodeActionResult(codeActionResult || []);
-
-      await Promise.all(
-        commandsOrCodeActions
-          .map(async (codeActionOrCommand) => {
-            // Commands are always applied. Regardless of whether it's a Command or CodeAction#command.
-            if (isCommand(codeActionOrCommand)) {
-              await commands.executeCommand(codeActionOrCommand.command, codeActionOrCommand.arguments);
-            } else {
-              // Only preferred edits are applied
-              // LSP states edits must be run first, then commands
-              if (codeActionOrCommand.edit && codeActionOrCommand.isPreferred) {
-                await workspace.applyEdit(codeActionOrCommand.edit);
-              }
-              if (codeActionOrCommand.command) {
-                await commands.executeCommand(
-                  codeActionOrCommand.command.command,
-                  codeActionOrCommand.command.arguments,
-                );
-              }
-            }
-          }),
-      );
-
-      function isCommand(codeActionOrCommand: CodeAction | Command): codeActionOrCommand is Command {
-        return typeof codeActionOrCommand.command === 'string';
-      }
-    },
-  );
 
   context.subscriptions.push(
-    applyAllFixesFile,
-    restartCommand,
-    showOutputCommand,
-    toggleEnable,
+    applyAllFixesFileCommand(client),
+    restartServerCommand(client),
+    showOutputChannelCommand(client),
+    toggleEnabledCommand(configService.config),
     configService,
   );
 
@@ -163,31 +44,7 @@ export async function activate(context: ExtensionContext) {
 		config,
 	);
 
-  async function findBinary(): Promise<string> {
-    let bin = configService.config.binPath;
-
-    if (bin) {
-      try {
-        await fsPromises.access(bin);
-
-        return bin;
-      } catch {}
-    }
-
-	async function findBinary(): Promise<string> {
-		let bin = config.binPath;
-
-		if (bin) {
-			try {
-				await fsPromises.access(bin);
-
-				return bin;
-			} catch {}
-		}
-
-		const workspaceFolders = workspace.workspaceFolders;
-
-  const command = await findBinary();
+  const command = await findBinary(context, configService.config);
   const run: Executable = {
     command: command!,
     options: {
@@ -231,16 +88,34 @@ export async function activate(context: ExtensionContext) {
     traceOutputChannel: outputChannel,
   };
 
-		if (workspaceFolders?.length && !isWindows) {
-			try {
-				return await Promise.any(
-					workspaceFolders.map(async (folder) => {
-						const binPath = join(
-							folder.uri.fsPath,
-							"node_modules",
-							".bin",
-							"oxc_language_server",
-						);
+  // Create the language client and start the client.
+  client = new LanguageClient(
+    languageClientName,
+    serverOptions,
+    clientOptions,
+  );
+
+  client.onNotification(ShowMessageNotification.type, (params) => {
+    switch (params.type) {
+      case MessageType.Debug:
+        outputChannel.debug(params.message);
+        break;
+      case MessageType.Log:
+        outputChannel.info(params.message);
+        break;
+      case MessageType.Info:
+        window.showInformationMessage(params.message);
+        break;
+      case MessageType.Warning:
+        window.showWarningMessage(params.message);
+        break;
+      case MessageType.Error:
+        window.showErrorMessage(params.message);
+        break;
+      default:
+        outputChannel.info(params.message);
+    }
+  });
 
 						await fsPromises.access(binPath);
 

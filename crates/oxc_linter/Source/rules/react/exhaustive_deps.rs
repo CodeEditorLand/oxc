@@ -2,25 +2,14 @@ use std::hash::Hash;
 
 use itertools::Itertools;
 use oxc_ast::{
-	AstKind,
-	Visit,
-	ast::{
-		Argument,
-		ArrayExpressionElement,
-		ArrowFunctionExpression,
-		BindingPatternKind,
-		CallExpression,
-		ChainElement,
-		Expression,
-		Function,
-		FunctionBody,
-		IdentifierReference,
-		MemberExpression,
-		StaticMemberExpression,
-		VariableDeclarationKind,
-	},
-	match_expression,
-	visit::walk::walk_function_body,
+    ast::{
+        Argument, ArrayExpressionElement, ArrowFunctionExpression, BindingPatternKind,
+        CallExpression, ChainElement, Expression, Function, FunctionBody, IdentifierReference,
+        MemberExpression, StaticMemberExpression, VariableDeclarationKind,
+    },
+    match_expression,
+    visit::walk::walk_function_body,
+    AstKind, AstType, Visit,
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
@@ -66,14 +55,11 @@ fn unknown_dependencies_diagnostic(hook_name:&str, span:Span) -> OxcDiagnostic {
 	.with_error_code_scope(SCOPE)
 }
 
-fn async_effect_diagnostic(span:Span) -> OxcDiagnostic {
-	OxcDiagnostic::warn("Effect callbacks are synchronous to prevent race conditions.")
-		.with_label(span)
-		.with_help(
-			"Consider putting the asynchronous code inside a function and calling it from the \
-			 effect.",
-		)
-		.with_error_code_scope(SCOPE)
+fn async_effect_diagnostic(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::warn("Effect callbacks are synchronous to prevent race conditions.")
+        .with_label(span)
+        .with_help("Consider putting the asynchronous code inside a function and calling it from the effect.")
+        .with_error_code_scope(SCOPE)
 }
 
 fn missing_dependency_diagnostic(hook_name:&str, deps:&[String], span:Span) -> OxcDiagnostic {
@@ -392,9 +378,11 @@ impl Rule for ExhaustiveDeps {
 			return;
 		};
 
-		if callback_node.is_async() && is_effect {
-			ctx.diagnostic(async_effect_diagnostic(callback_node.span()));
-		}
+            if !is_identifier_a_dependency(dep.name, dep.reference_id, ctx, component_scope_id) {
+                return false;
+            };
+            true
+        });
 
 		let dependencies_node = dependencies_node.and_then(|node| {
 			match node {
@@ -816,27 +804,23 @@ fn analyze_property_chain<'a, 'b>(
 	expr:&'b Expression<'a>,
 	semantic:&'b Semantic<'a>,
 ) -> Result<Option<Dependency<'a>>, ()> {
-	match expr {
-		Expression::Identifier(ident) => {
-			Ok(Some(Dependency {
-				span:ident.span(),
-				name:ident.name.clone(),
-				reference_id:ident.reference_id(),
-				chain:vec![],
-				symbol_id:semantic.symbols().get_reference(ident.reference_id()).symbol_id(),
-			}))
-		},
-		// TODO; is this correct?
-		Expression::JSXElement(_) => Ok(None),
-		Expression::StaticMemberExpression(expr) => concat_members(expr, semantic),
-		Expression::ChainExpression(chain_expr) => {
-			match &chain_expr.expression {
-				ChainElement::StaticMemberExpression(expr) => concat_members(expr, semantic),
-				_ => Err(()),
-			}
-		},
-		_ => Err(()),
-	}
+    match expr {
+        Expression::Identifier(ident) => Ok(Some(Dependency {
+            span: ident.span(),
+            name: ident.name,
+            reference_id: ident.reference_id(),
+            chain: vec![],
+            symbol_id: semantic.symbols().get_reference(ident.reference_id()).symbol_id(),
+        })),
+        // TODO; is this correct?
+        Expression::JSXElement(_) => Ok(None),
+        Expression::StaticMemberExpression(expr) => concat_members(expr, semantic),
+        Expression::ChainExpression(chain_expr) => match &chain_expr.expression {
+            ChainElement::StaticMemberExpression(expr) => concat_members(expr, semantic),
+            _ => Err(()),
+        },
+        _ => Err(()),
+    }
 }
 
 fn concat_members<'a, 'b>(
@@ -847,22 +831,22 @@ fn concat_members<'a, 'b>(
 		return Ok(None);
 	};
 
-	let new_chain = Vec::from([member_expr.property.name.clone()]);
+    let new_chain = Vec::from([member_expr.property.name]);
 
-	Ok(Some(Dependency {
-		span:member_expr.span,
-		name:source.name.clone(),
-		reference_id:source.reference_id,
-		chain:[source.chain, new_chain].concat(),
-		symbol_id:semantic.symbols().get_reference(source.reference_id).symbol_id(),
-	}))
+    Ok(Some(Dependency {
+        span: member_expr.span,
+        name: source.name,
+        reference_id: source.reference_id,
+        chain: [source.chain, new_chain].concat(),
+        symbol_id: semantic.symbols().get_reference(source.reference_id).symbol_id(),
+    }))
 }
 
 fn is_identifier_a_dependency<'a>(
-	ident_name:&Atom<'a>,
-	ident_reference_id:ReferenceId,
-	ctx:&'_ LintContext<'a>,
-	component_scope_id:ScopeId,
+    ident_name: Atom<'a>,
+    ident_reference_id: ReferenceId,
+    ctx: &'_ LintContext<'a>,
+    component_scope_id: ScopeId,
 ) -> bool {
 	// if it is a global e.g. `console` or `window`, then it's not a dependency
 	if ctx
@@ -933,11 +917,11 @@ fn is_identifier_a_dependency<'a>(
 
 // https://github.com/facebook/react/blob/fee786a057774ab687aff765345dd86fce534ab2/packages/eslint-plugin-react-hooks/src/ExhaustiveDeps.js#L164
 fn is_stable_value<'a, 'b>(
-	node:&'b AstNode<'a>,
-	ident_name:&Atom<'a>,
-	ident_reference_id:ReferenceId,
-	ctx:&'b LintContext<'a>,
-	component_scope_id:ScopeId,
+    node: &'b AstNode<'a>,
+    ident_name: Atom<'a>,
+    ident_reference_id: ReferenceId,
+    ctx: &'b LintContext<'a>,
+    component_scope_id: ScopeId,
 ) -> bool {
 	match node.kind() {
 		AstKind::VariableDeclaration(declaration) => {
@@ -1055,14 +1039,8 @@ fn is_function_stable<'a, 'b>(
 	let deps = {
 		let mut collector = ExhaustiveDepsVisitor::new(ctx.semantic());
 
-		collector.visit_function_body(function_body);
-
-		collector.found_dependencies
-	};
-
-	deps.iter().all(|dep| {
-		!is_identifier_a_dependency(&dep.name, dep.reference_id, ctx, component_scope_id)
-	})
+    deps.iter()
+        .all(|dep| !is_identifier_a_dependency(dep.name, dep.reference_id, ctx, component_scope_id))
 }
 
 // https://github.com/facebook/react/blob/fee786a057774ab687aff765345dd86fce534ab2/packages/eslint-plugin-react-hooks/src/ExhaustiveDeps.js#L1742
@@ -1089,12 +1067,12 @@ fn func_call_without_react_namespace<'a>(call_expr:&'a CallExpression<'a>) -> Op
 }
 
 struct ExhaustiveDepsVisitor<'a, 'b> {
-	semantic:&'b Semantic<'a>,
-	stack:Vec<AstKind<'a>>,
-	skip_reporting_dependency:bool,
-	set_state_call:bool,
-	found_dependencies:FxHashSet<Dependency<'a>>,
-	refs_inside_cleanups:Vec<&'a StaticMemberExpression<'a>>,
+    semantic: &'b Semantic<'a>,
+    stack: Vec<AstType>,
+    skip_reporting_dependency: bool,
+    set_state_call: bool,
+    found_dependencies: FxHashSet<Dependency<'a>>,
+    refs_inside_cleanups: Vec<&'a StaticMemberExpression<'a>>,
 }
 
 impl<'a, 'b> ExhaustiveDepsVisitor<'a, 'b> {
@@ -1115,7 +1093,9 @@ impl<'a, 'b> ExhaustiveDepsVisitor<'a, 'b> {
 }
 
 impl<'a> Visit<'a> for ExhaustiveDepsVisitor<'a, '_> {
-	fn enter_node(&mut self, kind:AstKind<'a>) { self.stack.push(kind); }
+    fn enter_node(&mut self, kind: AstKind<'a>) {
+        self.stack.push(kind.ty());
+    }
 
 	fn leave_node(&mut self, _kind:AstKind<'a>) { self.stack.pop(); }
 
@@ -1146,103 +1126,74 @@ impl<'a> Visit<'a> for ExhaustiveDepsVisitor<'a, '_> {
 			self.refs_inside_cleanups.push(it);
 		}
 
-		// consider `useEffect(() => { console.log(props.foo().foo.bar); },
-		// [props.foo]);` we don't care about `foo.bar`, only `props.foo`
-		if matches!(it.object.get_inner_expression(), Expression::CallExpression(_))
-			|| self.skip_reporting_dependency
-		{
-			self.visit_expression(&it.object);
+        let is_parent_call_expr =
+            self.stack.get(self.stack.len() - 2).is_some_and(|&ty| ty == AstType::CallExpression);
 
-			return;
-		}
+        match analyze_property_chain(&it.object, self.semantic) {
+            Ok(source) => {
+                if let Some(source) = source {
+                    if is_parent_call_expr {
+                        self.found_dependencies.insert(source);
+                    } else {
+                        let new_chain = Vec::from([it.property.name]);
+                        self.found_dependencies.insert(Dependency {
+                            name: source.name,
+                            reference_id: source.reference_id,
+                            span: source.span,
+                            chain: [source.chain.clone(), new_chain].concat(),
+                            symbol_id: self
+                                .semantic
+                                .symbols()
+                                .get_reference(source.reference_id)
+                                .symbol_id(),
+                        });
+                    }
+                }
 
 		let is_parent_call_expr = self
 			.stack
 			.get(self.stack.len() - 2)
 			.is_some_and(|kind| matches!(kind, AstKind::CallExpression(_)));
 
-		match analyze_property_chain(&it.object, self.semantic) {
-			Ok(source) => {
-				if let Some(source) = source {
-					if is_parent_call_expr {
-						self.found_dependencies.insert(source);
-					} else {
-						let new_chain = Vec::from([it.property.name.clone()]);
-						self.found_dependencies.insert(Dependency {
-							name:source.name.clone(),
-							reference_id:source.reference_id,
-							span:source.span,
-							chain:[source.chain.clone(), new_chain].concat(),
-							symbol_id:self
-								.semantic
-								.symbols()
-								.get_reference(source.reference_id)
-								.symbol_id(),
-						});
-					}
-				}
+    fn visit_identifier_reference(&mut self, ident: &IdentifierReference<'a>) {
+        if self.skip_reporting_dependency {
+            return;
+        }
+        self.found_dependencies.insert(Dependency {
+            name: ident.name,
+            reference_id: ident.reference_id(),
+            span: ident.span,
+            chain: vec![],
+            symbol_id: self.semantic.symbols().get_reference(ident.reference_id()).symbol_id(),
+        });
 
 				let cur_skip_reporting_dependency = self.skip_reporting_dependency;
 
-				self.skip_reporting_dependency = true;
-
-				self.visit_expression(&it.object);
-
-				self.skip_reporting_dependency = cur_skip_reporting_dependency;
-			},
-			// this means that some part of the chain could not be analyzed
-			// for example `foo.bar.baz().abc`. `baz()` cannot be statically analyzed
-			// instead, continue to go down, looking at the object to gather dependencies
-			Err(()) => {
-				self.visit_expression(&it.object);
-			},
-		}
-	}
-
-	fn visit_identifier_reference(&mut self, ident:&IdentifierReference<'a>) {
-		if self.skip_reporting_dependency {
-			return;
-		}
-
-		self.found_dependencies.insert(Dependency {
-			name:ident.name.clone(),
-			reference_id:ident.reference_id(),
-			span:ident.span,
-			chain:vec![],
-			symbol_id:self.semantic.symbols().get_reference(ident.reference_id()).symbol_id(),
-		});
-
-		if let Some(decl) = get_declaration_of_variable(ident, self.semantic) {
-			let is_set_state_call = match decl.kind() {
-				AstKind::VariableDeclarator(var_decl) => {
-					if let Some(Expression::CallExpression(call_expr)) = &var_decl.init {
-						if let Some(name) = func_call_without_react_namespace(call_expr) {
-							name == "useState" || name == "useReducer"
-						} else {
-							false
-						}
-					} else {
-						false
-					}
-				},
-
-				_ => false,
-			};
-
-			if is_set_state_call
-				&& self.stack.iter().all(|kind| {
-					!matches!(kind, AstKind::Function(_) | AstKind::ArrowFunctionExpression(_))
-				}) {
-				self.set_state_call = true;
-			}
-		}
-	}
+            if is_set_state_call
+                && self
+                    .stack
+                    .iter()
+                    .all(|&ty| !matches!(ty, AstType::Function | AstType::ArrowFunctionExpression))
+            {
+                self.set_state_call = true;
+            }
+        }
+    }
 }
 
-fn is_inside_effect_cleanup(stack:&[AstKind<'_>]) -> bool {
-	let mut iter = stack.iter().rev();
+fn is_inside_effect_cleanup(stack: &[AstType]) -> bool {
+    let mut iter = stack.iter().rev();
+    let mut is_in_returned_function = false;
 
-	let mut is_in_returned_function = false;
+    while let Some(&cur) = iter.next() {
+        if matches!(cur, AstType::Function | AstType::ArrowFunctionExpression) {
+            if let Some(&parent) = iter.next() {
+                if parent == AstType::ReturnStatement {
+                    is_in_returned_function = true;
+                }
+            }
+        }
+    }
 
 	while let Some(cur) = iter.next() {
 		match cur {

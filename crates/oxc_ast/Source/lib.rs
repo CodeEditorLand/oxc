@@ -57,35 +57,25 @@ mod ast_impl;
 mod ast_kind_impl;
 pub mod precedence;
 mod trivia;
+#[cfg(feature = "serialize")]
+pub mod utf8_to_utf16;
 
 mod generated {
-	#![allow(missing_docs)]
-	#[cfg(debug_assertions)]
-	pub mod assert_layouts;
-
-	pub mod ast_builder;
-
-	pub mod ast_kind;
-
-	pub mod derive_clone_in;
-
-	pub mod derive_content_eq;
-
-	pub mod derive_content_hash;
-	#[cfg(feature = "serialize")]
-	pub mod derive_estree;
-
-	pub mod derive_get_address;
-
-	pub mod derive_get_span;
-
-	pub mod derive_get_span_mut;
-
-	pub mod get_id;
-
-	pub mod visit;
-
-	pub mod visit_mut;
+    #![allow(missing_docs)]
+    #[cfg(debug_assertions)]
+    pub mod assert_layouts;
+    pub mod ast_builder;
+    pub mod ast_kind;
+    pub mod derive_clone_in;
+    pub mod derive_content_eq;
+    #[cfg(feature = "serialize")]
+    pub mod derive_estree;
+    pub mod derive_get_address;
+    pub mod derive_get_span;
+    pub mod derive_get_span_mut;
+    pub mod get_id;
+    pub mod visit;
+    pub mod visit_mut;
 }
 
 pub mod visit {
