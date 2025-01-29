@@ -18,23 +18,11 @@ mod schema;
 mod util;
 
 use derives::{
-	DeriveCloneIn,
-	DeriveContentEq,
-	DeriveContentHash,
-	DeriveESTree,
-	DeriveGetAddress,
-	DeriveGetSpan,
-	DeriveGetSpanMut,
+    DeriveCloneIn, DeriveContentEq, DeriveESTree, DeriveGetAddress, DeriveGetSpan, DeriveGetSpanMut,
 };
 use generators::{
-	AssertLayouts,
-	AstBuilderGenerator,
-	AstKindGenerator,
-	Generator,
-	GetIdGenerator,
-	TypescriptGenerator,
-	VisitGenerator,
-	VisitMutGenerator,
+    AssertLayouts, AstBuilderGenerator, AstKindGenerator, Generator, GetIdGenerator,
+    TypescriptGenerator, VisitGenerator, VisitMutGenerator,
 };
 use logger::{log, log_failed, log_result, log_success};
 use output::{Output, RawOutput};
@@ -42,115 +30,107 @@ use passes::{CalcLayout, Linker};
 use schema::Schema;
 use util::NormalizeError;
 
-static SOURCE_PATHS:&[&str] = &[
-	"crates/oxc_ast/src/ast/literal.rs",
-	"crates/oxc_ast/src/ast/js.rs",
-	"crates/oxc_ast/src/ast/ts.rs",
-	"crates/oxc_ast/src/ast/jsx.rs",
-	"crates/oxc_ast/src/ast/comment.rs",
-	"crates/oxc_syntax/src/number.rs",
-	"crates/oxc_syntax/src/operator.rs",
-	"crates/oxc_span/src/span/types.rs",
-	"crates/oxc_span/src/source_type/mod.rs",
-	"crates/oxc_regular_expression/src/ast.rs",
+static SOURCE_PATHS: &[&str] = &[
+    "crates/oxc_ast/src/ast/literal.rs",
+    "crates/oxc_ast/src/ast/js.rs",
+    "crates/oxc_ast/src/ast/ts.rs",
+    "crates/oxc_ast/src/ast/jsx.rs",
+    "crates/oxc_ast/src/ast/comment.rs",
+    "crates/oxc_syntax/src/number.rs",
+    "crates/oxc_syntax/src/operator.rs",
+    "crates/oxc_span/src/span/types.rs",
+    "crates/oxc_span/src/source_type/mod.rs",
+    "crates/oxc_regular_expression/src/ast.rs",
 ];
 
-const AST_CRATE:&str = "crates/oxc_ast";
-const TYPESCRIPT_PACKAGE:&str = "npm/oxc-types";
-const GITHUB_WATCH_LIST_PATH:&str = ".github/.generated_ast_watch_list.yml";
-const SCHEMA_PATH:&str = "schema.json";
+const AST_CRATE: &str = "crates/oxc_ast";
+const TYPESCRIPT_PACKAGE: &str = "npm/oxc-types";
+const GITHUB_WATCH_LIST_PATH: &str = ".github/.generated_ast_watch_list.yml";
+const SCHEMA_PATH: &str = "schema.json";
 
 type Result<R> = std::result::Result<R, String>;
 type TypeId = usize;
 
 #[derive(Debug, Bpaf)]
 pub struct CliOptions {
-	/// Runs all generators but won't write anything down.
-	#[bpaf(switch)]
-	dry_run:bool,
-	/// Prints no logs.
-	quiet:bool,
-	/// Output JSON schema.
-	schema:bool,
+    /// Runs all generators but won't write anything down.
+    #[bpaf(switch)]
+    dry_run: bool,
+    /// Prints no logs.
+    quiet: bool,
+    /// Output JSON schema.
+    schema: bool,
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-	let cli_options = cli_options().run();
+    let cli_options = cli_options().run();
 
-	if cli_options.quiet {
-		logger::quiet().normalize_with("Failed to set logger to `quiet` mode.")?;
-	}
+    if cli_options.quiet {
+        logger::quiet().normalize_with("Failed to set logger to `quiet` mode.")?;
+    }
 
-	let AstCodegenResult { mut outputs, schema } = SOURCE_PATHS
-		.iter()
-		.fold(AstCodegen::default(), AstCodegen::add_file)
-		.pass(Linker)
-		.pass(CalcLayout)
-		.generate(DeriveCloneIn)
-		.generate(DeriveGetAddress)
-		.generate(DeriveGetSpan)
-		.generate(DeriveGetSpanMut)
-		.generate(DeriveContentEq)
-		.generate(DeriveContentHash)
-		.generate(DeriveESTree)
-		.generate(AssertLayouts)
-		.generate(AstKindGenerator)
-		.generate(AstBuilderGenerator)
-		.generate(GetIdGenerator)
-		.generate(VisitGenerator)
-		.generate(VisitMutGenerator)
-		.generate(TypescriptGenerator)
-		.run()?;
+    let AstCodegenResult { mut outputs, schema } = SOURCE_PATHS
+        .iter()
+        .fold(AstCodegen::default(), AstCodegen::add_file)
+        .pass(Linker)
+        .pass(CalcLayout)
+        .generate(DeriveCloneIn)
+        .generate(DeriveGetAddress)
+        .generate(DeriveGetSpan)
+        .generate(DeriveGetSpanMut)
+        .generate(DeriveContentEq)
+        .generate(DeriveESTree)
+        .generate(AssertLayouts)
+        .generate(AstKindGenerator)
+        .generate(AstBuilderGenerator)
+        .generate(GetIdGenerator)
+        .generate(VisitGenerator)
+        .generate(VisitMutGenerator)
+        .generate(TypescriptGenerator)
+        .run()?;
 
-	outputs.push(generate_ci_filter(&outputs));
+    outputs.push(generate_ci_filter(&outputs));
 
-	if cli_options.schema {
-		outputs.push(generate_json_schema(&schema)?);
-	}
+    if cli_options.schema {
+        outputs.push(generate_json_schema(&schema)?);
+    }
 
-	if !cli_options.dry_run {
-		for output in outputs {
-			output.write_to_file()?;
-		}
-	}
+    if !cli_options.dry_run {
+        for output in outputs {
+            output.write_to_file()?;
+        }
+    }
 
-	Ok(())
+    Ok(())
 }
 
-fn generate_ci_filter(outputs:&[RawOutput]) -> RawOutput {
-	log!("Generate CI filter... ");
+fn generate_ci_filter(outputs: &[RawOutput]) -> RawOutput {
+    log!("Generate CI filter... ");
 
-	let mut code = "src:\n".to_string();
+    let mut code = "src:\n".to_string();
+    let mut push_item = |path: &str| code.push_str(format!("  - '{path}'\n").as_str());
 
-	let mut push_item = |path:&str| code.push_str(format!("  - '{path}'\n").as_str());
+    for input in SOURCE_PATHS {
+        push_item(input);
+    }
 
-	for input in SOURCE_PATHS {
-		push_item(input);
-	}
+    for output in outputs {
+        push_item(output.path.as_str());
+    }
 
-	for output in outputs {
-		push_item(output.path.as_str());
-	}
+    push_item("tasks/ast_tools/src/**");
+    push_item(GITHUB_WATCH_LIST_PATH);
 
-	push_item("tasks/ast_tools/src/**");
+    log_success!();
 
-	push_item(GITHUB_WATCH_LIST_PATH);
-
-	log_success!();
-
-	Output::Yaml { path:GITHUB_WATCH_LIST_PATH.to_string(), code }.into_raw(file!())
+    Output::Yaml { path: GITHUB_WATCH_LIST_PATH.to_string(), code }.into_raw(file!())
 }
 
-fn generate_json_schema(schema:&Schema) -> Result<RawOutput> {
-	log!("Generate JSON schema... ");
-
-	let result = serde_json::to_string_pretty(&schema.defs).normalize();
-
-	log_result!(result);
-
-	let schema = result?;
-
-	let output = Output::Raw { path:SCHEMA_PATH.to_string(), code:schema }.into_raw(file!());
-
-	Ok(output)
+fn generate_json_schema(schema: &Schema) -> Result<RawOutput> {
+    log!("Generate JSON schema... ");
+    let result = serde_json::to_string_pretty(&schema.defs).normalize();
+    log_result!(result);
+    let schema = result?;
+    let output = Output::Raw { path: SCHEMA_PATH.to_string(), code: schema }.into_raw(file!());
+    Ok(output)
 }
