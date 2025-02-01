@@ -272,16 +272,16 @@ inherit_variants! {
 #[derive(Debug)]
 #[generate_derive(CloneIn, GetSpan, GetSpanMut, ContentEq, ESTree)]
 pub enum JSXExpression<'a> {
-	/// An empty expression
-	///
-	/// ## Example
-	/// ```tsx
-	/// <Foo bar={} />
-	/// //       ^^
-	/// ```
-	EmptyExpression(JSXEmptyExpression) = 64,
-	// `Expression` variants added here by `inherit_variants!` macro
-	@inherit Expression
+    /// An empty expression
+    ///
+    /// ## Example
+    /// ```tsx
+    /// <Foo>{}</Foo>
+    /// //   ^^
+    /// ```
+    EmptyExpression(JSXEmptyExpression) = 64,
+    // `Expression` variants added here by `inherit_variants!` macro
+    @inherit Expression
 }
 }
 

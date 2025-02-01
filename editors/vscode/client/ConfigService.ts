@@ -6,7 +6,7 @@ import { IDisposable } from "./types";
 export class ConfigService implements IDisposable {
 	private static readonly _namespace = "oxc";
 
-  public readonly config: Config;
+  public config: Config;
 
 	public config: Config;
 
