@@ -1,31 +1,9 @@
 {
 	"name": "@codeeditorland/transform",
-	"version": "0.0.1",
-	"private": false,
 	"description": "Oxc transform Node API",
-	"keywords": [
-		"codeeditorland",
-		"land",
-		"playform"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/OXC#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/OXC/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/OXC.git"
-	},
 	"funding": {
 		"url": "https://github.com/sponsors/Boshen"
 	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "Source 🖋️ Open 👐🏻",
-		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
-	},
-	"type": "module",
 	"main": "index.js",
 	"files": [
 		"index.d.ts",
@@ -37,8 +15,5 @@
 	"dependencies": {},
 	"devDependencies": {
 		"@playform/build": "0.2.1"
-	},
-	"publishConfig": {
-		"access": "public"
 	}
 }
