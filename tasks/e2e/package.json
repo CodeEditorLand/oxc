@@ -31,7 +31,7 @@
 		"@codeeditorland-minify/binding": "workspace:^",
 		"@codeeditorland-transform/binding": "workspace:^",
 		"@playform/build": "0.2.1",
-		"antd": "^5.23.1",
+		"antd": "^5.23.3",
 		"fs-require": "^1.6.0",
 		"memfs": "^4.17.0",
 		"terser": "^5.37.0"
