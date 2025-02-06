@@ -32,9 +32,6 @@
 		"@napi-rs/cli": "catalog:",
 		"@playform/build": "0.2.1"
 	},
-	"volta": {
-		"node": "22.12.0"
-	},
 	"publishConfig": {
 		"access": "public"
 	}
