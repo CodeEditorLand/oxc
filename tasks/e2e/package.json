@@ -31,10 +31,10 @@
 		"@codeeditorland-minify/binding": "workspace:^",
 		"@codeeditorland-transform/binding": "workspace:^",
 		"@playform/build": "0.2.1",
-		"antd": "^5.23.3",
+		"antd": "^5.23.4",
 		"fs-require": "^1.6.0",
 		"memfs": "^4.17.0",
-		"terser": "^5.37.0"
+		"terser": "^5.38.1"
 	},
 	"publishConfig": {
 		"access": "public"
