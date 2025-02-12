@@ -6,7 +6,7 @@ categories.workspace = true
 edition.workspace = true
 include = ["/src"]
 keywords.workspace = true
-license.workspace = true
+license-file.workspace = true
 publish = false
 rust-version.workspace = true
 
