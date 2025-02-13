@@ -5,7 +5,7 @@ authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 keywords.workspace = true
-license-file.workspace = true
+license.workspace = true
 publish = false
 repository.workspace = true
 description.workspace = true
@@ -39,7 +39,7 @@ regex = { workspace = true }
 rustc-hash = { workspace = true }
 saphyr = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
+serde_json = { workspace = true, features = ["unbounded_depth"] }
 similar = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 walkdir = { workspace = true }
