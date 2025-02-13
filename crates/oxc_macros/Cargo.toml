@@ -7,7 +7,7 @@ edition.workspace = true
 homepage.workspace = true
 include = ["/src"]
 keywords.workspace = true
-license-file.workspace = true
+license.workspace = true
 publish = false
 repository.workspace = true
 rust-version.workspace = true
@@ -26,9 +26,4 @@ convert_case = { workspace = true }
 itertools = { workspace = true }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
-syn = { workspace = true, features = [
-	"derive",
-	"parsing",
-	"printing",
-	"proc-macro",
-] }
+syn = { workspace = true, features = ["derive", "parsing", "printing", "proc-macro"] }
