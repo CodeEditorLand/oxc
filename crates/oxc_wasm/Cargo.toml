@@ -6,7 +6,7 @@ categories.workspace = true
 edition.workspace = true
 include = ["/src"]
 keywords.workspace = true
-license-file.workspace = true
+license.workspace = true
 publish = false
 rust-version.workspace = true
 
@@ -19,14 +19,7 @@ test = false
 doctest = false
 
 [dependencies]
-oxc = { workspace = true, features = [
-	"codegen",
-	"minifier",
-	"semantic",
-	"serialize",
-	"transformer",
-	"wasm",
-] }
+oxc = { workspace = true, features = ["codegen", "minifier", "semantic", "serialize", "transformer", "wasm"] }
 
 oxc_index = { workspace = true }
 oxc_linter = { workspace = true }
