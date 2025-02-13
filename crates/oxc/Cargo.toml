@@ -1,13 +1,13 @@
 [package]
 name = "oxc"
-version = "0.48.1"
+version = "0.50.0"
 authors.workspace = true
 categories.workspace = true
 edition.workspace = true
 homepage.workspace = true
 include = ["/src"]
 keywords.workspace = true
-license-file.workspace = true
+license.workspace = true
 publish = true
 repository.workspace = true
 rust-version.workspace = true
@@ -62,10 +62,10 @@ cfg = ["oxc_cfg"]
 isolated_declarations = ["oxc_isolated_declarations"]
 
 serialize = [
-	"oxc_ast/serialize",
-	"oxc_semantic?/serialize",
-	"oxc_span/serialize",
-	"oxc_syntax/serialize",
+  "oxc_ast/serialize",
+  "oxc_semantic?/serialize",
+  "oxc_span/serialize",
+  "oxc_syntax/serialize",
 ]
 
 wasm = ["oxc_transformer/wasm"]
